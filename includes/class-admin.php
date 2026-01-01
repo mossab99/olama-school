@@ -49,6 +49,21 @@ class Olama_School_Admin
         add_action('wp_ajax_olama_get_teacher_summary', array($this, 'ajax_get_teacher_summary'));
         add_action('wp_ajax_olama_get_sections_by_grade', array($this, 'ajax_get_sections_by_grade'));
         add_action('wp_ajax_olama_toggle_teacher_assignment', array($this, 'ajax_toggle_teacher_assignment'));
+
+        // Whitelabel Footer
+        add_filter('admin_footer_text', array($this, 'whitelabel_footer'));
+        add_filter('update_footer', array($this, 'whitelabel_footer'), 11);
+    }
+
+    /**
+     * Whitelabel footer text
+     */
+    public function whitelabel_footer($text)
+    {
+        if (isset($_GET['page']) && strpos($_GET['page'], 'olama-school') !== false) {
+            return '';
+        }
+        return $text;
     }
 
     /**
@@ -1860,8 +1875,8 @@ class Olama_School_Admin
                 <div id="shortcode-display-wrapper" style="position: relative; margin-bottom: 20px;">
                     <code id="generated-shortcode"
                         style="display: block; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 1.2rem; background: #fff; padding: 20px 15px; border: 1px solid #cbd5e1; border-radius: 8px; color: #2563eb; overflow-x: auto; white-space: nowrap;">
-                                [olama_weekly_plan]
-                            </code>
+                                        [olama_weekly_plan]
+                                    </code>
                 </div>
                 <button type="button" class="button button-primary button-large" id="copy-shortcode"
                     style="height: 46px; padding: 0 30px; font-size: 1rem; font-weight: 600; border-radius: 8px; background: #2563eb;">
@@ -4673,7 +4688,7 @@ class Olama_School_Admin
             </div>
 
             <script>         if (typeof add_query_a            
-                                    rg !== 'function') {             function add_query_arg(key, value) {                 var url = new URL(window.location.href);                 url.searchParams.set(key, value);                 return url.href;             }         }
+                                            rg !== 'function') { function add_query_arg(key, value) { var url = new URL(window.location.href); url.searchParams.set(key, value); return url.href; } }
             </script>
 
             <style>
