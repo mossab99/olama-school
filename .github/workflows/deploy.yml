@@ -18,5 +18,29 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            cd /home/mossab99/htdocs/olama.online/wp-content/plugins/School-Plan
-            git pull origin main
+            PLUGIN_DIR=/home/mossab99/htdocs/olama.online/wp-content/plugins/School-Plan
+
+            if [ ! -d "$PLUGIN_DIR" ]; then
+              echo "Directory does not exist, cloning repository..."
+              cd /home/mossab99/htdocs/olama.online/wp-content/plugins
+              git clone https://github.com/<your-username>/School-Plan.git
+            else
+              echo "Directory exists, updating repository..."
+              cd $PLUGIN_DIR
+
+              # Make sure it's a git repo
+              if [ -d ".git" ]; then
+                git reset --hard
+                git clean -fd
+                git pull origin main
+              else
+                echo "Existing folder is not a git repo. Removing and re-cloning..."
+                cd ..
+                rm -rf School-Plan
+                git clone https://github.com/<your-username>/School-Plan.git
+              fi
+            fi
+
+            # Fix permissions (optional but recommended for WordPress)
+            chown -R www-data:www-data $PLUGIN_DIR
+            chmod -R 755 $PLUGIN_DIR
