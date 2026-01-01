@@ -4,6 +4,12 @@
 	margin-bottom: 20px;
 }
 
+.olama-school-wrap {
+	padding-bottom: 60px;
+	overflow: auto;
+	min-height: calc(100vh - 120px);
+}
+
 /* Weekly Plan List Styles */
 .olama-weekly-list-grid {
 	margin-top: 30px;

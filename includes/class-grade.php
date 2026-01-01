@@ -16,7 +16,7 @@ class Olama_School_Grade
     public static function get_grades()
     {
         global $wpdb;
-        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_grades ORDER BY grade_level ASC");
+        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_grades ORDER BY CAST(grade_level AS UNSIGNED) ASC");
     }
 
     /**
