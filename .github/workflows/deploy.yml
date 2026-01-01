@@ -23,7 +23,7 @@ jobs:
             if [ ! -d "$PLUGIN_DIR" ]; then
               echo "Directory does not exist, cloning repository..."
               cd /home/mossab99/htdocs/olama.online/wp-content/plugins
-              git clone https://github.com/<your-username>/School-Plan.git
+              git clone https://github.com/mossab99/School-Plan.git
             else
               echo "Directory exists, updating repository..."
               cd $PLUGIN_DIR
@@ -37,10 +37,12 @@ jobs:
                 echo "Existing folder is not a git repo. Removing and re-cloning..."
                 cd ..
                 rm -rf School-Plan
-                git clone https://github.com/<your-username>/School-Plan.git
+                git clone https://github.com/mossab99/School-Plan.git
               fi
             fi
 
             # Fix permissions (optional but recommended for WordPress)
-            chown -R www-data:www-data $PLUGIN_DIR
-            chmod -R 755 $PLUGIN_DIR
+            if [ -d "$PLUGIN_DIR" ]; then
+              chown -R www-data:www-data $PLUGIN_DIR
+              chmod -R 755 $PLUGIN_DIR
+            fi
