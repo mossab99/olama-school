@@ -90,9 +90,9 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
             <tbody>
                 <?php foreach ($scheduled_sections as $ss): ?>
                     <tr>
-                        <td><?php echo esc_html($ss->semester_name); ?></td>
-                        <td><?php echo esc_html($ss->grade_name); ?></td>
-                        <td><?php echo esc_html($ss->section_name); ?></td>
+                        <td><?php echo esc_html(__($ss->semester_name, 'olama-school')); ?></td>
+                        <td><?php echo esc_html(__($ss->grade_name, 'olama-school')); ?></td>
+                        <td><?php echo esc_html(__($ss->section_name, 'olama-school')); ?></td>
                         <td>
                             <a href="<?php echo admin_url('admin.php?page=olama-school-plans&tab=schedule&grade_id=' . $ss->grade_id . '&section_id=' . $ss->section_id . '&semester_id=' . $ss->semester_id); ?>" class="button button-small"><?php _e('Edit', 'olama-school'); ?></a>
                             <a href="<?php echo wp_nonce_url(add_query_arg(['action' => 'delete_full_schedule', 'section_id' => $ss->section_id, 'semester_id' => $ss->semester_id]), 'olama_delete_full_schedule'); ?>" class="button button-small button-link-delete" onclick="return confirm('<?php esc_attr_e('Delete this entire schedule?', 'olama-school'); ?>')"><?php _e('Delete', 'olama-school'); ?></a>
@@ -144,7 +144,7 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
             <select name="semester_id" onchange="this.form.submit()">
                 <?php foreach ($semesters as $s): ?>
                     <option value="<?php echo $s->id; ?>" <?php selected($selected_semester_id, $s->id); ?>>
-                        <?php echo esc_html($s->semester_name); ?>
+                        <?php echo esc_html(__($s->semester_name, 'olama-school')); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -173,23 +173,30 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
         <table class="wp-list-table widefat fixed striped" style="border: none;">
             <thead>
                 <tr style="background: #2271b1; color: #fff;">
-                    <th style="width: 80px; text-align: center; border-right: 1px solid rgba(255,255,255,0.1); color: #fff !important;">
-                        <?php _e('Period', 'olama-school'); ?>
+                    <th style="width: 150px; text-align: center; border-right: 1px solid rgba(255,255,255,0.1); color: #fff !important;">
+                        <?php _e('Day', 'olama-school'); ?>
                     </th>
-                    <?php foreach ($display_days as $day): ?>
+                    <?php 
+                    $period_labels = [
+                        1 => '1 - First', 2 => '2 - Second', 3 => '3 - Third', 4 => '4 - Fourth',
+                        5 => '5 - Fifth', 6 => '6 - Sixth', 7 => '7 - Seventh', 8 => '8 - Eighth'
+                    ];
+                    for ($period = 1; $period <= $periods_to_show; $period++): 
+                        $label = $period_labels[$period] ?? $period;
+                    ?>
                         <th style="padding: 15px; text-align: center; border-right: 1px solid rgba(255,255,255,0.1); color: #fff !important;">
-                            <div style="font-size: 1.1em; font-weight: 700;"><?php echo esc_html($day); ?></div>
+                            <div style="font-size: 1.1em; font-weight: 700;"><?php echo esc_html(__($label, 'olama-school')); ?></div>
                         </th>
-                    <?php endforeach; ?>
+                    <?php endfor; ?>
                 </tr>
             </thead>
             <tbody>
-                <?php for ($period = 1; $period <= $periods_to_show; $period++): ?>
+                <?php foreach ($display_days as $day): ?>
                     <tr>
-                        <td style="text-align: center; font-weight: 700; background: #f8f9fa; border-right: 1px solid #eee; color: #2271b1; font-size: 1.2em;">
-                            <?php echo $period; ?>
+                        <td style="text-align: center; font-weight: 700; background: #f8f9fa; border-right: 1px solid #eee; color: #2271b1; font-size: 1.1em;">
+                            <?php echo esc_html(__($day, 'olama-school')); ?>
                         </td>
-                        <?php foreach ($display_days as $day):
+                        <?php for ($period = 1; $period <= $periods_to_show; $period++):
                             $item = $schedule[$day][$period] ?? null;
                             $item_subject_id = $item ? $item->subject_id : 0;
                             ?>
@@ -208,9 +215,9 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
                                     </div>
                                 <?php endif; ?>
                             </td>
-                        <?php endforeach; ?>
+                        <?php endfor; ?>
                     </tr>
-                <?php endfor; ?>
+                <?php endforeach; ?>
             </tbody>
         </table>
 

@@ -195,10 +195,18 @@ if (!defined('ABSPATH')) {
                                         <?php echo esc_html($teacher->phone_number ?? '-'); ?>
                                     </td>
                                     <td>
-                                        <button type="button" class="button button-small"
-                                            onclick="olamaEditTeacher(<?php echo $teacher->ID; ?>, '<?php echo esc_attr($teacher->employee_id ?? ''); ?>', '<?php echo esc_attr($teacher->phone_number ?? ''); ?>')">
-                                            <?php _e('Edit', 'olama-school'); ?>
-                                        </button>
+                                        <div style="display: flex; gap: 5px;">
+                                            <button type="button" class="button button-small"
+                                                onclick="olamaEditTeacher(<?php echo $teacher->ID; ?>, '<?php echo esc_attr($teacher->employee_id ?? ''); ?>', '<?php echo esc_attr($teacher->phone_number ?? ''); ?>')">
+                                                <?php _e('Edit', 'olama-school'); ?>
+                                            </button>
+                                            <a href="<?php echo admin_url('admin.php?page=olama-school-plans&tab=office_hours&teacher_id=' . $teacher->ID); ?>"
+                                                class="button button-small">
+                                                <span class="dashicons dashicons-calendar-alt"
+                                                    style="font-size: 16px; width: 16px; height: 16px; margin-top: 2px;"></span>
+                                                <?php _e('Office Hours', 'olama-school'); ?>
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

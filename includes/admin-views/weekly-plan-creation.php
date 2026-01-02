@@ -123,7 +123,7 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
                     $w_count = 1;
                     foreach ($current_month_weeks as $w): ?>
                         <option value="<?php echo esc_attr($w['val']); ?>" <?php selected($week_start, $w['val']); ?>>
-                            <?php echo "Week $w_count (" . esc_html($w['label']) . ")"; ?>
+                            <?php echo sprintf(__('%s %d', 'olama-school'), __('Week', 'olama-school'), $w_count) . " (" . esc_html($w['label']) . ")"; ?>
                         </option>
                         <?php $w_count++; endforeach; ?>
                 </select>
@@ -172,7 +172,7 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
                     style="padding: 10px 20px; cursor: pointer; border: 1px solid transparent; border-bottom: none; border-radius: 4px 4px 0 0; background: <?php echo $active_day === $day_name ? '#fff' : '#f1f1f1'; ?>; <?php echo $active_day === $day_name ? 'border-color: #ddd; margin-bottom: -1px;' : ''; ?>"
                     onclick="document.getElementById('active_day_input').value='<?php echo $day_name; ?>'; document.getElementById('olama-plan-filters').submit();">
                     <strong>
-                        <?php echo esc_html($day_name); ?>
+                        <?php echo __(esc_html($day_name), 'olama-school'); ?>
                     </strong><br>
                     <small>
                         <?php echo date('M d', strtotime($date)); ?>
@@ -187,7 +187,7 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
         <div class="olama-form-col"
             style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
             <h2 style="margin-top: 0; color: #1d2327;">
-                <?php echo esc_html($active_day); ?>'s Plan -
+                <?php printf(__('%s\'s Plan', 'olama-school'), __($active_day, 'olama-school')); ?> -
                 <?php echo date('Y-m-d', strtotime($selected_date)); ?>
             </h2>
             <form method="post" id="olama-weekly-plan-form">
@@ -292,7 +292,7 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
                             <?php _e('Homework (Student Book)', 'olama-school'); ?>
                         </label>
                         <textarea name="homework_sb" rows="3" style="width: 100%;"
-                            placeholder="Page numbers or details..."></textarea>
+                            placeholder="<?php _e('Page numbers or details...', 'olama-school'); ?>"></textarea>
                     </div>
                 </div>
 
@@ -331,7 +331,7 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
                         <?php _e('Teacher\'s Notes', 'olama-school'); ?>
                     </label>
                     <textarea name="teacher_notes" rows="3" style="width: 100%;"
-                        placeholder="Additional notes..."></textarea>
+                        placeholder="<?php _e('Additional notes...', 'olama-school'); ?>"></textarea>
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 30px;">
@@ -385,7 +385,7 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <span class="status-badge <?php echo esc_attr($plan->status); ?>"
                                     style="font-size: 0.8em; padding: 2px 8px; border-radius: 12px; background: #eee; color: #666;">
-                                    <?php echo ucfirst($plan->status); ?>
+                                    <?php echo __(ucfirst($plan->status), 'olama-school'); ?>
                                 </span>
                                 <a href="#" class="olama-edit-plan" title="<?php _e('Edit', 'olama-school'); ?>"
                                     style="color: #666; text-decoration: none;"><i class="dashicons dashicons-edit"></i></a>
@@ -402,8 +402,8 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
                         <?php if ($plan->homework_sb || $plan->homework_eb): ?>
                             <div style="font-size: 0.85em; color: #666;">
                                 <i class="dashicons dashicons-book-alt" style="font-size: 16px; margin-right: 5px;"></i>
-                                <?php echo $plan->homework_sb ? 'SB: ' . esc_html($plan->homework_sb) : ''; ?>
-                                <?php echo $plan->homework_eb ? ' EB: ' . esc_html($plan->homework_eb) : ''; ?>
+                                <?php echo $plan->homework_sb ? __('SB:', 'olama-school') . ' ' . esc_html($plan->homework_sb) : ''; ?>
+                                <?php echo $plan->homework_eb ? ' ' . __('EB:', 'olama-school') . ' ' . esc_html($plan->homework_eb) : ''; ?>
                             </div>
                         <?php endif; ?>
                     </div>

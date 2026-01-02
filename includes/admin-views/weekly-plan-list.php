@@ -98,7 +98,7 @@ foreach ($days as $day_name => $date) {
                 <select name="plan_month" onchange="this.form.submit()">
                     <?php foreach ($months_weeks as $m_key => $weeks): ?>
                         <option value="<?php echo esc_attr($m_key); ?>" <?php selected($selected_month, $m_key); ?>>
-                            <?php echo date('F Y', strtotime($m_key . '-01')); ?>
+                            <?php echo date_i18n('F Y', strtotime($m_key . '-01')); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -112,7 +112,7 @@ foreach ($days as $day_name => $date) {
                     $w_count = 1;
                     foreach ($current_month_weeks as $w): ?>
                         <option value="<?php echo esc_attr($w['val']); ?>" <?php selected($week_start, $w['val']); ?>>
-                            <?php echo "W$w_count " . esc_html($w['label']); ?>
+                            <?php echo sprintf(__('%s %d', 'olama-school'), __('Week', 'olama-school'), $w_count) . ' ' . esc_html($w['label']); ?>
                         </option>
                         <?php $w_count++; endforeach; ?>
                 </select>
@@ -162,10 +162,10 @@ foreach ($days as $day_name => $date) {
                 <div class="day-header"
                     style="background: #f1f1f1; padding: 10px; text-align: center; border-bottom: 1px solid #ddd; border-radius: 8px 8px 0 0;">
                     <strong style="display: block; color: #1d2327;">
-                        <?php echo esc_html($day_name); ?>
+                        <?php echo __($day_name, 'olama-school'); ?>
                     </strong>
                     <small style="color: #666;">
-                        <?php echo date('M d', strtotime($date)); ?>
+                        <?php echo date_i18n('M d', strtotime($date)); ?>
                     </small>
                 </div>
                 <div class="day-content" style="padding: 10px; flex-grow: 1;">
@@ -194,8 +194,8 @@ foreach ($days as $day_name => $date) {
                                     <div style="font-size: 0.75em; color: #777; border-top: 1px solid #eee; pt: 6px; margin-top: 6px;">
                                         <i class="dashicons dashicons-book-alt"
                                             style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;"></i>
-                                        <?php echo $plan->homework_sb ? 'SB: ' . esc_html($plan->homework_sb) : ''; ?>
-                                        <?php echo $plan->homework_eb ? ' EB: ' . esc_html($plan->homework_eb) : ''; ?>
+                                        <?php echo $plan->homework_sb ? __('SB:', 'olama-school') . ' ' . esc_html($plan->homework_sb) : ''; ?>
+                                        <?php echo $plan->homework_eb ? ' ' . __('EB:', 'olama-school') . ' ' . esc_html($plan->homework_eb) : ''; ?>
                                     </div>
                                 <?php endif; ?>
                             </div>

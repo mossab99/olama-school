@@ -139,7 +139,7 @@ if ($cached_data !== false) {
                                 <td>
                                     <span
                                         style="padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 600; background: <?php echo ($rp->status == 'approved' ? '#e7ffef' : ($rp->status == 'submitted' ? '#fff9e7' : '#f0f0f1')); ?>; color: <?php echo ($rp->status == 'approved' ? '#2271b1' : ($rp->status == 'submitted' ? '#996800' : '#50575e')); ?>;">
-                                        <?php echo ucfirst($rp->status); ?>
+                                        <?php echo __(ucfirst($rp->status), 'olama-school'); ?>
                                     </span>
                                 </td>
                             </tr>

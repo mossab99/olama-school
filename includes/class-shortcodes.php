@@ -16,6 +16,7 @@ class Olama_School_Shortcodes
     {
         add_shortcode('olama_weekly_plan', array($this, 'render_weekly_plan_shortcode'));
         add_shortcode('olama_weekly_schedule', array($this, 'render_weekly_schedule_shortcode'));
+        add_shortcode('olama_teachers_office_hours', array($this, 'render_teachers_office_hours_shortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_shortcode_assets'));
     }
 
@@ -25,6 +26,174 @@ class Olama_School_Shortcodes
     public function enqueue_shortcode_assets()
     {
         wp_enqueue_style('olama-shortcodes-css', OLAMA_SCHOOL_URL . 'assets/css/shortcodes.css', array(), OLAMA_SCHOOL_VERSION);
+    }
+
+    /**
+     * Shortcode: [olama_teachers_office_hours]
+     */
+    public function render_teachers_office_hours_shortcode($atts)
+    {
+        $teachers = Olama_School_Teacher::get_teachers();
+
+        if (empty($teachers)) {
+            return '<div class="olama-no-plans">' . __('No teachers found.', 'olama-school') . '</div>';
+        }
+
+        ob_start();
+        ?>
+        <div class="olama-teachers-office-hours-container">
+            <div class="olama-search-box">
+                <span class="dashicons dashicons-search"></span>
+                <input type="text" id="olama-teacher-search"
+                    placeholder="<?php _e('Search by teacher name...', 'olama-school'); ?>">
+            </div>
+
+            <div class="olama-teachers-grid" id="olama-teachers-list">
+                <?php foreach ($teachers as $teacher):
+                    $office_hours = Olama_School_Teacher::get_office_hours($teacher->ID);
+                    if (empty($office_hours))
+                        continue;
+                    ?>
+                    <div class="olama-teacher-card" data-name="<?php echo esc_attr(strtolower($teacher->display_name)); ?>">
+                        <div class="olama-teacher-info">
+                            <div class="teacher-avatar">
+                                <?php echo get_avatar($teacher->ID, 64); ?>
+                            </div>
+                            <div class="teacher-details">
+                                <h3 class="teacher-name"><?php echo esc_html($teacher->display_name); ?></h3>
+                                <div class="teacher-title"><?php _e('Teacher', 'olama-school'); ?></div>
+                            </div>
+                        </div>
+                        <div class="olama-office-hours-list">
+                            <?php foreach ($office_hours as $oh): ?>
+                                <div class="olama-oh-item">
+                                    <span class="oh-day"><?php _e($oh->day_name, 'olama-school'); ?>:</span>
+                                    <span class="oh-time"><?php echo esc_html($oh->available_time); ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <script>
+            jQuery(document).ready(function ($) {
+                $('#olama-teacher-search').on('input', function () {
+                    var searchTerm = $(this).val().toLowerCase();
+                    $('#olama-teachers-list .olama-teacher-card').each(function () {
+                        var name = $(this).data('name');
+                        if (name.includes(searchTerm)) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                });
+            });
+        </script>
+
+        <style>
+            .olama-teachers-office-hours-container {
+                max-width: 1000px;
+                margin: 0 auto;
+            }
+
+            .olama-search-box {
+                position: relative;
+                margin-bottom: 30px;
+            }
+
+            .olama-search-box .dashicons {
+                position: absolute;
+                left: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #64748b;
+            }
+
+            .olama-search-box input {
+                width: 100%;
+                padding: 12px 12px 12px 40px;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                font-size: 1rem;
+            }
+
+            .olama-teachers-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 20px;
+            }
+
+            .olama-teacher-card {
+                background: #fff;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                transition: transform 0.2s;
+            }
+
+            .olama-teacher-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+
+            .olama-teacher-info {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                margin-bottom: 15px;
+                border-bottom: 1px solid #f1f5f9;
+                padding-bottom: 15px;
+            }
+
+            .teacher-avatar img {
+                border-radius: 50%;
+            }
+
+            .teacher-name {
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: #1e293b;
+            }
+
+            .teacher-title {
+                font-size: 0.85rem;
+                color: #64748b;
+            }
+
+            .olama-office-hours-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .olama-oh-item {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.9rem;
+            }
+
+            .oh-day {
+                font-weight: 600;
+                color: #475569;
+            }
+
+            .oh-time {
+                color: #2563eb;
+            }
+
+            @media (max-width: 600px) {
+                .olama-teachers-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+        <?php
+        return ob_get_clean();
     }
 
     /**

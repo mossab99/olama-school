@@ -161,7 +161,7 @@ jQuery(document).ready(function ($) {
                     <div class="item-info">
                         <strong>${unit.unit_number ? unit.unit_number + ' - ' : ''}${unit.unit_name}</strong>
                         ${parseInt(unit.lesson_count) === 0
-                        ? '<span class="empty-unit-indicator" title="No lessons added"></span>'
+                        ? `<span class="empty-unit-indicator" title="${olamaCurriculum.i18n.noLessons}"></span>`
                         : `<span class="lesson-count-badge">(${unit.lesson_count})</span>`}
                     </div>
                     <div class="item-actions">
@@ -215,8 +215,8 @@ jQuery(document).ready(function ($) {
 
         console.log('Save Unit Data:', data);
 
-        if (!data.unit_number) return alert('Unit number is required');
-        if (!data.unit_name) return alert('Unit name is required');
+        if (!data.unit_number) return alert(olamaCurriculum.i18n.unitNumberRequired);
+        if (!data.unit_name) return alert(olamaCurriculum.i18n.unitNameRequired);
 
         // Client-side duplicate check
         let isDuplicate = false;
@@ -226,7 +226,7 @@ jQuery(document).ready(function ($) {
                 return false;
             }
         });
-        if (isDuplicate) return alert('Unit #' + data.unit_number + ' already exists.');
+        if (isDuplicate) return alert(olamaCurriculum.i18n.unitExists.replace('#', '#' + data.unit_number));
 
         $.ajax({
             url: olamaCurriculum.ajaxUrl,
@@ -279,12 +279,12 @@ jQuery(document).ready(function ($) {
                         toggleSection('question-section', false);
                     }
                 } else {
-                    alert(response.data || 'Error deleting unit');
+                    alert(response.data || olamaCurriculum.i18n.errorDeletingUnit);
                 }
             },
             error: function (xhr, status, error) {
                 console.error('Delete Unit Error:', error);
-                alert('Error deleting unit: ' + error);
+                alert(olamaCurriculum.i18n.errorDeletingUnit + ': ' + error);
             }
         });
     });
@@ -316,12 +316,12 @@ jQuery(document).ready(function ($) {
                         const lessons = response.data.lessons || response.data || [];
                         renderLessons(lessons);
                     } else {
-                        $('#lessons-list').html('<p>Error loading lessons.</p>');
+                        $('#lessons-list').html('<p>' + olamaCurriculum.i18n.errorLoadingLessons + '</p>');
                     }
                 },
                 error: function (xhr, status, error) {
                     console.error('Load Lessons Error:', error);
-                    $('#lessons-list').html('<p>Error connecting to server.</p>');
+                    $('#lessons-list').html('<p>' + olamaCurriculum.i18n.errorConnection + '</p>');
                 }
             });
         }, 100);
@@ -334,12 +334,12 @@ jQuery(document).ready(function ($) {
         } else {
             lessons.forEach(function (lesson) {
                 // Fallback to lesson_name if lesson_title is undefined (handling legacy/mismatch)
-                const title = lesson.lesson_title || lesson.lesson_name || '(No Title)';
+                const title = lesson.lesson_title || lesson.lesson_name || olamaCurriculum.i18n.noTitle;
                 html += `
                 <div class="olama-item lesson-item" data-id="${lesson.id}" data-title="${title}" data-number="${lesson.lesson_number || ''}" data-url="${lesson.video_url || ''}" data-periods="${lesson.periods || 1}">
                     <div class="item-info">
                         <strong>${lesson.lesson_number ? lesson.lesson_number + ' - ' : ''}${title}</strong>
-                        <span class="lesson-count-badge">(${lesson.periods || 1} periods)</span>
+                        <span class="lesson-count-badge">${olamaCurriculum.i18n.periodsLabel.replace('%d', lesson.periods || 1)}</span>
                     </div>
                     <div class="item-actions">
                         <button class="button edit-lesson" data-id="${lesson.id}">${olamaCurriculum.i18n.edit}</button>
@@ -399,9 +399,9 @@ jQuery(document).ready(function ($) {
 
         console.log('Save Lesson Data:', data);
 
-        if (!data.lesson_number) return alert('Lesson number is required');
-        if (!data.lesson_title) return alert('Lesson title is required');
-        if (!currentUnit) return alert('No unit selected');
+        if (!data.lesson_number) return alert(olamaCurriculum.i18n.lessonNumberRequired);
+        if (!data.lesson_title) return alert(olamaCurriculum.i18n.lessonTitleRequired);
+        if (!currentUnit) return alert(olamaCurriculum.i18n.noUnitSelected);
 
         // Client-side duplicate check
         let isDuplicate = false;
@@ -411,7 +411,7 @@ jQuery(document).ready(function ($) {
                 return false;
             }
         });
-        if (isDuplicate) return alert('Lesson #' + data.lesson_number + ' already exists in this unit.');
+        if (isDuplicate) return alert(olamaCurriculum.i18n.lessonExists.replace('#', '#' + data.lesson_number));
 
         $.ajax({
             url: olamaCurriculum.ajaxUrl,
@@ -538,8 +538,8 @@ jQuery(document).ready(function ($) {
             nonce: olamaCurriculum.nonce
         };
 
-        if (!data.question_number) return alert('Question number is required');
-        if (!data.question_text) return alert('Question text is required');
+        if (!data.question_number) return alert(olamaCurriculum.i18n.questionNumberRequired);
+        if (!data.question_text) return alert(olamaCurriculum.i18n.questionTextRequired);
 
         // Client-side duplicate check
         let isDuplicate = false;
@@ -549,7 +549,7 @@ jQuery(document).ready(function ($) {
                 return false;
             }
         });
-        if (isDuplicate) return alert('Question #' + data.question_number + ' already exists in this lesson.');
+        if (isDuplicate) return alert(olamaCurriculum.i18n.questionExists.replace('#', '#' + data.question_number));
 
         $.ajax({
             url: olamaCurriculum.ajaxUrl,

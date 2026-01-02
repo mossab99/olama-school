@@ -35,6 +35,9 @@ $weeks = Olama_School_Academic::get_academic_weeks();
                 <option value="weekly_schedule">
                     <?php _e('Weekly Schedule', 'olama-school'); ?>
                 </option>
+                <option value="teachers_office_hours">
+                    <?php _e('Teachers Office Hours', 'olama-school'); ?>
+                </option>
             </select>
         </div>
         <div>

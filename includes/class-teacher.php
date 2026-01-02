@@ -106,4 +106,45 @@ class Olama_School_Teacher
             $teacher_id
         ));
     }
+
+    /**
+     * Get office hours for a teacher
+     */
+    public static function get_office_hours($teacher_id)
+    {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}olama_teacher_office_hours WHERE teacher_id = %d ORDER BY FIELD(day_name, 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')",
+            $teacher_id
+        ));
+    }
+
+    /**
+     * Save office hours for a teacher
+     */
+    public static function save_office_hours($teacher_id, $slots)
+    {
+        global $wpdb;
+        $table = "{$wpdb->prefix}olama_teacher_office_hours";
+
+        // Delete existing slots
+        $wpdb->delete($table, array('teacher_id' => $teacher_id));
+
+        if (empty($slots)) {
+            return true;
+        }
+
+        foreach ($slots as $slot) {
+            if (empty($slot['day_name']) || empty($slot['time'])) {
+                continue;
+            }
+            $wpdb->insert($table, array(
+                'teacher_id' => $teacher_id,
+                'day_name' => sanitize_text_field($slot['day_name']),
+                'available_time' => sanitize_text_field($slot['time']),
+            ));
+        }
+
+        return true;
+    }
 }

@@ -23,13 +23,13 @@ jQuery(document).ready(function ($) {
             const e = new Date(end).getTime();
 
             if (p >= s && p <= e) {
-                return { label: 'On-time', class: 'status-ontime' };
+                return { label: i18n.onTime, class: 'status-ontime' };
             } else if (p > e) {
                 const diff = Math.ceil((p - e) / (1000 * 60 * 60 * 24));
-                return { label: `Delayed by ${diff} days`, class: 'status-delayed' };
+                return { label: i18n.delayedBy.replace('%d', diff), class: 'status-delayed' };
             } else {
                 const diff = Math.ceil((s - p) / (1000 * 60 * 60 * 24));
-                return { label: `Bypass by ${diff} days`, class: 'status-bypass' };
+                return { label: i18n.bypassBy.replace('%d', diff), class: 'status-bypass' };
             }
         }
 
@@ -88,19 +88,19 @@ jQuery(document).ready(function ($) {
             </div>
 
             <div class="olama-detail-section">
-                <span class="olama-detail-label">${i18n.homework} (SB)</span>
+                <span class="olama-detail-label">${i18n.homeworkSB}</span>
                 <div class="olama-detail-value">${plan.homework_sb || '-'}</div>
             </div>
             <div class="olama-detail-section">
-                <span class="olama-detail-label">${i18n.homework} (EB)</span>
+                <span class="olama-detail-label">${i18n.homeworkEB}</span>
                 <div class="olama-detail-value">${plan.homework_eb || '-'}</div>
             </div>
             <div class="olama-detail-section">
-                <span class="olama-detail-label">${i18n.homework} (NB)</span>
+                <span class="olama-detail-label">${i18n.homeworkNB}</span>
                 <div class="olama-detail-value">${plan.homework_nb || '-'}</div>
             </div>
             <div class="olama-detail-section">
-                <span class="olama-detail-label">${i18n.homework} (WS)</span>
+                <span class="olama-detail-label">${i18n.homeworkWS}</span>
                 <div class="olama-detail-value">${plan.homework_ws || '-'}</div>
             </div>
         </div>`; // End Homework
@@ -139,7 +139,7 @@ jQuery(document).ready(function ($) {
 
         btn.prop('disabled', true).css('opacity', '0.7');
         const originalText = btn.html();
-        btn.html('<span class="dashicons dashicons-update spin"></span> ' + i18n.loading || 'Apprizing...');
+        btn.html('<span class="dashicons dashicons-update spin"></span> ' + (i18n.loading || 'Approving...'));
 
         $.ajax({
             url: ajaxurl,

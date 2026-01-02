@@ -16,11 +16,11 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
         <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 200px;">
                 <label class="olama-label">
-                    <?php _e('Select Semester', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('Select Semester'); ?>
                 </label>
                 <select id="timeline-semester" class="olama-select">
                     <option value="">
-                        <?php _e('Select Semester', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Select Semester'); ?>
                     </option>
                     <?php foreach ($semesters as $semester): ?>
                         <option value="<?php echo esc_attr($semester->id); ?>"
@@ -33,11 +33,11 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
             </div>
             <div style="flex: 1; min-width: 200px;">
                 <label class="olama-label">
-                    <?php _e('Select Grade', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('Select Grade'); ?>
                 </label>
                 <select id="timeline-grade" class="olama-select">
                     <option value="">
-                        <?php _e('Choose Grade...', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Choose Grade...'); ?>
                     </option>
                     <?php foreach ($grades as $grade): ?>
                         <option value="<?php echo esc_attr($grade->id); ?>">
@@ -48,17 +48,17 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
             </div>
             <div style="flex: 1; min-width: 200px;">
                 <label class="olama-label">
-                    <?php _e('Select Subject', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('Select Subject'); ?>
                 </label>
                 <select id="timeline-subject" class="olama-select" disabled>
                     <option value="">
-                        <?php _e('Select Grade first...', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Select Grade first...'); ?>
                     </option>
                 </select>
             </div>
             <div style="width: auto;">
                 <button type="button" id="load-timeline-btn" class="button button-primary button-large" disabled>
-                    <?php _e('Load Timeline', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('Load Timeline'); ?>
                 </button>
             </div>
         </div>
@@ -71,10 +71,10 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
                 <h2 id="timeline-title" style="margin: 0;"></h2>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" id="clear-timeline-btn" class="button button-secondary button-large">
-                        <?php _e('Clear All Dates', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Clear All Dates'); ?>
                     </button>
                     <button type="button" id="save-timeline-btn" class="button button-primary button-large">
-                        <?php _e('Save All Dates', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Save All Dates'); ?>
                     </button>
                 </div>
             </div>

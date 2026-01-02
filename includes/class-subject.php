@@ -44,6 +44,14 @@ class Olama_School_Subject
     }
 
     /**
+     * Alias for get_by_grade
+     */
+    public static function get_subjects_by_grade($grade_id)
+    {
+        return self::get_by_grade($grade_id);
+    }
+
+    /**
      * Add subject
      */
     public static function add_subject($data)

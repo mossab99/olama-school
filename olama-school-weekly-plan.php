@@ -3,7 +3,7 @@
  * Plugin Name: Mossab Olama School Weekly Plan System
  * Plugin URI: https://example.com/olama-school-weekly-plan
  * Description: A comprehensive WordPress plugin for managing school weekly plans, including hierarchical structures (Grades, Sections), subject management, and teacher/student assignments.
- * Version:           1.2.6
+ * Version:           1.2.8
  * Author: Antigravity
  * Author URI: https://example.com
  * Text Domain: olama-school
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define Constants
-define('OLAMA_SCHOOL_VERSION', '1.2.6');
+define('OLAMA_SCHOOL_VERSION', '1.2.8');
 define('OLAMA_SCHOOL_PATH', plugin_dir_path(__FILE__));
 define('OLAMA_SCHOOL_URL', plugin_dir_url(__FILE__));
 
@@ -30,6 +30,7 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-teacher.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-student.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-curriculum.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-plan.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-exam.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-schedule.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-units.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-lessons.php';
@@ -78,6 +79,9 @@ register_deactivation_hook(__FILE__, 'olama_school_deactivate');
  */
 function olama_school_init()
 {
+    // Load translations
+    load_plugin_textdomain('olama-school', false, dirname(plugin_basename(__FILE__)) . '/languages');
+
     // Initialize Permissions (ensure caps are updated if code changes)
     Olama_School_Permissions::init();
 
@@ -91,3 +95,28 @@ function olama_school_init()
     new Olama_School_Shortcodes();
 }
 add_action('plugins_loaded', 'olama_school_init');
+
+/**
+ * Force Arabic locale if set in plugin settings
+ */
+function olama_school_force_locale($locale)
+{
+    if (is_admin() && Olama_School_Helpers::is_arabic()) {
+        return 'ar';
+    }
+    return $locale;
+}
+add_filter('plugin_locale', 'olama_school_force_locale');
+add_filter('locale', 'olama_school_force_locale');
+
+/**
+ * Filter gettext to provide Arabic translations from our map
+ */
+function olama_school_translate_strings($translated, $text, $domain)
+{
+    if ($domain === 'olama-school' && Olama_School_Helpers::is_arabic()) {
+        return Olama_School_Helpers::translate($text);
+    }
+    return $translated;
+}
+add_filter('gettext', 'olama_school_translate_strings', 10, 3);

@@ -63,7 +63,7 @@ $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_gr
             style="display: flex; align-items: center; gap: 15px; background: #f8fafc; padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
             <?php if ($selected_grade_id && !empty($sections)): ?>
                 <div
-                    style="display: flex; align-items: center; gap: 10px; border-right: 1px solid #e2e8f0; padding-right: 15px; margin-right: 5px;">
+                    style="display: flex; align-items: center; gap: 10px; border-inline-end: 1px solid #e2e8f0; padding-inline-end: 15px; margin-inline-end: 5px;">
                     <label style="font-weight: 600; color: #64748b;"><?php _e('Section:', 'olama-school'); ?></label>
                     <select onchange="window.location.href=add_query_arg('coverage_section', this.value)"
                         style="border-radius: 4px; border-color: #cbd5e1; font-weight: 600; color: #1e293b;">
@@ -105,7 +105,7 @@ $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_gr
           <?php echo $is_active ? 'background: #2271b1; color: #fff; box-shadow: 0 4px 12px rgba(34,113,177,0.2);' : 'background: #f1f5f9; color: #475569;'; ?>">
                         <?php echo esc_html($grade->grade_name); ?>
                         <span class="dashicons dashicons-arrow-right-alt2"
-                            style="float: right; font-size: 18px; margin-top: 2px; <?php echo $is_active ? 'opacity: 1;' : 'opacity: 0.3;'; ?>"></span>
+                            style="margin-inline-start: auto; font-size: 18px; margin-top: 2px; <?php echo $is_active ? 'opacity: 1;' : 'opacity: 0.3;'; ?>"></span>
                     </a>
                 <?php endforeach; ?>
             </div>
@@ -135,7 +135,7 @@ $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_gr
                         </div>
                         <div style="font-size: 13px; color: #64748b; font-weight: 500;">
                             <span class="dashicons dashicons-calendar-alt"
-                                style="font-size: 16px; width: 16px; height: 16px; margin-right: 5px;"></span>
+                                style="font-size: 16px; width: 16px; height: 16px; margin-inline-end: 5px;"></span>
                             <?php echo esc_html($current_semester->semester_name); ?>
                             (<?php echo date_i18n(get_option('date_format'), strtotime($current_semester->start_date)); ?> -
                             <?php echo date_i18n(get_option('date_format'), strtotime($current_semester->end_date)); ?>)
@@ -146,12 +146,15 @@ $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_gr
                         <thead>
                             <tr style="background: #f1f5f9;">
                                 <th style="padding: 15px 20px; font-weight: 700; color: #475569;">
-                                    <?php _e('Subject', 'olama-school'); ?></th>
+                                    <?php _e('Subject', 'olama-school'); ?>
+                                </th>
                                 <th style="padding: 15px 20px; font-weight: 700; color: #475569; width: 220px;">
-                                    <?php _e('Curriculum Coverage', 'olama-school'); ?></th>
+                                    <?php _e('Curriculum Coverage', 'olama-school'); ?>
+                                </th>
                                 <th
                                     style="padding: 15px 20px; font-weight: 700; color: #475569; text-align: center; width: 300px;">
-                                    <?php _e('Performance Status', 'olama-school'); ?></th>
+                                    <?php _e('Performance Status', 'olama-school'); ?>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -287,7 +290,8 @@ $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_gr
                                         <span class="dashicons dashicons-warning"
                                             style="font-size: 30px; width: 30px; height: 30px; margin-bottom: 10px;"></span>
                                         <p style="font-size: 15px;">
-                                            <?php _e('No subjects found for this grade.', 'olama-school'); ?></p>
+                                            <?php _e('No subjects found for this grade.', 'olama-school'); ?>
+                                        </p>
                                     </td>
                                 </tr>
                             <?php endif; ?>
@@ -331,7 +335,7 @@ $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_gr
     .coverage-stat .label {
         font-size: 11px;
         font-weight: 600;
-        text-transform: uppercase;
+        text-transform: none;
         letter-spacing: 0.02em;
         opacity: 0.9;
     }

@@ -13,7 +13,7 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
 
 <div class="wrap olama-school-wrap">
     <h1>
-        <?php _e('Curriculum Management', 'olama-school'); ?>
+        <?php echo Olama_School_Helpers::translate('Curriculum Management'); ?>
     </h1>
 
     <!-- Section 1: Filters -->
@@ -21,11 +21,11 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
         <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 200px;">
                 <label class="olama-label">
-                    <?php _e('Semester', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('Semester'); ?>
                 </label>
                 <select id="curriculum-semester" class="olama-select">
                     <option value="">
-                        <?php _e('-- Select Semester --', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('-- Select Semester --'); ?>
                     </option>
                     <?php foreach ($semesters as $sem): ?>
                         <option value="<?php echo $sem->id; ?>">
@@ -36,11 +36,11 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
             </div>
             <div style="flex: 1; min-width: 200px;">
                 <label class="olama-label">
-                    <?php _e('Grade', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('Grade'); ?>
                 </label>
                 <select id="curriculum-grade" class="olama-select">
                     <option value="">
-                        <?php _e('-- Select Grade --', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('-- Select Grade --'); ?>
                     </option>
                     <?php foreach ($grades as $grade): ?>
                         <option value="<?php echo $grade->id; ?>">
@@ -51,7 +51,7 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
             </div>
             <div style="flex: 1; min-width: 200px;">
                 <label class="olama-label">
-                    <?php _e('Subject', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('Subject'); ?>
                 </label>
                 <select id="curriculum-subject" class="olama-select">
                     <!-- Populated via JS -->
@@ -70,7 +70,7 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
                 <input type="hidden" name="subject_id" class="curriculum-hidden-subject">
                 <button type="submit" class="button button-secondary" id="olama-export-curriculum-btn" disabled>
                     <span class="dashicons dashicons-download" style="margin-top: 4px;"></span>
-                    <?php _e('Export Curriculum CSV', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('Export Curriculum CSV'); ?>
                 </button>
             </form>
 
@@ -89,12 +89,12 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
 
                 <button type="submit" class="button button-primary" id="olama-import-curriculum-btn" disabled>
                     <span class="dashicons dashicons-upload" style="margin-top: 4px;"></span>
-                    <?php _e('Import Curriculum CSV', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('Import Curriculum CSV'); ?>
                 </button>
             </form>
 
             <p class="description" style="margin: 0; font-size: 11px; color: #64748b;">
-                <?php _e('Select Semester, Grade, and Subject to enable Export/Import.', 'olama-school'); ?>
+                <?php echo Olama_School_Helpers::translate('Select Semester, Grade, and Subject to enable Export/Import.'); ?>
             </p>
         </div>
     </div>
@@ -105,10 +105,10 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
         <div class="olama-card section-container" id="unit-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h2 style="margin: 0; font-size: 1.2em;">
-                    <?php _e('1. Units', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('1. Units'); ?>
                 </h2>
                 <button type="button" id="add-unit-btn" class="button button-small add-unit-btn">
-                    <?php _e('+ Add Unit', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('+ Add Unit'); ?>
                 </button>
             </div>
 
@@ -116,28 +116,33 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
                 style="display: none; background: #f9f9f9; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
                 <input type="hidden" id="unit-id" value="">
                 <div style="margin-bottom: 10px;">
-                    <input type="number" id="unit-number" placeholder="Unit #" style="width: 100%;" required>
+                    <input type="number" id="unit-number"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Unit #'); ?>" style="width: 100%;"
+                        required>
                 </div>
                 <div style="margin-bottom: 10px;">
-                    <input type="text" id="unit-name" placeholder="Unit Name" style="width: 100%;" required>
+                    <input type="text" id="unit-name"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Unit Name'); ?>" style="width: 100%;"
+                        required>
                 </div>
                 <div style="margin-bottom: 10px;">
-                    <textarea id="unit-objectives" placeholder="Learning Objectives"
+                    <textarea id="unit-objectives"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Learning Objectives'); ?>"
                         style="width: 100%; height: 60px;"></textarea>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="button button-primary save-unit-btn">
-                        <?php _e('Save Unit', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Save Unit'); ?>
                     </button>
                     <button type="button" class="button cancel-unit-btn">
-                        <?php _e('Cancel', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Cancel'); ?>
                     </button>
                 </div>
             </div>
 
             <div id="units-list" class="item-list">
                 <p style="color: #999; text-align: center; padding: 20px;">
-                    <?php _e('Select Subject to see units.', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('Select Subject to see units.'); ?>
                 </p>
             </div>
         </div>
@@ -146,10 +151,10 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
         <div class="olama-card section-container" id="lesson-section" style="opacity: 0.5; pointer-events: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h2 style="margin: 0; font-size: 1.2em;">
-                    <?php _e('2. Lessons', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('2. Lessons'); ?>
                 </h2>
                 <button type="button" id="add-lesson-btn" class="button button-small add-lesson-btn">
-                    <?php _e('+ Add Lesson', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('+ Add Lesson'); ?>
                 </button>
             </div>
 
@@ -157,31 +162,37 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
                 style="display: none; background: #f9f9f9; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
                 <input type="hidden" id="lesson-id" value="">
                 <div style="margin-bottom: 10px;">
-                    <input type="number" id="lesson-number" placeholder="Lesson #" style="width: 100%;" required>
+                    <input type="number" id="lesson-number"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Lesson #'); ?>" style="width: 100%;"
+                        required>
                 </div>
                 <div style="margin-bottom: 10px;">
-                    <input type="text" id="lesson-title" placeholder="Lesson Title" style="width: 100%;" required>
+                    <input type="text" id="lesson-title"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Lesson Title'); ?>"
+                        style="width: 100%;" required>
                 </div>
                 <div style="margin-bottom: 10px;">
-                    <input type="url" id="lesson-url" placeholder="Video URL" style="width: 100%;">
+                    <input type="url" id="lesson-url"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Video URL'); ?>" style="width: 100%;">
                 </div>
                 <div style="margin-bottom: 10px;">
-                    <input type="number" id="lesson-periods" placeholder="Number of Periods" style="width: 100%;"
-                        min="1" value="1" required>
+                    <input type="number" id="lesson-periods"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Number of Periods'); ?>"
+                        style="width: 100%;" min="1" value="1" required>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="button button-primary save-lesson-btn">
-                        <?php _e('Save Lesson', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Save Lesson'); ?>
                     </button>
                     <button type="button" class="button cancel-lesson-btn">
-                        <?php _e('Cancel', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Cancel'); ?>
                     </button>
                 </div>
             </div>
 
             <div id="lessons-list" class="item-list">
                 <p style="color: #999; text-align: center; padding: 20px;">
-                    <?php _e('Select Unit to see lessons.', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('Select Unit to see lessons.'); ?>
                 </p>
             </div>
         </div>
@@ -190,10 +201,10 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
         <div class="olama-card section-container" id="question-section" style="opacity: 0.5; pointer-events: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h2 style="margin: 0; font-size: 1.2em;">
-                    <?php _e('3. Question Bank', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('3. Question Bank'); ?>
                 </h2>
                 <button type="button" id="add-question-btn" class="button button-small add-question-btn">
-                    <?php _e('+ Add Question', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('+ Add Question'); ?>
                 </button>
             </div>
 
@@ -201,29 +212,33 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
                 style="display: none; background: #f9f9f9; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
                 <input type="hidden" id="question-id" value="">
                 <div style="margin-bottom: 10px;">
-                    <input type="number" id="question-number" placeholder="Question #" style="width: 100%;" required>
+                    <input type="number" id="question-number"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Question #'); ?>" style="width: 100%;"
+                        required>
                 </div>
                 <div style="margin-bottom: 10px;">
-                    <textarea id="question-text" placeholder="Question" style="width: 100%; height: 60px;"
-                        required></textarea>
+                    <textarea id="question-text"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Question'); ?>"
+                        style="width: 100%; height: 60px;" required></textarea>
                 </div>
                 <div style="margin-bottom: 10px;">
-                    <textarea id="question-answer" placeholder="Suggested Answer"
+                    <textarea id="question-answer"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Suggested Answer'); ?>"
                         style="width: 100%; height: 60px;"></textarea>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="button button-primary save-question-btn">
-                        <?php _e('Save Question', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Save Question'); ?>
                     </button>
                     <button type="button" class="button cancel-question-btn">
-                        <?php _e('Cancel', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Cancel'); ?>
                     </button>
                 </div>
             </div>
 
             <div id="questions-list" class="item-list">
                 <p style="color: #999; text-align: center; padding: 20px;">
-                    <?php _e('Select Lesson to see questions.', 'olama-school'); ?>
+                    <?php echo Olama_School_Helpers::translate('Select Lesson to see questions.'); ?>
                 </p>
             </div>
         </div>

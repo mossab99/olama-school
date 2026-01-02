@@ -229,9 +229,36 @@ class Olama_School_DB
 				section_id mediumint(9) NOT NULL,
 				subject_id mediumint(9) NOT NULL,
 				PRIMARY KEY  (id),
-				UNIQUE KEY assignment (teacher_id, section_id, subject_id),
+				KEY assignment (teacher_id, section_id, subject_id),
 				KEY teacher_id (teacher_id),
 				KEY section_id (section_id)
+			) $charset_collate;",
+			'olama_teacher_office_hours' => "CREATE TABLE {$wpdb->prefix}olama_teacher_office_hours (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				teacher_id bigint(20) UNSIGNED NOT NULL,
+				day_name varchar(20) NOT NULL,
+				available_time text NOT NULL,
+				PRIMARY KEY  (id),
+				KEY teacher_id (teacher_id)
+			) $charset_collate;",
+			'olama_exams' => "CREATE TABLE {$wpdb->prefix}olama_exams (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL,
+				grade_id mediumint(9) NOT NULL,
+				subject_id mediumint(9) NOT NULL,
+				evaluation_type varchar(50) NOT NULL,
+				exam_date date NOT NULL,
+				description text NOT NULL,
+				student_book_material text NOT NULL,
+				workbook_material text,
+				exercise_book_material text,
+				notebook_material text,
+				teacher_notes text NOT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP,
+				PRIMARY KEY  (id),
+				KEY year_semester (academic_year_id, semester_id),
+				KEY grade_subject (grade_id, subject_id)
 			) $charset_collate;"
 		);
 

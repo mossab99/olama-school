@@ -34,7 +34,7 @@ if (isset($_GET['message'])) {
     style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
     <h1 style="margin-top: 0; color: #1e293b; font-size: 24px; font-weight: 700;">
         <span class="dashicons dashicons-chart-bar"
-            style="font-size: 28px; width: 28px; height: 28px; margin-right: 10px; color: #2271b1;"></span>
+            style="font-size: 28px; width: 28px; height: 28px; margin-inline-end: 10px; color: #2271b1;"></span>
         <?php _e('Plan Load Management', 'olama-school'); ?>
     </h1>
     <p class="description" style="font-size: 14px; margin-bottom: 30px;">
@@ -60,9 +60,11 @@ if (isset($_GET['message'])) {
                         <th style="padding: 12px 20px; font-weight: 700;"><?php _e('Grade Level', 'olama-school'); ?>
                         </th>
                         <th style="padding: 12px 20px; font-weight: 700; width: 180px;">
-                            <?php _e('Max Weekly Plans', 'olama-school'); ?></th>
+                            <?php _e('Max Weekly Plans', 'olama-school'); ?>
+                        </th>
                         <th style="padding: 12px 20px; font-weight: 700; width: 150px; text-align: center;">
-                            <?php _e('Actions', 'olama-school'); ?></th>
+                            <?php _e('Actions', 'olama-school'); ?>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -128,7 +130,8 @@ if (isset($_GET['message'])) {
                             </th>
                             <th style="padding: 12px 20px; font-weight: 700;"><?php _e('Color', 'olama-school'); ?></th>
                             <th style="padding: 12px 20px; font-weight: 700; width: 250px;">
-                                <?php _e('Max Weekly Plans', 'olama-school'); ?></th>
+                                <?php _e('Max Weekly Plans', 'olama-school'); ?>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -140,7 +143,7 @@ if (isset($_GET['message'])) {
                                     </td>
                                     <td style="padding: 12px 20px;">
                                         <span
-                                            style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: <?php echo esc_attr($subject->color_code); ?>; margin-right: 5px;"></span>
+                                            style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: <?php echo esc_attr($subject->color_code); ?>; margin-inline-end: 5px;"></span>
                                         <code style="font-size: 11px;"><?php echo esc_html($subject->color_code); ?></code>
                                     </td>
                                     <td style="padding: 12px 20px;">

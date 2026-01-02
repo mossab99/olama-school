@@ -78,7 +78,7 @@ jQuery(document).ready(function ($) {
                 nonce: olamaTimeline.nonce
             },
             success: function (response) {
-                $loadBtn.prop('disabled', false).text('Load Timeline');
+                $loadBtn.prop('disabled', false).text(olamaTimeline.i18n.loadTimeline);
                 if (response.success) {
                     renderTimeline(response.data);
                     $title.text(subjectName);
@@ -88,7 +88,7 @@ jQuery(document).ready(function ($) {
                 }
             },
             error: function () {
-                $loadBtn.prop('disabled', false).text('Load Timeline');
+                $loadBtn.prop('disabled', false).text(olamaTimeline.i18n.loadTimeline);
                 alert(olamaTimeline.i18n.error);
             }
         });
@@ -97,20 +97,20 @@ jQuery(document).ready(function ($) {
     function renderTimeline(data) {
         let html = '';
         if (data.length === 0) {
-            html = `<p style="padding: 20px; text-align: center;">No units found for this selection.</p>`;
+            html = `<p style="padding: 20px; text-align: center;">${olamaTimeline.i18n.noUnitsFound}</p>`;
         } else {
             data.forEach(function (unit) {
                 html += `
                     <div class="timeline-unit-row" data-id="${unit.id}">
                         <div class="timeline-unit-header">
-                            <h3 class="timeline-unit-title">Unit ${unit.unit_number}: ${unit.unit_name}</h3>
+                            <h3 class="timeline-unit-title">${olamaTimeline.i18n.unit} ${unit.unit_number}: ${unit.unit_name}</h3>
                             <div class="timeline-unit-dates">
                                 <div class="date-group">
-                                    <label>Unit Start</label>
+                                    <label>${olamaTimeline.i18n.unitStart}</label>
                                     <input type="date" class="timeline-date-input unit-start" value="${unit.start_date || ''}" min="${semesterStart}" max="${semesterEnd}">
                                 </div>
                                 <div class="date-group">
-                                    <label>Unit End</label>
+                                    <label>${olamaTimeline.i18n.unitEnd}</label>
                                     <input type="date" class="timeline-date-input unit-end" value="${unit.end_date || ''}" min="${semesterStart}" max="${semesterEnd}">
                                 </div>
                             </div>
@@ -120,10 +120,10 @@ jQuery(document).ready(function ($) {
                                 <thead>
                                     <tr>
                                         <th style="width: 50px;">#</th>
-                                        <th>Lesson Title</th>
-                                        <th style="width: 100px;">Periods</th>
-                                        <th style="width: 180px;">Start Date</th>
-                                        <th style="width: 180px;">End Date</th>
+                                        <th>${olamaTimeline.i18n.lessonTitle}</th>
+                                        <th style="width: 100px;">${olamaTimeline.i18n.periods}</th>
+                                        <th style="width: 180px;">${olamaTimeline.i18n.startDate}</th>
+                                        <th style="width: 180px;">${olamaTimeline.i18n.endDate}</th>
                                     </tr>
                                 </thead>
                                 <tbody>`;
@@ -251,7 +251,7 @@ jQuery(document).ready(function ($) {
     // Save Timeline
     $saveBtn.on('click', function () {
         if ($('.input-error:visible').length > 0) {
-            alert('Please fix validation errors before saving.');
+            alert(olamaTimeline.i18n.fixErrors);
             return;
         }
 
@@ -285,7 +285,7 @@ jQuery(document).ready(function ($) {
             timeline_data: JSON.stringify(data),
             nonce: olamaTimeline.nonce
         }, function (response) {
-            $saveBtn.prop('disabled', false).removeClass('saving').text('Save All Dates');
+            $saveBtn.prop('disabled', false).removeClass('saving').text(olamaTimeline.i18n.saveAllDates);
             if (response.success) {
                 alert(response.data);
             } else {
