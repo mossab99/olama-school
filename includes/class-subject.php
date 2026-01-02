@@ -9,14 +9,21 @@ if (!defined('ABSPATH')) {
 
 class Olama_School_Subject
 {
+    private static $cache = array();
+
 
     /**
      * Get all subjects
      */
     public static function get_subjects()
     {
+        if (isset(self::$cache['all_subjects'])) {
+            return self::$cache['all_subjects'];
+        }
         global $wpdb;
-        return $wpdb->get_results("SELECT s.*, g.grade_name FROM {$wpdb->prefix}olama_subjects s JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id");
+        $results = $wpdb->get_results("SELECT s.*, g.grade_name FROM {$wpdb->prefix}olama_subjects s JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id");
+        self::$cache['all_subjects'] = $results;
+        return $results;
     }
 
     /**
@@ -24,11 +31,16 @@ class Olama_School_Subject
      */
     public static function get_by_grade($grade_id)
     {
+        if (isset(self::$cache['subjects_grade_' . $grade_id])) {
+            return self::$cache['subjects_grade_' . $grade_id];
+        }
         global $wpdb;
-        return $wpdb->get_results($wpdb->prepare(
+        $results = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}olama_subjects WHERE grade_id = %d",
             $grade_id
         ));
+        self::$cache['subjects_grade_' . $grade_id] = $results;
+        return $results;
     }
 
     /**
@@ -54,11 +66,16 @@ class Olama_School_Subject
      */
     public static function get_subject($id)
     {
+        if (isset(self::$cache['subject_' . $id])) {
+            return self::$cache['subject_' . $id];
+        }
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare(
+        $row = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}olama_subjects WHERE id = %d",
             $id
         ));
+        self::$cache['subject_' . $id] = $row;
+        return $row;
     }
 
     /**

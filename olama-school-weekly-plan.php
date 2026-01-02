@@ -3,7 +3,7 @@
  * Plugin Name: Mossab Olama School Weekly Plan System
  * Plugin URI: https://example.com/olama-school-weekly-plan
  * Description: A comprehensive WordPress plugin for managing school weekly plans, including hierarchical structures (Grades, Sections), subject management, and teacher/student assignments.
- * Version:           1.2.5
+ * Version:           1.2.6
  * Author: Antigravity
  * Author URI: https://example.com
  * Text Domain: olama-school
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define Constants
-define('OLAMA_SCHOOL_VERSION', '1.2.5');
+define('OLAMA_SCHOOL_VERSION', '1.2.6');
 define('OLAMA_SCHOOL_PATH', plugin_dir_path(__FILE__));
 define('OLAMA_SCHOOL_URL', plugin_dir_url(__FILE__));
 
@@ -39,6 +39,8 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-logger.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-exporter.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-importer.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-permissions.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-helpers.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-ajax-handlers.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-shortcodes.php';
 
 /**
@@ -82,6 +84,7 @@ function olama_school_init()
     // Initialize Admin
     if (is_admin()) {
         new Olama_School_Admin();
+        new Olama_School_Ajax_Handlers();
     }
 
     // Initialize Shortcodes

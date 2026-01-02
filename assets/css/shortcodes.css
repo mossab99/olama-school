@@ -218,3 +218,148 @@
         border-radius: 15px;
     }
 }
+
+/* Weekly Schedule Shortcode Styles */
+.olama-shortcode-schedule-container {
+    font-family: 'Outfit', sans-serif;
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.olama-schedule-header {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    padding: 25px;
+    border-radius: 15px;
+    color: #fff;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.15);
+}
+
+.olama-schedule-header h2 {
+    margin: 0 0 5px 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.olama-schedule-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.olama-schedule-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #fff;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.olama-schedule-table th {
+    background: #f8fafc;
+    padding: 15px;
+    text-align: center;
+    font-weight: 700;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.olama-schedule-table td {
+    padding: 15px;
+    text-align: center;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.olama-schedule-table .day-label {
+    font-weight: 700;
+    background: #f8fafc;
+    color: #64748b;
+    width: 150px;
+    border-right: 1px solid #e2e8f0;
+}
+
+.schedule-cell {
+    background: #fff;
+    min-height: 80px;
+}
+
+.schedule-cell.has-subject {
+    background: #fafafa;
+}
+
+.subject-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.3;
+}
+
+.olama-schedule-mobile {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .olama-schedule-desktop {
+        display: none;
+    }
+
+    .olama-schedule-mobile {
+        display: block;
+    }
+
+    .olama-mobile-day {
+        background: #fff;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid #f1f5f9;
+        overflow: hidden;
+    }
+
+    .olama-mobile-day h3 {
+        background: #f8fafc;
+        margin: 0;
+        padding: 12px 20px;
+        font-size: 1.1rem;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .olama-mobile-periods {
+        padding: 15px;
+    }
+
+    .olama-mobile-period-item {
+        margin-bottom: 10px;
+        padding: 10px 15px;
+        background: #f9fafb;
+        border-radius: 8px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .olama-mobile-period-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .period-label {
+        font-weight: 600;
+        color: #64748b;
+        font-size: 0.85rem;
+        min-width: 70px;
+    }
+
+    .subject-label {
+        font-weight: 700;
+        font-size: 1rem;
+    }
+}

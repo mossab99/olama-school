@@ -11,10 +11,18 @@ class Olama_School_Permissions
 {
     /**
      * Set up default roles and capabilities
+     * Only runs if capabilities haven't been added yet
      */
     public static function init()
     {
+        // Skip if capabilities already initialized (check option)
+        if (get_option('olama_school_caps_version') === OLAMA_SCHOOL_VERSION) {
+            return;
+        }
+
+        // Run capability setup only once
         self::add_capabilities();
+        update_option('olama_school_caps_version', OLAMA_SCHOOL_VERSION);
     }
 
     /**

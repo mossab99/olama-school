@@ -15,6 +15,7 @@ class Olama_School_Shortcodes
     public function __construct()
     {
         add_shortcode('olama_weekly_plan', array($this, 'render_weekly_plan_shortcode'));
+        add_shortcode('olama_weekly_schedule', array($this, 'render_weekly_schedule_shortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_shortcode_assets'));
     }
 
@@ -141,6 +142,108 @@ class Olama_School_Shortcodes
                                     </div>
                                 <?php endforeach; ?>
                             <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Shortcode: [olama_weekly_schedule]
+     * Attributes: semester, section
+     */
+    public function render_weekly_schedule_shortcode($atts)
+    {
+        global $wpdb;
+        $atts = shortcode_atts(array(
+            'semester' => '',
+            'section' => '',
+        ), $atts, 'olama_weekly_schedule');
+
+        $section_id = intval($atts['section']);
+        $semester_id = intval($atts['semester']);
+
+        if (!$section_id || !$semester_id) {
+            return '<div class="olama-error">' . __('Please specify valid section and semester IDs in the shortcode.', 'olama-school') . '</div>';
+        }
+
+        $schedule = Olama_School_Schedule::get_schedule($section_id, $semester_id);
+        $section = Olama_School_Section::get_section($section_id);
+        $grade = $section ? Olama_School_Grade::get_grade($section->grade_id) : null;
+        $semester = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_semesters WHERE id = %d", $semester_id));
+
+        if (empty($schedule)) {
+            return '<div class="olama-no-plans">' . __('No master schedule found for the selected section and semester.', 'olama-school') . '</div>';
+        }
+
+        $days = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday');
+        $max_periods = $grade ? intval($grade->periods_count) : 8;
+
+        ob_start();
+        ?>
+        <div class="olama-shortcode-schedule-container">
+            <div class="olama-schedule-header">
+                <h2><?php echo $grade ? esc_html($grade->grade_name) : ''; ?> -
+                    <?php echo $section ? esc_html($section->section_name) : ''; ?>
+                </h2>
+                <div class="olama-schedule-meta">
+                    <span class="dashicons dashicons-calendar"></span>
+                    <?php echo $semester ? esc_html($semester->semester_name) : ''; ?>
+                </div>
+            </div>
+
+            <div class="olama-schedule-desktop">
+                <table class="olama-schedule-table">
+                    <thead>
+                        <tr>
+                            <th><?php _e('Day / Period', 'olama-school'); ?></th>
+                            <?php for ($i = 1; $i <= $max_periods; $i++): ?>
+                                <th><?php echo $i; ?></th>
+                            <?php endfor; ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($days as $day): ?>
+                            <tr>
+                                <td class="day-label"><strong><?php _e($day, 'olama-school'); ?></strong></td>
+                                <?php for ($i = 1; $i <= $max_periods; $i++):
+                                    $item = $schedule[$day][$i] ?? null;
+                                    ?>
+                                    <td class="schedule-cell <?php echo $item ? 'has-subject' : ''; ?>"
+                                        style="<?php echo $item ? 'border-left: 4px solid ' . esc_attr($item->color_code) . ';' : ''; ?>">
+                                        <?php if ($item): ?>
+                                            <div class="subject-name" style="color: <?php echo esc_attr($item->color_code); ?>">
+                                                <?php echo esc_html($item->subject_name); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
+                                <?php endfor; ?>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="olama-schedule-mobile">
+                <?php foreach ($days as $day): ?>
+                    <div class="olama-mobile-day">
+                        <h3><?php _e($day, 'olama-school'); ?></h3>
+                        <div class="olama-mobile-periods">
+                            <?php for ($i = 1; $i <= $max_periods; $i++):
+                                $item = $schedule[$day][$i] ?? null;
+                                if (!$item)
+                                    continue;
+                                ?>
+                                <div class="olama-mobile-period-item"
+                                    style="border-left: 4px solid <?php echo esc_attr($item->color_code); ?>">
+                                    <span class="period-label"><?php printf(__('Period %d', 'olama-school'), $i); ?>:</span>
+                                    <span class="subject-label"
+                                        style="color: <?php echo esc_attr($item->color_code); ?>"><?php echo esc_html($item->subject_name); ?></span>
+                                </div>
+                            <?php endfor; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>

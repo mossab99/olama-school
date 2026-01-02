@@ -361,4 +361,247 @@ class Olama_School_Importer
         global $wpdb;
         return $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE $column = %s", $name));
     }
+
+    /**
+     * Import subjects from CSV
+     */
+    public static function import_subjects_csv()
+    {
+        global $wpdb;
+
+        // Verify nonce
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_import_subjects')) {
+            wp_die(__('Security check failed.', 'olama-school'));
+        }
+
+        // Check permissions
+        if (!current_user_can('olama_manage_academic_structure')) {
+            wp_die(__('You do not have permission to import subjects.', 'olama-school'));
+        }
+
+        if (empty($_FILES['olama_import_file']['tmp_name'])) {
+            wp_die(__('Please upload a valid CSV file.', 'olama-school'));
+        }
+
+        $file = $_FILES['olama_import_file']['tmp_name'];
+        $handle = fopen($file, 'r');
+
+        if ($handle !== false) {
+            // Skip BOM
+            $bom = fread($handle, 3);
+            if ($bom !== "\xEF\xBB\xBF") {
+                rewind($handle);
+            }
+
+            $headers = fgetcsv($handle);
+            if (!$headers) {
+                wp_die(__('Invalid CSV header.', 'olama-school'));
+            }
+
+            // Map headers
+            $map = array();
+            $fields = array(
+                'Subject Name' => 'subject_name',
+                'Subject Code' => 'subject_code',
+                'Grade Name' => 'grade_name',
+                'Color Code' => 'color_code'
+            );
+
+            foreach ($headers as $index => $header) {
+                $header = trim($header);
+                if (isset($fields[$header])) {
+                    $map[$fields[$header]] = $index;
+                }
+            }
+
+            $imported_count = 0;
+            while (($data = fgetcsv($handle)) !== false) {
+                $row = array();
+                foreach ($map as $field => $index) {
+                    $row[$field] = isset($data[$index]) ? trim($data[$index]) : '';
+                }
+
+                if (empty($row['subject_name']) || empty($row['grade_name'])) {
+                    continue;
+                }
+
+                $grade_id = self::get_id_by_name($wpdb->prefix . 'olama_grades', 'grade_name', $row['grade_name']);
+
+                if (!$grade_id) {
+                    // Automatically create missing grade
+                    $grade_level = $row['grade_name'];
+                    // Try to extract numerical level
+                    if (preg_match('/(\d+)/', $row['grade_name'], $matches)) {
+                        $grade_level = $matches[1];
+                    }
+
+                    $wpdb->insert($wpdb->prefix . 'olama_grades', array(
+                        'grade_name' => $row['grade_name'],
+                        'grade_level' => $grade_level,
+                        'periods_count' => 8
+                    ));
+                    $grade_id = $wpdb->insert_id;
+                }
+
+                if ($grade_id) {
+                    // Check if subject already exists for this grade
+                    $subject_id = $wpdb->get_var($wpdb->prepare(
+                        "SELECT id FROM {$wpdb->prefix}olama_subjects WHERE subject_name = %s AND grade_id = %d",
+                        $row['subject_name'],
+                        $grade_id
+                    ));
+
+                    $subject_data = array(
+                        'subject_name' => $row['subject_name'],
+                        'subject_code' => $row['subject_code'],
+                        'grade_id' => $grade_id,
+                        'color_code' => !empty($row['color_code']) ? $row['color_code'] : '#3498db',
+                    );
+
+                    if ($subject_id) {
+                        $wpdb->update($wpdb->prefix . 'olama_subjects', $subject_data, array('id' => $subject_id));
+                    } else {
+                        $wpdb->insert($wpdb->prefix . 'olama_subjects', $subject_data);
+                    }
+                    $imported_count++;
+                }
+            }
+            fclose($handle);
+
+            // Log activity
+            if (class_exists('Olama_School_Logger')) {
+                Olama_School_Logger::log('subjects_import', sprintf('CSV import completed: %d subjects processed.', $imported_count));
+            }
+
+            set_transient('olama_import_message', sprintf(__('%d subjects processed successfully.', 'olama-school'), $imported_count), 30);
+        }
+
+        wp_redirect(admin_url('admin.php?page=olama-school-academic&tab=subjects&import=success'));
+        exit;
+    }
+
+    /**
+     * Import grades and sections from CSV
+     */
+    public static function import_grades_sections_csv()
+    {
+        global $wpdb;
+
+        // Verify nonce
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_import_grades')) {
+            wp_die(__('Security check failed.', 'olama-school'));
+        }
+
+        // Check permissions
+        if (!current_user_can('olama_manage_academic_structure')) {
+            wp_die(__('You do not have permission to import grade data.', 'olama-school'));
+        }
+
+        if (empty($_FILES['olama_import_file']['tmp_name'])) {
+            wp_die(__('Please upload a valid CSV file.', 'olama-school'));
+        }
+
+        $file = $_FILES['olama_import_file']['tmp_name'];
+        $handle = fopen($file, 'r');
+
+        if ($handle !== false) {
+            // Skip BOM
+            $bom = fread($handle, 3);
+            if ($bom !== "\xEF\xBB\xBF") {
+                rewind($handle);
+            }
+
+            $headers = fgetcsv($handle);
+            if (!$headers) {
+                wp_die(__('Invalid CSV header.', 'olama-school'));
+            }
+
+            // Map headers
+            $map = array();
+            $fields = array(
+                'Grade Name' => 'grade_name',
+                'Grade Level' => 'grade_level',
+                'Periods/Day' => 'periods_count',
+                'Section Name' => 'section_name',
+                'Room Number' => 'room_number'
+            );
+
+            foreach ($headers as $index => $header) {
+                $header = trim($header);
+                if (isset($fields[$header])) {
+                    $map[$fields[$header]] = $index;
+                }
+            }
+
+            $imported_grades = 0;
+            $imported_sections = 0;
+            $grade_cache = array();
+
+            while (($data = fgetcsv($handle)) !== false) {
+                $row = array();
+                foreach ($map as $field => $index) {
+                    $row[$field] = isset($data[$index]) ? trim($data[$index]) : '';
+                }
+
+                if (empty($row['grade_name'])) {
+                    continue;
+                }
+
+                // Handle Grade
+                if (!isset($grade_cache[$row['grade_name']])) {
+                    $grade_id = self::get_id_by_name($wpdb->prefix . 'olama_grades', 'grade_name', $row['grade_name']);
+
+                    $grade_data = array(
+                        'grade_name' => $row['grade_name'],
+                        'grade_level' => !empty($row['grade_level']) ? $row['grade_level'] : $row['grade_name'],
+                        'periods_count' => !empty($row['periods_count']) ? intval($row['periods_count']) : 8,
+                    );
+
+                    if ($grade_id) {
+                        $wpdb->update($wpdb->prefix . 'olama_grades', $grade_data, array('id' => $grade_id));
+                    } else {
+                        $wpdb->insert($wpdb->prefix . 'olama_grades', $grade_data);
+                        $grade_id = $wpdb->insert_id;
+                        $imported_grades++;
+                    }
+                    $grade_cache[$row['grade_name']] = $grade_id;
+                }
+
+                $grade_id = $grade_cache[$row['grade_name']];
+
+                // Handle Section
+                if (!empty($row['section_name'])) {
+                    $section_id = $wpdb->get_var($wpdb->prepare(
+                        "SELECT id FROM {$wpdb->prefix}olama_sections WHERE section_name = %s AND grade_id = %d",
+                        $row['section_name'],
+                        $grade_id
+                    ));
+
+                    $section_data = array(
+                        'grade_id' => $grade_id,
+                        'section_name' => $row['section_name'],
+                        'room_number' => $row['room_number'] ?? '',
+                    );
+
+                    if ($section_id) {
+                        $wpdb->update($wpdb->prefix . 'olama_sections', $section_data, array('id' => $section_id));
+                    } else {
+                        $wpdb->insert($wpdb->prefix . 'olama_sections', $section_data);
+                        $imported_sections++;
+                    }
+                }
+            }
+            fclose($handle);
+
+            // Log activity
+            if (class_exists('Olama_School_Logger')) {
+                Olama_School_Logger::log('grades_import', sprintf('CSV import completed: %d grades and %d sections processed.', $imported_grades, $imported_sections));
+            }
+
+            set_transient('olama_import_message', sprintf(__('%d grades and %d sections processed successfully.', 'olama-school'), $imported_grades, $imported_sections), 30);
+        }
+
+        wp_redirect(admin_url('admin.php?page=olama-school-academic&tab=grades&import=success'));
+        exit;
+    }
 }

@@ -81,11 +81,20 @@ class Olama_School_Academic
      */
     public static function get_semesters($year_id)
     {
+        $cache_key = 'olama_semesters_' . $year_id;
+        $semesters = get_transient($cache_key);
+        if ($semesters !== false) {
+            return $semesters;
+        }
+
         global $wpdb;
-        return $wpdb->get_results($wpdb->prepare(
+        $results = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}olama_semesters WHERE academic_year_id = %d ORDER BY start_date ASC",
             $year_id
         ));
+
+        set_transient($cache_key, $results, DAY_IN_SECONDS);
+        return $results;
     }
 
     /**
@@ -94,7 +103,7 @@ class Olama_School_Academic
     public static function add_semester($data)
     {
         global $wpdb;
-        return $wpdb->insert(
+        $inserted = $wpdb->insert(
             "{$wpdb->prefix}olama_semesters",
             array(
                 'academic_year_id' => $data['academic_year_id'],
@@ -103,6 +112,12 @@ class Olama_School_Academic
                 'end_date' => $data['end_date'],
             )
         );
+
+        if ($inserted) {
+            delete_transient('olama_semesters_' . $data['academic_year_id']);
+            delete_transient('olama_academic_weeks_' . $data['academic_year_id']);
+        }
+        return $inserted;
     }
 
     /**
@@ -111,7 +126,17 @@ class Olama_School_Academic
     public static function delete_semester($semester_id)
     {
         global $wpdb;
-        return $wpdb->delete("{$wpdb->prefix}olama_semesters", array('id' => $semester_id));
+        $semester = $wpdb->get_row($wpdb->prepare("SELECT academic_year_id FROM {$wpdb->prefix}olama_semesters WHERE id = %d", $semester_id));
+        if ($semester) {
+            $year_id = $semester->academic_year_id;
+            $deleted = $wpdb->delete("{$wpdb->prefix}olama_semesters", array('id' => $semester_id));
+            if ($deleted) {
+                delete_transient('olama_semesters_' . $year_id);
+                delete_transient('olama_academic_weeks_' . $year_id);
+            }
+            return $deleted;
+        }
+        return false;
     }
 
     /**
@@ -229,6 +254,12 @@ class Olama_School_Academic
             return array();
         }
 
+        $cache_key = 'olama_academic_weeks_' . $active_year->id;
+        $weeks = get_transient($cache_key);
+        if ($weeks !== false) {
+            return $weeks;
+        }
+
         $semesters = self::get_semesters($active_year->id);
         if (!$semesters) {
             return array();
@@ -257,6 +288,7 @@ class Olama_School_Academic
             }
         }
         ksort($weeks);
+        set_transient($cache_key, $weeks, DAY_IN_SECONDS);
         return $weeks;
     }
 }

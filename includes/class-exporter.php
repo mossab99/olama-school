@@ -169,4 +169,134 @@ class Olama_School_Exporter
 
         exit;
     }
+
+    /**
+     * Export all subjects to CSV
+     */
+    public static function export_subjects_csv()
+    {
+        global $wpdb;
+
+        // Verify nonce
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_export_subjects')) {
+            wp_die(__('Security check failed.', 'olama-school'));
+        }
+
+        // Check permissions
+        if (!current_user_can('olama_manage_academic_structure')) {
+            wp_die(__('You do not have permission to export subjects.', 'olama-school'));
+        }
+
+        $filename = 'olama-subjects-' . date('Y-m-d') . '.csv';
+
+        // Fetch subjects joined with grades
+        $subjects = $wpdb->get_results("
+            SELECT s.*, g.grade_name
+            FROM {$wpdb->prefix}olama_subjects s
+            LEFT JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id
+            ORDER BY g.grade_name ASC, s.subject_name ASC
+        ");
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+
+        $output = fopen('php://output', 'w');
+
+        // Add UTF-8 BOM
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // Column headers
+        fputcsv($output, array(
+            __('Subject Name', 'olama-school'),
+            __('Subject Code', 'olama-school'),
+            __('Grade Name', 'olama-school'),
+            __('Color Code', 'olama-school')
+        ));
+
+        if ($subjects) {
+            foreach ($subjects as $subject) {
+                fputcsv($output, array(
+                    $subject->subject_name,
+                    $subject->subject_code,
+                    $subject->grade_name,
+                    $subject->color_code
+                ));
+            }
+        }
+
+        fclose($output);
+
+        // Log activity
+        if (class_exists('Olama_School_Logger')) {
+            Olama_School_Logger::log('subjects_export', sprintf('CSV export triggered for %d subjects', count($subjects)));
+        }
+
+        exit;
+    }
+
+    /**
+     * Export all grades and their sections to CSV
+     */
+    public static function export_grades_sections_csv()
+    {
+        global $wpdb;
+
+        // Verify nonce
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_export_grades')) {
+            wp_die(__('Security check failed.', 'olama-school'));
+        }
+
+        // Check permissions
+        if (!current_user_can('olama_manage_academic_structure')) {
+            wp_die(__('You do not have permission to export grade data.', 'olama-school'));
+        }
+
+        $filename = 'olama-grades-sections-' . date('Y-m-d') . '.csv';
+
+        // Fetch grades and sections
+        $data = $wpdb->get_results("
+            SELECT g.grade_name, g.grade_level, g.periods_count, s.section_name, s.room_number
+            FROM {$wpdb->prefix}olama_grades g
+            LEFT JOIN {$wpdb->prefix}olama_sections s ON g.id = s.grade_id
+            ORDER BY CAST(g.grade_level AS UNSIGNED) ASC, g.grade_name ASC, s.section_name ASC
+        ");
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+
+        $output = fopen('php://output', 'w');
+
+        // Add UTF-8 BOM
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // Column headers
+        fputcsv($output, array(
+            __('Grade Name', 'olama-school'),
+            __('Grade Level', 'olama-school'),
+            __('Periods/Day', 'olama-school'),
+            __('Section Name', 'olama-school'),
+            __('Room Number', 'olama-school')
+        ));
+
+        if ($data) {
+            foreach ($data as $row) {
+                fputcsv($output, array(
+                    $row->grade_name,
+                    $row->grade_level,
+                    $row->periods_count,
+                    $row->section_name ?? '',
+                    $row->room_number ?? ''
+                ));
+            }
+        }
+
+        fclose($output);
+
+        // Log activity
+        if (class_exists('Olama_School_Logger')) {
+            Olama_School_Logger::log('grades_export', sprintf('CSV export triggered for grades and sections'));
+        }
+
+        exit;
+    }
 }

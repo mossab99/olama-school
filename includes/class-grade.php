@@ -9,14 +9,21 @@ if (!defined('ABSPATH')) {
 
 class Olama_School_Grade
 {
+    private static $cache = array();
+
 
     /**
      * Get all grades
      */
     public static function get_grades()
     {
+        if (isset(self::$cache['all_grades'])) {
+            return self::$cache['all_grades'];
+        }
         global $wpdb;
-        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_grades ORDER BY CAST(grade_level AS UNSIGNED) ASC");
+        $results = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_grades ORDER BY CAST(grade_level AS UNSIGNED) ASC");
+        self::$cache['all_grades'] = $results;
+        return $results;
     }
 
     /**
@@ -54,11 +61,16 @@ class Olama_School_Grade
      */
     public static function get_grade($id)
     {
+        if (isset(self::$cache['grade_' . $id])) {
+            return self::$cache['grade_' . $id];
+        }
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare(
+        $row = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}olama_grades WHERE id = %d",
             $id
         ));
+        self::$cache['grade_' . $id] = $row;
+        return $row;
     }
 
     /**

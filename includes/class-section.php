@@ -9,14 +9,21 @@ if (!defined('ABSPATH')) {
 
 class Olama_School_Section
 {
+    private static $cache = array();
+
 
     /**
      * Get all sections
      */
     public static function get_sections()
     {
+        if (isset(self::$cache['all_sections'])) {
+            return self::$cache['all_sections'];
+        }
         global $wpdb;
-        return $wpdb->get_results("SELECT s.*, g.grade_name FROM {$wpdb->prefix}olama_sections s JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id");
+        $results = $wpdb->get_results("SELECT s.*, g.grade_name FROM {$wpdb->prefix}olama_sections s JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id");
+        self::$cache['all_sections'] = $results;
+        return $results;
     }
 
     /**
@@ -24,11 +31,16 @@ class Olama_School_Section
      */
     public static function get_by_grade($grade_id)
     {
+        if (isset(self::$cache['sections_grade_' . $grade_id])) {
+            return self::$cache['sections_grade_' . $grade_id];
+        }
         global $wpdb;
-        return $wpdb->get_results($wpdb->prepare(
+        $results = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d",
             $grade_id
         ));
+        self::$cache['sections_grade_' . $grade_id] = $results;
+        return $results;
     }
 
     /**
@@ -36,11 +48,16 @@ class Olama_School_Section
      */
     public static function get_section($id)
     {
+        if (isset(self::$cache['section_' . $id])) {
+            return self::$cache['section_' . $id];
+        }
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare(
+        $row = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}olama_sections WHERE id = %d",
             $id
         ));
+        self::$cache['section_' . $id] = $row;
+        return $row;
     }
 
     /**
