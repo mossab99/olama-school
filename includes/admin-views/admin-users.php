@@ -156,7 +156,7 @@ if (!defined('ABSPATH')) {
             <!-- Teachers Tab -->
             <div class="olama-card" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4;">
                 <h2>
-                    <?php _e('Teachers (WordPress Users with Editor Role)', 'olama-school'); ?>
+                    <?php _e('Teachers (WordPress Users with Teacher Role)', 'olama-school'); ?>
                 </h2>
                 <table class="wp-list-table widefat fixed striped">
                     <thead>
@@ -205,7 +205,7 @@ if (!defined('ABSPATH')) {
                         <?php else: ?>
                             <tr>
                                 <td colspan="5">
-                                    <?php _e('No teachers found. Assign the "Editor" role to users to make them teachers.', 'olama-school'); ?>
+                                    <?php _e('No teachers found. Assign the "Teacher" role to users to make them teachers.', 'olama-school'); ?>
                                 </td>
                             </tr>
                         <?php endif; ?>

@@ -13,8 +13,8 @@ if (!current_user_can('manage_options')) {
 $roles = array(
     'administrator' => __('Administrator', 'olama-school'),
     'editor' => __('Coordinator/Editor', 'olama-school'),
-    'author' => __('Teacher/Author', 'olama-school'),
-    'subscriber' => __('Student/Subscriber', 'olama-school'),
+    'teacher' => __('Teacher', 'olama-school'),
+    'author' => __('Author', 'olama-school'),
 );
 
 $capabilities = array(
@@ -27,6 +27,7 @@ $capabilities = array(
     'olama_view_reports' => __('View Reports', 'olama-school'),
     'olama_import_export_data' => __('Import/Export Data', 'olama-school'),
     'olama_view_logs' => __('View Logs', 'olama-school'),
+    'olama_manage_settings' => __('Manage Settings & Permissions', 'olama-school'),
 );
 
 if (isset($_POST['save_permissions'])) {
@@ -45,8 +46,8 @@ if (isset($_POST['save_permissions'])) {
         }
     }
     
-    // Invalidate permissions cache to force re-initialization
-    delete_option('olama_school_caps_version');
+    // No longer deleting olama_school_caps_version here. 
+    // We want UI-customized permissions to persist and not be reset to hardcoded defaults in init().
     
     echo '<div class="updated"><p>' . __('Permissions updated successfully.', 'olama-school') . '</p></div>';
 }
