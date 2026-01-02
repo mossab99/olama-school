@@ -44,6 +44,10 @@ if (isset($_POST['save_permissions'])) {
             }
         }
     }
+    
+    // Invalidate permissions cache to force re-initialization
+    delete_option('olama_school_caps_version');
+    
     echo '<div class="updated"><p>' . __('Permissions updated successfully.', 'olama-school') . '</p></div>';
 }
 ?>
