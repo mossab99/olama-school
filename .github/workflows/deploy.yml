@@ -51,6 +51,6 @@ jobs:
                       fi
                     fi
 
-  chown -R www-data:www-data "$PLUGIN_DIR"
-  find "$PLUGIN_DIR" -type d -exec chmod 755 {} \;
-  find "$PLUGIN_DIR" -type f -exec chmod 644 {} \;
+                    chown -R www-data:www-data "$PLUGIN_DIR"
+                    find "$PLUGIN_DIR" -type d -exec chmod 755 {} \;
+                    find "$PLUGIN_DIR" -type f -exec chmod 644 {} \;
