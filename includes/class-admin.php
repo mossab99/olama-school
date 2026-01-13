@@ -209,6 +209,9 @@ class Olama_School_Admin
 
             Olama_School_Schedule::save_bulk_schedule($section_id, $semester_id, $schedule_data);
 
+            // Clear WordPress object cache to ensure fresh data on redirect
+            wp_cache_flush();
+
             $url = add_query_arg(array(
                 'grade_id' => intval($_POST['grade_id']),
                 'section_id' => $section_id,
@@ -545,6 +548,11 @@ class Olama_School_Admin
                     'error' => __('An error occurred.', 'olama-school'),
                 )
             ));
+        }
+
+        // Enqueue print stylesheet for weekly schedule
+        if (isset($_GET['page']) && $_GET['page'] === 'olama-school-plans' && isset($_GET['tab']) && $_GET['tab'] === 'schedule') {
+            wp_enqueue_style('olama-schedule-print', OLAMA_SCHOOL_URL . 'assets/css/schedule-print.css', array(), OLAMA_SCHOOL_VERSION, 'print');
         }
     }
 
@@ -1479,6 +1487,134 @@ class Olama_School_Admin
      */
     public function render_schedule_page_content()
     {
+        // Handle Schedule Export
+        if (isset($_POST['olama_export_schedule']) && check_admin_referer('olama_export_schedule')) {
+            $semester_id = intval($_POST['semester_id']);
+            $section_id = intval($_POST['section_id']);
+            $grade_id = intval($_POST['grade_id']);
+
+            if ($section_id && $semester_id) {
+                $schedule = Olama_School_Schedule::get_schedule($section_id, $semester_id);
+                $subjects = Olama_School_Subject::get_by_grade($grade_id);
+                $subject_map = array();
+                foreach ($subjects as $subj) {
+                    $subject_map[$subj->id] = array(
+                        'name' => $subj->subject_name,
+                        'code' => $subj->subject_code
+                    );
+                }
+
+                // Generate CSV
+                header('Content-Type: text/csv; charset=utf-8');
+                header('Content-Disposition: attachment; filename="schedule_export_' . date('Y-m-d') . '.csv"');
+
+                $output = fopen('php://output', 'w');
+                fputcsv($output, array('Day', 'Period', 'Subject', 'Subject Code'));
+
+                foreach ($schedule as $day => $periods) {
+                    foreach ($periods as $period_num => $item) {
+                        if ($item && isset($subject_map[$item->subject_id])) {
+                            fputcsv($output, array(
+                                $day,
+                                $period_num,
+                                $subject_map[$item->subject_id]['name'],
+                                $subject_map[$item->subject_id]['code']
+                            ));
+                        }
+                    }
+                }
+
+                fclose($output);
+                exit;
+            }
+        }
+
+        // Handle Schedule Import
+        if (isset($_POST['olama_import_schedule']) && check_admin_referer('olama_import_schedule')) {
+            $semester_id = intval($_POST['semester_id']);
+            $section_id = intval($_POST['section_id']);
+            $grade_id = intval($_POST['grade_id']);
+
+            if (!isset($_FILES['olama_schedule_file']) || $_FILES['olama_schedule_file']['error'] !== UPLOAD_ERR_OK) {
+                echo '<div class="error"><p>' . Olama_School_Helpers::translate('Please select a file to import.') . '</p></div>';
+            } else {
+                $file = $_FILES['olama_schedule_file']['tmp_name'];
+
+                if (($handle = fopen($file, 'r')) !== false) {
+                    // Read header
+                    $header = fgetcsv($handle);
+
+                    if (!$header || count($header) < 3) {
+                        echo '<div class="error"><p>' . Olama_School_Helpers::translate('Invalid CSV file format.') . '</p></div>';
+                    } else {
+                        // Get subjects for mapping
+                        $subjects = Olama_School_Subject::get_by_grade($grade_id);
+                        $subject_map_by_name = array();
+                        $subject_map_by_code = array();
+                        foreach ($subjects as $subj) {
+                            $subject_map_by_name[strtolower($subj->subject_name)] = $subj->id;
+                            if ($subj->subject_code) {
+                                $subject_map_by_code[strtolower($subj->subject_code)] = $subj->id;
+                            }
+                        }
+
+                        $imported_count = 0;
+                        $valid_days = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
+
+                        while (($row = fgetcsv($handle)) !== false) {
+                            if (count($row) < 3)
+                                continue;
+
+                            $day = trim($row[0]);
+                            $period = intval($row[1]);
+                            $subject_name = trim($row[2]);
+                            $subject_code = isset($row[3]) ? trim($row[3]) : '';
+
+                            // Validate day
+                            if (!in_array($day, $valid_days))
+                                continue;
+
+                            // Validate period
+                            if ($period < 1 || $period > 8)
+                                continue;
+
+                            // Find subject ID
+                            $subject_id = 0;
+                            $subject_name_lower = strtolower($subject_name);
+                            $subject_code_lower = strtolower($subject_code);
+
+                            if (isset($subject_map_by_name[$subject_name_lower])) {
+                                $subject_id = $subject_map_by_name[$subject_name_lower];
+                            } elseif ($subject_code && isset($subject_map_by_code[$subject_code_lower])) {
+                                $subject_id = $subject_map_by_code[$subject_code_lower];
+                            }
+
+                            if ($subject_id) {
+                                Olama_School_Schedule::save_schedule_item(array(
+                                    'semester_id' => $semester_id,
+                                    'section_id' => $section_id,
+                                    'day_name' => $day,
+                                    'period_number' => $period,
+                                    'subject_id' => $subject_id
+                                ));
+                                $imported_count++;
+                            }
+                        }
+
+                        fclose($handle);
+
+                        if ($imported_count > 0) {
+                            echo '<div class="updated"><p>' . sprintf(Olama_School_Helpers::translate('Schedule imported successfully! %d items added.'), $imported_count) . '</p></div>';
+                        } else {
+                            echo '<div class="error"><p>' . Olama_School_Helpers::translate('No data found in CSV file.') . '</p></div>';
+                        }
+                    }
+                } else {
+                    echo '<div class="error"><p>' . Olama_School_Helpers::translate('Error processing import file.') . '</p></div>';
+                }
+            }
+        }
+
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/weekly-plan-schedule.php';
     }
 

@@ -545,6 +545,17 @@ class Olama_School_Helpers
         'All grades and sections cleared successfully!' => 'تم مسح جميع الصفوف والشعب بنجاح!',
         'All subjects cleared successfully!' => 'تم مسح جميع المواد بنجاح!',
         'Cannot delete grades because some grades have linked data (sections, students, subjects, or curriculum). Please delete dependent data first.' => 'لا يمكن حذف الصفوف لأن بعض الصفوف لديها بيانات مرتبطة (شعب، طلاب، مواد، أو مناهج). يرجى حذف البيانات التابعة أولاً.',
+
+        // Weekly Schedule Import/Export/PDF Strings
+        'Export Schedule (CSV)' => 'تصدير الجدول (CSV)',
+        'Import Schedule' => 'استيراد جدول',
+        'Download PDF' => 'تحميل PDF',
+        'Schedule exported successfully!' => 'تم تصدير الجدول بنجاح!',
+        'Schedule imported successfully! %d items added.' => 'تم استيراد الجدول بنجاح! تم إضافة %d عنصر.',
+        'Invalid CSV file format.' => 'تنسيق ملف CSV غير صحيح.',
+        'Please select a file to import.' => 'يرجى تحديد الملف المراد استيراده.',
+        'Error processing import file.' => 'خطأ في معالجة ملف الاستيراد.',
+        'No data found in CSV file.' => 'لم يتم العثور على بيانات في ملف CSV.',
         );
 
         return $map[$text] ?? $text;

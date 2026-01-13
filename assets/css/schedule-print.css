@@ -1,0 +1,159 @@
+/**
+ * Print-specific styles for Weekly Schedule
+ * Optimized for A4 paper size
+ */
+
+@media print {
+
+    /* A4 Page Setup */
+    @page {
+        size: A4;
+        margin: 1cm;
+    }
+
+    /* Hide everything except schedule */
+    body * {
+        visibility: hidden;
+    }
+
+    .olama-schedule-container,
+    .olama-schedule-container * {
+        visibility: visible;
+    }
+
+    /* Hide UI elements */
+    .button,
+    .nav-tab-wrapper,
+    .olama-filter-section,
+    .olama-card,
+    #wpadminbar,
+    #adminmenumain,
+    .notice,
+    .updated,
+    .error,
+    form>div:first-child,
+    form>div:last-child,
+    .dashicons,
+    div[style*="margin-top: 5px"] {
+        display: none !important;
+    }
+
+    /* Position schedule at top of page */
+    .olama-schedule-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    /* Add print header */
+    .olama-schedule-container::before {
+        content: attr(data-school-name) " - " attr(data-grade) " - " attr(data-section) " (" attr(data-semester) ")";
+        display: block;
+        text-align: center;
+        font-size: 16pt;
+        font-weight: bold;
+        margin-bottom: 12pt;
+        padding-bottom: 6pt;
+        border-bottom: 2pt solid #000;
+    }
+
+    /* Table styling */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11pt;
+        margin: 0;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    thead th {
+        background: #2271b1 !important;
+        color: #fff !important;
+        font-weight: bold;
+        padding: 10pt !important;
+        border: 1pt solid #000 !important;
+        text-align: center !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        font-size: 11pt !important;
+    }
+
+    tbody td {
+        padding: 8pt !important;
+        border: 1pt solid #666 !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+        min-height: 30pt;
+    }
+
+    tbody tr td:first-child {
+        background: #f0f0f0 !important;
+        font-weight: bold;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Fix select elements to show only selected value as text */
+    select {
+        /* Remove all select styling */
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        font-size: 10pt !important;
+        font-weight: 500 !important;
+        color: #000 !important;
+        width: 100% !important;
+        text-align: center !important;
+        /* Hide dropdown arrow */
+        background-image: none !important;
+    }
+
+    /* Hide all options except selected */
+    select option {
+        display: none !important;
+    }
+
+    select option:checked {
+        display: block !important;
+    }
+
+    /* Alternative: Use attr() to show selected value */
+    select::after {
+        content: attr(data-selected);
+    }
+
+    /* Page breaks */
+    tr {
+        page-break-inside: avoid;
+    }
+
+    /* Ensure proper font rendering */
+    * {
+        font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
+        color: #000 !important;
+    }
+
+    /* RTL Support for Arabic */
+    html[dir="rtl"] table,
+    html[dir="rtl"] .olama-schedule-container {
+        direction: rtl;
+    }
+
+    /* Force text rendering for better readability */
+    body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}

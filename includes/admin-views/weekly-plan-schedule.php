@@ -150,11 +150,105 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
             </select>
         </div>
 
-        <div style="margin-left: auto;">
-            <button type="button" class="button button-secondary" onclick="window.print()"><span class="dashicons dashicons-printer" style="margin-top: 4px;"></span> <?php _e('Print Schedule', 'olama-school'); ?></button>
+        <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
+            <!-- Export Schedule CSV -->
+            <form method="post" action="" style="display: inline;">
+                <?php wp_nonce_field('olama_export_schedule'); ?>
+                <input type="hidden" name="olama_export_schedule" value="1" />
+                <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>" />
+                <input type="hidden" name="section_id" value="<?php echo $selected_section_id; ?>" />
+                <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>" />
+                <button type="submit" class="button" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
+                    <span class="dashicons dashicons-download" style="margin-top: 4px;"></span>
+                    <?php echo Olama_School_Helpers::translate('Export Schedule (CSV)'); ?>
+                </button>
+            </form>
+
+            <!-- Import Schedule CSV -->
+            <form method="post" action="" enctype="multipart/form-data" style="display: inline-flex; gap: 5px; align-items: center;">
+                <?php wp_nonce_field('olama_import_schedule'); ?>
+                <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>" />
+                <input type="hidden" name="section_id" value="<?php echo $selected_section_id; ?>" />
+                <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>" />
+                <input type="file" name="olama_schedule_file" accept=".csv" required style="font-size: 12px;" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?> />
+                <button type="submit" name="olama_import_schedule" value="1" class="button button-primary" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
+                    <span class="dashicons dashicons-upload" style="margin-top: 4px;"></span>
+                    <?php echo Olama_School_Helpers::translate('Import Schedule'); ?>
+                </button>
+            </form>
+
+            <div style="border-left: 1px solid #ddd; height: 30px;"></div>
+
+            <!-- Download PDF Button -->
+            <button type="button" class="button button-secondary" onclick="olamaPrintSchedule()">
+                <span class="dashicons dashicons-pdf" style="margin-top: 4px;"></span>
+                <?php echo Olama_School_Helpers::translate('Download PDF'); ?>
+            </button>
+
+            <!-- Print Schedule Button -->
+            <button type="button" class="button button-secondary" onclick="window.print()">
+                <span class="dashicons dashicons-printer" style="margin-top: 4px;"></span>
+                <?php _e('Print Schedule', 'olama-school'); ?>
+            </button>
         </div>
     </form>
 </div>
+
+<script>
+function olamaPrintSchedule() {
+    // Get schedule metadata for print header
+    const schoolName = '<?php echo esc_js(get_option('olama_school_settings', [])['school_name_ar'] ?? 'School Name'); ?>';
+    const grade = '<?php echo esc_js($grades[array_search($selected_grade_id, array_column($grades, 'id'))]->grade_name ?? ''); ?>';
+    const section = '<?php echo esc_js($sections[array_search($selected_section_id, array_column($sections, 'id'))]->section_name ?? ''); ?>';
+    const semester = '<?php echo esc_js($semesters[array_search($selected_semester_id, array_column($semesters, 'id'))]->semester_name ?? ''); ?>';
+    
+    // Set data attributes for print header
+    const container = document.querySelector('.olama-schedule-container');
+    if (container) {
+        container.setAttribute('data-school-name', schoolName);
+        container.setAttribute('data-grade', grade);
+        container.setAttribute('data-section', section);
+        container.setAttribute('data-semester', semester);
+    }
+    
+    // Convert all select elements to plain text spans for printing
+    const scheduleTable = document.querySelector('.olama-schedule-container table');
+    const selects = scheduleTable.querySelectorAll('select');
+    const selectReplacements = [];
+    
+    selects.forEach(function(select) {
+        const selectedOption = select.options[select.selectedIndex];
+        const selectedText = selectedOption ? selectedOption.text : '';
+        
+        // Create a span with the selected text
+        const span = document.createElement('span');
+        span.textContent = selectedText;
+        span.style.fontSize = '10pt';
+        span.style.fontWeight = '500';
+        span.className = 'print-only-text';
+        
+        // Store original select and its replacement
+        selectReplacements.push({
+            select: select,
+            span: span,
+            parent: select.parentNode
+        });
+        
+        // Replace select with span
+        select.parentNode.replaceChild(span, select);
+    });
+    
+    // Trigger print dialog
+    window.print();
+    
+    // Restore select elements after print dialog closes
+    setTimeout(function() {
+        selectReplacements.forEach(function(item) {
+            item.parent.replaceChild(item.select, item.span);
+        });
+    }, 100);
+}
+</script>
 
 <div class="olama-schedule-container" style="background: #fff; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.1); padding: 5px; overflow-x: auto;">
     <form method="post">
