@@ -48,6 +48,7 @@ jQuery(document).ready(function ($) {
         $('#olama-export-curriculum-btn').prop('disabled', !isAllSelected);
         $('#olama-import-curriculum-file').prop('disabled', !isAllSelected);
         $('#olama-import-curriculum-btn').prop('disabled', !isAllSelected);
+        $('#olama-clear-curriculum-btn').prop('disabled', !isAllSelected);
     }
 
     // --- Filter Interactions ---
@@ -670,6 +671,65 @@ jQuery(document).ready(function ($) {
     toggleSection('lesson-section', false);
     toggleSection('question-section', false);
     updateImportExportStatus();
+
+    // --- Clear Curriculum Handler ---
+    $('#olama-clear-curriculum-btn').on('click', function () {
+        const semesterId = $('#curriculum-semester').val();
+        const gradeId = $('#curriculum-grade').val();
+        const subjectId = $('#curriculum-subject').val();
+        const subjectName = $('#curriculum-subject option:selected').text();
+
+        if (!semesterId || !gradeId || !subjectId) {
+            alert(olamaCurriculum.i18n.selectAll || 'Please select semester, grade, and subject.');
+            return;
+        }
+
+        const confirmMessage = (olamaCurriculum.i18n.confirmClearCurriculum || 'Are you sure you want to delete ALL units and lessons for "{subject}"? This action cannot be undone!')
+            .replace('{subject}', subjectName);
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        const $btn = $(this);
+        const originalText = $btn.html();
+        $btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin" style="margin-top: 4px;"></span> ' + (olamaCurriculum.i18n.deleting || 'Deleting...'));
+
+        $.ajax({
+            url: olamaCurriculum.ajaxUrl,
+            method: 'POST',
+            data: {
+                action: 'olama_clear_curriculum',
+                semester_id: semesterId,
+                grade_id: gradeId,
+                subject_id: subjectId,
+                nonce: olamaCurriculum.nonce
+            },
+            success: function (response) {
+                if (response.success) {
+                    alert(response.data.message || (olamaCurriculum.i18n.curriculumCleared || 'Curriculum cleared successfully!'));
+                    // Reload units list
+                    loadUnits();
+                    // Reset current selections
+                    currentUnit = null;
+                    currentLesson = null;
+                    $('#lessons-list').empty();
+                    $('#questions-list').empty();
+                    toggleSection('lesson-section', false);
+                    toggleSection('question-section', false);
+                } else {
+                    alert(response.data.message || (olamaCurriculum.i18n.errorClearingCurriculum || 'Error clearing curriculum.'));
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Clear Curriculum Error:', error);
+                alert(olamaCurriculum.i18n.errorConnection || 'Error connecting to server.');
+            },
+            complete: function () {
+                $btn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
 
     // Handle URL params for auto-load
     handleUrlParams();

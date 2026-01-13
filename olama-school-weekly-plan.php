@@ -19,6 +19,11 @@ define('OLAMA_SCHOOL_VERSION', '1.2.9');
 define('OLAMA_SCHOOL_PATH', plugin_dir_path(__FILE__));
 define('OLAMA_SCHOOL_URL', plugin_dir_url(__FILE__));
 
+// Load Composer autoloader for PHPSpreadsheet
+if (file_exists(OLAMA_SCHOOL_PATH . 'vendor/autoload.php')) {
+    require_once OLAMA_SCHOOL_PATH . 'vendor/autoload.php';
+}
+
 // Include required classes
 require_once OLAMA_SCHOOL_PATH . 'includes/class-db.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-admin.php';

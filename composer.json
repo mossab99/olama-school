@@ -1,0 +1,12 @@
+{
+    "name": "olama-school/weekly-plan",
+    "description": "WordPress plugin for school weekly plan management and curriculum",
+    "type": "wordpress-plugin",
+    "require": {
+        "php": ">=7.4",
+        "phpoffice/phpspreadsheet": "^1.29"
+    },
+    "autoload": {
+        "classmap": ["includes/"]
+    }
+}

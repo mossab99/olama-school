@@ -27,6 +27,7 @@ class Olama_School_Ajax_Handlers
         add_action('wp_ajax_olama_save_curriculum_question', array($this, 'save_curriculum_question'));
         add_action('wp_ajax_olama_get_curriculum_questions', array($this, 'get_curriculum_questions'));
         add_action('wp_ajax_olama_delete_curriculum_question', array($this, 'delete_curriculum_question'));
+        add_action('wp_ajax_olama_clear_curriculum', array($this, 'clear_curriculum'));
 
         add_action('wp_ajax_olama_get_scheduled_subjects', array($this, 'get_scheduled_subjects'));
         add_action('wp_ajax_olama_get_subjects_by_grade', array($this, 'get_subjects_by_grade'));
@@ -36,6 +37,9 @@ class Olama_School_Ajax_Handlers
         add_action('wp_ajax_olama_get_timeline_data', array($this, 'get_timeline_data'));
         add_action('wp_ajax_olama_save_timeline_dates', array($this, 'save_timeline_dates'));
         add_action('wp_ajax_olama_bulk_approve_plans', array($this, 'bulk_approve_plans'));
+
+        // Bulk Upload AJAX Handler
+        add_action('wp_ajax_olama_bulk_upload_curriculum', array($this, 'bulk_upload_curriculum'));
 
         // Teacher Assignment AJAX Handlers
         add_action('wp_ajax_olama_get_teacher_assignments', array($this, 'get_teacher_assignments'));
@@ -410,5 +414,143 @@ class Olama_School_Ajax_Handlers
         } else {
             wp_send_json_error('Database error');
         }
+    }
+
+    // ==========================================
+    // Bulk Upload Handler
+    // ==========================================
+
+    public function bulk_upload_curriculum()
+    {
+        check_ajax_referer('olama_bulk_upload_nonce', 'nonce');
+
+        // Check permissions
+        if (!current_user_can('olama_manage_curriculum')) {
+            wp_send_json_error(array(
+                'message' => __('You do not have permission to import curriculum data.', 'olama-school')
+            ));
+        }
+
+        // Validate parameters
+        $semester_id = isset($_POST['semester_id']) ? intval($_POST['semester_id']) : 0;
+        $grade_id = isset($_POST['grade_id']) ? intval($_POST['grade_id']) : 0;
+
+        if (!$semester_id || !$grade_id) {
+            wp_send_json_error(array(
+                'message' => __('Please select both semester and grade.', 'olama-school')
+            ));
+        }
+
+        // Validate file upload
+        if (empty($_FILES['file']['tmp_name'])) {
+            wp_send_json_error(array(
+                'message' => __('Please upload a valid file.', 'olama-school')
+            ));
+        }
+
+        // Process the bulk import
+        $result = Olama_School_Importer::import_bulk_curriculum(
+            $semester_id,
+            $grade_id,
+            $_FILES['file']
+        );
+
+        if ($result['success']) {
+            wp_send_json_success($result);
+        } else {
+            wp_send_json_error(array(
+                'message' => $result['message']
+            ));
+        }
+    }
+
+    // ==========================================
+    // Clear Curriculum Handler
+    // ==========================================
+
+    public function clear_curriculum()
+    {
+        check_ajax_referer('olama_curriculum_nonce', 'nonce');
+
+        // Check permissions
+        if (!current_user_can('olama_manage_curriculum')) {
+            wp_send_json_error(array(
+                'message' => __('You do not have permission to delete curriculum data.', 'olama-school')
+            ));
+        }
+
+        // Validate parameters
+        $semester_id = isset($_POST['semester_id']) ? intval($_POST['semester_id']) : 0;
+        $grade_id = isset($_POST['grade_id']) ? intval($_POST['grade_id']) : 0;
+        $subject_id = isset($_POST['subject_id']) ? intval($_POST['subject_id']) : 0;
+
+        if (!$semester_id || !$grade_id || !$subject_id) {
+            wp_send_json_error(array(
+                'message' => __('Please select semester, grade, and subject.', 'olama-school')
+            ));
+        }
+
+        global $wpdb;
+
+        // Get all unit IDs for this subject
+        $unit_ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}olama_curriculum_units 
+             WHERE semester_id = %d AND grade_id = %d AND subject_id = %d",
+            $semester_id,
+            $grade_id,
+            $subject_id
+        ));
+
+        if (empty($unit_ids)) {
+            wp_send_json_success(array(
+                'message' => __('No curriculum data found to delete.', 'olama-school')
+            ));
+            return;
+        }
+
+        // Delete all lessons for these units
+        $placeholders = implode(',', array_fill(0, count($unit_ids), '%d'));
+        $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$wpdb->prefix}olama_curriculum_lessons 
+             WHERE unit_id IN ($placeholders)",
+            $unit_ids
+        ));
+
+        // Delete all questions for lessons in these units (if applicable)
+        $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$wpdb->prefix}olama_questions 
+             WHERE lesson_id IN (
+                 SELECT id FROM {$wpdb->prefix}olama_curriculum_lessons 
+                 WHERE unit_id IN ($placeholders)
+             )",
+            $unit_ids
+        ));
+
+        // Delete all units
+        $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$wpdb->prefix}olama_curriculum_units 
+             WHERE semester_id = %d AND grade_id = %d AND subject_id = %d",
+            $semester_id,
+            $grade_id,
+            $subject_id
+        ));
+
+        // Log activity
+        if (class_exists('Olama_School_Logger')) {
+            $subject = $wpdb->get_var($wpdb->prepare(
+                "SELECT subject_name FROM {$wpdb->prefix}olama_subjects WHERE id = %d",
+                $subject_id
+            ));
+            Olama_School_Logger::log('curriculum_cleared', sprintf(
+                'Curriculum cleared for subject: %s (Semester: %d, Grade: %d)',
+                $subject,
+                $semester_id,
+                $grade_id
+            ));
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Successfully deleted all curriculum data. %d unit(s) and their lessons were removed.', 'olama-school'), count($unit_ids))
+        ));
     }
 }

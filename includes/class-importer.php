@@ -631,4 +631,395 @@ class Olama_School_Importer
         wp_redirect(admin_url('admin.php?page=olama-school-academic&tab=grades&import=success'));
         exit;
     }
+
+    /**
+     * Import curriculum from Excel/CSV file for multiple subjects
+     * Handles CSV-only format where each row can specify subject via sheet name matching
+     */
+    public static function import_bulk_curriculum($semester_id, $grade_id, $file_data)
+    {
+        global $wpdb;
+
+        $semester_id = intval($semester_id);
+        $grade_id = intval($grade_id);
+
+        if (!$semester_id || !$grade_id) {
+            return array(
+                'success' => false,
+                'message' => __('Invalid semester or grade parameters.', 'olama-school')
+            );
+        }
+
+        $results = array();
+        $file_extension = strtolower(pathinfo($file_data['name'], PATHINFO_EXTENSION));
+
+        if ($file_extension === 'csv') {
+            $results = self::process_csv_bulk($semester_id, $grade_id, $file_data['tmp_name']);
+        } elseif (in_array($file_extension, array('xlsx', 'xls'))) {
+            // Process Excel file using PHPSpreadsheet
+            $results = self::process_excel_bulk($semester_id, $grade_id, $file_data['tmp_name']);
+        } else {
+            return array(
+                'success' => false,
+                'message' => __('Unsupported file format. Please upload Excel (.xlsx, .xls) or CSV (.csv) file.', 'olama-school')
+            );
+        }
+
+        // Log activity
+        if (class_exists('Olama_School_Logger')) {
+            $total_units = array_sum(array_column($results, 'units_count'));
+            $total_lessons = array_sum(array_column($results, 'lessons_count'));
+            Olama_School_Logger::log('bulk_curriculum_import', sprintf(
+                'Bulk curriculum import completed: %d subjects, %d units, %d lessons processed.',
+                count($results),
+                $total_units,
+                $total_lessons
+            ));
+        }
+
+        return array(
+            'success' => true,
+            'results' => $results
+        );
+    }
+
+    /**
+     * Process CSV file with curriculum data for multiple subjects
+     * CSV should have all subjects' data in one file
+     */
+    private static function process_csv_bulk($semester_id, $grade_id, $file_path)
+    {
+        global $wpdb;
+
+        $handle = fopen($file_path, 'r');
+        if ($handle === false) {
+            return array();
+        }
+
+        // Skip BOM
+        $bom = fread($handle, 3);
+        if ($bom !== "\xEF\xBB\xBF") {
+            rewind($handle);
+        }
+
+        $headers = fgetcsv($handle);
+        if (!$headers) {
+            fclose($handle);
+            return array();
+        }
+
+        // Map headers
+        $map = array();
+        $fields_map = array(
+            'subject_name' => array('subject', 'subject name', 'المادة', 'اسم المادة'),
+            'unit_number' => array('unit #', 'unit number', 'رقم الوحدة'),
+            'unit_name' => array('unit name', 'اسم الوحدة'),
+            'objectives' => array('objectives', 'learning objectives', 'الأهداف'),
+            'lesson_number' => array('lesson #', 'lesson number', 'رقم الدرس'),
+            'lesson_title' => array('lesson title', 'lesson name', 'عنوان الدرس'),
+            'video_url' => array('video url', 'link', 'رابط الفيديو'),
+            'periods' => array('number of periods', 'periods', 'عدد الحصص')
+        );
+
+        foreach ($headers as $index => $header) {
+            $header_clean = strtolower(trim($header));
+            foreach ($fields_map as $field_key => $variations) {
+                if (in_array($header_clean, $variations)) {
+                    $map[$field_key] = $index;
+                    break;
+                }
+            }
+        }
+
+        // Validate mandatory columns
+        if (!isset($map['unit_number']) || !isset($map['unit_name'])) {
+            fclose($handle);
+            return array(
+                array(
+                    'subject_name' => 'Unknown',
+                    'units_count' => 0,
+                    'lessons_count' => 0,
+                    'errors' => array(__('Required columns (Unit #, Unit Name) are missing.', 'olama-school'))
+                )
+            );
+        }
+
+        // Group data by subject
+        $subjects_data = array();
+        $current_subject = null;
+
+        while (($data = fgetcsv($handle)) !== false) {
+            $row = array(
+                'subject_name' => '',
+                'unit_number' => '',
+                'unit_name' => '',
+                'objectives' => '',
+                'lesson_number' => '',
+                'lesson_title' => '',
+                'video_url' => '',
+                'periods' => '1'
+            );
+
+            foreach ($map as $field => $index) {
+                $row[$field] = isset($data[$index]) ? trim($data[$index]) : '';
+            }
+
+            if (empty($row['unit_number'])) {
+                continue;
+            }
+
+            // Determine subject - if subject column exists, use it; otherwise group all as single subject
+            if (isset($map['subject_name']) && !empty($row['subject_name'])) {
+                $current_subject = $row['subject_name'];
+            } elseif ($current_subject === null) {
+                $current_subject = 'Default Subject';
+            }
+
+            if (!isset($subjects_data[$current_subject])) {
+                $subjects_data[$current_subject] = array();
+            }
+
+            $subjects_data[$current_subject][] = $row;
+        }
+
+        fclose($handle);
+
+        // Process each subject's data
+        $results = array();
+        foreach ($subjects_data as $subject_name => $rows) {
+            $result = self::import_subject_curriculum($semester_id, $grade_id, $subject_name, $rows);
+            $results[] = $result;
+        }
+
+        return $results;
+    }
+
+    /**
+     * Import curriculum data for a single subject
+     */
+    private static function import_subject_curriculum($semester_id, $grade_id, $subject_name, $rows)
+    {
+        global $wpdb;
+
+        $errors = array();
+        $units_count = 0;
+        $lessons_count = 0;
+
+        // Get or create subject
+        $subject_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}olama_subjects WHERE subject_name = %s AND grade_id = %d",
+            $subject_name,
+            $grade_id
+        ));
+
+        if (!$subject_id) {
+            // Create new subject
+            $wpdb->insert($wpdb->prefix . 'olama_subjects', array(
+                'subject_name' => $subject_name,
+                'subject_code' => substr($subject_name, 0, 3),
+                'grade_id' => $grade_id,
+                'color_code' => '#3b82f6'
+            ));
+            $subject_id = $wpdb->insert_id;
+
+            if (!$subject_id) {
+                return array(
+                    'subject_name' => $subject_name,
+                    'units_count' => 0,
+                    'lessons_count' => 0,
+                    'errors' => array(__('Failed to create subject.', 'olama-school'))
+                );
+            }
+        }
+
+        // Process rows
+        $current_unit_id = 0;
+        $last_unit_number = '';
+
+        foreach ($rows as $row) {
+            // Handle unit
+            if ($row['unit_number'] !== $last_unit_number) {
+                $unit_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}olama_curriculum_units WHERE semester_id = %d AND grade_id = %d AND subject_id = %d AND unit_number = %s",
+                    $semester_id,
+                    $grade_id,
+                    $subject_id,
+                    $row['unit_number']
+                ));
+
+                if ($unit_id) {
+                    $wpdb->update($wpdb->prefix . 'olama_curriculum_units', array(
+                        'unit_name' => $row['unit_name'],
+                        'objectives' => $row['objectives']
+                    ), array('id' => $unit_id));
+                } else {
+                    $wpdb->insert($wpdb->prefix . 'olama_curriculum_units', array(
+                        'semester_id' => $semester_id,
+                        'grade_id' => $grade_id,
+                        'subject_id' => $subject_id,
+                        'unit_number' => $row['unit_number'],
+                        'unit_name' => $row['unit_name'],
+                        'objectives' => $row['objectives']
+                    ));
+                    $unit_id = $wpdb->insert_id;
+                    $units_count++;
+                }
+
+                $current_unit_id = $unit_id;
+                $last_unit_number = $row['unit_number'];
+            }
+
+            // Handle lesson
+            if (!empty($row['lesson_number']) && $current_unit_id) {
+                $lesson_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}olama_curriculum_lessons WHERE unit_id = %d AND lesson_number = %s",
+                    $current_unit_id,
+                    $row['lesson_number']
+                ));
+
+                if ($lesson_id) {
+                    $wpdb->update($wpdb->prefix . 'olama_curriculum_lessons', array(
+                        'lesson_title' => $row['lesson_title'],
+                        'video_url' => $row['video_url'],
+                        'periods' => intval($row['periods'])
+                    ), array('id' => $lesson_id));
+                } else {
+                    $wpdb->insert($wpdb->prefix . 'olama_curriculum_lessons', array(
+                        'unit_id' => $current_unit_id,
+                        'lesson_number' => $row['lesson_number'],
+                        'lesson_title' => $row['lesson_title'],
+                        'video_url' => $row['video_url'],
+                        'periods' => intval($row['periods'])
+                    ));
+                    $lessons_count++;
+                }
+            }
+        }
+
+        return array(
+            'subject_name' => $subject_name,
+            'units_count' => $units_count,
+            'lessons_count' => $lessons_count,
+            'errors' => $errors
+        );
+    }
+
+    /**
+     * Process Excel file with curriculum data for multiple subjects
+     * Each sheet represents one subject
+     */
+    private static function process_excel_bulk($semester_id, $grade_id, $file_path)
+    {
+        global $wpdb;
+
+        try {
+            // Check if PHPSpreadsheet is available
+            if (!class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
+                return array(
+                    array(
+                        'subject_name' => 'Error',
+                        'units_count' => 0,
+                        'lessons_count' => 0,
+                        'errors' => array(__('PHPSpreadsheet library not found. Please install via Composer.', 'olama-school'))
+                    )
+                );
+            }
+
+            // Load the Excel file
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file_path);
+            $results = array();
+
+            // Process each sheet as a subject
+            foreach ($spreadsheet->getAllSheets() as $sheet) {
+                $subject_name = $sheet->getTitle();
+                $rows = array();
+
+                // Get all rows from the sheet
+                $highestRow = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
+
+                // Read header row
+                $headers = array();
+                for ($col = 'A'; $col <= $highestColumn; $col++) {
+                    $headers[$col] = trim($sheet->getCell($col . '1')->getValue());
+                }
+
+                // Map headers to field names
+                $map = array();
+                $fields_map = array(
+                    'subject_name' => array('subject', 'subject name', 'المادة', 'اسم المادة'),
+                    'unit_number' => array('unit #', 'unit number', 'رقم الوحدة'),
+                    'unit_name' => array('unit name', 'اسم الوحدة'),
+                    'objectives' => array('objectives', 'learning objectives', 'الأهداف'),
+                    'lesson_number' => array('lesson #', 'lesson number', 'رقم الدرس'),
+                    'lesson_title' => array('lesson title', 'lesson name', 'عنوان الدرس'),
+                    'video_url' => array('video url', 'link', 'رابط الفيديو'),
+                    'periods' => array('number of periods', 'periods', 'عدد الحصص')
+                );
+
+                foreach ($headers as $col => $header) {
+                    $header_clean = strtolower(trim($header));
+                    foreach ($fields_map as $field_key => $variations) {
+                        if (in_array($header_clean, $variations)) {
+                            $map[$field_key] = $col;
+                            break;
+                        }
+                    }
+                }
+
+                // Validate required columns
+                if (!isset($map['unit_number']) || !isset($map['unit_name'])) {
+                    $results[] = array(
+                        'subject_name' => $subject_name,
+                        'units_count' => 0,
+                        'lessons_count' => 0,
+                        'errors' => array(__('Required columns (Unit #, Unit Name) are missing in sheet: ' . $subject_name, 'olama-school'))
+                    );
+                    continue;
+                }
+
+                // Read data rows
+                for ($row = 2; $row <= $highestRow; $row++) {
+                    $rowData = array(
+                        'subject_name' => '',
+                        'unit_number' => '',
+                        'unit_name' => '',
+                        'objectives' => '',
+                        'lesson_number' => '',
+                        'lesson_title' => '',
+                        'video_url' => '',
+                        'periods' => '1'
+                    );
+
+                    foreach ($map as $field => $col) {
+                        $cellValue = $sheet->getCell($col . $row)->getValue();
+                        $rowData[$field] = trim((string) $cellValue);
+                    }
+
+                    if (!empty($rowData['unit_number'])) {
+                        $rows[] = $rowData;
+                    }
+                }
+
+                // Process this subject's data
+                if (!empty($rows)) {
+                    $result = self::import_subject_curriculum($semester_id, $grade_id, $subject_name, $rows);
+                    $results[] = $result;
+                }
+            }
+
+            return $results;
+
+        } catch (\Exception $e) {
+            return array(
+                array(
+                    'subject_name' => 'Error',
+                    'units_count' => 0,
+                    'lessons_count' => 0,
+                    'errors' => array(__('Error reading Excel file: ', 'olama-school') . $e->getMessage())
+                )
+            );
+        }
+    }
 }
+

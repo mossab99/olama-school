@@ -436,6 +436,11 @@ class Olama_School_Admin
                     'questionNumberRequired' => Olama_School_Helpers::translate('Question number is required'),
                     'questionTextRequired' => Olama_School_Helpers::translate('Question text is required'),
                     'questionExists' => Olama_School_Helpers::translate('Question # already exists in this lesson.'),
+                    'confirmClearCurriculum' => Olama_School_Helpers::translate('Are you sure you want to delete ALL units and lessons for "{subject}"? This action cannot be undone!'),
+                    'deleting' => Olama_School_Helpers::translate('Deleting...'),
+                    'curriculumCleared' => Olama_School_Helpers::translate('Curriculum cleared successfully!'),
+                    'errorClearingCurriculum' => Olama_School_Helpers::translate('Error clearing curriculum.'),
+                    'selectAll' => Olama_School_Helpers::translate('Please select semester, grade, and subject.'),
                 )
             ));
         }
@@ -468,6 +473,30 @@ class Olama_School_Admin
                     'fixErrors' => Olama_School_Helpers::translate('Please fix validation errors before saving.'),
                     'loadTimeline' => Olama_School_Helpers::translate('Load Timeline'),
                     'saveAllDates' => Olama_School_Helpers::translate('Save All Dates'),
+                )
+            ));
+        }
+
+        if (isset($_GET['page']) && $_GET['page'] === 'olama-school-curriculum' && isset($_GET['tab']) && $_GET['tab'] === 'bulk_upload') {
+            wp_enqueue_script('olama-bulk-upload-script', OLAMA_SCHOOL_URL . 'assets/js/bulk-upload.js', array('jquery'), OLAMA_SCHOOL_VERSION, true);
+            wp_localize_script('olama-bulk-upload-script', 'olamaBulkUpload', array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('olama_bulk_upload_nonce'),
+                'i18n' => array(
+                    'selectBoth' => Olama_School_Helpers::translate('Please select both semester and grade'),
+                    'selectFile' => Olama_School_Helpers::translate('Please select a file to upload'),
+                    'uploading' => Olama_School_Helpers::translate('Uploading and processing...'),
+                    'success' => Olama_School_Helpers::translate('Upload completed successfully'),
+                    'error' => Olama_School_Helpers::translate('An error occurred during upload'),
+                    'processingSubjects' => Olama_School_Helpers::translate('Processing subjects...'),
+                    'subject' => Olama_School_Helpers::translate('Subject'),
+                    'unitsImported' => Olama_School_Helpers::translate('Units Imported'),
+                    'lessonsImported' => Olama_School_Helpers::translate('Lessons Imported'),
+                    'status' => Olama_School_Helpers::translate('Status'),
+                    'errors' => Olama_School_Helpers::translate('Errors'),
+                    'totalSubjects' => Olama_School_Helpers::translate('Total Subjects Processed'),
+                    'totalUnits' => Olama_School_Helpers::translate('Total Units Imported'),
+                    'totalLessons' => Olama_School_Helpers::translate('Total Lessons Imported'),
                 )
             ));
         }
@@ -911,6 +940,8 @@ class Olama_School_Admin
                     class="nav-tab <?php echo $active_tab === 'curriculum' ? 'nav-tab-active' : ''; ?>"><?php _e('Curriculum', 'olama-school'); ?></a>
                 <a href="?page=olama-school-curriculum&tab=timeline"
                     class="nav-tab <?php echo $active_tab === 'timeline' ? 'nav-tab-active' : ''; ?>"><?php _e('Timeline', 'olama-school'); ?></a>
+                <a href="?page=olama-school-curriculum&tab=bulk_upload"
+                    class="nav-tab <?php echo $active_tab === 'bulk_upload' ? 'nav-tab-active' : ''; ?>"><?php _e('Bulk Upload', 'olama-school'); ?></a>
             </h2>
 
             <div class="olama-tab-content" style="margin-top: 20px;">
@@ -918,6 +949,9 @@ class Olama_School_Admin
                 switch ($active_tab) {
                     case 'timeline':
                         $this->render_timeline_page_content();
+                        break;
+                    case 'bulk_upload':
+                        $this->render_bulk_upload_page_content();
                         break;
                     case 'curriculum':
                     default:
@@ -1046,6 +1080,14 @@ class Olama_School_Admin
     public function render_timeline_page_content()
     {
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/curriculum-timeline.php';
+    }
+
+    /**
+     * Render Bulk Upload Page Content
+     */
+    public function render_bulk_upload_page_content()
+    {
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/curriculum-bulk-upload.php';
     }
 
     /**
