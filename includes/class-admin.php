@@ -740,6 +740,48 @@ class Olama_School_Admin
             }
         }
 
+        // Handle Clear All Grades & Sections
+        if (isset($_GET['action']) && $_GET['action'] === 'clear_all_grades') {
+            if (check_admin_referer('olama_clear_all_grades')) {
+                global $wpdb;
+
+                // Get all grades
+                $all_grades = Olama_School_Grade::get_grades();
+
+                // Check if any grade has linked data
+                $has_linked_data = false;
+                foreach ($all_grades as $grade) {
+                    $tables_to_check = array(
+                        'olama_sections' => 'sections',
+                        'olama_students' => 'students',
+                        'olama_subjects' => 'subjects',
+                        'olama_curriculum_units' => 'curriculum',
+                    );
+
+                    foreach ($tables_to_check as $table => $label) {
+                        $count = $wpdb->get_var($wpdb->prepare(
+                            "SELECT COUNT(*) FROM {$wpdb->prefix}{$table} WHERE grade_id = %d",
+                            $grade->id
+                        ));
+                        if ($count > 0) {
+                            $has_linked_data = true;
+                            break 2;
+                        }
+                    }
+                }
+
+                if ($has_linked_data) {
+                    echo '<div class="error"><p>' . Olama_School_Helpers::translate('Cannot delete grades because some grades have linked data (sections, students, subjects, or curriculum). Please delete dependent data first.') . '</p></div>';
+                } else {
+                    // Safe to delete all grades
+                    foreach ($all_grades as $grade) {
+                        $wpdb->delete("{$wpdb->prefix}olama_grades", array('id' => $grade->id));
+                    }
+                    echo '<div class="updated"><p>' . Olama_School_Helpers::translate('All grades and sections cleared successfully!') . '</p></div>';
+                }
+            }
+        }
+
         // Handle Section submission
         if (isset($_POST['add_section']) && check_admin_referer('olama_add_section')) {
             $result = Olama_School_Section::add_section(array(
@@ -832,6 +874,15 @@ class Olama_School_Admin
             if (check_admin_referer('olama_delete_subject_' . $subject_id)) {
                 Olama_School_Subject::delete_subject($subject_id);
                 echo '<div class="updated"><p>' . __('Subject deleted.', 'olama-school') . '</p></div>';
+            }
+        }
+
+        // Handle Clear All Subjects
+        if (isset($_GET['action']) && $_GET['action'] === 'clear_all_subjects') {
+            if (check_admin_referer('olama_clear_all_subjects')) {
+                global $wpdb;
+                $wpdb->query("DELETE FROM {$wpdb->prefix}olama_subjects");
+                echo '<div class="updated"><p>' . Olama_School_Helpers::translate('All subjects cleared successfully!') . '</p></div>';
             }
         }
 

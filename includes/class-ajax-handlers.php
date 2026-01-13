@@ -28,6 +28,7 @@ class Olama_School_Ajax_Handlers
         add_action('wp_ajax_olama_get_curriculum_questions', array($this, 'get_curriculum_questions'));
         add_action('wp_ajax_olama_delete_curriculum_question', array($this, 'delete_curriculum_question'));
         add_action('wp_ajax_olama_clear_curriculum', array($this, 'clear_curriculum'));
+        add_action('wp_ajax_olama_clear_grade_curriculum', array($this, 'clear_grade_curriculum'));
 
         add_action('wp_ajax_olama_get_scheduled_subjects', array($this, 'get_scheduled_subjects'));
         add_action('wp_ajax_olama_get_subjects_by_grade', array($this, 'get_subjects_by_grade'));
@@ -551,6 +552,92 @@ class Olama_School_Ajax_Handlers
 
         wp_send_json_success(array(
             'message' => sprintf(__('Successfully deleted all curriculum data. %d unit(s) and their lessons were removed.', 'olama-school'), count($unit_ids))
+        ));
+    }
+
+    // ==========================================
+    // Clear Grade Curriculum Handler
+    // ==========================================
+
+    public function clear_grade_curriculum()
+    {
+        check_ajax_referer('olama_curriculum_nonce', 'nonce');
+
+        // Check permissions
+        if (!current_user_can('olama_manage_curriculum')) {
+            wp_send_json_error(array(
+                'message' => __('You do not have permission to delete curriculum data.', 'olama-school')
+            ));
+        }
+
+        // Validate parameters (subject not required for grade-level clear)
+        $semester_id = isset($_POST['semester_id']) ? intval($_POST['semester_id']) : 0;
+        $grade_id = isset($_POST['grade_id']) ? intval($_POST['grade_id']) : 0;
+
+        if (!$semester_id || !$grade_id) {
+            wp_send_json_error(array(
+                'message' => __('Please select semester and grade.', 'olama-school')
+            ));
+        }
+
+        global $wpdb;
+
+        // Get all unit IDs for this grade and semester (across ALL subjects)
+        $unit_ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}olama_curriculum_units 
+             WHERE semester_id = %d AND grade_id = %d",
+            $semester_id,
+            $grade_id
+        ));
+
+        if (empty($unit_ids)) {
+            wp_send_json_success(array(
+                'message' => __('No curriculum data found to delete.', 'olama-school')
+            ));
+            return;
+        }
+
+        // Delete all lessons for these units
+        $placeholders = implode(',', array_fill(0, count($unit_ids), '%d'));
+        $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$wpdb->prefix}olama_curriculum_lessons 
+             WHERE unit_id IN ($placeholders)",
+            $unit_ids
+        ));
+
+        // Delete all questions for lessons in these units
+        $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$wpdb->prefix}olama_questions 
+             WHERE lesson_id IN (
+                 SELECT id FROM {$wpdb->prefix}olama_curriculum_lessons 
+                 WHERE unit_id IN ($placeholders)
+             )",
+            $unit_ids
+        ));
+
+        // Delete all units
+        $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$wpdb->prefix}olama_curriculum_units 
+             WHERE semester_id = %d AND grade_id = %d",
+            $semester_id,
+            $grade_id
+        ));
+
+        // Log activity
+        if (class_exists('Olama_School_Logger')) {
+            $grade = $wpdb->get_var($wpdb->prepare(
+                "SELECT grade_name FROM {$wpdb->prefix}olama_grades WHERE id = %d",
+                $grade_id
+            ));
+            Olama_School_Logger::log('grade_curriculum_cleared', sprintf(
+                'Grade curriculum cleared for: %s (Semester: %d)',
+                $grade,
+                $semester_id
+            ));
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Grade curriculum cleared successfully! %d unit(s) across all subjects were removed.', 'olama-school'), count($unit_ids))
         ));
     }
 }

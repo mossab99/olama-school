@@ -112,6 +112,14 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
                 <?php echo Olama_School_Helpers::translate('Clear Curriculum'); ?>
             </button>
 
+            <div style="height: 24px; width: 1px; background: #cbd5e1; display: inline-block;"></div>
+
+            <button type="button" class="button button-link-delete" id="olama-clear-grade-curriculum-btn" disabled
+                style="color: #b91c1c; font-weight: 600;">
+                <span class="dashicons dashicons-trash" style="margin-top: 4px;"></span>
+                <?php echo Olama_School_Helpers::translate('Clear Grade Curriculum'); ?>
+            </button>
+
             <p class="description" style="margin: 0; font-size: 11px; color: #64748b;">
                 <?php echo Olama_School_Helpers::translate('Select Semester, Grade, and Subject to enable Export/Import.'); ?>
             </p>

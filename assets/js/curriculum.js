@@ -38,6 +38,7 @@ jQuery(document).ready(function ($) {
         const subjectId = $('#curriculum-subject').val();
 
         const isAllSelected = semesterId && gradeId && subjectId;
+        const isGradeSelected = semesterId && gradeId; // For grade-level operations
 
         // Update hidden fields in both forms
         $('.curriculum-hidden-semester').val(semesterId);
@@ -49,6 +50,9 @@ jQuery(document).ready(function ($) {
         $('#olama-import-curriculum-file').prop('disabled', !isAllSelected);
         $('#olama-import-curriculum-btn').prop('disabled', !isAllSelected);
         $('#olama-clear-curriculum-btn').prop('disabled', !isAllSelected);
+
+        // Clear Grade Curriculum only needs semester and grade
+        $('#olama-clear-grade-curriculum-btn').prop('disabled', !isGradeSelected);
     }
 
     // --- Filter Interactions ---
@@ -723,6 +727,67 @@ jQuery(document).ready(function ($) {
             },
             error: function (xhr, status, error) {
                 console.error('Clear Curriculum Error:', error);
+                alert(olamaCurriculum.i18n.errorConnection || 'Error connecting to server.');
+            },
+            complete: function () {
+                $btn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+
+    // --- Clear Grade Curriculum Handler ---
+    $('#olama-clear-grade-curriculum-btn').on('click', function () {
+        const semesterId = $('#curriculum-semester').val();
+        const gradeId = $('#curriculum-grade').val();
+        const gradeName = $('#curriculum-grade option:selected').text();
+
+        if (!semesterId || !gradeId) {
+            alert(olamaCurriculum.i18n.selectAll || 'Please select semester and grade.');
+            return;
+        }
+
+        const confirmMessage = (olamaCurriculum.i18n.confirmClearGradeCurriculum || 'Are you sure you want to delete ALL curriculum data for this grade? This will remove all units, lessons, and questions for ALL subjects in the selected semester and grade. This action cannot be undone!')
+            .replace('{grade}', gradeName);
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        const $btn = $(this);
+        const originalText = $btn.html();
+        $btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin" style="margin-top: 4px;"></span> ' + (olamaCurriculum.i18n.deleting || 'Deleting...'));
+
+        $.ajax({
+            url: olamaCurriculum.ajaxUrl,
+            method: 'POST',
+            data: {
+                action: 'olama_clear_grade_curriculum',
+                semester_id: semesterId,
+                grade_id: gradeId,
+                nonce: olamaCurriculum.nonce
+            },
+            success: function (response) {
+                if (response.success) {
+                    alert(response.data.message || (olamaCurriculum.i18n.gradeCurriculumCleared || 'Grade curriculum cleared successfully!'));
+                    // Reload units list if a subject is still selected
+                    if (currentSubject) {
+                        loadUnits();
+                    } else {
+                        $('#units-list').empty();
+                    }
+                    // Reset current selections
+                    currentUnit = null;
+                    currentLesson = null;
+                    $('#lessons-list').empty();
+                    $('#questions-list').empty();
+                    toggleSection('lesson-section', false);
+                    toggleSection('question-section', false);
+                } else {
+                    alert(response.data.message || (olamaCurriculum.i18n.errorClearingCurriculum || 'Error clearing curriculum.'));
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Clear Grade Curriculum Error:', error);
                 alert(olamaCurriculum.i18n.errorConnection || 'Error connecting to server.');
             },
             complete: function () {

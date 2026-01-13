@@ -42,6 +42,15 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit_subject' && isset($_GET[
         <button type="submit" class="button button-primary"><span class="dashicons dashicons-import"
                 style="margin-top: 4px;"></span> <?php _e('Import Subjects', 'olama-school'); ?></button>
     </form>
+
+    <div style="border-left: 1px solid #ddd; height: 30px; margin: 0 10px;"></div>
+
+    <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-academic&tab=subjects&action=clear_all_subjects'), 'olama_clear_all_subjects'); ?>"
+        class="button button-link-delete" style="color: #b91c1c; font-weight: 600;"
+        onclick="return confirm('<?php echo esc_js(Olama_School_Helpers::translate('Are you sure you want to delete ALL subjects? This action cannot be undone!')); ?>')">
+        <span class="dashicons dashicons-trash" style="margin-top: 4px;"></span>
+        <?php echo Olama_School_Helpers::translate('Clear All Subjects'); ?>
+    </a>
 </div>
 <div class="olama-flex" style="display: flex; gap: 20px;">
     <div class="olama-card" style="flex: 1; background: #fff; padding: 20px; border: 1px solid #ccd0d4;">

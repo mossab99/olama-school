@@ -531,6 +531,20 @@ class Olama_School_Helpers
         'Please select semester, grade, and subject.' => 'يرجى اختيار الفصل والصف والمادة.',
         'No curriculum data found to delete.' => 'لم يتم العثور على بيانات منهج للحذف.',
         'Successfully deleted all curriculum data. %d unit(s) and their lessons were removed.' => 'تم حذف جميع بيانات المنهج بنجاح. تم حذف %d وحدة/وحدات ودروسها.',
+
+        // Clear Grade Curriculum Strings
+        'Clear Grade Curriculum' => 'مسح منهج الصف بالكامل',
+        'Are you sure you want to delete ALL curriculum data for this grade? This will remove all units, lessons, and questions for ALL subjects in the selected semester and grade. This action cannot be undone!' => 'هل أنت متأكد من حذف جميع بيانات المنهج لهذا الصف؟ سيؤدي هذا إلى إزالة جميع الوحدات والدروس والأسئلة لجميع المواد في الفصل والصف المحددين. لا يمكن التراجع عن هذا الإجراء!',
+        'Grade curriculum cleared successfully! %d unit(s) across all subjects were removed.' => 'تم مسح منهج الصف بنجاح! تم حذف %d وحدة/وحدات من جميع المواد.',
+
+        // Clear All Academic Data Strings
+        'Clear All Grades & Sections' => 'مسح جميع الصفوف والشعب',
+        'Clear All Subjects' => 'مسح جميع المواد',
+        'Are you sure you want to delete ALL grades and their sections? This action cannot be undone!' => 'هل أنت متأكد من حذف جميع الصفوف وشعبها؟ لا يمكن التراجع عن هذا الإجراء!',
+        'Are you sure you want to delete ALL subjects? This action cannot be undone!' => 'هل أنت متأكد من حذف جميع المواد؟ لا يمكن التراجع عن هذا الإجراء!',
+        'All grades and sections cleared successfully!' => 'تم مسح جميع الصفوف والشعب بنجاح!',
+        'All subjects cleared successfully!' => 'تم مسح جميع المواد بنجاح!',
+        'Cannot delete grades because some grades have linked data (sections, students, subjects, or curriculum). Please delete dependent data first.' => 'لا يمكن حذف الصفوف لأن بعض الصفوف لديها بيانات مرتبطة (شعب، طلاب، مواد، أو مناهج). يرجى حذف البيانات التابعة أولاً.',
         );
 
         return $map[$text] ?? $text;

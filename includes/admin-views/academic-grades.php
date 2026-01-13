@@ -35,6 +35,15 @@ if ($selected_grade_id) {
             <?php _e('Import Grades & Sections', 'olama-school'); ?>
         </button>
     </form>
+
+    <div style="border-left: 1px solid #ddd; height: 30px; margin: 0 10px;"></div>
+
+    <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-academic&tab=grades&action=clear_all_grades'), 'olama_clear_all_grades'); ?>"
+        class="button button-link-delete" style="color: #b91c1c; font-weight: 600;"
+        onclick="return confirm('<?php echo esc_js(Olama_School_Helpers::translate('Are you sure you want to delete ALL grades and their sections? This action cannot be undone!')); ?>')">
+        <span class="dashicons dashicons-trash" style="margin-top: 4px;"></span>
+        <?php echo Olama_School_Helpers::translate('Clear All Grades & Sections'); ?>
+    </a>
 </div>
 <div class="olama-flex" style="display: flex; gap: 20px;">
     <div class="olama-main-col" style="flex: 2;">
