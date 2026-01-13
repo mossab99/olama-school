@@ -599,9 +599,79 @@ jQuery(document).ready(function ($) {
         });
     });
 
+    // --- URL Parameter Handling (Auto-load) ---
+    function handleUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const semesterId = urlParams.get('semester_id');
+        const gradeId = urlParams.get('grade_id');
+        const subjectId = urlParams.get('subject_id');
+
+        if (!semesterId && !gradeId && !subjectId) return;
+
+        console.log('Curriculum Auto-load: Checking URL parameters...', { semesterId, gradeId, subjectId });
+
+        // Add a small delay to ensure other UI scripts (like Select2) have finished
+        setTimeout(function () {
+            if (semesterId) {
+                const $sem = $('#curriculum-semester');
+                // Use filter for case-insensitive/robust matching if needed
+                const $opt = $sem.find('option').filter(function () {
+                    return $(this).val().toString().trim() === semesterId.toString().trim();
+                });
+
+                if ($opt.length > 0) {
+                    $sem.val($opt.val()).trigger('change');
+                } else {
+                    console.warn('Auto-load: Semester ID not found in options:', semesterId);
+                }
+            }
+
+            if (gradeId) {
+                const $grade = $('#curriculum-grade');
+                const $opt = $grade.find('option').filter(function () {
+                    return $(this).val().toString().trim() === gradeId.toString().trim();
+                });
+
+                if ($opt.length > 0) {
+                    $grade.val($opt.val()).trigger('change');
+
+                    // Wait for subjects to load before selecting subject
+                    if (subjectId) {
+                        let attempts = 0;
+                        const checkSubjectInterval = setInterval(function () {
+                            attempts++;
+                            const $subjectSelect = $('#curriculum-subject');
+                            const $sOpt = $subjectSelect.find('option').filter(function () {
+                                return $(this).val().toString().trim() === subjectId.toString().trim();
+                            });
+
+                            if ($sOpt.length > 0) {
+                                console.log('Auto-load: Subject found, selecting:', subjectId);
+                                clearInterval(checkSubjectInterval);
+                                $subjectSelect.val($sOpt.val()).trigger('change');
+                            }
+
+                            if (attempts > 60) { // 6-second timeout
+                                console.warn('Auto-load: Timed out waiting for subject option:', subjectId);
+                                clearInterval(checkSubjectInterval);
+                            }
+                        }, 100);
+                    }
+                } else {
+                    console.warn('Auto-load: Grade ID not found in options:', gradeId);
+                }
+            }
+
+            updateImportExportStatus();
+        }, 500);
+    }
+
     // Initialize UI
     toggleSection('lesson-section', false);
     toggleSection('question-section', false);
     updateImportExportStatus();
+
+    // Handle URL params for auto-load
+    handleUrlParams();
 
 });

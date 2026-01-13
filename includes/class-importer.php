@@ -216,16 +216,22 @@ class Olama_School_Importer
 
         // Verify nonce
         if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_import_curriculum')) {
-            wp_die(__('Security check failed.', 'olama-school'));
+            set_transient('olama_import_error', __('Security check failed.', 'olama-school'), 30);
+            wp_redirect(admin_url('admin.php?page=olama-school-curriculum'));
+            exit;
         }
 
         // Check permissions
         if (!current_user_can('olama_manage_curriculum')) {
-            wp_die(__('You do not have permission to import curriculum data.', 'olama-school'));
+            set_transient('olama_import_error', __('You do not have permission to import curriculum data.', 'olama-school'), 30);
+            wp_redirect(admin_url('admin.php?page=olama-school-curriculum'));
+            exit;
         }
 
         if (empty($_FILES['olama_import_file']['tmp_name'])) {
-            wp_die(__('Please upload a valid CSV file.', 'olama-school'));
+            set_transient('olama_import_error', __('Please upload a valid CSV file.', 'olama-school'), 30);
+            wp_redirect(admin_url('admin.php?page=olama-school-curriculum'));
+            exit;
         }
 
         $semester_id = intval($semester_id);
@@ -233,7 +239,9 @@ class Olama_School_Importer
         $subject_id = intval($subject_id);
 
         if (!$semester_id || !$grade_id || !$subject_id) {
-            wp_die(__('Invalid parameters for import.', 'olama-school'));
+            set_transient('olama_import_error', __('Invalid parameters for import.', 'olama-school'), 30);
+            wp_redirect(admin_url('admin.php?page=olama-school-curriculum'));
+            exit;
         }
 
         $file = $_FILES['olama_import_file']['tmp_name'];
@@ -251,22 +259,32 @@ class Olama_School_Importer
                 wp_die(__('Invalid CSV header.', 'olama-school'));
             }
 
-            // Map headers
+            // Map headers (case-insensitive and flexible)
             $map = array();
-            $fields = array(
-                'Unit #' => 'unit_number',
-                'Unit Name' => 'unit_name',
-                'Objectives' => 'objectives',
-                'Lesson #' => 'lesson_number',
-                'Lesson Title' => 'lesson_title',
-                'Video URL' => 'video_url'
+            $fields_map = array(
+                'unit_number' => array('unit #', 'unit number', 'رقم الوحدة'),
+                'unit_name' => array('unit name', 'اسم الوحدة'),
+                'objectives' => array('objectives', 'learning objectives', 'الأهداف'),
+                'lesson_number' => array('lesson #', 'lesson number', 'رقم الدرس'),
+                'lesson_title' => array('lesson title', 'lesson name', 'عنوان الدرس', 'lesson tit'),
+                'video_url' => array('video url', 'link', 'رابط الفيديو')
             );
 
             foreach ($headers as $index => $header) {
-                $header = trim($header);
-                if (isset($fields[$header])) {
-                    $map[$fields[$header]] = $index;
+                $header_clean = strtolower(trim($header));
+                foreach ($fields_map as $field_key => $variations) {
+                    if (in_array($header_clean, $variations)) {
+                        $map[$field_key] = $index;
+                        break;
+                    }
                 }
+            }
+
+            // Validate mandatory columns
+            if (!isset($map['unit_number']) || !isset($map['unit_name'])) {
+                set_transient('olama_import_error', __('Required columns (Unit #, Unit Name) are missing or misnamed in the CSV.', 'olama-school'), 30);
+                wp_redirect(admin_url('admin.php?page=olama-school-curriculum&semester_id=' . $semester_id . '&grade_id=' . $grade_id . '&subject_id=' . $subject_id));
+                exit;
             }
 
             $units_count = 0;
@@ -275,7 +293,16 @@ class Olama_School_Importer
             $last_unit_number = '';
 
             while (($data = fgetcsv($handle)) !== false) {
-                $row = array();
+                // Initialize row with default values to prevent undefined key warnings
+                $row = array(
+                    'unit_number' => '',
+                    'unit_name' => '',
+                    'objectives' => '',
+                    'lesson_number' => '',
+                    'lesson_title' => '',
+                    'video_url' => ''
+                );
+
                 foreach ($map as $field => $index) {
                     $row[$field] = isset($data[$index]) ? trim($data[$index]) : '';
                 }

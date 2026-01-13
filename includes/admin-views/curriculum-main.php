@@ -16,6 +16,17 @@ $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->i
         <?php echo Olama_School_Helpers::translate('Curriculum Management'); ?>
     </h1>
 
+    <?php
+    if ($import_message = get_transient('olama_import_message')) {
+        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($import_message) . '</p></div>';
+        delete_transient('olama_import_message');
+    }
+    if ($import_error = get_transient('olama_import_error')) {
+        echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($import_error) . '</p></div>';
+        delete_transient('olama_import_error');
+    }
+    ?>
+
     <!-- Section 1: Filters -->
     <div class="olama-card" style="margin-bottom: 20px;">
         <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
