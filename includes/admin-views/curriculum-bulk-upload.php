@@ -11,7 +11,8 @@ $active_year = Olama_School_Academic::get_active_year();
 $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->id) : array();
 ?>
 
-<div class="wrap olama-school-wrap">
+
+<div>
     <?php
     // Display messages
     if ($import_message = get_transient('olama_bulk_import_message')) {

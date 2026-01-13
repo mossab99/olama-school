@@ -75,14 +75,59 @@ class Olama_School_Curriculum
     }
 
     /**
-     * Get a single curriculum item by ID
+     * Get curriculum statistics for a grade and semester
      */
-    public static function get_item($id)
+    public static function get_curriculum_stats($semester_id, $grade_id)
     {
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_curriculum WHERE id = %d",
-            $id
+        $units_table = "{$wpdb->prefix}olama_curriculum_units";
+        $lessons_table = "{$wpdb->prefix}olama_curriculum_lessons";
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT u.subject_id, 
+                    COUNT(DISTINCT u.id) as unit_count, 
+                    COUNT(l.id) as lesson_count 
+             FROM $units_table u
+             LEFT JOIN $lessons_table l ON u.id = l.unit_id
+             WHERE u.semester_id = %d AND u.grade_id = %d 
+             GROUP BY u.subject_id",
+            $semester_id,
+            $grade_id
+        ));
+    }
+
+    /**
+     * Get lesson counts for a subject name across all grades
+     */
+    public static function get_subject_lessons_across_grades($subject_name)
+    {
+        global $wpdb;
+        $units_table = "{$wpdb->prefix}olama_curriculum_units";
+        $lessons_table = "{$wpdb->prefix}olama_curriculum_lessons";
+        $grades_table = "{$wpdb->prefix}olama_grades";
+        $subjects_table = "{$wpdb->prefix}olama_subjects";
+
+        // First find all subject IDs that have this name
+        $subject_ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT id FROM $subjects_table WHERE subject_name = %s",
+            $subject_name
+        ));
+
+        if (empty($subject_ids)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($subject_ids), '%d'));
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT g.grade_name, COUNT(l.id) as lesson_count 
+             FROM $units_table u
+             JOIN $lessons_table l ON u.id = l.unit_id
+             JOIN $grades_table g ON u.grade_id = g.id
+             WHERE u.subject_id IN ($placeholders)
+             GROUP BY u.grade_id
+             ORDER BY g.grade_level ASC",
+            ...$subject_ids
         ));
     }
 }

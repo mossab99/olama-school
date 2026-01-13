@@ -556,6 +556,19 @@ class Olama_School_Helpers
         'Please select a file to import.' => 'يرجى تحديد الملف المراد استيراده.',
         'Error processing import file.' => 'خطأ في معالجة ملف الاستيراد.',
         'No data found in CSV file.' => 'لم يتم العثور على بيانات في ملف CSV.',
+        'Curriculum Analysis' => 'تحليل المناهج',
+        'Curriculum Coverage Summary' => 'ملخص تغطية المناهج',
+        'Number of Units' => 'عدد الوحدات',
+        'Number of Lessons' => 'عدد الدروس',
+        'Success' => 'تم الرفع بنجاح',
+        'No curriculum data found for the selected filters.' => 'لا توجد بيانات للمناهج حسب الفلاتر المختارة.',
+        'Lessons Distribution (Selected Grade)' => 'توزيع الدروس (للصف المختار)',
+        'Lessons Across All Grades' => 'الدروس عبر جميع الصفوف',
+        'Subject for Trend Analysis' => 'المادة للتحليل المقارن',
+        '"%s" Lessons Across All Grades' => '"%s" الدروس عبر جميع الصفوف',
+        'Total' => 'الإجمالي',
+        '%d Units' => '%d وحدة',
+        '%d Lessons' => '%d درس',
         );
 
         return $map[$text] ?? $text;

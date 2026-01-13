@@ -1,27 +1,28 @@
 /**
- * Print-specific styles for Weekly Schedule
- * Optimized for A4 paper size
+ * Optimized Print-specific styles for Weekly Schedule
+ * Designed for A4 Landscape for maximum readability
  */
 
 @media print {
 
-    /* A4 Page Setup */
+    /* A4 Landscape Setup */
     @page {
-        size: A4;
-        margin: 1cm;
+        size: A4 landscape;
+        margin: 0.5cm;
     }
 
-    /* Hide everything except schedule */
+    /* Reset and Hide everything by default */
     body * {
         visibility: hidden;
     }
 
+    /* Show only the schedule container and its children */
     .olama-schedule-container,
     .olama-schedule-container * {
         visibility: visible;
     }
 
-    /* Hide UI elements */
+    /* Hide unnecessary UI elements */
     .button,
     .nav-tab-wrapper,
     .olama-filter-section,
@@ -34,126 +35,128 @@
     form>div:first-child,
     form>div:last-child,
     .dashicons,
-    div[style*="margin-top: 5px"] {
+    [style*="margin-top: 5px"],
+    .olama-schedule-container button,
+    .olama-schedule-container input[type="hidden"] {
         display: none !important;
     }
 
-    /* Position schedule at top of page */
+    /* Position schedule at the very top left of the print page */
     .olama-schedule-container {
         position: absolute;
         left: 0;
         top: 0;
         width: 100%;
-        margin: 0;
-        padding: 0;
-        box-shadow: none;
-        border-radius: 0;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
     }
 
-    /* Add print header */
-    .olama-schedule-container::before {
-        content: attr(data-school-name) " - " attr(data-grade) " - " attr(data-section) " (" attr(data-semester) ")";
-        display: block;
+    /* Professional Print Header */
+    .olama-print-header {
+        display: block !important;
         text-align: center;
-        font-size: 16pt;
-        font-weight: bold;
-        margin-bottom: 12pt;
-        padding-bottom: 6pt;
-        border-bottom: 2pt solid #000;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #2271b1 !important;
     }
 
-    /* Table styling */
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 11pt;
+    .olama-print-header h1 {
         margin: 0;
+        font-size: 26pt !important;
+        color: #2271b1 !important;
+        font-weight: 800;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
-    thead {
-        display: table-header-group;
+    .olama-print-header p {
+        margin: 8px 0 0;
+        font-size: 16pt !important;
+        color: #333 !important;
+        font-weight: 600;
+    }
+
+    /* Table optimization for Landscape */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        table-layout: fixed !important;
+        /* Equal column widths */
+        border: 2pt solid #000 !important;
+    }
+
+    th,
+    td {
+        border: 1.5pt solid #000 !important;
+        padding: 12pt 6pt !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+        word-wrap: break-word !important;
     }
 
     thead th {
         background: #2271b1 !important;
-        color: #fff !important;
-        font-weight: bold;
-        padding: 10pt !important;
-        border: 1pt solid #000 !important;
-        text-align: center !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-        font-size: 11pt !important;
-    }
-
-    tbody td {
-        padding: 8pt !important;
-        border: 1pt solid #666 !important;
-        text-align: center !important;
-        vertical-align: middle !important;
-        min-height: 30pt;
-    }
-
-    tbody tr td:first-child {
-        background: #f0f0f0 !important;
-        font-weight: bold;
+        color: #ffffff !important;
+        font-size: 13pt !important;
+        font-weight: 800 !important;
+        text-transform: uppercase;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
 
-    /* Fix select elements to show only selected value as text */
-    select {
-        /* Remove all select styling */
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        border: none !important;
-        background: transparent !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        font-size: 10pt !important;
-        font-weight: 500 !important;
-        color: #000 !important;
-        width: 100% !important;
-        text-align: center !important;
-        /* Hide dropdown arrow */
-        background-image: none !important;
+    /* Day Column Styling */
+    tbody td:first-child {
+        background: #f0f4f8 !important;
+        font-weight: 800 !important;
+        width: 10% !important;
+        font-size: 14pt !important;
+        color: #2271b1 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
-    /* Hide all options except selected */
-    select option {
-        display: none !important;
-    }
-
-    select option:checked {
+    /* Subject text within cells */
+    .print-only-text {
+        font-size: 13pt !important;
+        font-weight: 700 !important;
         display: block !important;
+        line-height: 1.3 !important;
+        color: #000 !important;
     }
 
-    /* Alternative: Use attr() to show selected value */
-    select::after {
-        content: attr(data-selected);
+    /* Improved contrast and spacing */
+    tbody tr:nth-child(even) {
+        background-color: #f9f9f9 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
-    /* Page breaks */
+    /* Page breaks prevention */
     tr {
         page-break-inside: avoid;
     }
 
-    /* Ensure proper font rendering */
+    /* Global Font Overrides for clarity */
     * {
-        font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
-        color: #000 !important;
+        font-family: 'Segoe UI', Arial, sans-serif !important;
     }
 
-    /* RTL Support for Arabic */
-    html[dir="rtl"] table,
-    html[dir="rtl"] .olama-schedule-container {
+    /* RTL specific adjustments */
+    html[dir="rtl"] {
         direction: rtl;
     }
 
-    /* Force text rendering for better readability */
-    body {
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
+    /* Remove the old metadata header technique */
+    .olama-schedule-container::before {
+        display: none !important;
+    }
+}
+
+/* Screen visibility */
+@media screen {
+    .olama-print-header {
+        display: none;
     }
 }
