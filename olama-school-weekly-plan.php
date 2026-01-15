@@ -84,6 +84,10 @@ register_deactivation_hook(__FILE__, 'olama_school_deactivate');
  */
 function olama_school_init()
 {
+    // Initialize Database
+    $olama_db = new Olama_School_DB();
+    $olama_db->create_tables();
+
     // Load translations
     load_plugin_textdomain('olama-school', false, dirname(plugin_basename(__FILE__)) . '/languages');
 

@@ -52,6 +52,11 @@ class Olama_School_DB
 				grade_level varchar(20) NOT NULL,
 				periods_count tinyint(4) DEFAULT 8,
 				max_weekly_plans tinyint(4) DEFAULT 0,
+				max_sun tinyint(4) DEFAULT 0,
+				max_mon tinyint(4) DEFAULT 0,
+				max_tue tinyint(4) DEFAULT 0,
+				max_wed tinyint(4) DEFAULT 0,
+				max_thu tinyint(4) DEFAULT 0,
 				is_active tinyint(1) DEFAULT 1,
 				PRIMARY KEY  (id)
 			) $charset_collate;",

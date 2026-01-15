@@ -451,3 +451,17 @@
 .assignment-item.active .assignment-count {
 	background: #0ea5e9;
 }
+
+
+.olama-plan-item.active .assignment-count {
+	background: #0ea5e9;
+}
+
+/* Hide filled subjects in dropdown */
+#olama-subject-select option.olama-filled-subject {
+    display: none !important;
+}
+
+#olama-subject-select option.olama-filled-subject.is-editing {
+    display: block !important;
+}

@@ -59,8 +59,11 @@ if (isset($_GET['message'])) {
                         </th>
                         <th style="padding: 12px 20px; font-weight: 700;"><?php _e('Grade Level', 'olama-school'); ?>
                         </th>
-                        <th style="padding: 12px 20px; font-weight: 700; width: 180px;">
+                        <th style="padding: 12px 20px; font-weight: 700; width: 120px;">
                             <?php _e('Max Weekly Plans', 'olama-school'); ?>
+                        </th>
+                        <th style="padding: 12px 20px; font-weight: 700; width: 400px; text-align: center;">
+                            <?php _e('Daily Max Limits (Sun - Thu)', 'olama-school'); ?>
                         </th>
                         <th style="padding: 12px 20px; font-weight: 700; width: 150px; text-align: center;">
                             <?php _e('Actions', 'olama-school'); ?>
@@ -83,10 +86,30 @@ if (isset($_GET['message'])) {
                             <td style="padding: 12px 20px;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <input type="number" name="grade_limit[<?php echo $grade->id; ?>]"
+                                        class="olama-weekly-limit-input" data-grade-id="<?php echo $grade->id; ?>"
                                         value="<?php echo intval($grade->max_weekly_plans); ?>" min="0"
                                         style="width: 70px; border-radius: 4px; border: 1px solid #cbd5e1; padding: 4px 8px;">
-                                    <span
-                                        style="font-size: 11px; color: #64748b;"><?php _e('plans', 'olama-school'); ?></span>
+                                </div>
+                            </td>
+                            <td style="padding: 12px 20px;">
+                                <div style="display: flex; justify-content: space-between; gap: 5px;">
+                                    <?php
+                                    $daily_days = ['sun' => 'S', 'mon' => 'M', 'tue' => 'T', 'wed' => 'W', 'thu' => 'Th'];
+                                    foreach ($daily_days as $key => $label):
+                                        $field_name = "max_" . $key;
+                                        $value = isset($grade->$field_name) ? intval($grade->$field_name) : 0;
+                                        ?>
+                                        <div style="text-align: center; flex: 1;">
+                                            <div style="font-size: 10px; color: #64748b; margin-bottom: 2px;">
+                                                <?php echo $label; ?>
+                                            </div>
+                                            <input type="number"
+                                                name="grade_daily_max[<?php echo $grade->id; ?>][<?php echo $key; ?>]"
+                                                class="olama-daily-limit-input-<?php echo $grade->id; ?> olama-day-limit-field"
+                                                value="<?php echo $value; ?>" min="0"
+                                                style="width: 100%; border-radius: 4px; border: 1px solid #cbd5e1; padding: 4px; font-size: 12px; text-align: center;">
+                                        </div>
+                                    <?php endforeach; ?>
                                 </div>
                             </td>
                             <td style="padding: 12px 20px; text-align: center;">
@@ -103,6 +126,31 @@ if (isset($_GET['message'])) {
                 </tbody>
             </table>
         </div>
+
+        <script>
+            jQuery(document).ready(function ($) {
+                $('.olama-weekly-limit-input').on('input', function () {
+                    const weeklyLimit = parseInt($(this).val()) || 0;
+                    const gradeId = $(this).data('grade-id');
+                    const $dailyInputs = $('.olama-daily-limit-input-' + gradeId);
+
+                    if (weeklyLimit > 0) {
+                        const baseDaily = Math.floor(weeklyLimit / 5);
+                        const remainder = weeklyLimit % 5;
+
+                        $dailyInputs.each(function (index) {
+                            let value = baseDaily;
+                            if (index === 4) { // Last day (Thu) get the remainder
+                                value += remainder;
+                            }
+                            $(this).val(value);
+                        });
+                    } else {
+                        $dailyInputs.val(0);
+                    }
+                });
+            });
+        </script>
 
         <?php if ($selected_grade_id):
             $current_grade = null;

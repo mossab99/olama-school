@@ -162,11 +162,13 @@ class Olama_School_Admin
             $subject_limits = $_POST['subject_limit'] ?? [];
             $errors = [];
 
+            $grade_daily_max = $_POST['grade_daily_max'] ?? [];
             // 1. Update Grade Limits and fetch for constraint check
             $current_grade_limits = [];
             foreach ($grade_limits as $grade_id => $limit) {
                 $grade_id = intval($grade_id);
                 $limit = intval($limit);
+                $daily = $grade_daily_max[$grade_id] ?? [];
 
                 // Fetch existing grade to preserve other fields (like periods_count)
                 $existing_grade = Olama_School_Grade::get_grade($grade_id);
@@ -175,7 +177,12 @@ class Olama_School_Admin
                         'grade_name' => $existing_grade->grade_name,
                         'grade_level' => $existing_grade->grade_level,
                         'periods_count' => $existing_grade->periods_count,
-                        'max_weekly_plans' => $limit
+                        'max_weekly_plans' => $limit,
+                        'max_sun' => intval($daily['sun'] ?? 0),
+                        'max_mon' => intval($daily['mon'] ?? 0),
+                        'max_tue' => intval($daily['tue'] ?? 0),
+                        'max_wed' => intval($daily['wed'] ?? 0),
+                        'max_thu' => intval($daily['thu'] ?? 0),
                     ));
                     $current_grade_limits[$grade_id] = $limit;
                 }
@@ -538,6 +545,18 @@ class Olama_School_Admin
                     'revertToDraft' => Olama_School_Helpers::translate('Revert to Draft'),
                     'saveAsDraft' => Olama_School_Helpers::translate('Save as Draft'),
                     'updatePlan' => Olama_School_Helpers::translate('Update Plan'),
+                    'loading' => Olama_School_Helpers::translate('Loading...'),
+                    'errorLoadingUnits' => Olama_School_Helpers::translate('Error loading units'),
+                    'errorLoadingLessons' => Olama_School_Helpers::translate('Error loading lessons'),
+                    'loadingQuestions' => Olama_School_Helpers::translate('Loading questions...'),
+                    'errorLoadingQuestions' => Olama_School_Helpers::translate('Error loading questions'),
+                    'confirmDelete' => Olama_School_Helpers::translate('Are you sure you want to delete this plan?'),
+                    'deletePlanError' => Olama_School_Helpers::translate('An error occurred while deleting the plan.'),
+                    'failedDelete' => Olama_School_Helpers::translate('Failed to delete plan.'),
+                    'noPlansToday' => Olama_School_Helpers::translate('No plans saved for today yet.'),
+                    'onTime' => Olama_School_Helpers::translate('On-time'),
+                    'delayedBy' => Olama_School_Helpers::translate('Delayed by %d days'),
+                    'bypassBy' => Olama_School_Helpers::translate('Bypass by %d days'),
                 )
             ));
         }
@@ -666,6 +685,9 @@ class Olama_School_Admin
                     'delayedBy' => Olama_School_Helpers::translate('Delayed by %d days'),
                     'bypassBy' => Olama_School_Helpers::translate('Bypass by %d days'),
                     'loading' => Olama_School_Helpers::translate('Loading...'),
+                    'approving' => Olama_School_Helpers::translate('Approving...'),
+                    'errorOccurred' => Olama_School_Helpers::translate('Error occurred'),
+                    'communicationError' => Olama_School_Helpers::translate('Communication error'),
                 )
             ));
         }

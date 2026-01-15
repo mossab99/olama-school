@@ -190,7 +190,7 @@ class Olama_School_Ajax_Handlers
             Olama_School_Question_Bank::delete_question($id);
             wp_send_json_success();
         }
-        wp_send_json_error('Invalid ID');
+        wp_send_json_error(__('Invalid ID', 'olama-school'));
     }
 
     // ==========================================
@@ -320,14 +320,14 @@ class Olama_School_Ajax_Handlers
         check_ajax_referer('olama_admin_nonce', 'nonce');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
         }
 
         $section_id = isset($_POST['section_id']) ? intval($_POST['section_id']) : 0;
         $week_start = isset($_POST['week_start']) ? sanitize_text_field($_POST['week_start']) : '';
 
         if (!$section_id || !$week_start) {
-            wp_send_json_error('Invalid parameters');
+            wp_send_json_error(__('Invalid parameters', 'olama-school'));
         }
 
         global $wpdb;
@@ -344,7 +344,7 @@ class Olama_School_Ajax_Handlers
         if ($result !== false) {
             wp_send_json_success();
         } else {
-            wp_send_json_error('Database error');
+            wp_send_json_error(__('Database error', 'olama-school'));
         }
     }
 
@@ -357,7 +357,7 @@ class Olama_School_Ajax_Handlers
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
         $grade_id = intval($_POST['grade_id']);
         if (!$grade_id) {
-            wp_send_json_error('Invalid Grade ID');
+            wp_send_json_error(__('Invalid Grade ID', 'olama-school'));
         }
         $sections = Olama_School_Section::get_by_grade($grade_id);
         wp_send_json_success($sections);
@@ -368,7 +368,7 @@ class Olama_School_Ajax_Handlers
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
         $teacher_id = intval($_POST['teacher_id']);
         if (!$teacher_id) {
-            wp_send_json_error('Invalid Teacher ID');
+            wp_send_json_error(__('Invalid Teacher ID', 'olama-school'));
         }
         $assignments = Olama_School_Teacher::get_all_assignments($teacher_id);
         wp_send_json_success($assignments);
@@ -383,7 +383,7 @@ class Olama_School_Ajax_Handlers
         $grade_id = intval($_POST['grade_id']);
 
         if (!$teacher_id || !$section_id || !$grade_id) {
-            wp_send_json_error('Invalid parameters');
+            wp_send_json_error(__('Invalid parameters', 'olama-school'));
         }
 
         $assigned_subjects = Olama_School_Teacher::get_assigned_subjects($teacher_id, $section_id);
@@ -405,7 +405,7 @@ class Olama_School_Ajax_Handlers
         $grade_id = intval($_POST['grade_id']);
 
         if (!$teacher_id || !$section_id || !$subject_id || !$grade_id) {
-            wp_send_json_error('Invalid parameters');
+            wp_send_json_error(__('Invalid parameters', 'olama-school'));
         }
 
         $result = Olama_School_Teacher::toggle_assignment($teacher_id, $section_id, $subject_id, $grade_id);
@@ -413,7 +413,7 @@ class Olama_School_Ajax_Handlers
         if ($result !== false) {
             wp_send_json_success();
         } else {
-            wp_send_json_error('Database error');
+            wp_send_json_error(__('Database error', 'olama-school'));
         }
     }
 

@@ -60,6 +60,7 @@ class Olama_School_Plan
             $grade_limit = $grade ? intval($grade->max_weekly_plans) : 0;
 
             if ($grade_limit > 0) {
+                // Check Weekly Limit
                 $total_plans = $wpdb->get_var($wpdb->prepare(
                     "SELECT COUNT(*) FROM $table WHERE section_id = %d AND plan_date BETWEEN %s AND %s",
                     $section_id,
@@ -68,6 +69,26 @@ class Olama_School_Plan
                 ));
                 if ($total_plans >= $grade_limit) {
                     return new WP_Error('limit_reached', sprintf(__('Weekly limit reached for this grade (%d plans).', 'olama-school'), $grade_limit));
+                }
+
+                // Check Daily Limit
+                $day_map = [0 => 'sun', 1 => 'mon', 2 => 'tue', 3 => 'wed', 4 => 'thu'];
+                $day_key = intval(date('w', strtotime($plan_date)));
+
+                if (isset($day_map[$day_key])) {
+                    $day_col = 'max_' . $day_map[$day_key];
+                    $daily_limit = property_exists($grade, $day_col) ? intval($grade->$day_col) : 0;
+
+                    if ($daily_limit > 0) {
+                        $daily_plans = $wpdb->get_var($wpdb->prepare(
+                            "SELECT COUNT(*) FROM $table WHERE section_id = %d AND plan_date = %s",
+                            $section_id,
+                            $plan_date
+                        ));
+                        if ($daily_plans >= $daily_limit) {
+                            return new WP_Error('limit_reached', sprintf(__('Daily limit reached for this day (%d plans).', 'olama-school'), $daily_limit));
+                        }
+                    }
                 }
             }
 

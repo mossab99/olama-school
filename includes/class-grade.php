@@ -51,6 +51,11 @@ class Olama_School_Grade
                 'grade_level' => $data['grade_level'],
                 'periods_count' => $data['periods_count'] ?? 8,
                 'max_weekly_plans' => $data['max_weekly_plans'] ?? 0,
+                'max_sun' => $data['max_sun'] ?? 0,
+                'max_mon' => $data['max_mon'] ?? 0,
+                'max_tue' => $data['max_tue'] ?? 0,
+                'max_wed' => $data['max_wed'] ?? 0,
+                'max_thu' => $data['max_thu'] ?? 0,
                 'is_active' => $data['is_active'] ?? 1,
             )
         );
@@ -99,6 +104,11 @@ class Olama_School_Grade
                 'grade_level' => $data['grade_level'],
                 'periods_count' => $data['periods_count'] ?? 8,
                 'max_weekly_plans' => $data['max_weekly_plans'] ?? 0,
+                'max_sun' => $data['max_sun'] ?? 0,
+                'max_mon' => $data['max_mon'] ?? 0,
+                'max_tue' => $data['max_tue'] ?? 0,
+                'max_wed' => $data['max_wed'] ?? 0,
+                'max_thu' => $data['max_thu'] ?? 0,
             ),
             array('id' => $id)
         );

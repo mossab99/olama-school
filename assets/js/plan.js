@@ -17,6 +17,31 @@ jQuery(document).ready(function ($) {
 
     let currentEditingPlan = null;
 
+    function handleSubjectFiltering() {
+        const editingSubjectId = currentEditingPlan ? currentEditingPlan.subject_id.toString() : null;
+
+        $subjectSelect.find('option').each(function () {
+            const $option = $(this);
+            const val = $option.val();
+            if (!val) return;
+
+            const isFilled = $option.hasClass('olama-filled-subject');
+
+            if (isFilled) {
+                if (editingSubjectId && val === editingSubjectId) {
+                    $option.addClass('is-editing').prop('disabled', false);
+                } else {
+                    $option.removeClass('is-editing').prop('disabled', true);
+                }
+            } else {
+                $option.prop('disabled', false);
+            }
+        });
+    }
+
+    // Trigger on load
+    handleSubjectFiltering();
+
     // Handle Subject selection -> Load Units
     $subjectSelect.on('change', function () {
         const subjectId = $(this).val();
@@ -31,7 +56,7 @@ jQuery(document).ready(function ($) {
 
         if (!subjectId || !gradeId) return;
 
-        $unitSelect.prop('disabled', true).html('<option value="">Loading...</option>');
+        $unitSelect.prop('disabled', true).html('<option value="">' + (olamaPlan.i18n.loading || 'Loading...') + '</option>');
 
         $.ajax({
             url: olamaPlan.ajaxUrl,
@@ -60,7 +85,7 @@ jQuery(document).ready(function ($) {
                 }
             },
             error: function () {
-                $unitSelect.html('<option value="">Error loading units</option>');
+                $unitSelect.html('<option value="">' + (olamaPlan.i18n.errorLoadingUnits || 'Error loading units') + '</option>');
             }
         });
     });
@@ -76,7 +101,7 @@ jQuery(document).ready(function ($) {
 
         if (!unitId) return;
 
-        $lessonSelect.prop('disabled', true).html('<option value="">Loading...</option>');
+        $lessonSelect.prop('disabled', true).html('<option value="">' + (olamaPlan.i18n.loading || 'Loading...') + '</option>');
 
         $.ajax({
             url: olamaPlan.ajaxUrl,
@@ -103,7 +128,7 @@ jQuery(document).ready(function ($) {
                 }
             },
             error: function () {
-                $lessonSelect.html('<option value="">Error loading lessons</option>');
+                $lessonSelect.html('<option value="">' + (olamaPlan.i18n.errorLoadingLessons || 'Error loading lessons') + '</option>');
             }
         });
     });
@@ -116,13 +141,13 @@ jQuery(document).ready(function ($) {
         const e = new Date(end).getTime();
 
         if (p >= s && p <= e) {
-            return { label: 'On-time', class: 'status-ontime' };
+            return { label: olamaPlan.i18n.onTime || 'On-time', class: 'status-ontime' };
         } else if (p > e) {
             const diff = Math.ceil((p - e) / (1000 * 60 * 60 * 24));
-            return { label: `Delayed by ${diff} days`, class: 'status-delayed' };
+            return { label: (olamaPlan.i18n.delayedBy || 'Delayed by %d days').replace('%d', diff), class: 'status-delayed' };
         } else {
             const diff = Math.ceil((s - p) / (1000 * 60 * 60 * 24));
-            return { label: `Bypass by ${diff} days`, class: 'status-bypass' };
+            return { label: (olamaPlan.i18n.bypassBy || 'Bypass by %d days').replace('%d', diff), class: 'status-bypass' };
         }
     }
 
@@ -155,7 +180,7 @@ jQuery(document).ready(function ($) {
             });
         }
 
-        $questionsList.html('<p>Loading questions...</p>');
+        $questionsList.html('<p>' + (olamaPlan.i18n.loadingQuestions || 'Loading questions...') + '</p>');
         $questionsArea.show();
 
         $.ajax({
@@ -192,7 +217,7 @@ jQuery(document).ready(function ($) {
                 }
             },
             error: function () {
-                $questionsList.html('<p>Error loading questions</p>');
+                $questionsList.html('<p>' + (olamaPlan.i18n.errorLoadingQuestions || 'Error loading questions') + '</p>');
                 currentEditingPlan = null;
             }
         });
@@ -253,7 +278,10 @@ jQuery(document).ready(function ($) {
         }
 
         // Start cascading from Subject
-        $subjectSelect.val(planData.subject_id).trigger('change');
+        $subjectSelect.val(planData.subject_id);
+        handleSubjectFiltering();
+
+        $subjectSelect.trigger('change');
 
         // Scroll to form
         $('html, body').animate({
@@ -283,7 +311,9 @@ jQuery(document).ready(function ($) {
         $('#olama-edit-status-container').hide();
 
         // Reset cascading selects
-        $subjectSelect.val('').trigger('change');
+        $subjectSelect.val('');
+        handleSubjectFiltering();
+        $subjectSelect.trigger('change');
 
         // Reset UI
         $saveButton.val(olamaPlan.i18n.saveAsDraft || 'Save as Draft');
@@ -321,9 +351,18 @@ jQuery(document).ready(function ($) {
             success: function (response) {
                 if (response.success) {
                     $item.fadeOut(function () {
+                        const deletedPlan = $(this).data('plan');
+                        const subjectId = deletedPlan ? deletedPlan.subject_id : null;
+
                         $(this).remove();
+
+                        if (subjectId) {
+                            $subjectSelect.find(`option[value="${subjectId}"]`).removeClass('olama-filled-subject');
+                            handleSubjectFiltering();
+                        }
+
                         if ($('.olama-plan-item').length === 0) {
-                            $('.olama-plans-today-list').html('<p>No plans saved for today yet.</p>');
+                            $('.olama-plans-today-list').html('<p>' + (olamaPlan.i18n.noPlansToday || 'No plans saved for today yet.') + '</p>');
                         }
                     });
                 } else {
@@ -332,7 +371,7 @@ jQuery(document).ready(function ($) {
                 }
             },
             error: function () {
-                alert('An error occurred while deleting the plan.');
+                alert(olamaPlan.i18n.deletePlanError || 'An error occurred while deleting the plan.');
                 $btn.css('opacity', '1').css('pointer-events', 'auto');
             }
         });

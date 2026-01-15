@@ -139,7 +139,7 @@ jQuery(document).ready(function ($) {
 
         btn.prop('disabled', true).css('opacity', '0.7');
         const originalText = btn.html();
-        btn.html('<span class="dashicons dashicons-update spin"></span> ' + (i18n.loading || 'Approving...'));
+        btn.html('<span class="dashicons dashicons-update spin"></span> ' + (i18n.approving || 'Approving...'));
 
         $.ajax({
             url: ajaxurl,
@@ -155,12 +155,12 @@ jQuery(document).ready(function ($) {
                     alert(i18n.bulkApproveSuccess);
                     window.location.reload();
                 } else {
-                    alert(response.data || 'Error occurred');
+                    alert(response.data || (i18n.errorOccurred || 'Error occurred'));
                     btn.prop('disabled', false).css('opacity', '1').html(originalText);
                 }
             },
             error: function () {
-                alert('Communication error');
+                alert(i18n.communicationError || 'Communication error');
                 btn.prop('disabled', false).css('opacity', '1').html(originalText);
             }
         });

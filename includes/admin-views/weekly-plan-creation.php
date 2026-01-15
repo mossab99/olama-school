@@ -89,6 +89,9 @@ $days = array(
 $selected_date = $days[$active_day];
 
 $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, date('Y-m-d', strtotime($week_start . ' +4 days')));
+$today_plans = array_filter($all_plans, function ($p) use ($selected_date) {
+    return $p->plan_date === $selected_date;
+});
 ?>
 
 <div class="olama-plan-creation-container">
@@ -232,6 +235,10 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
                             $semester_id = $semesters[0]->id ?? 0;
                             $scheduled_subjects = Olama_School_Schedule::get_unique_subjects_for_day($selected_section_id, $active_day, $semester_id);
 
+                            $filled_subject_ids = array_map(function ($p) {
+                                return $p->subject_id;
+                            }, $today_plans);
+
                             if (!current_user_can('manage_options')) {
                                 $teacher_id = get_current_user_id();
                                 $assigned_ids = Olama_School_Teacher::get_assigned_subjects($teacher_id, $selected_section_id);
@@ -240,8 +247,10 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
                                 });
                             }
 
-                            foreach ($scheduled_subjects as $subj): ?>
-                                <option value="<?php echo $subj->id; ?>">
+                            foreach ($scheduled_subjects as $subj):
+                                $is_filled = in_array($subj->id, $filled_subject_ids);
+                                ?>
+                                <option value="<?php echo $subj->id; ?>" <?php echo $is_filled ? 'data-filled="true" class="olama-filled-subject"' : ''; ?>>
                                     <?php echo esc_html($subj->subject_name); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -302,7 +311,7 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
                             <?php _e('Homework (Exercise Book)', 'olama-school'); ?>
                         </label>
                         <textarea name="homework_eb" rows="3" style="width: 100%;"
-                            placeholder="Page numbers or details..."></textarea>
+                            placeholder="<?php _e('Page numbers or details...', 'olama-school'); ?>"></textarea>
                     </div>
                 </div>
 
@@ -312,7 +321,7 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
                             <?php _e('Homework (Notebook)', 'olama-school'); ?>
                         </label>
                         <textarea name="homework_nb" rows="3" style="width: 100%;"
-                            placeholder="Notebook instructions..."></textarea>
+                            placeholder="<?php _e('Notebook instructions...', 'olama-school'); ?>"></textarea>
                     </div>
                 </div>
 
@@ -322,7 +331,7 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
                             <?php _e('Homework (Worksheet)', 'olama-school'); ?>
                         </label>
                         <textarea name="homework_ws" rows="3" style="width: 100%;"
-                            placeholder="Worksheet details..."></textarea>
+                            placeholder="<?php _e('Worksheet details...', 'olama-school'); ?>"></textarea>
                     </div>
                 </div>
 
@@ -354,9 +363,6 @@ $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, dat
                 <?php _e('Saved Plans for Today', 'olama-school'); ?>
             </h2>
             <?php
-            $today_plans = array_filter($all_plans, function ($p) use ($selected_date) {
-                return $p->plan_date === $selected_date;
-            });
             if ($today_plans): ?>
                 <?php foreach ($today_plans as $plan):
                     $q_ids = Olama_School_Plan::get_plan_questions($plan->id);
