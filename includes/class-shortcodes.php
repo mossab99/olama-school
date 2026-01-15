@@ -222,15 +222,28 @@ class Olama_School_Shortcodes
         }
 
         $week_end = date('Y-m-d', strtotime($week_start . ' +4 days'));
-        $plans = Olama_School_Plan::get_plans($section_id, $week_start, $week_end);
+        $all_plans = Olama_School_Plan::get_plans($section_id, $week_start, $week_end);
 
-        // Filter to only show published plans in frontend
-        $plans = array_filter($plans, function ($p) {
+        $is_admin = current_user_can('manage_options') || current_user_can('olama_view_reports');
+
+        // Filter plans based on status and user role
+        $plans = array_filter($all_plans, function ($p) use ($is_admin) {
+            if ($is_admin) {
+                return true; // Admins can see everything
+            }
             return $p->status === 'published';
         });
 
+        if (empty($all_plans)) {
+            return '<div class="olama-no-plans" style="padding: 30px; background: #fff1f2; border: 1px solid #fecaca; border-radius: 8px; color: #b91c1c; text-align: center; font-weight: 600;">' .
+                Olama_School_Helpers::translate('No weekly plans found for the selected week.') .
+                '</div>';
+        }
+
         if (empty($plans)) {
-            return '<div class="olama-no-plans">' . __('No published weekly plan found for the selected week.', 'olama-school') . '</div>';
+            return '<div class="olama-no-plans" style="padding: 30px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; color: #92400e; text-align: center; font-weight: 600;">' .
+                Olama_School_Helpers::translate('No published plans found for this week, but drafts exist.') .
+                '</div>';
         }
 
         // Group plans by date
@@ -276,8 +289,15 @@ class Olama_School_Shortcodes
                             <?php else: ?>
                                 <?php foreach ($day_plans as $plan): ?>
                                     <div class="olama-plan-item" style="border-left-color: <?php echo esc_attr($plan->color_code); ?>">
-                                        <div class="plan-subject" style="color: <?php echo esc_attr($plan->color_code); ?>">
-                                            <?php echo esc_html($plan->subject_name); ?>
+                                        <div class="plan-subject"
+                                            style="color: <?php echo esc_attr($plan->color_code); ?>; display: flex; justify-content: space-between; align-items: center;">
+                                            <span><?php echo esc_html($plan->subject_name); ?></span>
+                                            <?php if ($plan->status === 'draft'): ?>
+                                                <span class="draft-badge"
+                                                    style="background: #f1f5f9; color: #64748b; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                                    <?php echo Olama_School_Helpers::translate('Draft'); ?>
+                                                </span>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="plan-lesson">
                                             <?php if ($plan->unit_number): ?>

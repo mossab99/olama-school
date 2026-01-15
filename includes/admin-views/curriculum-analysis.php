@@ -77,26 +77,31 @@ if ($selected_semester_id && $selected_grade_id) {
     </h2>
 
     <?php if (!empty($stats)):
-        $total_units = 0;
-        $total_lessons = 0;
+        $total_units = array_sum(array_column($stats, 'unit_count'));
+        $total_lessons = array_sum(array_column($stats, 'lesson_count'));
         ?>
-            <table class="wp-list-table widefat fixed striped">
+        <table class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
                     <th style="font-weight: 700;"><?php echo Olama_School_Helpers::translate('Subject'); ?></th>
                     <th style="font-weight: 700;"><?php echo Olama_School_Helpers::translate('Number of Units'); ?></th>
                     <th style="font-weight: 700;"><?php echo Olama_School_Helpers::translate('Number of Lessons'); ?></th>
+                    <th style="font-weight: 700;"><?php echo Olama_School_Helpers::translate('Coverage Percentage'); ?></th>
                 </tr>
             </thead>
             <tbody>
-                    <?php foreach ($stats as $stat):
-                        $total_units += $stat->unit_count;
-                        $total_lessons += $stat->lesson_count;
-                        ?>
+                <?php foreach ($stats as $stat):
+                    ?>
                     <tr>
                         <td style="font-weight: 600;"><?php echo esc_html($stat->subject_name); ?></td>
                         <td><?php echo sprintf(Olama_School_Helpers::translate('%d Units'), $stat->unit_count); ?></td>
                         <td><?php echo sprintf(Olama_School_Helpers::translate('%d Lessons'), $stat->lesson_count); ?></td>
+                        <td>
+                            <?php
+                            $percentage = $total_lessons > 0 ? ($stat->lesson_count / $total_lessons) * 100 : 0;
+                            echo number_format($percentage, 1) . '%';
+                            ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -105,6 +110,7 @@ if ($selected_semester_id && $selected_grade_id) {
                     <td style="color: #2271b1;"><?php echo Olama_School_Helpers::translate('Total'); ?></td>
                     <td><?php echo sprintf(Olama_School_Helpers::translate('%d Units'), $total_units); ?></td>
                     <td><?php echo sprintf(Olama_School_Helpers::translate('%d Lessons'), $total_lessons); ?></td>
+                    <td>100%</td>
                 </tr>
             </tfoot>
         </table>
@@ -161,9 +167,9 @@ if ($selected_semester_id && $selected_grade_id) {
                         tooltip: {
                             callbacks: {
                                 label: function (context) {
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const current = context.raw;
-                                    const percentage = ((current / total) * 100).toFixed(1);
+                                    const total = context.dataset.data.reduce((a, b) => Number(a) + Number(b), 0);
+                                    const current = Number(context.raw);
+                                    const percentage = total > 0 ? ((current / total) * 100).toFixed(1) : 0;
                                     return `${context.label}: ${current} (${percentage}%)`;
                                 }
                             }

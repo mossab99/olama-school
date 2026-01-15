@@ -68,7 +68,8 @@ class Olama_School_Plan
                     $week_end
                 ));
                 if ($total_plans >= $grade_limit) {
-                    return new WP_Error('limit_reached', sprintf(__('Weekly limit reached for this grade (%d plans).', 'olama-school'), $grade_limit));
+                    $grade_name = $grade ? $grade->grade_name : '';
+                    return new WP_Error('limit_reached', sprintf(__('Grade %s has a maximum of %d plans.', 'olama-school'), $grade_name, $grade_limit));
                 }
 
                 // Check Daily Limit
@@ -86,7 +87,8 @@ class Olama_School_Plan
                             $plan_date
                         ));
                         if ($daily_plans >= $daily_limit) {
-                            return new WP_Error('limit_reached', sprintf(__('Daily limit reached for this day (%d plans).', 'olama-school'), $daily_limit));
+                            $day_name = Olama_School_Helpers::translate(date('l', strtotime($plan_date)));
+                            return new WP_Error('limit_reached', sprintf(__('A maximum of %d plans are allowed on %s.', 'olama-school'), $daily_limit, $day_name));
                         }
                     }
                 }
@@ -105,7 +107,8 @@ class Olama_School_Plan
                     $week_end
                 ));
                 if ($subject_plans >= $subject_limit) {
-                    return new WP_Error('limit_reached', sprintf(__('Weekly limit reached for this subject (%d plans).', 'olama-school'), $subject_limit));
+                    $subject_name = $subject ? $subject->subject_name : '';
+                    return new WP_Error('limit_reached', sprintf(__('Subject %s has a maximum of %d plans.', 'olama-school'), $subject_name, $subject_limit));
                 }
             }
         }
