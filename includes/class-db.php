@@ -234,7 +234,7 @@ class Olama_School_DB
 				section_id mediumint(9) NOT NULL,
 				subject_id mediumint(9) NOT NULL,
 				PRIMARY KEY  (id),
-				KEY assignment (teacher_id, section_id, subject_id),
+				KEY assignment (teacher_id,section_id,subject_id),
 				KEY teacher_id (teacher_id),
 				KEY section_id (section_id)
 			) $charset_collate;",
