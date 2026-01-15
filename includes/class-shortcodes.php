@@ -256,15 +256,28 @@ class Olama_School_Shortcodes
         $section = Olama_School_Section::get_section($section_id);
         $grade = $section ? Olama_School_Grade::get_grade($section->grade_id) : null;
 
+        $semester_name = '';
+        if ($atts['semester']) {
+            global $wpdb;
+            $semester_name = $wpdb->get_var($wpdb->prepare("SELECT semester_name FROM {$wpdb->prefix}olama_semesters WHERE id = %d", intval($atts['semester'])));
+        }
+
         ob_start();
         ?>
         <div class="olama-shortcode-weekly-plan-container">
             <div class="olama-plan-header">
                 <div class="olama-plan-meta">
-                    <h2 class="olama-grade-section"><?php echo $grade ? esc_html($grade->grade_name) : ''; ?> -
+                    <h2 class="olama-grade-section" style="color: #ffffff !important;">
+                        <?php echo $grade ? esc_html($grade->grade_name) : ''; ?> -
                         <?php echo $section ? esc_html($section->section_name) : ''; ?>
                     </h2>
-                    <div class="olama-plan-week-range">
+                    <?php if ($semester_name): ?>
+                        <div class="olama-plan-semester" style="color: #e2e8f0 !important;">
+                            <span class="dashicons dashicons-category"></span>
+                            <?php echo esc_html($semester_name); ?>
+                        </div>
+                    <?php endif; ?>
+                    <div class="olama-plan-week-range" style="color: #e2e8f0 !important;">
                         <span class="dashicons dashicons-calendar-alt"></span>
                         <?php echo date('M d', strtotime($week_start)); ?> - <?php echo date('M d, Y', strtotime($week_end)); ?>
                     </div>
@@ -301,30 +314,60 @@ class Olama_School_Shortcodes
                                         </div>
                                         <div class="plan-lesson">
                                             <?php if ($plan->unit_number): ?>
-                                                <span
-                                                    class="lesson-num"><?php echo esc_html($plan->unit_number . '.' . $plan->lesson_number); ?></span>
+                                                <div class="plan-unit-info">
+                                                    <span class="unit-name"><?php echo esc_html($plan->unit_name); ?></span>
+                                                </div>
                                             <?php endif; ?>
-                                            <span class="lesson-title"><?php echo esc_html($plan->lesson_title); ?></span>
+                                            <div class="lesson-title">
+                                                <?php if ($plan->unit_number): ?>
+                                                    <span
+                                                        class="lesson-num"><?php echo esc_html($plan->unit_number . '.' . $plan->lesson_number); ?></span>
+                                                <?php endif; ?>
+                                                <?php echo esc_html($plan->lesson_title); ?>
+                                            </div>
                                         </div>
                                         <?php if ($plan->homework_sb || $plan->homework_eb || $plan->homework_nb || $plan->homework_ws): ?>
                                             <div class="plan-homework">
                                                 <div class="homework-icon">
                                                     <span class="dashicons dashicons-welcome-edit-page"></span>
-                                                    <span><?php _e('Homework', 'olama-school'); ?>:</span>
+                                                    <span><?php echo Olama_School_Helpers::translate('الواجب'); ?></span>
                                                 </div>
                                                 <div class="homework-details">
                                                     <?php if ($plan->homework_sb): ?>
-                                                        <div class="hw-part"><strong>SB:</strong> <?php echo esc_html($plan->homework_sb); ?></div>
+                                                        <div class="hw-part">
+                                                            <strong><?php echo Olama_School_Helpers::translate('كتاب الطالب'); ?>:</strong>
+                                                            <?php echo esc_html($plan->homework_sb); ?>
+                                                        </div>
                                                     <?php endif; ?>
                                                     <?php if ($plan->homework_eb): ?>
-                                                        <div class="hw-part"><strong>EB:</strong> <?php echo esc_html($plan->homework_eb); ?></div>
+                                                        <div class="hw-part">
+                                                            <strong><?php echo Olama_School_Helpers::translate('كتاب التمارين'); ?>:</strong>
+                                                            <?php echo esc_html($plan->homework_eb); ?>
+                                                        </div>
                                                     <?php endif; ?>
                                                     <?php if ($plan->homework_nb): ?>
-                                                        <div class="hw-part"><strong>NB:</strong> <?php echo esc_html($plan->homework_nb); ?></div>
+                                                        <div class="hw-part">
+                                                            <strong><?php echo Olama_School_Helpers::translate('الدفتر'); ?>:</strong>
+                                                            <?php echo esc_html($plan->homework_nb); ?>
+                                                        </div>
                                                     <?php endif; ?>
                                                     <?php if ($plan->homework_ws): ?>
-                                                        <div class="hw-part"><strong>WS:</strong> <?php echo esc_html($plan->homework_ws); ?></div>
+                                                        <div class="hw-part">
+                                                            <strong><?php echo Olama_School_Helpers::translate('الدوسية'); ?>:</strong>
+                                                            <?php echo esc_html($plan->homework_ws); ?>
+                                                        </div>
                                                     <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($plan->teacher_notes)): ?>
+                                            <div class="plan-teacher-notes">
+                                                <div class="notes-header">
+                                                    <span class="dashicons dashicons-admin-comments"></span>
+                                                    <?php echo Olama_School_Helpers::translate('ملاحظات المعلم'); ?>
+                                                </div>
+                                                <div class="notes-content">
+                                                    <?php echo nl2br(esc_html($plan->teacher_notes)); ?>
                                                 </div>
                                             </div>
                                         <?php endif; ?>
