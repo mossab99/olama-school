@@ -25,6 +25,7 @@ class Olama_School_Shortcodes
      */
     public function enqueue_shortcode_assets()
     {
+        wp_enqueue_style('olama-google-fonts', 'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Almarai:wght@300;400;700;800&display=swap', array(), null);
         wp_enqueue_style('olama-shortcodes-css', OLAMA_SCHOOL_URL . 'assets/css/shortcodes.css', array(), OLAMA_SCHOOL_VERSION);
     }
 
@@ -262,107 +263,195 @@ class Olama_School_Shortcodes
             $semester_name = $wpdb->get_var($wpdb->prepare("SELECT semester_name FROM {$wpdb->prefix}olama_semesters WHERE id = %d", intval($atts['semester'])));
         }
 
+        // Helper to get subject icons
+        $get_icon = function ($subject_name) {
+            $subject_name = strtolower($subject_name);
+            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'رياضيات') !== false)
+                return 'dashicons-calculator';
+            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'انجليزي') !== false || strpos($subject_name, 'إنجليزية') !== false)
+                return 'dashicons-admin-site-alt3';
+            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'علوم') !== false)
+                return 'dashicons-rest-api';
+            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'عربي') !== false || strpos($subject_name, 'عربية') !== false)
+                return 'dashicons-translation';
+            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'دين') !== false || strpos($subject_name, 'إسلامية') !== false)
+                return 'dashicons-heart';
+            if (strpos($subject_name, 'digital') !== false || strpos($subject_name, 'حاسوب') !== false || strpos($subject_name, 'مهارات رقمية') !== false)
+                return 'dashicons-desktop';
+            if (strpos($subject_name, 'art') !== false || strpos($subject_name, 'فنية') !== false)
+                return 'dashicons-art';
+            if (strpos($subject_name, 'physic') !== false || strpos($subject_name, 'رياضة') !== false)
+                return 'dashicons-universal-access';
+            return 'dashicons-book-alt';
+        };
+
+        // Helper to get subject background color (pastel based on subject type)
+        $get_subject_bg = function ($subject_name) {
+            $subject_name = strtolower($subject_name);
+            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'عربي') !== false || strpos($subject_name, 'عربية') !== false)
+                return '#dcfce7'; // mint
+            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'رياضيات') !== false)
+                return '#dbeafe'; // light blue
+            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'دين') !== false || strpos($subject_name, 'إسلامية') !== false || strpos($subject_name, 'تربية') !== false)
+                return '#fef3c7'; // amber
+            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'انجليزي') !== false || strpos($subject_name, 'إنجليزية') !== false)
+                return '#e0e7ff'; // indigo
+            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'علوم') !== false)
+                return '#ccfbf1'; // teal
+            return '#f1f5f9'; // default gray
+        };
+
         ob_start();
         ?>
-        <div class="olama-shortcode-weekly-plan-container">
-            <div class="olama-plan-header">
-                <div class="olama-plan-meta">
-                    <h2 class="olama-grade-section" style="color: #ffffff !important;">
+        <div class="olama-weekly-plan-v2">
+            <!-- Illustrated Header -->
+            <div class="plan-header-v2">
+                <div class="header-content">
+                    <h1 class="header-title">الخطة الأسبوعية</h1>
+                    <div class="header-subtitle">
+                        <span class="dashicons dashicons-welcome-learn-more"></span>
                         <?php echo $grade ? esc_html($grade->grade_name) : ''; ?> -
                         <?php echo $section ? esc_html($section->section_name) : ''; ?>
-                    </h2>
-                    <?php if ($semester_name): ?>
-                        <div class="olama-plan-semester" style="color: #e2e8f0 !important;">
-                            <span class="dashicons dashicons-category"></span>
-                            <?php echo esc_html($semester_name); ?>
-                        </div>
-                    <?php endif; ?>
-                    <div class="olama-plan-week-range" style="color: #e2e8f0 !important;">
-                        <span class="dashicons dashicons-calendar-alt"></span>
-                        <?php echo date('M d', strtotime($week_start)); ?> - <?php echo date('M d, Y', strtotime($week_end)); ?>
                     </div>
                 </div>
             </div>
 
-            <div class="olama-days-grid">
+            <!-- Academic Year & Week Info Bar -->
+            <div class="semester-bar">
+                <div class="semester-left">
+                    <span class="dashicons dashicons-calendar-alt"></span>
+                    <span class="week-label"><?php echo Olama_School_Helpers::translate('الأسبوع الدراسي الأول'); ?></span>
+                    <span
+                        class="week-dates">(<?php echo date_i18n('j', strtotime($week_start)); ?>-<?php echo date_i18n('j F', strtotime($week_end)); ?>)</span>
+                </div>
+                <div class="semester-right">
+                    <span class="dashicons dashicons-portfolio"></span>
+                    <span class="academic-year-label"><?php echo Olama_School_Helpers::translate('العام الدراسي'); ?></span>
+                    <span class="academic-year"><?php
+                    $start_year = date('Y', strtotime($week_start));
+                    $end_year = $start_year + 1;
+                    echo $start_year . '-' . $end_year;
+                    ?></span>
+                </div>
+            </div>
+
+            <!-- Days Accordion -->
+            <div class="days-accordion">
                 <?php
-                $days_of_week = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday');
-                foreach ($days_of_week as $day_name):
-                    $current_date = date('Y-m-d', strtotime($week_start . ' +' . array_search($day_name, $days_of_week) . ' days'));
+                $days_of_week = array('Sunday' => 'الأحد', 'Monday' => 'الاثنين', 'Tuesday' => 'الثلاثاء', 'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس');
+                $day_index = 0;
+                foreach ($days_of_week as $day_en => $day_ar):
+                    $current_date = date('Y-m-d', strtotime($week_start . ' +' . $day_index . ' days'));
                     $day_plans = $grouped_plans[$current_date] ?? array();
+                    $is_active = $current_date == date('Y-m-d') ? 'active' : '';
+                    if (empty($is_active) && empty($grouped_plans[date('Y-m-d')]) && $day_index === 0)
+                        $is_active = 'active';
+                    $day_index++;
                     ?>
-                    <div class="olama-day-card <?php echo empty($day_plans) ? 'no-plans' : ''; ?>">
-                        <div class="olama-day-header">
-                            <span class="day-name"><?php _e($day_name, 'olama-school'); ?></span>
-                            <span class="day-date"><?php echo date('M d', strtotime($current_date)); ?></span>
+                    <div class="day-item <?php echo $is_active; ?> <?php echo empty($day_plans) ? 'empty' : ''; ?>">
+                        <div class="day-header">
+                            <div class="day-left">
+                                <span class="toggle-chevron dashicons dashicons-arrow-down-alt2"></span>
+                                <div class="day-text">
+                                    <span class="day-name-ar"><?php echo esc_html($day_ar); ?></span>
+                                    <span class="day-count"><?php echo count($day_plans); ?>
+                                        <?php echo Olama_School_Helpers::translate('حصص'); ?></span>
+                                </div>
+                            </div>
+                            <div class="day-date-badge">
+                                <span class="date-month"><?php echo strtoupper(date_i18n('M', strtotime($current_date))); ?></span>
+                                <span class="date-day"><?php echo date_i18n('d', strtotime($current_date)); ?></span>
+                            </div>
                         </div>
-                        <div class="olama-day-plans">
+                        <div class="day-content">
                             <?php if (empty($day_plans)): ?>
-                                <p class="no-content"><?php _e('No lessons planned', 'olama-school'); ?></p>
+                                <div class="empty-day">
+                                    <span class="dashicons dashicons-calendar-alt"></span>
+                                    <p><?php echo Olama_School_Helpers::translate('لا توجد حصص مخططة لهذا اليوم'); ?></p>
+                                </div>
                             <?php else: ?>
-                                <?php foreach ($day_plans as $plan): ?>
-                                    <div class="olama-plan-item" style="border-left-color: <?php echo esc_attr($plan->color_code); ?>">
-                                        <div class="plan-subject"
-                                            style="color: <?php echo esc_attr($plan->color_code); ?>; display: flex; justify-content: space-between; align-items: center;">
-                                            <span><?php echo esc_html($plan->subject_name); ?></span>
-                                            <?php if ($plan->status === 'draft'): ?>
-                                                <span class="draft-badge"
-                                                    style="background: #f1f5f9; color: #64748b; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
-                                                    <?php echo Olama_School_Helpers::translate('Draft'); ?>
-                                                </span>
-                                            <?php endif; ?>
+                                <?php foreach ($day_plans as $plan):
+                                    $icon = $get_icon($plan->subject_name);
+                                    $bg_color = $get_subject_bg($plan->subject_name);
+                                    ?>
+                                    <div class="subject-card" style="background: <?php echo esc_attr($bg_color); ?>;">
+                                        <div class="subject-header">
+                                            <span class="dashicons <?php echo $icon; ?> subject-icon"></span>
+                                            <span class="subject-name"><?php echo esc_html($plan->subject_name); ?></span>
                                         </div>
-                                        <div class="plan-lesson">
-                                            <?php if ($plan->unit_number): ?>
-                                                <div class="plan-unit-info">
-                                                    <span class="unit-name"><?php echo esc_html($plan->unit_name); ?></span>
-                                                </div>
-                                            <?php endif; ?>
-                                            <div class="lesson-title">
-                                                <?php if ($plan->unit_number): ?>
-                                                    <span
-                                                        class="lesson-num"><?php echo esc_html($plan->unit_number . '.' . $plan->lesson_number); ?></span>
+
+                                        <!-- Classwork Section -->
+                                        <div class="section-block classwork">
+                                            <div class="section-label">
+                                                <span class="dashicons dashicons-clipboard"></span>
+                                                <?php echo Olama_School_Helpers::translate('حصة اليوم'); ?> <span
+                                                    class="label-en">(Classwork)</span>
+                                            </div>
+                                            <div class="detail-list">
+                                                <?php if ($plan->unit_name): ?>
+                                                    <div class="detail-item">
+                                                        <span class="dashicons dashicons-category detail-icon"></span>
+                                                        <span
+                                                            class="detail-label"><?php echo Olama_School_Helpers::translate('الوحدة'); ?>:</span>
+                                                        <span class="detail-value"><?php echo esc_html($plan->unit_name); ?></span>
+                                                    </div>
                                                 <?php endif; ?>
-                                                <?php echo esc_html($plan->lesson_title); ?>
+                                                <div class="detail-item">
+                                                    <span class="dashicons dashicons-book-alt detail-icon"></span>
+                                                    <span
+                                                        class="detail-label"><?php echo Olama_School_Helpers::translate('الدرس'); ?>:</span>
+                                                    <span class="detail-value"><?php echo esc_html($plan->lesson_title); ?></span>
+                                                </div>
                                             </div>
                                         </div>
+
+                                        <!-- Homework Section -->
                                         <?php if ($plan->homework_sb || $plan->homework_eb || $plan->homework_nb || $plan->homework_ws): ?>
-                                            <div class="plan-homework">
-                                                <div class="homework-icon">
-                                                    <span class="dashicons dashicons-welcome-edit-page"></span>
-                                                    <span><?php echo Olama_School_Helpers::translate('الواجب'); ?></span>
+                                            <div class="section-block homework">
+                                                <div class="section-label">
+                                                    <span class="dashicons dashicons-admin-home"></span>
+                                                    <?php echo Olama_School_Helpers::translate('الواجب البيتي'); ?>
                                                 </div>
-                                                <div class="homework-details">
+                                                <div class="homework-list">
                                                     <?php if ($plan->homework_sb): ?>
-                                                        <div class="hw-part">
-                                                            <strong><?php echo Olama_School_Helpers::translate('كتاب الطالب'); ?>:</strong>
-                                                            <?php echo esc_html($plan->homework_sb); ?>
+                                                        <div class="homework-item">
+                                                            <span class="dashicons dashicons-book hw-icon"></span>
+                                                            <span
+                                                                class="hw-label"><?php echo Olama_School_Helpers::translate('كتاب الطالب'); ?>:</span>
+                                                            <span class="hw-value"><?php echo esc_html($plan->homework_sb); ?></span>
                                                         </div>
                                                     <?php endif; ?>
                                                     <?php if ($plan->homework_eb): ?>
-                                                        <div class="hw-part">
-                                                            <strong><?php echo Olama_School_Helpers::translate('كتاب التمارين'); ?>:</strong>
-                                                            <?php echo esc_html($plan->homework_eb); ?>
+                                                        <div class="homework-item">
+                                                            <span class="dashicons dashicons-edit hw-icon"></span>
+                                                            <span
+                                                                class="hw-label"><?php echo Olama_School_Helpers::translate('كتاب التمارين'); ?>:</span>
+                                                            <span class="hw-value"><?php echo esc_html($plan->homework_eb); ?></span>
                                                         </div>
                                                     <?php endif; ?>
                                                     <?php if ($plan->homework_nb): ?>
-                                                        <div class="hw-part">
-                                                            <strong><?php echo Olama_School_Helpers::translate('الدفتر'); ?>:</strong>
-                                                            <?php echo esc_html($plan->homework_nb); ?>
+                                                        <div class="homework-item">
+                                                            <span class="dashicons dashicons-media-text hw-icon"></span>
+                                                            <span class="hw-label"><?php echo Olama_School_Helpers::translate('الدفتر'); ?>:</span>
+                                                            <span class="hw-value"><?php echo esc_html($plan->homework_nb); ?></span>
                                                         </div>
                                                     <?php endif; ?>
                                                     <?php if ($plan->homework_ws): ?>
-                                                        <div class="hw-part">
-                                                            <strong><?php echo Olama_School_Helpers::translate('الدوسية'); ?>:</strong>
-                                                            <?php echo esc_html($plan->homework_ws); ?>
+                                                        <div class="homework-item">
+                                                            <span class="dashicons dashicons-media-document hw-icon"></span>
+                                                            <span
+                                                                class="hw-label"><?php echo Olama_School_Helpers::translate('ورقة عمل'); ?>:</span>
+                                                            <span class="hw-value"><?php echo esc_html($plan->homework_ws); ?></span>
                                                         </div>
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
                                         <?php endif; ?>
+
+                                        <!-- Teacher Notes -->
                                         <?php if (!empty($plan->teacher_notes)): ?>
-                                            <div class="plan-teacher-notes">
-                                                <div class="notes-header">
+                                            <div class="section-block teacher-notes">
+                                                <div class="section-label">
                                                     <span class="dashicons dashicons-admin-comments"></span>
                                                     <?php echo Olama_School_Helpers::translate('ملاحظات المعلم'); ?>
                                                 </div>
@@ -378,6 +467,28 @@ class Olama_School_Shortcodes
                     </div>
                 <?php endforeach; ?>
             </div>
+
+            <!-- Footer -->
+            <div class="plan-footer">
+                <p>&copy; <?php echo date('Y'); ?>         <?php echo Olama_School_Helpers::translate('مدرستي - جميع الحقوق محفوظة'); ?>
+                </p>
+                <small>Designed for Students & Parents</small>
+            </div>
+
+            <script>
+                document.querySelectorAll('.day-header').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const item = header.parentElement;
+                        const wasActive = item.classList.contains('active');
+
+                        document.querySelectorAll('.day-item').forEach(i => i.classList.remove('active'));
+
+                        if (!wasActive) {
+                            item.classList.add('active');
+                        }
+                    });
+                });
+            </script>
         </div>
         <?php
         return ob_get_clean();
