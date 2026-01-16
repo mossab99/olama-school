@@ -45,6 +45,39 @@
 	border: 1px solid #ddd;
 }
 
+/* Filter Row Utility */
+.olama-filter-row {
+	display: flex !important;
+	flex-wrap: wrap !important;
+	gap: 12px !important;
+	align-items: flex-end !important;
+	width: 100%;
+	margin-bottom: 10px;
+}
+
+.olama-filter-row>div,
+.olama-filter-item {
+	flex: 1 0 160px !important;
+	max-width: 250px;
+	margin: 0;
+}
+
+.olama-filter-item label,
+.olama-filter-row>div label {
+	display: block !important;
+	font-weight: 600 !important;
+	margin-bottom: 5px !important;
+	font-size: 0.85rem;
+	color: #475569;
+}
+
+.olama-filter-row .olama-select,
+.olama-filter-row select {
+	width: 100% !important;
+	height: 40px !important;
+}
+
+
 /* Plan Details Card Enhancements */
 #olama-plan-details-card {
 	background: #ffffff;
@@ -459,9 +492,9 @@
 
 /* Hide filled subjects in dropdown */
 #olama-subject-select option.olama-filled-subject {
-    display: none !important;
+	display: none !important;
 }
 
 #olama-subject-select option.olama-filled-subject.is-editing {
-    display: block !important;
+	display: block !important;
 }

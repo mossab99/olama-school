@@ -34,11 +34,21 @@ if (!empty($sections)) {
 }
 
 // Reuse week selection logic
-$all_weeks = Olama_School_Academic::get_academic_weeks();
+$active_year = Olama_School_Academic::get_active_year();
+$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+
+$current_semesters = Olama_School_Academic::get_semesters($selected_year_id);
+// $selected_semester_id and $all_weeks are already defined in class-admin.php
 $months_weeks = array();
 foreach ($all_weeks as $val => $label) {
-    $m_key = date('Y-m', strtotime($val));
-    $months_weeks[$m_key][] = array('val' => $val, 'label' => $label);
+    $m_key_start = date('Y-m', strtotime($val));
+    $months_weeks[$m_key_start][] = array('val' => $val, 'label' => $label);
+
+    // Check if week ends in a different month
+    $m_key_end = date('Y-m', strtotime($val . ' +4 days'));
+    if ($m_key_end !== $m_key_start) {
+        $months_weeks[$m_key_end][] = array('val' => $val, 'label' => $label);
+    }
 }
 
 $today = time();
@@ -83,10 +93,9 @@ foreach ($days as $day_name => $date) {
 }
 
 // Coverage Analysis Logic
-$active_year = Olama_School_Academic::get_active_year();
 $current_semester_id = 0;
-if ($active_year) {
-    $semesters = Olama_School_Academic::get_semesters($active_year->id);
+if ($selected_year_id) {
+    $semesters = Olama_School_Academic::get_semesters($selected_year_id);
     $week_sunday = strtotime($week_start);
     $week_thursday = $week_sunday + (4 * 86400);
 
@@ -171,13 +180,47 @@ if ($current_semester_id && $selected_grade_id) {
     <!-- Filters -->
     <div class="olama-filter-section"
         style="margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-        <form method="get" style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+        <form method="get" class="olama-filter-row">
             <input type="hidden" name="page" value="olama-school-plans" />
             <input type="hidden" name="tab" value="list" />
-            <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                    <?php _e('Month', 'olama-school'); ?>
-                </label>
+
+            <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+
+            <div class="olama-filter-item">
+                <label><?php _e('Semester', 'olama-school'); ?></label>
+                <select name="semester_id" class="olama-select" onchange="this.form.submit()">
+                    <?php foreach ($current_semesters as $sem): ?>
+                        <option value="<?php echo $sem->id; ?>" <?php selected($selected_semester_id, $sem->id); ?>>
+                            <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="olama-filter-item">
+                <label><?php _e('Grade', 'olama-school'); ?></label>
+                <select name="grade_id" onchange="this.form.submit()">
+                    <?php foreach ($grades as $grade): ?>
+                        <option value="<?php echo $grade->id; ?>" <?php selected($selected_grade_id, $grade->id); ?>>
+                            <?php echo esc_html($grade->grade_name); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="olama-filter-item">
+                <label><?php _e('Section', 'olama-school'); ?></label>
+                <select name="section_id" onchange="this.form.submit()">
+                    <?php foreach ($sections as $section): ?>
+                        <option value="<?php echo $section->id; ?>" <?php selected($selected_section_id, $section->id); ?>>
+                            <?php echo esc_html($section->section_name); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="olama-filter-item">
+                <label><?php _e('Month', 'olama-school'); ?></label>
                 <select name="plan_month" onchange="this.form.submit()">
                     <?php foreach ($months_weeks as $m_key => $weeks): ?>
                         <option value="<?php echo esc_attr($m_key); ?>" <?php selected($selected_month, $m_key); ?>>
@@ -186,10 +229,9 @@ if ($current_semester_id && $selected_grade_id) {
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                    <?php _e('Week Start', 'olama-school'); ?>
-                </label>
+
+            <div class="olama-filter-item">
+                <label><?php _e('Week Start', 'olama-school'); ?></label>
                 <select name="week_start" onchange="this.form.submit()">
                     <?php
                     $w_count = 1;
@@ -200,30 +242,7 @@ if ($current_semester_id && $selected_grade_id) {
                         <?php $w_count++; endforeach; ?>
                 </select>
             </div>
-            <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                    <?php _e('Grade', 'olama-school'); ?>
-                </label>
-                <select name="grade_id" onchange="this.form.submit()">
-                    <?php foreach ($grades as $grade): ?>
-                        <option value="<?php echo $grade->id; ?>" <?php selected($selected_grade_id, $grade->id); ?>>
-                            <?php echo esc_html($grade->grade_name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                    <?php _e('Section', 'olama-school'); ?>
-                </label>
-                <select name="section_id" onchange="this.form.submit()">
-                    <?php foreach ($sections as $section): ?>
-                        <option value="<?php echo $section->id; ?>" <?php selected($selected_section_id, $section->id); ?>>
-                            <?php echo esc_html($section->section_name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+
             <div style="margin-left: auto;">
                 <button type="button" id="olama-bulk-approve-btn" class="button button-primary"
                     style="height: 35px; background: #10b981; border-color: #059669; font-weight: 600; margin-top: 20px;"
@@ -248,13 +267,13 @@ if ($current_semester_id && $selected_grade_id) {
                         <?php echo __($day_name, 'olama-school'); ?>
                     </strong>
                     <small style="color: #666;">
-                        <?php echo date_i18n('M d', strtotime($date)); ?>
+                        <?php echo Olama_School_Helpers::format_date($date, false, 'M d'); ?>
                     </small>
                 </div>
                 <div class="day-content" style="padding: 10px; flex-grow: 1;">
                     <?php if (!empty($grouped_plans[$date])): ?>
                         <?php foreach ($grouped_plans[$date] as $plan):
-                            $status_data = $this->get_progress_status($plan->plan_date, $plan->lesson_start_date, $plan->lesson_end_date);
+                            $status_data = Olama_School_Helpers::get_progress_status($plan->plan_date, $plan->lesson_start_date, $plan->lesson_end_date);
                             ?>
                             <div class="olama-plan-card" data-plan='<?php echo esc_attr(wp_json_encode($plan)); ?>'
                                 style="border-left: 4px solid <?php echo esc_attr($plan->color_code); ?>; background: #fff; padding: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 10px; cursor: pointer; position: relative;">

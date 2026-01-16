@@ -138,7 +138,14 @@ class Olama_School_Plan
             }
         }
 
+        $academic_year_id = isset($data['academic_year_id']) ? intval($data['academic_year_id']) : 0;
+        if (!$academic_year_id) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $academic_year_id = $active_year ? $active_year->id : 0;
+        }
+
         $plan_data = array(
+            'academic_year_id' => $academic_year_id,
             'section_id' => $section_id,
             'subject_id' => intval($data['subject_id']),
             'teacher_id' => intval($data['teacher_id']),

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Olama School Helpers Class
  * Shared utility functions used across the plugin
@@ -107,7 +107,44 @@ class Olama_School_Helpers
     }
 
     /**
-     * Get Arabic translation for a string
+     * Format date according to plugin settings
+     * 
+     * @param string|int $date Date string or timestamp
+     * @param bool $include_time Whether to include time in output
+     * @param string $custom_format Optional custom format override
+     * @return string Formatted date string
+     */
+    public static function format_date($date, $include_time = false, $custom_format = '')
+    {
+        if (empty($date)) {
+            return '';
+        }
+
+        // Convert to timestamp if needed
+        $timestamp = is_numeric($date) ? $date : strtotime($date);
+
+        if (!$timestamp) {
+            return $date; // Return original if conversion fails
+        }
+
+        // Get format from settings or use custom
+        if ($custom_format) {
+            $format = $custom_format;
+        } else {
+            $settings = get_option('olama_school_settings', array());
+            $format = $settings['date_format'] ?? 'd-m-Y';
+
+            // Add time if requested
+            if ($include_time) {
+                $format .= ' H:i';
+            }
+        }
+
+        return date_i18n($format, $timestamp);
+    }
+
+    /**
+     * Check if the current language is Arabic
      * 
      * @param string $text The English text
      * @return string Translated text if in Arabic mode, otherwise original
@@ -135,6 +172,11 @@ class Olama_School_Helpers
         'School Start Day' => 'بداية الأسبوع الدراسي',
         'School Last Day' => 'نهاية الأسبوع الدراسي',
         'Default Language' => 'اللغة الافتراضية',
+        'Date Format' => 'تنسيق التاريخ',
+        'Day-Month-Year (16-01-2026)' => 'يوم-شهر-سنة (16-01-2026)',
+        'Month-Day-Year (01-16-2026)' => 'شهر-يوم-سنة (01-16-2026)',
+        'Year-Month-Day (2026-01-16)' => 'سنة-شهر-يوم (2026-01-16)',
+        'Choose how dates should be displayed throughout the plugin.' => 'اختر كيفية عرض التواريخ في جميع أنحاء الإضافة.',
         'Arabic' => 'العربية',
         'English' => 'الإنجليزية',
         'Save Changes' => 'حفظ التغييرات',
@@ -218,11 +260,11 @@ class Olama_School_Helpers
         'Homework (SB)' => 'الواجب (كتاب الطالب)',
         'Homework (EB)' => 'الواجب (كتاب التمارين)',
         'Homework (NB)' => 'الواجب (الدفتر)',
-        'Homework (WS)' => 'الواجب (ورقة عمل)',
+        'Homework (WS)' => 'الواجب (الدوسية)',
         'Homework (Student Book)' => 'الواجب (كتاب الطالب)',
         'Homework (Exercise Book)' => 'الواجب (كتاب التمارين)',
         'Homework (Notebook)' => 'الواجب (الدفتر)',
-        'Homework (Worksheet)' => 'الواجب (ورقة عمل)',
+        'Homework (Worksheet)' => 'الواجب (الدوسية)',
         'Teacher Notes' => 'ملاحظات المعلم',
         'Teacher\'s Notes' => 'ملاحظات المعلم',
         'Additional notes...' => 'ملاحظات إضافية...',
@@ -244,7 +286,7 @@ class Olama_School_Helpers
         'SB:' => 'كتاب الطالب:',
         'EB:' => 'كتاب التمارين:',
         'NB:' => 'الدفتر:',
-        'WS:' => 'ورقة عمل:',
+        'WS:' => 'الدوسية:',
         // Academic Management Strings
         'Academic Calendar' => 'التقويم الأكاديمي',
         'Grades & Sections' => 'الصفوف والشعب',
@@ -267,6 +309,8 @@ class Olama_School_Helpers
         'No academic years found.' => 'لم يتم العثور على سنوات أكاديمية.',
         'Semesters for %s' => 'فصول سنة %s',
         'Add Semester' => 'إضافة فصل دراسي',
+        'First Semester' => 'الفصل الأول',
+        'Second Semester' => 'الفصل الثاني',
         '1st Semester' => 'الفصل الأول',
         '2nd Semester' => 'الفصل الثاني',
         'Summer Semester' => 'فصل صيفي',
@@ -366,6 +410,8 @@ class Olama_School_Helpers
         'Subject deleted.' => 'تم حذف المادة.',
         'Student added successfully.' => 'تم إضافة الطالب بنجاح.',
         'Teacher information updated.' => 'تم تحديث معلومات المعلم.',
+        'Semester activated.' => 'تم تفعيل الفصل الدراسي.',
+        'Academic Year activated.' => 'تم تفعيل السنة الأكاديمية.',
         'Semester' => 'الفصل الدراسي',
         '-- Select Semester --' => '-- اختر الفصل الدراسي --',
         '-- Select Grade --' => '-- اختر الصف --',
@@ -611,10 +657,44 @@ class Olama_School_Helpers
         'No weekly plans found for the selected week.' => 'لم يتم العثور على أي خطط أسبوعية للأسبوع المحدد.',
         'Preview' => 'معاينة',
         'Note: As an admin, you can see draft plans.' => 'ملاحظة: بصفتك مسؤولاً، يمكنك رؤية مسودات الخطط.',
+        'Academic Year' => 'السنة الأكاديمية',
         'Draft' => 'مسودة',
         'Published' => 'منشور',
+        'عدد الواجبات' => 'عدد الواجبات',
+        'Semester dates must be within the academic year range.' => 'يجب أن تكون تواريخ الفصل الدراسي ضمن نطاق السنة الأكاديمية.',
+        'A semester with this name already exists in this academic year.' => 'يوجد فصل دراسي بهذا الاسم بالفعل في هذه السنة الأكاديمية.',
+        'Semester dates overlap with another existing semester.' => 'تتداخل تواريخ الفصل الدراسي مع فصل دراسي آخر موجود.',
+        'Invalid Semester.' => 'فصل دراسي غير صالح.',
         );
 
         return $map[$text] ?? $text;
+    }
+
+    /**
+     * Render Academic Year Selector
+     */
+    public static function academic_year_selector($selected_year_id)
+    {
+        $years = Olama_School_Academic::get_years();
+        if (empty($years))
+            return '';
+
+        ob_start();
+        ?>
+        <div style="flex: 1; min-width: 150px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                <?php echo self::translate('Academic Year'); ?>
+            </label>
+            <select name="academic_year_id" id="olama-academic-year-select" class="olama-select" onchange="this.form.submit()">
+                <?php foreach ($years as $year): ?>
+                    <option value="<?php echo $year->id; ?>" <?php selected($selected_year_id, $year->id); ?>>
+                        <?php echo esc_html($year->year_name); ?>
+                        <?php echo !empty($year->is_active) ? '(' . self::translate('Active') . ')' : ''; ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <?php
+        return ob_get_clean();
     }
 }

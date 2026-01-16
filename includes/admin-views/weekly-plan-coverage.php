@@ -21,7 +21,10 @@ if (!$semesters) {
 }
 
 // 2. Selection Handling
-$selected_semester_id = isset($_GET['coverage_semester']) ? intval($_GET['coverage_semester']) : (isset($semesters[0]->id) ? intval($semesters[0]->id) : 0);
+$active_semester = Olama_School_Academic::get_active_semester($active_year->id);
+$default_semester_id = $active_semester ? intval($active_semester->id) : (isset($semesters[0]->id) ? intval($semesters[0]->id) : 0);
+
+$selected_semester_id = isset($_GET['coverage_semester']) ? intval($_GET['coverage_semester']) : $default_semester_id;
 $selected_grade_id = isset($_GET['coverage_grade']) ? intval($_GET['coverage_grade']) : 0;
 
 $sections = $selected_grade_id ? Olama_School_Section::get_by_grade($selected_grade_id) : [];
@@ -43,6 +46,20 @@ if (!$current_semester && !empty($semesters)) {
 
 $grades = Olama_School_Grade::get_grades();
 $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_grade_id) : [];
+
+// 3. Determine Effective Date Range for filtering plans (Sunday to Thursday alignment)
+$semester_weeks = Olama_School_Academic::get_academic_weeks($active_year->id, $selected_semester_id);
+$effective_start = $current_semester->start_date;
+$effective_end = $current_semester->end_date;
+
+if (!empty($semester_weeks)) {
+    $week_dates = array_keys($semester_weeks);
+    sort($week_dates);
+    $effective_start = $week_dates[0];
+    // End date is Thursday of the last week
+    $last_week_start = end($week_dates);
+    $effective_end = date('Y-m-d', strtotime($last_week_start . ' +4 days'));
+}
 ?>
 
 <div class="olama-coverage-container"
@@ -137,8 +154,8 @@ $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_gr
                             <span class="dashicons dashicons-calendar-alt"
                                 style="font-size: 16px; width: 16px; height: 16px; margin-inline-end: 5px;"></span>
                             <?php echo esc_html($current_semester->semester_name); ?>
-                            (<?php echo date_i18n(get_option('date_format'), strtotime($current_semester->start_date)); ?> -
-                            <?php echo date_i18n(get_option('date_format'), strtotime($current_semester->end_date)); ?>)
+                            (<?php echo Olama_School_Helpers::format_date($current_semester->start_date); ?> -
+                            <?php echo Olama_School_Helpers::format_date($current_semester->end_date); ?>)
                         </div>
                     </div>
 
@@ -181,8 +198,8 @@ $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_gr
                                          AND p.plan_date >= %s AND p.plan_date <= %s",
                                         $subject->id,
                                         $selected_section_id,
-                                        $current_semester->start_date,
-                                        $current_semester->end_date
+                                        $effective_start,
+                                        $effective_end
                                     ));
 
                                     // 3. Map plans to lessons
@@ -212,7 +229,7 @@ $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_gr
                                                 $best_status_class = null;
 
                                                 foreach ($plans_by_lesson[$lesson_id] as $plan) {
-                                                    $status = $this->get_progress_status($plan->plan_date, $lesson->start_date, $lesson->end_date);
+                                                    $status = Olama_School_Helpers::get_progress_status($plan->plan_date, $lesson->start_date, $lesson->end_date);
                                                     if ($status) {
                                                         $class = $status['class'];
                                                         // Priority: on-time > delayed > bypass

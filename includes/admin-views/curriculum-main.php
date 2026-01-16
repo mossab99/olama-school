@@ -8,12 +8,16 @@ if (!defined('ABSPATH')) {
 
 $grades = Olama_School_Grade::get_grades();
 $active_year = Olama_School_Academic::get_active_year();
-$semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->id) : array();
+$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+$semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
 ?>
 
 <h1>
     <?php echo Olama_School_Helpers::translate('Curriculum Management'); ?>
 </h1>
+
+<?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+<div style="margin-bottom: 20px;"></div>
 
 <?php
 if ($import_message = get_transient('olama_import_message')) {
@@ -28,26 +32,9 @@ if ($import_error = get_transient('olama_import_error')) {
 
 <!-- Section 1: Filters -->
 <div class="olama-card" style="margin-bottom: 20px;">
-    <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 200px;">
-            <label class="olama-label">
-                <?php echo Olama_School_Helpers::translate('Semester'); ?>
-            </label>
-            <select id="curriculum-semester" class="olama-select">
-                <option value="">
-                    <?php echo Olama_School_Helpers::translate('-- Select Semester --'); ?>
-                </option>
-                <?php foreach ($semesters as $sem): ?>
-                    <option value="<?php echo $sem->id; ?>">
-                        <?php echo esc_html($sem->semester_name); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div style="flex: 1; min-width: 200px;">
-            <label class="olama-label">
-                <?php echo Olama_School_Helpers::translate('Grade'); ?>
-            </label>
+    <div class="olama-filter-row">
+        <div class="olama-filter-item">
+            <label><?php echo Olama_School_Helpers::translate('Grade'); ?></label>
             <select id="curriculum-grade" class="olama-select">
                 <option value="">
                     <?php echo Olama_School_Helpers::translate('-- Select Grade --'); ?>
@@ -59,10 +46,25 @@ if ($import_error = get_transient('olama_import_error')) {
                 <?php endforeach; ?>
             </select>
         </div>
-        <div style="flex: 1; min-width: 200px;">
-            <label class="olama-label">
-                <?php echo Olama_School_Helpers::translate('Subject'); ?>
-            </label>
+        <div class="olama-filter-item">
+            <?php
+            $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
+            $default_semester_id = $active_semester ? $active_semester->id : 0;
+            ?>
+            <label><?php echo Olama_School_Helpers::translate('Semester'); ?></label>
+            <select id="curriculum-semester" class="olama-select">
+                <option value="">
+                    <?php echo Olama_School_Helpers::translate('-- Select Semester --'); ?>
+                </option>
+                <?php foreach ($semesters as $sem): ?>
+                    <option value="<?php echo $sem->id; ?>" <?php selected($default_semester_id, $sem->id); ?>>
+                        <?php echo esc_html($sem->semester_name); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="olama-filter-item">
+            <label><?php echo Olama_School_Helpers::translate('Subject'); ?></label>
             <select id="curriculum-subject" class="olama-select">
                 <!-- Populated via JS -->
             </select>

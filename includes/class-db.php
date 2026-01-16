@@ -42,6 +42,7 @@ class Olama_School_DB
 				semester_name varchar(50) NOT NULL,
 				start_date date NOT NULL,
 				end_date date NOT NULL,
+				is_active tinyint(1) DEFAULT 0,
 				PRIMARY KEY  (id),
 				KEY academic_year_id (academic_year_id)
 			) $charset_collate;",
@@ -119,6 +120,7 @@ class Olama_School_DB
 
 			'olama_plans' => "CREATE TABLE {$wpdb->prefix}olama_plans (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
 				section_id mediumint(9) NOT NULL,
 				subject_id mediumint(9) NOT NULL,
 				teacher_id bigint(20) UNSIGNED NOT NULL,
@@ -138,6 +140,7 @@ class Olama_School_DB
 				created_at datetime DEFAULT CURRENT_TIMESTAMP,
 				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 				PRIMARY KEY  (id),
+				KEY academic_year_id (academic_year_id),
 				KEY section_date (section_id, plan_date),
 				KEY subject_id (subject_id),
 				KEY teacher_id (teacher_id)
@@ -271,5 +274,9 @@ class Olama_School_DB
 		foreach ($tables as $table_sql) {
 			dbDelta($table_sql);
 		}
+
+		// Rename existing semesters for better naming convention
+		$wpdb->query("UPDATE {$wpdb->prefix}olama_semesters SET semester_name = 'First Semester' WHERE semester_name = '1st Semester'");
+		$wpdb->query("UPDATE {$wpdb->prefix}olama_semesters SET semester_name = 'Second Semester' WHERE semester_name = '2nd Semester'");
 	}
 }

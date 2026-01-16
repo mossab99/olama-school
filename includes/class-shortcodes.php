@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Shortcodes Class
  */
@@ -354,13 +354,15 @@ class Olama_School_Shortcodes
                                 <span class="toggle-chevron dashicons dashicons-arrow-down-alt2"></span>
                                 <div class="day-text">
                                     <span class="day-name-ar"><?php echo esc_html($day_ar); ?></span>
-                                    <span class="day-count"><?php echo count($day_plans); ?>
-                                        <?php echo Olama_School_Helpers::translate('حصص'); ?></span>
+                                    <span class="day-count"><?php echo Olama_School_Helpers::translate('عدد الواجبات'); ?> -
+                                        <?php echo count($day_plans); ?></span>
                                 </div>
                             </div>
                             <div class="day-date-badge">
-                                <span class="date-month"><?php echo strtoupper(date_i18n('M', strtotime($current_date))); ?></span>
-                                <span class="date-day"><?php echo date_i18n('d', strtotime($current_date)); ?></span>
+                                <span
+                                    class="date-month"><?php echo strtoupper(Olama_School_Helpers::format_date($current_date, false, 'M')); ?></span>
+                                <span
+                                    class="date-day"><?php echo Olama_School_Helpers::format_date($current_date, false, 'd'); ?></span>
                             </div>
                         </div>
                         <div class="day-content">
@@ -439,8 +441,7 @@ class Olama_School_Shortcodes
                                                     <?php if ($plan->homework_ws): ?>
                                                         <div class="homework-item">
                                                             <span class="dashicons dashicons-media-document hw-icon"></span>
-                                                            <span
-                                                                class="hw-label"><?php echo Olama_School_Helpers::translate('ورقة عمل'); ?>:</span>
+                                                            <span class="hw-label"><?php echo Olama_School_Helpers::translate('الدوسية'); ?>:</span>
                                                             <span class="hw-value"><?php echo esc_html($plan->homework_ws); ?></span>
                                                         </div>
                                                     <?php endif; ?>

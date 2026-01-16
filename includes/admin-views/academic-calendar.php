@@ -6,9 +6,30 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$years = Olama_School_Academic::get_years();
-$selected_year_id = isset($_GET['manage_year']) ? intval($_GET['manage_year']) : 0;
+// Redundant definitions removed as they are handled in class-admin.php
 ?>
+
+<div class="olama-admin-header" style="margin-bottom: 20px;">
+    <form method="get" id="olama-calendar-year-filter">
+        <input type="hidden" name="page" value="olama-school-academic" />
+        <input type="hidden" name="tab" value="calendar" />
+        <div style="display: flex; align-items: flex-end; gap: 10px;">
+            <div style="flex: 0 0 250px;">
+                <label
+                    style="display: block; font-weight: 600; margin-bottom: 5px;"><?php _e('Manage Academic Year', 'olama-school'); ?></label>
+                <select name="manage_year" class="olama-select" onchange="this.form.submit()" style="width: 100%;">
+                    <option value="0"><?php _e('-- Select Year to Manage --', 'olama-school'); ?></option>
+                    <?php foreach ($years as $year): ?>
+                        <option value="<?php echo $year->id; ?>" <?php selected($selected_year_id, $year->id); ?>>
+                            <?php echo esc_html($year->year_name); ?>
+                            <?php echo $year->is_active ? '(' . __('Active', 'olama-school') . ')' : ''; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+    </form>
+</div>
 
 <div style="display: grid; grid-template-columns: 1fr 350px; gap: 20px;">
     <div class="olama-main-col">
@@ -52,10 +73,10 @@ $selected_year_id = isset($_GET['manage_year']) ? intval($_GET['manage_year']) :
                                         <?php echo esc_html($year->year_name); ?>
                                     </strong></td>
                                 <td>
-                                    <?php echo esc_html($year->start_date); ?>
+                                    <?php echo Olama_School_Helpers::format_date($year->start_date); ?>
                                 </td>
                                 <td>
-                                    <?php echo esc_html($year->end_date); ?>
+                                    <?php echo Olama_School_Helpers::format_date($year->end_date); ?>
                                 </td>
                                 <td>
                                     <?php if ($year->is_active): ?>
@@ -136,11 +157,11 @@ $selected_year_id = isset($_GET['manage_year']) ? intval($_GET['manage_year']) :
                                         <?php _e('Name', 'olama-school'); ?>
                                     </label>
                                     <select name="semester_name" required>
-                                        <option value="1st Semester">
-                                            <?php _e('1st Semester', 'olama-school'); ?>
+                                        <option value="First Semester">
+                                            <?php _e('First Semester', 'olama-school'); ?>
                                         </option>
-                                        <option value="2nd Semester">
-                                            <?php _e('2nd Semester', 'olama-school'); ?>
+                                        <option value="Second Semester">
+                                            <?php _e('Second Semester', 'olama-school'); ?>
                                         </option>
                                         <option value="Summer Semester">
                                             <?php _e('Summer Semester', 'olama-school'); ?>
@@ -157,12 +178,67 @@ $selected_year_id = isset($_GET['manage_year']) ? intval($_GET['manage_year']) :
                                     <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                                         <?php _e('End Date', 'olama-school'); ?>
                                     </label>
-                                    <input type="date" name="end_date" required />
+                                    <input type="date" name="sem_end_date" required />
+                                </div>
+                                <div style="align-self: flex-start; margin-top: 25px;">
+                                    <label><input type="checkbox" name="is_active" value="1" />
+                                        <?php _e('Set as Active', 'olama-school'); ?>
+                                    </label>
                                 </div>
                                 <div>
                                     <?php submit_button(__('Add', 'olama-school'), 'primary', 'add_semester', false); ?>
                                     <button type="button" class="button"
                                         onclick="document.getElementById('add-semester-form').style.display='none'">
+                                        <?php _e('Cancel', 'olama-school'); ?>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="edit-semester-form"
+                        style="display: none; background: #fffbeb; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #d97706;">
+                        <form method="post" action="">
+                            <?php wp_nonce_field('olama_update_semester'); ?>
+                            <input type="hidden" name="edit_semester_id" id="edit_semester_id" />
+                            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                                        <?php _e('Name', 'olama-school'); ?>
+                                    </label>
+                                    <select name="edit_semester_name" id="edit_semester_name" required>
+                                        <option value="First Semester">
+                                            <?php _e('First Semester', 'olama-school'); ?>
+                                        </option>
+                                        <option value="Second Semester">
+                                            <?php _e('Second Semester', 'olama-school'); ?>
+                                        </option>
+                                        <option value="Summer Semester">
+                                            <?php _e('Summer Semester', 'olama-school'); ?>
+                                        </option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                                        <?php _e('Start Date', 'olama-school'); ?>
+                                    </label>
+                                    <input type="date" name="edit_sem_start_date" id="edit_sem_start_date" required />
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                                        <?php _e('End Date', 'olama-school'); ?>
+                                    </label>
+                                    <input type="date" name="edit_sem_end_date" id="edit_sem_end_date" required />
+                                </div>
+                                <div style="align-self: flex-start; margin-top: 25px;">
+                                    <label><input type="checkbox" name="edit_is_active" id="edit_is_active" value="1" />
+                                        <?php _e('Set as Active', 'olama-school'); ?>
+                                    </label>
+                                </div>
+                                <div>
+                                    <?php submit_button(__('Update', 'olama-school'), 'primary', 'update_semester', false); ?>
+                                    <button type="button" class="button"
+                                        onclick="document.getElementById('edit-semester-form').style.display='none'">
                                         <?php _e('Cancel', 'olama-school'); ?>
                                     </button>
                                 </div>
@@ -192,15 +268,45 @@ $selected_year_id = isset($_GET['manage_year']) ? intval($_GET['manage_year']) :
                                 <?php foreach ($semesters as $sem): ?>
                                     <tr>
                                         <td><strong>
-                                                <?php echo esc_html($sem->semester_name); ?>
+                                                <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
                                             </strong></td>
                                         <td>
-                                            <?php echo esc_html($sem->start_date); ?>
+                                            <?php echo Olama_School_Helpers::format_date($sem->start_date); ?>
                                         </td>
                                         <td>
-                                            <?php echo esc_html($sem->end_date); ?>
+                                            <?php echo Olama_School_Helpers::format_date($sem->end_date); ?>
                                         </td>
                                         <td>
+                                            <?php if (!empty($sem->is_active)): ?>
+                                                <span class="status-pill active"
+                                                    style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                                    <?php _e('Active', 'olama-school'); ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="status-pill inactive"
+                                                    style="background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                                    <?php _e('Inactive', 'olama-school'); ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="button button-small"
+                                                data-id="<?php echo esc_attr($sem->id); ?>"
+                                                data-name="<?php echo esc_attr($sem->semester_name); ?>"
+                                                data-start="<?php echo esc_attr($sem->start_date); ?>"
+                                                data-end="<?php echo esc_attr($sem->end_date); ?>"
+                                                data-active="<?php echo !empty($sem->is_active) ? '1' : '0'; ?>"
+                                                onclick="olamaEditSemester(this)">
+                                                <?php _e('Edit', 'olama-school'); ?>
+                                            </button>
+
+                                            <?php if (empty($sem->is_active)): ?>
+                                                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-academic&manage_year=' . $selected_year_id . '&action=activate_semester&semester_id=' . $sem->id), 'olama_activate_semester_' . $sem->id); ?>"
+                                                    class="button button-small primary">
+                                                    <?php _e('Activate', 'olama-school'); ?>
+                                                </a>
+                                            <?php endif; ?>
+
                                             <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-academic&manage_year=' . $selected_year_id . '&action=delete_semester&semester_id=' . $sem->id), 'olama_delete_semester_' . $sem->id); ?>"
                                                 class="button button-small" style="color: #dc2626;"
                                                 onclick="return confirm('<?php _e('Delete Semester?', 'olama-school'); ?>')">
@@ -423,6 +529,20 @@ $selected_year_id = isset($_GET['manage_year']) ? intval($_GET['manage_year']) :
         document.getElementById('edit_event_description').value = btn.getAttribute('data-desc');
         document.getElementById('edit_event_start_date').value = btn.getAttribute('data-start');
         document.getElementById('edit_event_end_date').value = btn.getAttribute('data-end');
+
+        editForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function olamaEditSemester(btn) {
+        document.getElementById('add-semester-form').style.display = 'none';
+        const editForm = document.getElementById('edit-semester-form');
+        editForm.style.display = 'block';
+
+        document.getElementById('edit_semester_id').value = btn.getAttribute('data-id');
+        document.getElementById('edit_semester_name').value = btn.getAttribute('data-name');
+        document.getElementById('edit_sem_start_date').value = btn.getAttribute('data-start');
+        document.getElementById('edit_sem_end_date').value = btn.getAttribute('data-end');
+        document.getElementById('edit_is_active').checked = btn.getAttribute('data-active') === '1';
 
         editForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }

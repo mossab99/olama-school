@@ -38,12 +38,11 @@ $subjects = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olam
     <p><?php _e('Compare progress across sections for the same grade.', 'olama-school'); ?></p>
 
     <div style="background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #ccd0d4;">
-        <form method="get" style="display: flex; gap: 20px; align-items: flex-end;">
+        <form method="get" class="olama-filter-row">
             <input type="hidden" name="page" value="olama-school-plans">
             <input type="hidden" name="tab" value="comparison">
-            <div>
-                <label
-                    style="display: block; margin-bottom: 5px; font-weight: 600;"><?php _e('Grade', 'olama-school'); ?></label>
+            <div class="olama-filter-item">
+                <label><?php _e('Grade', 'olama-school'); ?></label>
                 <select name="compare_grade_id" onchange="this.form.submit()">
                     <?php foreach ($grades as $g): ?>
                         <option value="<?php echo $g->id; ?>" <?php selected($selected_grade_id, $g->id); ?>>
@@ -53,9 +52,8 @@ $subjects = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olam
                 </select>
             </div>
             <?php if ($sections): ?>
-                <div>
-                    <label
-                        style="display: block; margin-bottom: 5px; font-weight: 600;"><?php _e('Section 1', 'olama-school'); ?></label>
+                <div class="olama-filter-item">
+                    <label><?php _e('Section 1', 'olama-school'); ?></label>
                     <select name="sec1">
                         <?php foreach ($sections as $s): ?>
                             <option value="<?php echo $s->id; ?>" <?php selected($sec1_id, $s->id); ?>>
@@ -64,9 +62,8 @@ $subjects = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olam
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div>
-                    <label
-                        style="display: block; margin-bottom: 5px; font-weight: 600;"><?php _e('Section 2', 'olama-school'); ?></label>
+                <div class="olama-filter-item">
+                    <label><?php _e('Section 2', 'olama-school'); ?></label>
                     <select name="sec2">
                         <?php foreach ($sections as $s): ?>
                             <option value="<?php echo $s->id; ?>" <?php selected($sec2_id, $s->id); ?>>

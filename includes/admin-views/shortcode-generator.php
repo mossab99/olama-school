@@ -8,11 +8,19 @@ if (!defined('ABSPATH')) {
 
 $grades = Olama_School_Grade::get_grades();
 $active_year = Olama_School_Academic::get_active_year();
-$semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->id) : array();
-$weeks = Olama_School_Academic::get_academic_weeks();
+$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+$semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
+$weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
 ?>
 <div class="olama-card"
     style="max-width: 800px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+
+    <form method="get" id="olama-shortcode-gen-filters" style="margin-bottom: 20px;">
+        <input type="hidden" name="page" value="olama-school-plans" />
+        <input type="hidden" name="tab" value="shortcode" />
+        <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+    </form>
+
     <h2 style="margin-top: 0; color: #1e293b; font-size: 1.5rem; font-weight: 700;">
         <span class="dashicons dashicons-shortcode"
             style="font-size: 24px; width: 24px; height: 24px; margin-right: 10px; color: #2563eb;"></span>

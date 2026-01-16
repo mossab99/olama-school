@@ -6,136 +6,34 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$grades = Olama_School_Grade::get_grades();
-
-if (!current_user_can('manage_options')) {
-    $user_id = get_current_user_id();
-    global $wpdb;
-    $assigned_grade_ids = $wpdb->get_col($wpdb->prepare(
-        "SELECT DISTINCT grade_id FROM {$wpdb->prefix}olama_teacher_assignments WHERE teacher_id = %d",
-        $user_id
-    ));
-    $grades = array_filter($grades, function ($g) use ($assigned_grade_ids) {
-        return in_array($g->id, $assigned_grade_ids);
-    });
-    $grades = array_values($grades);
-}
-
-if (!$grades) {
-    echo '<div class="error"><p>' . __('Please create grades first.', 'olama-school') . '</p></div>';
-    return;
-}
-
-$selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : (isset($grades[0]->id) ? intval($grades[0]->id) : 0);
-$sections = Olama_School_Section::get_by_grade($selected_grade_id);
-
-if (!current_user_can('manage_options')) {
-    $user_id = get_current_user_id();
-    global $wpdb;
-    $assigned_section_ids = $wpdb->get_col($wpdb->prepare(
-        "SELECT DISTINCT section_id FROM {$wpdb->prefix}olama_teacher_assignments WHERE teacher_id = %d AND grade_id = %d",
-        $user_id,
-        $selected_grade_id
-    ));
-    $sections = array_filter($sections, function ($s) use ($assigned_section_ids) {
-        return in_array($s->id, $assigned_section_ids);
-    });
-    $sections = array_values($sections);
-}
-
-$selected_section_id = 0;
-if (!empty($sections)) {
-    $selected_section_id = isset($_GET['section_id']) ? intval($_GET['section_id']) : intval($sections[0]->id);
-}
-
-$all_weeks = Olama_School_Academic::get_academic_weeks();
-$months_weeks = array();
-foreach ($all_weeks as $val => $label) {
-    $m_key = date('Y-m', strtotime($val));
-    $months_weeks[$m_key][] = array('val' => $val, 'label' => $label);
-}
-
-$today = time();
-$today_val = date('Y-m-d', $today - ((int) date('w', $today) * 86400));
-$initial_week = isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : $today_val;
-$selected_month = isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : date('Y-m', strtotime($initial_week));
-
-if (!isset($months_weeks[$selected_month]) && !empty($months_weeks)) {
-    $m_keys = array_keys($months_weeks);
-    $selected_month = $m_keys[0];
-}
-
-$current_month_weeks = $months_weeks[$selected_month] ?? array();
-$week_start = $initial_week;
-$valid_week = false;
-foreach ($current_month_weeks as $w) {
-    if ($w['val'] === $week_start) {
-        $valid_week = true;
-        break;
-    }
-}
-if (!$valid_week && !empty($current_month_weeks)) {
-    $week_start = $current_month_weeks[0]['val'] ?? '';
-}
-
-$active_day = isset($_GET['active_day']) ? sanitize_text_field($_GET['active_day']) : 'Sunday';
-$days = array(
-    'Sunday' => date('Y-m-d', strtotime($week_start)),
-    'Monday' => date('Y-m-d', strtotime($week_start . ' +1 day')),
-    'Tuesday' => date('Y-m-d', strtotime($week_start . ' +2 days')),
-    'Wednesday' => date('Y-m-d', strtotime($week_start . ' +3 days')),
-    'Thursday' => date('Y-m-d', strtotime($week_start . ' +4 days')),
-);
-$selected_date = $days[$active_day];
-
-$all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, date('Y-m-d', strtotime($week_start . ' +4 days')));
-$today_plans = array_filter($all_plans, function ($p) use ($selected_date) {
-    return $p->plan_date === $selected_date;
-});
+// All variables like $grades, $sections, $months_weeks, $selected_month, 
+// $week_start, $selected_date, and $today_plans are provided by class-admin.php
 ?>
 
 <div class="olama-plan-creation-container">
     <!-- Section 1: Top Navigation & Filters -->
     <div class="olama-card"
         style="margin-bottom: 25px; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-        <form method="get" id="olama-plan-filters"
-            style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
+        <form method="get" id="olama-plan-filters" class="olama-filter-row">
             <input type="hidden" name="page" value="olama-school-plans" />
             <input type="hidden" name="tab" value="creation" />
             <input type="hidden" name="active_day" id="active_day_input" value="<?php echo esc_attr($active_day); ?>" />
 
-            <div style="flex: 1; min-width: 150px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                    <?php _e('Month', 'olama-school'); ?>
-                </label>
-                <select name="plan_month" class="olama-select" onchange="this.form.submit()">
-                    <?php foreach ($months_weeks as $m_key => $weeks): ?>
-                        <option value="<?php echo esc_attr($m_key); ?>" <?php selected($selected_month, $m_key); ?>>
-                            <?php echo date('F Y', strtotime($m_key . '-01')); ?>
+            <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+
+            <div class="olama-filter-item">
+                <label><?php _e('Semester', 'olama-school'); ?></label>
+                <select name="semester_id" class="olama-select" onchange="this.form.submit()">
+                    <?php foreach ($current_semesters as $sem): ?>
+                        <option value="<?php echo $sem->id; ?>" <?php selected($selected_semester_id, $sem->id); ?>>
+                            <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
-            <div style="flex: 1; min-width: 150px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                    <?php _e('Week', 'olama-school'); ?>
-                </label>
-                <select name="week_start" class="olama-select" onchange="this.form.submit()">
-                    <?php
-                    $w_count = 1;
-                    foreach ($current_month_weeks as $w): ?>
-                        <option value="<?php echo esc_attr($w['val']); ?>" <?php selected($week_start, $w['val']); ?>>
-                            <?php echo sprintf(__('%s %d', 'olama-school'), __('Week', 'olama-school'), $w_count) . " (" . esc_html($w['label']) . ")"; ?>
-                        </option>
-                        <?php $w_count++; endforeach; ?>
-                </select>
-            </div>
-
-            <div style="flex: 1; min-width: 150px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                    <?php _e('Grade', 'olama-school'); ?>
-                </label>
+            <div class="olama-filter-item">
+                <label><?php _e('Grade', 'olama-school'); ?></label>
                 <select name="grade_id" class="olama-select" onchange="this.form.submit()">
                     <?php foreach ($grades as $grade): ?>
                         <option value="<?php echo $grade->id; ?>" <?php selected($selected_grade_id, $grade->id); ?>>
@@ -145,10 +43,8 @@ $today_plans = array_filter($all_plans, function ($p) use ($selected_date) {
                 </select>
             </div>
 
-            <div style="flex: 1; min-width: 150px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                    <?php _e('Section', 'olama-school'); ?>
-                </label>
+            <div class="olama-filter-item">
+                <label><?php _e('Section', 'olama-school'); ?></label>
                 <select name="section_id" class="olama-select" onchange="this.form.submit()">
                     <?php if ($sections): ?>
                         <?php foreach ($sections as $section): ?>
@@ -161,6 +57,30 @@ $today_plans = array_filter($all_plans, function ($p) use ($selected_date) {
                             <?php _e('No sections found', 'olama-school'); ?>
                         </option>
                     <?php endif; ?>
+                </select>
+            </div>
+
+            <div class="olama-filter-item">
+                <label><?php _e('Month', 'olama-school'); ?></label>
+                <select name="plan_month" class="olama-select" onchange="this.form.submit()">
+                    <?php foreach ($months_weeks as $m_key => $weeks): ?>
+                        <option value="<?php echo esc_attr($m_key); ?>" <?php selected($selected_month, $m_key); ?>>
+                            <?php echo date('F Y', strtotime($m_key . '-01')); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="olama-filter-item">
+                <label><?php _e('Week', 'olama-school'); ?></label>
+                <select name="week_start" class="olama-select" onchange="this.form.submit()">
+                    <?php
+                    $w_count = 1;
+                    foreach ($current_month_weeks as $w): ?>
+                        <option value="<?php echo esc_attr($w['val']); ?>" <?php selected($week_start, $w['val']); ?>>
+                            <?php echo sprintf(__('%s %d', 'olama-school'), __('Week', 'olama-school'), $w_count) . " " . esc_html($w['label']); ?>
+                        </option>
+                        <?php $w_count++; endforeach; ?>
                 </select>
             </div>
         </form>
@@ -178,7 +98,7 @@ $today_plans = array_filter($all_plans, function ($p) use ($selected_date) {
                         <?php echo __(esc_html($day_name), 'olama-school'); ?>
                     </strong><br>
                     <small>
-                        <?php echo date('M d', strtotime($date)); ?>
+                        <?php echo Olama_School_Helpers::format_date($date, false, 'M d'); ?>
                     </small>
                 </li>
             <?php endforeach; ?>
@@ -229,27 +149,25 @@ $today_plans = array_filter($all_plans, function ($p) use ($selected_date) {
                             <option value="">
                                 <?php _e('-- Select Subject --', 'olama-school'); ?>
                             </option>
-                            <?php
-                            $active_year = Olama_School_Academic::get_active_year();
-                            $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->id) : [];
-                            $semester_id = $semesters[0]->id ?? 0;
-                            $scheduled_subjects = Olama_School_Schedule::get_unique_subjects_for_day($selected_section_id, $active_day, $semester_id);
+               <?php
+               // semester_id is already calculated in class-admin.php
+               $scheduled_subjects = Olama_School_Schedule::get_unique_subjects_for_day($selected_section_id, $active_day, $semester_id);
 
-                            $filled_subject_ids = array_map(function ($p) {
-                                return $p->subject_id;
-                            }, $today_plans);
+               $filled_subject_ids = array_map(function ($p) {
+                   return $p->subject_id;
+               }, $today_plans);
 
-                            if (!current_user_can('manage_options')) {
-                                $teacher_id = get_current_user_id();
-                                $assigned_ids = Olama_School_Teacher::get_assigned_subjects($teacher_id, $selected_section_id);
-                                $scheduled_subjects = array_filter($scheduled_subjects, function ($subj) use ($assigned_ids) {
-                                    return in_array($subj->id, $assigned_ids);
-                                });
-                            }
+               if (!current_user_can('manage_options')) {
+                   $teacher_id = get_current_user_id();
+                   $assigned_ids = Olama_School_Teacher::get_assigned_subjects($teacher_id, $selected_section_id);
+                   $scheduled_subjects = array_filter($scheduled_subjects, function ($subj) use ($assigned_ids) {
+                       return in_array($subj->id, $assigned_ids);
+                   });
+               }
 
-                            foreach ($scheduled_subjects as $subj):
-                                $is_filled = in_array($subj->id, $filled_subject_ids);
-                                ?>
+               foreach ($scheduled_subjects as $subj):
+                   $is_filled = in_array($subj->id, $filled_subject_ids);
+                   ?>
                                 <option value="<?php echo $subj->id; ?>" <?php echo $is_filled ? 'data-filled="true" class="olama-filled-subject"' : ''; ?>>
                                     <?php echo esc_html($subj->subject_name); ?>
                                 </option>

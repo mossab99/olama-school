@@ -35,9 +35,11 @@ $start_day_name = $settings['start_day'] ?? 'Monday';
 $last_day_name = $settings['last_day'] ?? 'Thursday';
 
 $active_year = Olama_School_Academic::get_active_year();
-$semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->id) : [];
+$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+$semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : [];
 
-$selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : ($semesters[0]->id ?? 0);
+$active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
+$selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : ($active_semester ? $active_semester->id : ($semesters[0]->id ?? 0));
 
 $periods_to_show = 8;
 if ($selected_grade_id) {
@@ -148,12 +150,14 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
 
 <div class="olama-filter-section" style="margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
     <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-        <form method="get" id="olama-schedule-filter-form" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin: 0;">
+        <form method="get" id="olama-schedule-filter-form" class="olama-filter-row" style="margin: 0;">
             <input type="hidden" name="page" value="olama-school-plans" />
             <input type="hidden" name="tab" value="schedule" />
 
-            <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;"><?php _e('Grade', 'olama-school'); ?></label>
+            <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+
+            <div class="olama-filter-item">
+                <label><?php _e('Grade', 'olama-school'); ?></label>
                 <select name="grade_id" onchange="document.getElementById('olama-section-select').value='0'; this.form.submit()">
                     <?php foreach ($grades as $grade): ?>
                         <option value="<?php echo $grade->id; ?>" <?php selected($selected_grade_id, $grade->id); ?>>
@@ -163,8 +167,8 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
                 </select>
             </div>
 
-            <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;"><?php _e('Section', 'olama-school'); ?></label>
+            <div class="olama-filter-item">
+                <label><?php _e('Section', 'olama-school'); ?></label>
                 <select name="section_id" id="olama-section-select" onchange="this.form.submit()">
                     <option value="0"><?php _e('-- Select Section --', 'olama-school'); ?></option>
                     <?php if ($sections): ?>
@@ -177,8 +181,8 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
                 </select>
             </div>
 
-            <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;"><?php _e('Semester', 'olama-school'); ?></label>
+            <div class="olama-filter-item">
+                <label><?php _e('Semester', 'olama-school'); ?></label>
                 <select name="semester_id" onchange="this.form.submit()">
                     <?php foreach ($semesters as $s): ?>
                         <option value="<?php echo $s->id; ?>" <?php selected($selected_semester_id, $s->id); ?>>

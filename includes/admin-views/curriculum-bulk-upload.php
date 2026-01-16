@@ -8,9 +8,17 @@ if (!defined('ABSPATH')) {
 
 $grades = Olama_School_Grade::get_grades();
 $active_year = Olama_School_Academic::get_active_year();
-$semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->id) : array();
+$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+$semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
 ?>
 
+<div style="margin-bottom: 20px;">
+    <form method="get" id="olama-bulk-upload-filters">
+        <input type="hidden" name="page" value="olama-school-curriculum" />
+        <input type="hidden" name="tab" value="bulk_upload" />
+        <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+    </form>
+</div>
 
 <div>
     <?php
