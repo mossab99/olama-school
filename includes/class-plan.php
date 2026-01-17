@@ -44,6 +44,19 @@ class Olama_School_Plan
         $plan_date = $data['plan_date'];
         $period_number = intval($data['period_number']);
 
+        // Auto-assign period number if not specified (0)
+        // This allows multiple subjects per day by giving each a unique period
+        if ($period_number === 0 && !$plan_id) {
+            // Find the highest period number for this section and date
+            $max_period = $wpdb->get_var($wpdb->prepare(
+                "SELECT MAX(period_number) FROM $table WHERE section_id = %d AND plan_date = %s",
+                $section_id,
+                $plan_date
+            ));
+            // Assign next available period number (starting from 1)
+            $period_number = $max_period ? intval($max_period) + 1 : 1;
+        }
+
         $subject_id = intval($data['subject_id']);
 
         // Limit Validation
@@ -113,15 +126,20 @@ class Olama_School_Plan
             }
         }
 
-        // If no plan_id, check if a plan already exists for this section, date, and subject
-        // We exclude period_number if it's 0 (meaning not specified) to allow general day-plans per subject
+        // If no plan_id, check if a plan already exists for this exact combination
+        // The database has a unique constraint on (section_id, plan_date, period_number)
+        // But we also want to check by subject to allow updating existing plans for the same subject
         if (!$plan_id) {
+            // First check: exact match by section, date, subject, and period
+            // This allows updating an existing plan for the same subject
             $existing_plan_id = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM $table WHERE section_id = %d AND plan_date = %s AND subject_id = %d",
+                "SELECT id FROM $table WHERE section_id = %d AND plan_date = %s AND subject_id = %d AND period_number = %d",
                 $section_id,
                 $plan_date,
-                $subject_id
+                $subject_id,
+                $period_number
             ));
+
             if ($existing_plan_id) {
                 $plan_id = $existing_plan_id;
             }
@@ -138,14 +156,37 @@ class Olama_School_Plan
             }
         }
 
+        $semester_id = isset($data['semester_id']) ? intval($data['semester_id']) : 0;
         $academic_year_id = isset($data['academic_year_id']) ? intval($data['academic_year_id']) : 0;
+
+        if ($semester_id > 0 && !$academic_year_id) {
+            $semester = $wpdb->get_row($wpdb->prepare(
+                "SELECT academic_year_id FROM {$wpdb->prefix}olama_semesters WHERE id = %d",
+                $semester_id
+            ));
+            if ($semester) {
+                $academic_year_id = $semester->academic_year_id;
+            }
+        }
+
         if (!$academic_year_id) {
             $active_year = Olama_School_Academic::get_active_year();
             $academic_year_id = $active_year ? $active_year->id : 0;
         }
 
+        if (!$semester_id && $plan_date) {
+            // Fallback: Try to derive semester from date if not provided
+            $semester = $wpdb->get_row($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}olama_semesters WHERE academic_year_id = %d AND %s BETWEEN start_date AND end_date LIMIT 1",
+                $academic_year_id,
+                $plan_date
+            ));
+            $semester_id = $semester ? $semester->id : 0;
+        }
+
         $plan_data = array(
             'academic_year_id' => $academic_year_id,
+            'semester_id' => $semester_id,
             'section_id' => $section_id,
             'subject_id' => intval($data['subject_id']),
             'teacher_id' => intval($data['teacher_id']),
@@ -165,10 +206,39 @@ class Olama_School_Plan
         );
 
         if ($plan_id > 0) {
-            $wpdb->update($table, $plan_data, array('id' => $plan_id));
+            $result = $wpdb->update($table, $plan_data, array('id' => $plan_id));
+            if ($result === false) {
+                return new WP_Error('db_update_error', __('Database error updating plan: ', 'olama-school') . $wpdb->last_error);
+            }
         } else {
-            $wpdb->insert($table, $plan_data);
+            $result = $wpdb->insert($table, $plan_data);
+            if ($result === false) {
+                // Check if this is a duplicate entry error (time slot already occupied)
+                if (strpos($wpdb->last_error, 'Duplicate entry') !== false && strpos($wpdb->last_error, 'uk_plan_slot') !== false) {
+                    // Find which subject is already in this slot
+                    $existing_subject = $wpdb->get_var($wpdb->prepare(
+                        "SELECT s.subject_name FROM $table p 
+                         LEFT JOIN {$wpdb->prefix}olama_subjects s ON p.subject_id = s.id
+                         WHERE p.section_id = %d AND p.plan_date = %s AND p.period_number = %d",
+                        $section_id,
+                        $plan_date,
+                        $period_number
+                    ));
+
+                    if ($existing_subject) {
+                        return new WP_Error('slot_occupied', sprintf(
+                            __('This time slot is already occupied by "%s". Please delete that plan first or choose a different period.', 'olama-school'),
+                            $existing_subject
+                        ));
+                    }
+                }
+
+                return new WP_Error('db_insert_error', __('Database error creating plan: ', 'olama-school') . $wpdb->last_error);
+            }
             $plan_id = $wpdb->insert_id;
+            if (!$plan_id) {
+                return new WP_Error('no_insert_id', __('Plan was not saved - no ID returned', 'olama-school'));
+            }
         }
 
         // Handle linked questions

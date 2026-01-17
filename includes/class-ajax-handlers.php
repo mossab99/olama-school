@@ -29,6 +29,7 @@ class Olama_School_Ajax_Handlers
         add_action('wp_ajax_olama_delete_curriculum_question', array($this, 'delete_curriculum_question'));
         add_action('wp_ajax_olama_clear_curriculum', array($this, 'clear_curriculum'));
         add_action('wp_ajax_olama_clear_grade_curriculum', array($this, 'clear_grade_curriculum'));
+        add_action('wp_ajax_olama_force_clear_all_curriculum', array($this, 'force_clear_all_curriculum'));
 
         add_action('wp_ajax_olama_get_scheduled_subjects', array($this, 'get_scheduled_subjects'));
         add_action('wp_ajax_olama_get_subjects_by_grade', array($this, 'get_subjects_by_grade'));
@@ -55,6 +56,9 @@ class Olama_School_Ajax_Handlers
 
     public function save_curriculum_unit()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
 
         $received_data = array(
@@ -81,16 +85,22 @@ class Olama_School_Ajax_Handlers
 
     public function get_curriculum_units()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
-        $subject_id = intval($_GET['subject_id']);
-        $grade_id = intval($_GET['grade_id']);
-        $semester_id = intval($_GET['semester_id']);
+        $subject_id = intval($_REQUEST['subject_id']);
+        $grade_id = intval($_REQUEST['grade_id']);
+        $semester_id = intval($_REQUEST['semester_id']);
         $units = Olama_School_Unit::get_units($subject_id, $grade_id, $semester_id);
         wp_send_json_success($units);
     }
 
     public function delete_curriculum_unit()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
         $result = Olama_School_Unit::delete_unit(intval($_POST['id']));
 
@@ -107,6 +117,9 @@ class Olama_School_Ajax_Handlers
 
     public function save_curriculum_lesson()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
 
         $received_data = array(
@@ -131,13 +144,19 @@ class Olama_School_Ajax_Handlers
 
     public function get_curriculum_lessons()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
-        $lessons = Olama_School_Lesson::get_lessons(intval($_GET['unit_id']));
+        $lessons = Olama_School_Lesson::get_lessons(intval($_REQUEST['unit_id']));
         wp_send_json_success($lessons);
     }
 
     public function delete_curriculum_lesson()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
         $result = Olama_School_Lesson::delete_lesson(intval($_POST['id']));
 
@@ -154,6 +173,9 @@ class Olama_School_Ajax_Handlers
 
     public function save_curriculum_question()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
         $result = Olama_School_Question_Bank::save_question($_POST);
 
@@ -169,8 +191,11 @@ class Olama_School_Ajax_Handlers
 
     public function get_curriculum_questions()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
-        $questions = Olama_School_Question_Bank::get_questions(intval($_GET['lesson_id']));
+        $questions = Olama_School_Question_Bank::get_questions(intval($_REQUEST['lesson_id']));
 
         // Map fields for compatibility
         $normalized = array_map(function ($q) {
@@ -184,6 +209,9 @@ class Olama_School_Ajax_Handlers
 
     public function delete_curriculum_question()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
         $id = intval($_POST['id']);
         if ($id > 0) {
@@ -199,8 +227,11 @@ class Olama_School_Ajax_Handlers
 
     public function get_subjects_by_grade()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
-        $grade_id = intval($_GET['grade_id']);
+        $grade_id = intval($_REQUEST['grade_id']);
         $subjects = Olama_School_Subject::get_by_grade($grade_id);
         wp_send_json_success($subjects);
     }
@@ -211,9 +242,12 @@ class Olama_School_Ajax_Handlers
         $section_id = intval($_GET['section_id']);
         $day_name = sanitize_text_field($_GET['day_name']);
 
-        $active_year = Olama_School_Academic::get_active_year();
-        $semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->id) : [];
-        $semester_id = $semesters[0]->id ?? 0;
+        $semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : 0;
+
+        if (!$semester_id) {
+            $active_semester = Olama_School_Academic::get_active_semester();
+            $semester_id = $active_semester ? $active_semester->id : 0;
+        }
 
         $subjects = Olama_School_Schedule::get_unique_subjects_for_day($section_id, $day_name, $semester_id);
         wp_send_json_success($subjects);
@@ -236,11 +270,14 @@ class Olama_School_Ajax_Handlers
 
     public function get_timeline_data()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_admin_nonce', 'nonce');
 
-        $semester_id = intval($_GET['semester_id']);
-        $grade_id = intval($_GET['grade_id']);
-        $subject_id = intval($_GET['subject_id']);
+        $semester_id = intval($_REQUEST['semester_id']);
+        $grade_id = intval($_REQUEST['grade_id']);
+        $subject_id = intval($_REQUEST['subject_id']);
 
         if (!$semester_id || !$grade_id || !$subject_id) {
             wp_send_json_error(__('Missing parameters.', 'olama-school'));
@@ -257,6 +294,8 @@ class Olama_School_Ajax_Handlers
                 'unit_name' => $unit->unit_name,
                 'start_date' => $unit->start_date,
                 'end_date' => $unit->end_date,
+                'formatted_start_date' => Olama_School_Helpers::format_date($unit->start_date),
+                'formatted_end_date' => Olama_School_Helpers::format_date($unit->end_date),
                 'lessons' => array_map(function ($lesson) {
                     return array(
                         'id' => $lesson->id,
@@ -264,7 +303,9 @@ class Olama_School_Ajax_Handlers
                         'lesson_title' => $lesson->lesson_title,
                         'periods' => $lesson->periods,
                         'start_date' => $lesson->start_date,
-                        'end_date' => $lesson->end_date
+                        'end_date' => $lesson->end_date,
+                        'formatted_start_date' => Olama_School_Helpers::format_date($lesson->start_date),
+                        'formatted_end_date' => Olama_School_Helpers::format_date($lesson->end_date),
                     );
                 }, $lessons)
             );
@@ -275,9 +316,13 @@ class Olama_School_Ajax_Handlers
 
     public function save_timeline_dates()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_admin_nonce', 'nonce');
 
-        $data = json_decode(stripslashes($_POST['timeline_data']), true);
+        $data_json = isset($_POST['timeline_data']) ? $_POST['timeline_data'] : '';
+        $data = json_decode(stripslashes($data_json), true);
 
         if (!$data || !is_array($data)) {
             wp_send_json_error(__('Invalid data format.', 'olama-school'));
@@ -291,8 +336,8 @@ class Olama_School_Ajax_Handlers
             $wpdb->update(
                 $units_table,
                 array(
-                    'start_date' => !empty($unit['start_date']) ? $unit['start_date'] : null,
-                    'end_date' => !empty($unit['end_date']) ? $unit['end_date'] : null
+                    'start_date' => !empty($unit['start_date']) ? Olama_School_Helpers::sanitize_date($unit['start_date']) : null,
+                    'end_date' => !empty($unit['end_date']) ? Olama_School_Helpers::sanitize_date($unit['end_date']) : null
                 ),
                 array('id' => intval($unit['id']))
             );
@@ -302,8 +347,8 @@ class Olama_School_Ajax_Handlers
                     $wpdb->update(
                         $lessons_table,
                         array(
-                            'start_date' => !empty($lesson['start_date']) ? $lesson['start_date'] : null,
-                            'end_date' => !empty($lesson['end_date']) ? $lesson['end_date'] : null,
+                            'start_date' => !empty($lesson['start_date']) ? Olama_School_Helpers::sanitize_date($lesson['start_date']) : null,
+                            'end_date' => !empty($lesson['end_date']) ? Olama_School_Helpers::sanitize_date($lesson['end_date']) : null,
                             'periods' => isset($lesson['periods']) ? intval($lesson['periods']) : 1
                         ),
                         array('id' => intval($lesson['id']))
@@ -359,7 +404,8 @@ class Olama_School_Ajax_Handlers
         if (!$grade_id) {
             wp_send_json_error(__('Invalid Grade ID', 'olama-school'));
         }
-        $sections = Olama_School_Section::get_by_grade($grade_id);
+        $active_year = Olama_School_Academic::get_active_year();
+        $sections = Olama_School_Section::get_by_grade($grade_id, $active_year ? $active_year->id : 0);
         wp_send_json_success($sections);
     }
 
@@ -370,7 +416,8 @@ class Olama_School_Ajax_Handlers
         if (!$teacher_id) {
             wp_send_json_error(__('Invalid Teacher ID', 'olama-school'));
         }
-        $assignments = Olama_School_Teacher::get_all_assignments($teacher_id);
+        $active_year = Olama_School_Academic::get_active_year();
+        $assignments = Olama_School_Teacher::get_all_assignments($teacher_id, $active_year ? $active_year->id : 0);
         wp_send_json_success($assignments);
     }
 
@@ -386,7 +433,8 @@ class Olama_School_Ajax_Handlers
             wp_send_json_error(__('Invalid parameters', 'olama-school'));
         }
 
-        $assigned_subjects = Olama_School_Teacher::get_assigned_subjects($teacher_id, $section_id);
+        $active_year = Olama_School_Academic::get_active_year();
+        $assigned_subjects = Olama_School_Teacher::get_assigned_subjects($teacher_id, $section_id, $active_year ? $active_year->id : 0);
         $all_grade_subjects = Olama_School_Subject::get_by_grade($grade_id);
 
         wp_send_json_success(array(
@@ -408,7 +456,8 @@ class Olama_School_Ajax_Handlers
             wp_send_json_error(__('Invalid parameters', 'olama-school'));
         }
 
-        $result = Olama_School_Teacher::toggle_assignment($teacher_id, $section_id, $subject_id, $grade_id);
+        $active_year = Olama_School_Academic::get_active_year();
+        $result = Olama_School_Teacher::toggle_assignment($teacher_id, $section_id, $subject_id, $grade_id, $active_year ? $active_year->id : 0);
 
         if ($result !== false) {
             wp_send_json_success();
@@ -423,6 +472,14 @@ class Olama_School_Ajax_Handlers
 
     public function bulk_upload_curriculum()
     {
+        // Clean any existing output buffers
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // Start fresh output buffering
+        ob_start();
+
         check_ajax_referer('olama_bulk_upload_nonce', 'nonce');
 
         // Check permissions
@@ -456,6 +513,11 @@ class Olama_School_Ajax_Handlers
             $_FILES['file']
         );
 
+        // Clean all output buffers before sending JSON
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
         if ($result['success']) {
             wp_send_json_success($result);
         } else {
@@ -471,6 +533,9 @@ class Olama_School_Ajax_Handlers
 
     public function clear_curriculum()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
 
         // Check permissions
@@ -481,9 +546,9 @@ class Olama_School_Ajax_Handlers
         }
 
         // Validate parameters
-        $semester_id = isset($_POST['semester_id']) ? intval($_POST['semester_id']) : 0;
-        $grade_id = isset($_POST['grade_id']) ? intval($_POST['grade_id']) : 0;
-        $subject_id = isset($_POST['subject_id']) ? intval($_POST['subject_id']) : 0;
+        $semester_id = isset($_REQUEST['semester_id']) ? intval($_REQUEST['semester_id']) : 0;
+        $grade_id = isset($_REQUEST['grade_id']) ? intval($_REQUEST['grade_id']) : 0;
+        $subject_id = isset($_REQUEST['subject_id']) ? intval($_REQUEST['subject_id']) : 0;
 
         if (!$semester_id || !$grade_id || !$subject_id) {
             wp_send_json_error(array(
@@ -519,7 +584,7 @@ class Olama_School_Ajax_Handlers
 
         // Delete all questions for lessons in these units (if applicable)
         $wpdb->query($wpdb->prepare(
-            "DELETE FROM {$wpdb->prefix}olama_questions 
+            "DELETE FROM {$wpdb->prefix}olama_curriculum_questions 
              WHERE lesson_id IN (
                  SELECT id FROM {$wpdb->prefix}olama_curriculum_lessons 
                  WHERE unit_id IN ($placeholders)
@@ -561,6 +626,9 @@ class Olama_School_Ajax_Handlers
 
     public function clear_grade_curriculum()
     {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
 
         // Check permissions
@@ -571,8 +639,8 @@ class Olama_School_Ajax_Handlers
         }
 
         // Validate parameters (subject not required for grade-level clear)
-        $semester_id = isset($_POST['semester_id']) ? intval($_POST['semester_id']) : 0;
-        $grade_id = isset($_POST['grade_id']) ? intval($_POST['grade_id']) : 0;
+        $semester_id = isset($_REQUEST['semester_id']) ? intval($_REQUEST['semester_id']) : 0;
+        $grade_id = isset($_REQUEST['grade_id']) ? intval($_REQUEST['grade_id']) : 0;
 
         if (!$semester_id || !$grade_id) {
             wp_send_json_error(array(
@@ -607,7 +675,7 @@ class Olama_School_Ajax_Handlers
 
         // Delete all questions for lessons in these units
         $wpdb->query($wpdb->prepare(
-            "DELETE FROM {$wpdb->prefix}olama_questions 
+            "DELETE FROM {$wpdb->prefix}olama_curriculum_questions 
              WHERE lesson_id IN (
                  SELECT id FROM {$wpdb->prefix}olama_curriculum_lessons 
                  WHERE unit_id IN ($placeholders)
@@ -639,5 +707,47 @@ class Olama_School_Ajax_Handlers
         wp_send_json_success(array(
             'message' => sprintf(__('Grade curriculum cleared successfully! %d unit(s) across all subjects were removed.', 'olama-school'), count($unit_ids))
         ));
+    }
+
+    /**
+     * Force Clear ALL Curriculum Data (Global)
+     */
+    public function force_clear_all_curriculum()
+    {
+        // Clean any existing output buffers to prevent them from breaking the JSON response
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        check_ajax_referer('olama_curriculum_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Only administrators can perform a global wipe.', 'olama-school')));
+        }
+
+        global $wpdb;
+
+        // Attempt to increase execution time for large deletions
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+
+        // We use DELETE instead of TRUNCATE for better compatibility with different DB users
+        $q_res = $wpdb->query("DELETE FROM {$wpdb->prefix}olama_curriculum_questions");
+        $l_res = $wpdb->query("DELETE FROM {$wpdb->prefix}olama_curriculum_lessons");
+        $u_res = $wpdb->query("DELETE FROM {$wpdb->prefix}olama_curriculum_units");
+
+        if ($wpdb->last_error) {
+            wp_send_json_error(array(
+                'message' => __('Database error during global wipe:', 'olama-school') . ' ' . $wpdb->last_error
+            ));
+        }
+
+        // Log the activity
+        if (class_exists('Olama_School_Logger')) {
+            Olama_School_Logger::log('curriculum_global_wipe', 'GLOBAL CURRICULUM WIPE: All units, lessons, and questions were deleted.');
+        }
+
+        wp_send_json_success(array('message' => __('Global curriculum wipe completed successfully!', 'olama-school')));
     }
 }

@@ -27,19 +27,27 @@ class Olama_School_Section
     }
 
     /**
-     * Get sections by grade
+     * Get sections by grade and academic year
      */
-    public static function get_by_grade($grade_id)
+    public static function get_by_grade($grade_id, $academic_year_id = 0)
     {
-        if (isset(self::$cache['sections_grade_' . $grade_id])) {
-            return self::$cache['sections_grade_' . $grade_id];
+        if (!$academic_year_id) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $academic_year_id = $active_year ? $active_year->id : 0;
         }
+
+        $cache_key = 'sections_grade_' . $grade_id . '_year_' . $academic_year_id;
+        if (isset(self::$cache[$cache_key])) {
+            return self::$cache[$cache_key];
+        }
+
         global $wpdb;
         $results = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d",
-            $grade_id
+            "SELECT * FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d AND academic_year_id = %d",
+            $grade_id,
+            $academic_year_id
         ));
-        self::$cache['sections_grade_' . $grade_id] = $results;
+        self::$cache[$cache_key] = $results;
         return $results;
     }
 
@@ -67,20 +75,22 @@ class Olama_School_Section
     {
         global $wpdb;
 
-        // Check for duplicates in the same grade
+        // Check for duplicates in the same grade and academic year
         $exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d AND section_name = %s",
+            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d AND section_name = %s AND academic_year_id = %d",
             $data['grade_id'],
-            $data['section_name']
+            $data['section_name'],
+            $data['academic_year_id']
         ));
 
         if ($exists) {
-            return new WP_Error('duplicate_section', __('A section with this name already exists for this grade.', 'olama-school'));
+            return new WP_Error('duplicate_section', __('A section with this name already exists for this grade in the selected academic year.', 'olama-school'));
         }
 
         return $wpdb->insert(
             "{$wpdb->prefix}olama_sections",
             array(
+                'academic_year_id' => $data['academic_year_id'],
                 'grade_id' => $data['grade_id'],
                 'section_name' => $data['section_name'],
                 'room_number' => $data['room_number'] ?? '',
@@ -97,19 +107,21 @@ class Olama_School_Section
 
         // Check for duplicates (excluding current ID)
         $exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d AND section_name = %s AND id != %d",
+            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d AND section_name = %s AND academic_year_id = %d AND id != %d",
             $data['grade_id'],
             $data['section_name'],
+            $data['academic_year_id'],
             $id
         ));
 
         if ($exists) {
-            return new WP_Error('duplicate_section', __('A section with this name already exists for this grade.', 'olama-school'));
+            return new WP_Error('duplicate_section', __('A section with this name already exists for this grade in the selected academic year.', 'olama-school'));
         }
 
         return $wpdb->update(
             "{$wpdb->prefix}olama_sections",
             array(
+                'academic_year_id' => $data['academic_year_id'],
                 'grade_id' => $data['grade_id'],
                 'section_name' => $data['section_name'],
                 'room_number' => $data['room_number'] ?? '',

@@ -6,6 +6,7 @@ jQuery(document).ready(function ($) {
     let currentUnit = null;
     let currentLesson = null;
     let currentSemester = null;
+    let currentYear = $('#curriculum-year').val();
     let currentSubjectColor = '#2271b1'; // Default WordPress blue
 
     // --- Helpers ---
@@ -71,6 +72,7 @@ jQuery(document).ready(function ($) {
         if (currentGrade) {
             $.ajax({
                 url: olamaCurriculum.ajaxUrl,
+                method: 'POST',
                 data: {
                     action: 'olama_get_subjects_by_grade',
                     grade_id: currentGrade,
@@ -83,7 +85,14 @@ jQuery(document).ready(function ($) {
                             options += `<option value="${subject.id}" data-color="${subject.color_code || '#2271b1'}">${subject.subject_name}</option>`;
                         });
                         $('#curriculum-subject').html(options).prop('disabled', false);
+                    } else {
+                        console.error('Get Subjects Error:', response.data);
                     }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Get Subjects Connection Error:', error);
+                    console.error('Response:', xhr.responseText);
+                    alert('Error loading subjects: ' + status + ' (' + error + ')\nStatus: ' + xhr.status);
                 }
             });
         }
@@ -127,6 +136,18 @@ jQuery(document).ready(function ($) {
         }
     });
 
+    $('#curriculum-year').on('change', function () {
+        currentYear = $(this).val();
+
+        // Update URL to preserve year context
+        const url = new URL(window.location.href);
+        url.searchParams.set('academic_year_id', currentYear);
+        // Reset specific filters when switching years
+        url.searchParams.delete('semester_id');
+        url.searchParams.delete('subject_id');
+        window.location.href = url.toString();
+    });
+
     // --- Unit Management ---
     function loadUnits() {
         showLoading('#units-list');
@@ -140,6 +161,7 @@ jQuery(document).ready(function ($) {
         console.log('Load Units Request:', requestData);
         $.ajax({
             url: olamaCurriculum.ajaxUrl,
+            method: 'POST',
             data: requestData,
             success: function (response) {
                 console.log('Load Units Response:', response);
@@ -147,10 +169,15 @@ jQuery(document).ready(function ($) {
                     // Handle both old format (array) and new format (object with units)
                     const units = Array.isArray(response.data) ? response.data : (response.data.units || []);
                     renderUnits(units);
+                } else {
+                    console.error('Load Units Server Error:', response.data);
+                    $('#units-list').html('<p>' + (response.data || 'Error loading units') + '</p>');
                 }
             },
             error: function (xhr, status, error) {
-                console.error('Load Units Error:', error);
+                console.error('Load Units Connection Error:', error);
+                console.error('Response:', xhr.responseText);
+                $('#units-list').html('<p>Connection error loading units. Status: ' + xhr.status + '</p>');
             }
         });
     }
@@ -310,6 +337,7 @@ jQuery(document).ready(function ($) {
 
             $.ajax({
                 url: olamaCurriculum.ajaxUrl,
+                method: 'POST',
                 data: {
                     action: 'olama_get_curriculum_lessons',
                     unit_id: currentUnit,
@@ -321,12 +349,13 @@ jQuery(document).ready(function ($) {
                         const lessons = response.data.lessons || response.data || [];
                         renderLessons(lessons);
                     } else {
-                        $('#lessons-list').html('<p>' + olamaCurriculum.i18n.errorLoadingLessons + '</p>');
+                        $('#lessons-list').html('<p>' + (response.data || olamaCurriculum.i18n.errorLoadingLessons) + '</p>');
                     }
                 },
                 error: function (xhr, status, error) {
-                    console.error('Load Lessons Error:', error);
-                    $('#lessons-list').html('<p>' + olamaCurriculum.i18n.errorConnection + '</p>');
+                    console.error('Load Lessons Connection Error:', error);
+                    console.error('Response:', xhr.responseText);
+                    $('#lessons-list').html('<p>' + olamaCurriculum.i18n.errorConnection + ' (Status: ' + xhr.status + ')</p>');
                 }
             });
         }, 100);
@@ -482,6 +511,7 @@ jQuery(document).ready(function ($) {
         showLoading('#questions-list');
         $.ajax({
             url: olamaCurriculum.ajaxUrl,
+            method: 'POST',
             data: {
                 action: 'olama_get_curriculum_questions',
                 lesson_id: currentLesson,
@@ -490,7 +520,13 @@ jQuery(document).ready(function ($) {
             success: function (response) {
                 if (response.success) {
                     renderQuestions(response.data);
+                } else {
+                    console.error('Load Questions Server Error:', response.data);
                 }
+            },
+            error: function (xhr, status, error) {
+                console.error('Load Questions Connection Error:', error);
+                console.error('Response:', xhr.responseText);
             }
         });
     }
@@ -791,6 +827,50 @@ jQuery(document).ready(function ($) {
                 alert(olamaCurriculum.i18n.errorConnection || 'Error connecting to server.');
             },
             complete: function () {
+                $btn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+
+    // --- Force Clear ALL Curriculum Data (Global) ---
+    $('#olama-force-clear-all-curriculum-btn').on('click', function () {
+        const confirm1 = confirm('CRITICAL WARNING: This will delete ALL curriculum data (Units, Lessons, Questions) across ALL academic years, semesters, and subjects. This action is IRREVERSIBLE!\n\nAre you absolutely sure?');
+        if (!confirm1) return;
+
+        const confirm2 = confirm('SECOND CONFIRMATION: Are you REALLY sure? All your data will be permanently lost.');
+        if (!confirm2) return;
+
+        const typedConfirm = prompt('FINAL CONFIRMATION: To proceed, please type "DELETE" in the box below:');
+        if (typedConfirm !== 'DELETE') {
+            alert('Wipe cancelled. Re-confirmation mismatched.');
+            return;
+        }
+
+        const $btn = $(this);
+        const originalText = $btn.html();
+        $btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin" style="margin-top: 4px;"></span> ' + (olamaCurriculum.i18n.deleting || 'DELETING EVERYTHING...'));
+
+        $.ajax({
+            url: olamaCurriculum.ajaxUrl,
+            method: 'POST',
+            data: {
+                action: 'olama_force_clear_all_curriculum',
+                nonce: olamaCurriculum.nonce
+            },
+            success: function (response) {
+                if (response.success) {
+                    alert(response.data.message || 'Global curriculum wipe completed successfully!');
+                    // Refresh the entire page to reset everything
+                    window.location.reload();
+                } else {
+                    alert(response.data.message || 'Error performing global wipe.');
+                    $btn.prop('disabled', false).html(originalText);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Global Wipe Error:', error);
+                console.error('Response Text:', xhr.responseText);
+                alert('Connection Error: ' + status + ' (' + error + ')\nStatus Code: ' + xhr.status + '\nCheck Console for more details.');
                 $btn.prop('disabled', false).html(originalText);
             }
         });

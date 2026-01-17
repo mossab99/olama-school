@@ -8,7 +8,11 @@ $grades = Olama_School_Grade::get_grades();
 $teachers = Olama_School_Teacher::get_teachers();
 
 $selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : ($grades[0]->id ?? 0);
-$sections = Olama_School_Section::get_by_grade($selected_grade_id);
+
+$active_year = Olama_School_Academic::get_active_year();
+$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+
+$sections = Olama_School_Section::get_by_grade($selected_grade_id, $selected_year_id);
 
 // Ensure selected section belongs to the selected grade
 $selected_section_id = isset($_GET['section_id']) ? intval($_GET['section_id']) : 0;
@@ -34,8 +38,6 @@ $settings = get_option('olama_school_settings', array());
 $start_day_name = $settings['start_day'] ?? 'Monday';
 $last_day_name = $settings['last_day'] ?? 'Thursday';
 
-$active_year = Olama_School_Academic::get_active_year();
-$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
 $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : [];
 
 $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);

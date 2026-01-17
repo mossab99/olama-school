@@ -66,14 +66,107 @@ class Olama_School_Academic
     }
 
     /**
-     * Delete an academic year
+     * Get single year
      */
-    public static function delete_year($year_id)
+    public static function get_year($year_id)
     {
         global $wpdb;
-        // First delete semesters belonging to this year
-        $wpdb->delete("{$wpdb->prefix}olama_semesters", array('academic_year_id' => $year_id));
-        return $wpdb->delete("{$wpdb->prefix}olama_academic_years", array('id' => $year_id));
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_academic_years WHERE id = %d", $year_id));
+    }
+
+    /**
+     * Update academic year
+     */
+    public static function update_year($year_id, $data)
+    {
+        global $wpdb;
+
+        $is_active = isset($data['is_active']) ? $data['is_active'] : 0;
+
+        // If we are setting this one to active, deactivate others
+        if ($is_active) {
+            $wpdb->update("{$wpdb->prefix}olama_academic_years", array('is_active' => 0), array('is_active' => 1));
+        }
+
+        return $wpdb->update(
+            "{$wpdb->prefix}olama_academic_years",
+            array(
+                'year_name' => $data['year_name'],
+                'start_date' => $data['start_date'],
+                'end_date' => $data['end_date'],
+                'is_active' => $is_active,
+            ),
+            array('id' => $year_id)
+        );
+    }
+
+    /**
+     * Delete an academic year
+     */
+    public static function delete_year($year_id, $force = false)
+    {
+        global $wpdb;
+
+        if (!$force) {
+            // Check for dependencies in any of this year's semesters
+            $semesters = self::get_semesters($year_id);
+            foreach ($semesters as $sem) {
+                $plans_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}olama_plans WHERE semester_id = %d", $sem->id));
+                if ($plans_count > 0) {
+                    return new WP_Error('dependency_error', sprintf(__('Cannot delete year because semester "%s" has %d weekly plans.', 'olama-school'), $sem->semester_name, $plans_count));
+                }
+
+                $schedule_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}olama_schedule WHERE semester_id = %d", $sem->id));
+                if ($schedule_count > 0) {
+                    return new WP_Error('dependency_error', sprintf(__('Cannot delete year because semester "%s" has %d schedule items.', 'olama-school'), $sem->semester_name, $schedule_count));
+                }
+
+                $units_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}olama_curriculum_units WHERE semester_id = %d", $sem->id));
+                if ($units_count > 0) {
+                    return new WP_Error('dependency_error', sprintf(__('Cannot delete year because semester "%s" has %d curriculum units.', 'olama-school'), $sem->semester_name, $units_count));
+                }
+
+                $exams_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}olama_exams WHERE semester_id = %d", $sem->id));
+                if ($exams_count > 0) {
+                    return new WP_Error('dependency_error', sprintf(__('Cannot delete year because semester "%s" has %d exams.', 'olama-school'), $sem->semester_name, $exams_count));
+                }
+            }
+
+            // Also check for direct year dependencies (events, sections, teacher assignments)
+            $events_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}olama_academic_events WHERE academic_year_id = %d", $year_id));
+            if ($events_count > 0) {
+                return new WP_Error('dependency_error', sprintf(__('Cannot delete year because it has %d academic events.', 'olama-school'), $events_count));
+            }
+
+            $sections_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}olama_sections WHERE academic_year_id = %d", $year_id));
+            if ($sections_count > 0) {
+                return new WP_Error('dependency_error', sprintf(__('Cannot delete year because it has %d sections.', 'olama-school'), $sections_count));
+            }
+        } else {
+            // Force delete
+            $semesters = self::get_semesters($year_id);
+            foreach ($semesters as $sem) {
+                self::delete_semester($sem->id, true);
+            }
+
+            // Clean up direct dependencies
+            $wpdb->delete("{$wpdb->prefix}olama_academic_events", array('academic_year_id' => $year_id));
+            $wpdb->delete("{$wpdb->prefix}olama_teacher_assignments", array('academic_year_id' => $year_id));
+            $wpdb->delete("{$wpdb->prefix}olama_sections", array('academic_year_id' => $year_id));
+
+            // Delete all semesters for this year (just in case any were missed)
+            $wpdb->delete("{$wpdb->prefix}olama_semesters", array('academic_year_id' => $year_id));
+        }
+
+        // Final deletion
+        $deleted = $wpdb->delete("{$wpdb->prefix}olama_academic_years", array('id' => $year_id));
+
+        if ($deleted) {
+            delete_transient('olama_active_year');
+            delete_transient('olama_academic_years');
+        }
+
+        return $deleted;
     }
 
     /**
@@ -139,9 +232,67 @@ class Olama_School_Academic
     /**
      * Delete semester
      */
-    public static function delete_semester($semester_id)
+    public static function delete_semester($semester_id, $force = false)
     {
         global $wpdb;
+
+        if (!$force) {
+            // Check for dependencies
+            $plans_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}olama_plans WHERE semester_id = %d", $semester_id));
+            if ($plans_count > 0) {
+                return new WP_Error('dependency_error', sprintf(__('Cannot delete semester because it has %d weekly plans.', 'olama-school'), $plans_count));
+            }
+
+            $schedule_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}olama_schedule WHERE semester_id = %d", $semester_id));
+            if ($schedule_count > 0) {
+                return new WP_Error('dependency_error', sprintf(__('Cannot delete semester because it has %d schedule items.', 'olama-school'), $schedule_count));
+            }
+
+            $units_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}olama_curriculum_units WHERE semester_id = %d", $semester_id));
+            if ($units_count > 0) {
+                return new WP_Error('dependency_error', sprintf(__('Cannot delete semester because it has %d curriculum units.', 'olama-school'), $units_count));
+            }
+
+            $exams_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}olama_exams WHERE semester_id = %d", $semester_id));
+            if ($exams_count > 0) {
+                return new WP_Error('dependency_error', sprintf(__('Cannot delete semester because it has %d exams.', 'olama-school'), $exams_count));
+            }
+        } else {
+            // Force delete: Clean up all tables
+            // 1. Delete plan questions
+            $wpdb->query($wpdb->prepare(
+                "DELETE FROM {$wpdb->prefix}olama_plan_questions WHERE plan_id IN (SELECT id FROM {$wpdb->prefix}olama_plans WHERE semester_id = %d)",
+                $semester_id
+            ));
+            // 2. Delete plans
+            $wpdb->delete("{$wpdb->prefix}olama_plans", array('semester_id' => $semester_id));
+
+            // 3. Delete schedule items
+            $wpdb->delete("{$wpdb->prefix}olama_schedule", array('semester_id' => $semester_id));
+
+            // 4. Delete curriculum questions
+            $wpdb->query($wpdb->prepare(
+                "DELETE FROM {$wpdb->prefix}olama_curriculum_questions WHERE lesson_id IN (
+                    SELECT id FROM {$wpdb->prefix}olama_curriculum_lessons WHERE unit_id IN (
+                        SELECT id FROM {$wpdb->prefix}olama_curriculum_units WHERE semester_id = %d
+                    )
+                )",
+                $semester_id
+            ));
+            // 5. Delete curriculum lessons
+            $wpdb->query($wpdb->prepare(
+                "DELETE FROM {$wpdb->prefix}olama_curriculum_lessons WHERE unit_id IN (
+                    SELECT id FROM {$wpdb->prefix}olama_curriculum_units WHERE semester_id = %d
+                )",
+                $semester_id
+            ));
+            // 6. Delete curriculum units
+            $wpdb->delete("{$wpdb->prefix}olama_curriculum_units", array('semester_id' => $semester_id));
+
+            // 7. Delete exams
+            $wpdb->delete("{$wpdb->prefix}olama_exams", array('semester_id' => $semester_id));
+        }
+
         $semester = $wpdb->get_row($wpdb->prepare("SELECT academic_year_id FROM {$wpdb->prefix}olama_semesters WHERE id = %d", $semester_id));
         if ($semester) {
             $year_id = $semester->academic_year_id;

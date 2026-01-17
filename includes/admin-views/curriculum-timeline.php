@@ -15,7 +15,7 @@ $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_
 <div class="olama-timeline-container">
     <div class="olama-card" style="margin-bottom: 20px; padding: 20px;">
         <form method="get" id="olama-timeline-filters">
-            <input type="hidden" name="page" value="olama-school-plans" />
+            <input type="hidden" name="page" value="olama-school-curriculum" />
             <input type="hidden" name="tab" value="timeline" />
             <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
         </form>

@@ -8,10 +8,26 @@ if (!defined('ABSPATH')) {
 
 $grades = Olama_School_Grade::get_grades();
 $active_year = Olama_School_Academic::get_active_year();
-$semesters = $active_year ? Olama_School_Academic::get_semesters($active_year->id) : array();
+$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+
+$semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
 
 $selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : 0;
 $selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : 0;
+
+// Validate semester belongs to year
+if ($selected_semester_id > 0 && !empty($semesters)) {
+    $found = false;
+    foreach ($semesters as $s) {
+        if (intval($s->id) === $selected_semester_id) {
+            $found = true;
+            break;
+        }
+    }
+    if (!$found) {
+        $selected_semester_id = 0;
+    }
+}
 
 $stats = [];
 if ($selected_semester_id && $selected_grade_id) {
@@ -44,6 +60,8 @@ if ($selected_semester_id && $selected_grade_id) {
         <input type="hidden" name="tab" value="analysis">
 
         <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
+            <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+
             <div style="flex: 1; min-width: 200px;">
                 <label class="olama-label"><?php echo Olama_School_Helpers::translate('Semester'); ?></label>
                 <select name="semester_id" class="olama-select" onchange="this.form.submit()">

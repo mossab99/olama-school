@@ -711,18 +711,22 @@ class Olama_School_Importer
         // Map headers
         $map = array();
         $fields_map = array(
-            'subject_name' => array('subject', 'subject name', 'المادة', 'اسم المادة'),
-            'unit_number' => array('unit #', 'unit number', 'رقم الوحدة'),
-            'unit_name' => array('unit name', 'اسم الوحدة'),
-            'objectives' => array('objectives', 'learning objectives', 'الأهداف'),
-            'lesson_number' => array('lesson #', 'lesson number', 'رقم الدرس'),
-            'lesson_title' => array('lesson title', 'lesson name', 'عنوان الدرس'),
-            'video_url' => array('video url', 'link', 'رابط الفيديو'),
-            'periods' => array('number of periods', 'periods', 'عدد الحصص')
+            'subject_name' => array('subject', 'subject name', 'المادة', 'اسم المادة', 'اسم ماده', 'subject_name'),
+            'unit_number' => array('unit #', 'unit number', 'رقم الوحدة', 'وحدة', 'رقم وحده', 'unit', 'unit_no', 'unit_number'),
+            'unit_name' => array('unit name', 'اسم الوحدة', 'اسم وحده', 'unit_name'),
+            'objectives' => array('objectives', 'learning objectives', 'الأهداف', 'اهداف', 'objective'),
+            'lesson_number' => array('lesson #', 'lesson number', 'رقم الدرس', 'درس', 'رقم درس', 'lesson', 'lesson_no', 'lesson_number'),
+            'lesson_title' => array('lesson title', 'lesson name', 'عنوان الدرس', 'عنوان درس', 'lesson_title'),
+            'video_url' => array('video url', 'link', 'رابط الفيديو', 'فيديو', 'video', 'url'),
+            'periods' => array('number of periods', 'periods', 'عدد الحصص', 'حصص', 'عدد حصص', 'period_count')
         );
 
         foreach ($headers as $index => $header) {
+            // Even more aggressive normalization: remove non-alphanumeric/non-Arabic except #
             $header_clean = strtolower(trim($header));
+            $header_clean = preg_replace('/[^\p{L}\p{N}#\s]/u', '', $header_clean); // Keep letters, numbers, #, and spaces
+            $header_clean = preg_replace('/\s+/', ' ', $header_clean);
+
             foreach ($fields_map as $field_key => $variations) {
                 if (in_array($header_clean, $variations)) {
                     $map[$field_key] = $index;
@@ -731,15 +735,20 @@ class Olama_School_Importer
             }
         }
 
-        // Validate mandatory columns
-        if (!isset($map['unit_number']) || !isset($map['unit_name'])) {
+        // Log detected columns for debugging
+        if (class_exists('Olama_School_Logger')) {
+            Olama_School_Logger::log('bulk_import_debug', 'Detected CSV columns: ' . json_encode($map));
+        }
+
+        // Validate mandatory columns - only unit_number is required
+        if (!isset($map['unit_number'])) {
             fclose($handle);
             return array(
                 array(
                     'subject_name' => 'Unknown',
                     'units_count' => 0,
                     'lessons_count' => 0,
-                    'errors' => array(__('Required columns (Unit #, Unit Name) are missing.', 'olama-school'))
+                    'errors' => array(__('Required column (Unit #) is missing.', 'olama-school'))
                 )
             );
         }
@@ -816,7 +825,7 @@ class Olama_School_Importer
             // Create new subject
             $wpdb->insert($wpdb->prefix . 'olama_subjects', array(
                 'subject_name' => $subject_name,
-                'subject_code' => substr($subject_name, 0, 3),
+                'subject_code' => mb_substr($subject_name, 0, 10, 'UTF-8'),
                 'grade_id' => $grade_id,
                 'color_code' => '#3b82f6'
             ));
@@ -832,6 +841,10 @@ class Olama_School_Importer
             }
         }
 
+        if (class_exists('Olama_School_Logger')) {
+            Olama_School_Logger::log('bulk_import_debug', sprintf('Processing subject: %s (ID: %d), Rows: %d', $subject_name, $subject_id, count($rows)));
+        }
+
         // Process rows
         $current_unit_id = 0;
         $last_unit_number = '';
@@ -839,6 +852,9 @@ class Olama_School_Importer
         foreach ($rows as $row) {
             // Handle unit
             if ($row['unit_number'] !== $last_unit_number) {
+                // Use unit_number as unit_name if unit_name is empty
+                $unit_name_value = !empty($row['unit_name']) ? $row['unit_name'] : $row['unit_number'];
+
                 $unit_id = $wpdb->get_var($wpdb->prepare(
                     "SELECT id FROM {$wpdb->prefix}olama_curriculum_units WHERE semester_id = %d AND grade_id = %d AND subject_id = %d AND unit_number = %s",
                     $semester_id,
@@ -849,7 +865,7 @@ class Olama_School_Importer
 
                 if ($unit_id) {
                     $wpdb->update($wpdb->prefix . 'olama_curriculum_units', array(
-                        'unit_name' => $row['unit_name'],
+                        'unit_name' => $unit_name_value,
                         'objectives' => $row['objectives']
                     ), array('id' => $unit_id));
                 } else {
@@ -858,12 +874,12 @@ class Olama_School_Importer
                         'grade_id' => $grade_id,
                         'subject_id' => $subject_id,
                         'unit_number' => $row['unit_number'],
-                        'unit_name' => $row['unit_name'],
+                        'unit_name' => $unit_name_value,
                         'objectives' => $row['objectives']
                     ));
                     $unit_id = $wpdb->insert_id;
-                    $units_count++;
                 }
+                $units_count++; // Increment for both new and updated units
 
                 $current_unit_id = $unit_id;
                 $last_unit_number = $row['unit_number'];
@@ -891,8 +907,8 @@ class Olama_School_Importer
                         'video_url' => $row['video_url'],
                         'periods' => intval($row['periods'])
                     ));
-                    $lessons_count++;
                 }
+                $lessons_count++; // Increment for both new and updated lessons
             }
         }
 
@@ -947,18 +963,22 @@ class Olama_School_Importer
                 // Map headers to field names
                 $map = array();
                 $fields_map = array(
-                    'subject_name' => array('subject', 'subject name', 'المادة', 'اسم المادة'),
-                    'unit_number' => array('unit #', 'unit number', 'رقم الوحدة'),
-                    'unit_name' => array('unit name', 'اسم الوحدة'),
-                    'objectives' => array('objectives', 'learning objectives', 'الأهداف'),
-                    'lesson_number' => array('lesson #', 'lesson number', 'رقم الدرس'),
-                    'lesson_title' => array('lesson title', 'lesson name', 'عنوان الدرس'),
-                    'video_url' => array('video url', 'link', 'رابط الفيديو'),
-                    'periods' => array('number of periods', 'periods', 'عدد الحصص')
+                    'subject_name' => array('subject', 'subject name', 'المادة', 'اسم المادة', 'اسم ماده'),
+                    'unit_number' => array('unit #', 'unit number', 'رقم الوحدة', 'وحدة', 'رقم وحده'),
+                    'unit_name' => array('unit name', 'اسم الوحدة', 'اسم وحده'),
+                    'objectives' => array('objectives', 'learning objectives', 'الأهداف', 'اهداف'),
+                    'lesson_number' => array('lesson #', 'lesson number', 'رقم الدرس', 'درس', 'رقم درس'),
+                    'lesson_title' => array('lesson title', 'lesson name', 'عنوان الدرس', 'عنوان درس'),
+                    'video_url' => array('video url', 'link', 'رابط الفيديو', 'فيديو'),
+                    'periods' => array('number of periods', 'periods', 'عدد الحصص', 'حصص', 'عدد حصص')
                 );
 
                 foreach ($headers as $col => $header) {
+                    // Even more aggressive normalization
                     $header_clean = strtolower(trim($header));
+                    $header_clean = preg_replace('/[^\p{L}\p{N}#\s]/u', '', $header_clean);
+                    $header_clean = preg_replace('/\s+/', ' ', $header_clean);
+
                     foreach ($fields_map as $field_key => $variations) {
                         if (in_array($header_clean, $variations)) {
                             $map[$field_key] = $col;
@@ -967,13 +987,17 @@ class Olama_School_Importer
                     }
                 }
 
-                // Validate required columns
-                if (!isset($map['unit_number']) || !isset($map['unit_name'])) {
+                if (class_exists('Olama_School_Logger')) {
+                    Olama_School_Logger::log('bulk_import_debug', sprintf('Sheet: %s, Detected columns: %s', $subject_name, json_encode($map)));
+                }
+
+                // Validate required columns - only unit_number is required
+                if (!isset($map['unit_number'])) {
                     $results[] = array(
                         'subject_name' => $subject_name,
                         'units_count' => 0,
                         'lessons_count' => 0,
-                        'errors' => array(__('Required columns (Unit #, Unit Name) are missing in sheet: ' . $subject_name, 'olama-school'))
+                        'errors' => array(__('Required column (Unit #) is missing in sheet: ' . $subject_name, 'olama-school'))
                     );
                     continue;
                 }

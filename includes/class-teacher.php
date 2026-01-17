@@ -54,38 +54,51 @@ class Olama_School_Teacher
     }
 
     /**
-     * Get assigned subjects for a teacher and section
+     * Get assigned subjects for a teacher, section and academic year
      */
-    public static function get_assigned_subjects($teacher_id, $section_id)
+    public static function get_assigned_subjects($teacher_id, $section_id, $academic_year_id = 0)
     {
+        if (!$academic_year_id) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $academic_year_id = $active_year ? $active_year->id : 0;
+        }
+
         global $wpdb;
         return $wpdb->get_col($wpdb->prepare(
             "SELECT subject_id FROM {$wpdb->prefix}olama_teacher_assignments 
-            WHERE teacher_id = %d AND section_id = %d",
+            WHERE teacher_id = %d AND section_id = %d AND academic_year_id = %d",
             $teacher_id,
-            $section_id
+            $section_id,
+            $academic_year_id
         ));
     }
 
     /**
      * Toggle teacher assignment to a subject
      */
-    public static function toggle_assignment($teacher_id, $section_id, $subject_id, $grade_id)
+    public static function toggle_assignment($teacher_id, $section_id, $subject_id, $grade_id, $academic_year_id = 0)
     {
+        if (!$academic_year_id) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $academic_year_id = $active_year ? $active_year->id : 0;
+        }
+
         global $wpdb;
         $table = "{$wpdb->prefix}olama_teacher_assignments";
 
         $existing = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM $table WHERE teacher_id = %d AND section_id = %d AND subject_id = %d",
+            "SELECT id FROM $table WHERE teacher_id = %d AND section_id = %d AND subject_id = %d AND academic_year_id = %d",
             $teacher_id,
             $section_id,
-            $subject_id
+            $subject_id,
+            $academic_year_id
         ));
 
         if ($existing) {
             return $wpdb->delete($table, array('id' => $existing));
         } else {
             return $wpdb->insert($table, array(
+                'academic_year_id' => $academic_year_id,
                 'teacher_id' => $teacher_id,
                 'grade_id' => $grade_id,
                 'section_id' => $section_id,
@@ -95,15 +108,21 @@ class Olama_School_Teacher
     }
 
     /**
-     * Get all assignments for a teacher
+     * Get all assignments for a teacher in an academic year
      */
-    public static function get_all_assignments($teacher_id)
+    public static function get_all_assignments($teacher_id, $academic_year_id = 0)
     {
+        if (!$academic_year_id) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $academic_year_id = $active_year ? $active_year->id : 0;
+        }
+
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(
             "SELECT grade_id, section_id, subject_id FROM {$wpdb->prefix}olama_teacher_assignments 
-            WHERE teacher_id = %d",
-            $teacher_id
+            WHERE teacher_id = %d AND academic_year_id = %d",
+            $teacher_id,
+            $academic_year_id
         ));
     }
 

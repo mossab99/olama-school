@@ -57,7 +57,7 @@ class Olama_School_Schedule
         global $wpdb;
         $table = "{$wpdb->prefix}olama_schedule";
 
-        return $wpdb->replace(
+        $result = $wpdb->replace(
             $table,
             array(
                 'semester_id' => intval($data['semester_id']),
@@ -68,6 +68,8 @@ class Olama_School_Schedule
             ),
             array('%d', '%d', '%s', '%d', '%d')
         );
+
+        return $result !== false;
     }
 
     /**

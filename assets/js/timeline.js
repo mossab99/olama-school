@@ -24,6 +24,7 @@ jQuery(document).ready(function ($) {
 
         $.ajax({
             url: olamaTimeline.ajaxUrl,
+            method: 'POST',
             data: {
                 action: 'olama_get_subjects_by_grade',
                 grade_id: gradeId,
@@ -36,7 +37,13 @@ jQuery(document).ready(function ($) {
                         options += `<option value="${subject.id}">${subject.subject_name}</option>`;
                     });
                     $subjectSelect.html(options).prop('disabled', false);
+                } else {
+                    console.error('Timeline Get Subjects Error:', response.data);
                 }
+            },
+            error: function (xhr, status, error) {
+                console.error('Timeline Get Subjects Connection Error:', error);
+                console.error('Response:', xhr.responseText);
             }
         });
     });
@@ -70,6 +77,7 @@ jQuery(document).ready(function ($) {
 
         $.ajax({
             url: olamaTimeline.ajaxUrl,
+            method: 'POST',
             data: {
                 action: 'olama_get_timeline_data',
                 semester_id: semesterId,
@@ -84,12 +92,15 @@ jQuery(document).ready(function ($) {
                     $title.text(subjectName);
                     $content.show();
                 } else {
-                    alert(response.data || olamaTimeline.i18n.error);
+                    console.error('Load Timeline Server Error:', response.data);
+                    alert(olamaTimeline.i18n.error + '\nServer said: ' + (typeof response.data === 'string' ? response.data : JSON.stringify(response.data)));
                 }
             },
-            error: function () {
+            error: function (xhr, status, error) {
                 $loadBtn.prop('disabled', false).text(olamaTimeline.i18n.loadTimeline);
-                alert(olamaTimeline.i18n.error);
+                console.error('Load Timeline Connection Error:', error);
+                console.error('Response:', xhr.responseText);
+                alert(olamaTimeline.i18n.error + '\nStatus: ' + status + ' (' + error + ')\nStatus Code: ' + xhr.status);
             }
         });
     });
@@ -107,11 +118,11 @@ jQuery(document).ready(function ($) {
                             <div class="timeline-unit-dates">
                                 <div class="date-group">
                                     <label>${olamaTimeline.i18n.unitStart}</label>
-                                    <input type="date" class="timeline-date-input unit-start" value="${unit.start_date || ''}" min="${semesterStart}" max="${semesterEnd}">
+                                    <input type="text" class="timeline-date-input unit-start olama-datepicker" value="${unit.formatted_start_date || ''}" data-raw="${unit.start_date || ''}" autocomplete="off">
                                 </div>
                                 <div class="date-group">
                                     <label>${olamaTimeline.i18n.unitEnd}</label>
-                                    <input type="date" class="timeline-date-input unit-end" value="${unit.end_date || ''}" min="${semesterStart}" max="${semesterEnd}">
+                                    <input type="text" class="timeline-date-input unit-end olama-datepicker" value="${unit.formatted_end_date || ''}" data-raw="${unit.end_date || ''}" autocomplete="off">
                                 </div>
                             </div>
                         </div>
@@ -137,11 +148,11 @@ jQuery(document).ready(function ($) {
                                 <input type="number" class="timeline-periods-input lesson-periods" value="${lesson.periods || 1}" min="1" style="width: 60px;">
                             </td>
                             <td>
-                                <input type="date" class="timeline-date-input lesson-start" value="${lesson.start_date || ''}" min="${semesterStart}" max="${semesterEnd}">
+                                <input type="text" class="timeline-date-input lesson-start olama-datepicker" value="${lesson.formatted_start_date || ''}" data-raw="${lesson.start_date || ''}" autocomplete="off">
                                 <div class="date-error"></div>
                             </td>
                             <td>
-                                <input type="date" class="timeline-date-input lesson-end" value="${lesson.end_date || ''}" min="${semesterStart}" max="${semesterEnd}">
+                                <input type="text" class="timeline-date-input lesson-end olama-datepicker" value="${lesson.formatted_end_date || ''}" data-raw="${lesson.end_date || ''}" autocomplete="off">
                                 <div class="date-error"></div>
                             </td>
                         </tr>`;
@@ -155,6 +166,18 @@ jQuery(document).ready(function ($) {
             });
         }
         $grid.html(html);
+
+        // Initialize datepickers for the new elements
+        $('.olama-datepicker').datepicker({
+            dateFormat: olamaAdmin.dateFormat,
+            isRTL: olamaAdmin.isArabic,
+            onSelect: function (dateText, inst) {
+                const day = inst.selectedDay.toString().padStart(2, '0');
+                const month = (inst.selectedMonth + 1).toString().padStart(2, '0');
+                const year = inst.selectedYear;
+                $(this).attr('data-raw', `${year}-${month}-${day}`).trigger('change');
+            }
+        });
     }
 
     // Validation logic
@@ -171,8 +194,8 @@ jQuery(document).ready(function ($) {
 
         $('.timeline-unit-row').each(function () {
             const $unitRow = $(this);
-            const unitStart = $unitRow.find('.unit-start').val();
-            const unitEnd = $unitRow.find('.unit-end').val();
+            const unitStart = $unitRow.find('.unit-start').attr('data-raw');
+            const unitEnd = $unitRow.find('.unit-end').attr('data-raw');
 
             if (unitStart && unitEnd) {
                 unitDates.push({
@@ -199,8 +222,8 @@ jQuery(document).ready(function ($) {
             // Lessons within units
             $unitRow.find('.timeline-lesson-row').each(function () {
                 const $lessonRow = $(this);
-                const lessonStart = $lessonRow.find('.lesson-start').val();
-                const lessonEnd = $lessonRow.find('.lesson-end').val();
+                const lessonStart = $lessonRow.find('.lesson-start').attr('data-raw');
+                const lessonEnd = $lessonRow.find('.lesson-end').attr('data-raw');
 
                 if (lessonStart) {
                     if (unitStart && lessonStart < unitStart) {
@@ -260,8 +283,8 @@ jQuery(document).ready(function ($) {
             const $unitRow = $(this);
             const unit = {
                 id: $unitRow.data('id'),
-                start_date: $unitRow.find('.unit-start').val(),
-                end_date: $unitRow.find('.unit-end').val(),
+                start_date: $unitRow.find('.unit-start').attr('data-raw'),
+                end_date: $unitRow.find('.unit-end').attr('data-raw'),
                 lessons: []
             };
 
@@ -269,8 +292,8 @@ jQuery(document).ready(function ($) {
                 const $lessonRow = $(this);
                 unit.lessons.push({
                     id: $lessonRow.data('id'),
-                    start_date: $lessonRow.find('.lesson-start').val(),
-                    end_date: $lessonRow.find('.lesson-end').val(),
+                    start_date: $lessonRow.find('.lesson-start').attr('data-raw'),
+                    end_date: $lessonRow.find('.lesson-end').attr('data-raw'),
                     periods: $lessonRow.find('.lesson-periods').val()
                 });
             });
@@ -280,16 +303,28 @@ jQuery(document).ready(function ($) {
 
         $saveBtn.prop('disabled', true).addClass('saving').text(olamaTimeline.i18n.saving);
 
-        $.post(olamaTimeline.ajaxUrl, {
-            action: 'olama_save_timeline_dates',
-            timeline_data: JSON.stringify(data),
-            nonce: olamaTimeline.nonce
-        }, function (response) {
-            $saveBtn.prop('disabled', false).removeClass('saving').text(olamaTimeline.i18n.saveAllDates);
-            if (response.success) {
-                alert(response.data);
-            } else {
-                alert(response.data || olamaTimeline.i18n.error);
+        $.ajax({
+            url: olamaTimeline.ajaxUrl,
+            method: 'POST',
+            data: {
+                action: 'olama_save_timeline_dates',
+                timeline_data: JSON.stringify(data),
+                nonce: olamaTimeline.nonce
+            },
+            success: function (response) {
+                $saveBtn.prop('disabled', false).removeClass('saving').text(olamaTimeline.i18n.saveAllDates);
+                if (response.success) {
+                    alert(response.data);
+                } else {
+                    console.error('Save Timeline Server Error:', response.data);
+                    alert(response.data || olamaTimeline.i18n.error);
+                }
+            },
+            error: function (xhr, status, error) {
+                $saveBtn.prop('disabled', false).removeClass('saving').text(olamaTimeline.i18n.saveAllDates);
+                console.error('Save Timeline Connection Error:', error);
+                console.error('Response text:', xhr.responseText);
+                alert(olamaTimeline.i18n.error + '\nStatus: ' + status + ' (' + error + ')\nStatus Code: ' + xhr.status);
             }
         });
     });

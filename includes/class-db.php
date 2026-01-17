@@ -64,11 +64,13 @@ class Olama_School_DB
 
 			'olama_sections' => "CREATE TABLE {$wpdb->prefix}olama_sections (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
 				grade_id mediumint(9) NOT NULL,
 				section_name varchar(50) NOT NULL,
 				room_number varchar(20),
 				homeroom_teacher_id bigint(20) UNSIGNED,
 				PRIMARY KEY  (id),
+				KEY academic_year_id (academic_year_id),
 				KEY grade_id (grade_id)
 			) $charset_collate;",
 
@@ -101,26 +103,12 @@ class Olama_School_DB
 				KEY section_id (section_id)
 			) $charset_collate;",
 
-			'olama_curriculum' => "CREATE TABLE {$wpdb->prefix}olama_curriculum (
-				id mediumint(9) NOT NULL AUTO_INCREMENT,
-				grade_id mediumint(9) NOT NULL,
-				subject_id mediumint(9) NOT NULL,
-				semester_id mediumint(9) NOT NULL,
-				unit_number varchar(10) NOT NULL,
-				unit_name varchar(255) NOT NULL,
-				lesson_number varchar(10),
-				lesson_title text NOT NULL,
-				objectives text,
-				pages varchar(50),
-				duration tinyint(4) DEFAULT 1,
-				resources text,
-				PRIMARY KEY  (id),
-				KEY curriculum_lookup (grade_id, subject_id, semester_id)
-			) $charset_collate;",
+
 
 			'olama_plans' => "CREATE TABLE {$wpdb->prefix}olama_plans (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				academic_year_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL,
 				section_id mediumint(9) NOT NULL,
 				subject_id mediumint(9) NOT NULL,
 				teacher_id bigint(20) UNSIGNED NOT NULL,
@@ -140,8 +128,9 @@ class Olama_School_DB
 				created_at datetime DEFAULT CURRENT_TIMESTAMP,
 				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 				PRIMARY KEY  (id),
-				KEY academic_year_id (academic_year_id),
+				KEY year_semester (academic_year_id, semester_id),
 				KEY section_date (section_id, plan_date),
+				KEY plan_lookup (academic_year_id, section_id, plan_date),
 				KEY subject_id (subject_id),
 				KEY teacher_id (teacher_id)
 			) $charset_collate;",
@@ -232,12 +221,14 @@ class Olama_School_DB
 			) $charset_collate;",
 			'olama_teacher_assignments' => "CREATE TABLE {$wpdb->prefix}olama_teacher_assignments (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
 				teacher_id bigint(20) UNSIGNED NOT NULL,
 				grade_id mediumint(9) NOT NULL,
 				section_id mediumint(9) NOT NULL,
 				subject_id mediumint(9) NOT NULL,
 				PRIMARY KEY  (id),
 				KEY assignment (teacher_id,section_id,subject_id),
+				KEY academic_year_id (academic_year_id),
 				KEY teacher_id (teacher_id),
 				KEY section_id (section_id)
 			) $charset_collate;",

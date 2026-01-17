@@ -7,6 +7,7 @@ if (!defined('ABSPATH')) {
 }
 
 $grades = Olama_School_Grade::get_grades();
+$academic_years = Olama_School_Academic::get_years();
 $active_year = Olama_School_Academic::get_active_year();
 $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
 $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
@@ -16,7 +17,6 @@ $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_
     <?php echo Olama_School_Helpers::translate('Curriculum Management'); ?>
 </h1>
 
-<?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
 <div style="margin-bottom: 20px;"></div>
 
 <?php
@@ -33,6 +33,16 @@ if ($import_error = get_transient('olama_import_error')) {
 <!-- Section 1: Filters -->
 <div class="olama-card" style="margin-bottom: 20px;">
     <div class="olama-filter-row">
+        <div class="olama-filter-item">
+            <label><?php echo Olama_School_Helpers::translate('Academic Year'); ?></label>
+            <select id="curriculum-year" class="olama-select">
+                <?php foreach ($academic_years as $year): ?>
+                    <option value="<?php echo $year->id; ?>" <?php selected($selected_year_id, $year->id); ?>>
+                        <?php echo esc_html($year->year_name); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
         <div class="olama-filter-item">
             <label><?php echo Olama_School_Helpers::translate('Grade'); ?></label>
             <select id="curriculum-grade" class="olama-select">
@@ -119,6 +129,14 @@ if ($import_error = get_transient('olama_import_error')) {
             style="color: #b91c1c; font-weight: 600;">
             <span class="dashicons dashicons-trash" style="margin-top: 4px;"></span>
             <?php echo Olama_School_Helpers::translate('Clear Grade Curriculum'); ?>
+        </button>
+
+        <div style="height: 24px; width: 1px; background: #cbd5e1; display: inline-block;"></div>
+
+        <button type="button" class="button button-primary" id="olama-force-clear-all-curriculum-btn"
+            style="background: #dc2626; border-color: #dc2626; font-weight: 800; color: white;">
+            <span class="dashicons dashicons-warning" style="margin-top: 4px;"></span>
+            <?php echo Olama_School_Helpers::translate('FORCE DELETE EVERYTHING'); ?>
         </button>
 
         <p class="description" style="margin: 0; font-size: 11px; color: #64748b;">

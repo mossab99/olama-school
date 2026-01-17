@@ -97,6 +97,15 @@ if (!defined('ABSPATH')) {
                                         <?php _e('Manage Semesters', 'olama-school'); ?>
                                     </a>
 
+                                    <button type="button" class="button button-small"
+                                        data-id="<?php echo esc_attr($year->id); ?>"
+                                        data-name="<?php echo esc_attr($year->year_name); ?>"
+                                        data-start="<?php echo esc_attr(Olama_School_Helpers::format_date($year->start_date)); ?>"
+                                        data-end="<?php echo esc_attr(Olama_School_Helpers::format_date($year->end_date)); ?>"
+                                        data-active="<?php echo $year->is_active ? '1' : '0'; ?>" onclick="olamaEditYear(this)">
+                                        <?php _e('Edit', 'olama-school'); ?>
+                                    </button>
+
                                     <?php if (!$year->is_active): ?>
                                         <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-academic&action=activate&year_id=' . $year->id), 'olama_activate_year_' . $year->id); ?>"
                                             class="button button-small primary">
@@ -172,13 +181,15 @@ if (!defined('ABSPATH')) {
                                     <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                                         <?php _e('Start Date', 'olama-school'); ?>
                                     </label>
-                                    <input type="date" name="sem_start_date" required />
+                                    <input type="text" name="sem_start_date" required class="olama-datepicker"
+                                        autocomplete="off" />
                                 </div>
                                 <div>
                                     <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                                         <?php _e('End Date', 'olama-school'); ?>
                                     </label>
-                                    <input type="date" name="sem_end_date" required />
+                                    <input type="text" name="sem_end_date" required class="olama-datepicker"
+                                        autocomplete="off" />
                                 </div>
                                 <div style="align-self: flex-start; margin-top: 25px;">
                                     <label><input type="checkbox" name="is_active" value="1" />
@@ -222,13 +233,15 @@ if (!defined('ABSPATH')) {
                                     <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                                         <?php _e('Start Date', 'olama-school'); ?>
                                     </label>
-                                    <input type="date" name="edit_sem_start_date" id="edit_sem_start_date" required />
+                                    <input type="text" name="edit_sem_start_date" id="edit_sem_start_date" required
+                                        class="olama-datepicker" autocomplete="off" />
                                 </div>
                                 <div>
                                     <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                                         <?php _e('End Date', 'olama-school'); ?>
                                     </label>
-                                    <input type="date" name="edit_sem_end_date" id="edit_sem_end_date" required />
+                                    <input type="text" name="edit_sem_end_date" id="edit_sem_end_date" required
+                                        class="olama-datepicker" autocomplete="off" />
                                 </div>
                                 <div style="align-self: flex-start; margin-top: 25px;">
                                     <label><input type="checkbox" name="edit_is_active" id="edit_is_active" value="1" />
@@ -293,8 +306,8 @@ if (!defined('ABSPATH')) {
                                             <button type="button" class="button button-small"
                                                 data-id="<?php echo esc_attr($sem->id); ?>"
                                                 data-name="<?php echo esc_attr($sem->semester_name); ?>"
-                                                data-start="<?php echo esc_attr($sem->start_date); ?>"
-                                                data-end="<?php echo esc_attr($sem->end_date); ?>"
+                                                data-start="<?php echo esc_attr(Olama_School_Helpers::format_date($sem->start_date)); ?>"
+                                                data-end="<?php echo esc_attr(Olama_School_Helpers::format_date($sem->end_date)); ?>"
                                                 data-active="<?php echo !empty($sem->is_active) ? '1' : '0'; ?>"
                                                 onclick="olamaEditSemester(this)">
                                                 <?php _e('Edit', 'olama-school'); ?>
@@ -356,17 +369,15 @@ if (!defined('ABSPATH')) {
                                     <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                                         <?php _e('Start Date', 'olama-school'); ?>
                                     </label>
-                                    <input type="date" name="event_start_date" required style="width: 100%;"
-                                        min="<?php echo esc_attr($selected_year->start_date); ?>"
-                                        max="<?php echo esc_attr($selected_year->end_date); ?>" />
+                                    <input type="text" name="event_start_date" required style="width: 100%;"
+                                        class="olama-datepicker" autocomplete="off" />
                                 </div>
                                 <div>
                                     <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                                         <?php _e('End Date', 'olama-school'); ?>
                                     </label>
-                                    <input type="date" name="event_end_date" required style="width: 100%;"
-                                        min="<?php echo esc_attr($selected_year->start_date); ?>"
-                                        max="<?php echo esc_attr($selected_year->end_date); ?>" />
+                                    <input type="text" name="event_end_date" required style="width: 100%;"
+                                        class="olama-datepicker" autocomplete="off" />
                                 </div>
                                 <div>
                                     <?php submit_button(__('Add', 'olama-school'), 'primary', 'add_event', false); ?>
@@ -398,17 +409,15 @@ if (!defined('ABSPATH')) {
                                     <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                                         <?php _e('Start Date', 'olama-school'); ?>
                                     </label>
-                                    <input type="date" name="edit_event_start_date" id="edit_event_start_date" required
-                                        style="width: 100%;" min="<?php echo esc_attr($selected_year->start_date); ?>"
-                                        max="<?php echo esc_attr($selected_year->end_date); ?>" />
+                                    <input type="text" name="edit_event_start_date" id="edit_event_start_date" required
+                                        style="width: 100%;" class="olama-datepicker" autocomplete="off" />
                                 </div>
                                 <div>
                                     <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                                         <?php _e('End Date', 'olama-school'); ?>
                                     </label>
-                                    <input type="date" name="edit_event_end_date" id="edit_event_end_date" required
-                                        style="width: 100%;" min="<?php echo esc_attr($selected_year->start_date); ?>"
-                                        max="<?php echo esc_attr($selected_year->end_date); ?>" />
+                                    <input type="text" name="edit_event_end_date" id="edit_event_end_date" required
+                                        style="width: 100%;" class="olama-datepicker" autocomplete="off" />
                                 </div>
                                 <div>
                                     <?php submit_button(__('Update', 'olama-school'), 'primary', 'update_event', false); ?>
@@ -448,17 +457,17 @@ if (!defined('ABSPATH')) {
                                                 <?php echo esc_html($event->event_description); ?>
                                             </strong></td>
                                         <td>
-                                            <?php echo esc_html($event->start_date); ?>
+                                            <?php echo Olama_School_Helpers::format_date($event->start_date); ?>
                                         </td>
                                         <td>
-                                            <?php echo esc_html($event->end_date); ?>
+                                            <?php echo Olama_School_Helpers::format_date($event->end_date); ?>
                                         </td>
                                         <td>
                                             <button type="button" class="button button-small olama-edit-event-btn"
                                                 data-id="<?php echo esc_attr($event->id); ?>"
                                                 data-desc="<?php echo esc_attr($event->event_description); ?>"
-                                                data-start="<?php echo esc_attr($event->start_date); ?>"
-                                                data-end="<?php echo esc_attr($event->end_date); ?>" onclick="olamaEditEvent(this)">
+                                                data-start="<?php echo esc_attr(Olama_School_Helpers::format_date($event->start_date)); ?>"
+                                                data-end="<?php echo esc_attr(Olama_School_Helpers::format_date($event->end_date)); ?>" onclick="olamaEditEvent(this)">
                                                 <?php _e('Edit', 'olama-school'); ?>
                                             </button>
                                             <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-academic&manage_year=' . $selected_year_id . '&action=delete_event&event_id=' . $event->id), 'olama_delete_event_' . $event->id); ?>"
@@ -484,6 +493,47 @@ if (!defined('ABSPATH')) {
     </div>
 
     <div class="olama-side-col">
+        <div id="edit-year-form"
+            style="display: none; background: #fffbeb; padding: 20px; border: 1px dashed #d97706; margin-bottom: 20px;">
+            <h2 style="margin-top: 0;">
+                <?php _e('Edit Academic Year', 'olama-school'); ?>
+            </h2>
+            <form method="post" action="">
+                <?php wp_nonce_field('olama_update_year'); ?>
+                <input type="hidden" name="edit_year_id" id="edit_year_id" />
+                <p>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                        <?php _e('Year Name', 'olama-school'); ?>
+                    </label>
+                    <input type="text" name="edit_year_name" id="edit_year_name" required class="widefat" />
+                </p>
+                <p>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                        <?php _e('Start Date', 'olama-school'); ?>
+                    </label>
+                    <input type="text" name="edit_start_date" id="edit_start_date" required
+                        class="widefat olama-datepicker" autocomplete="off" />
+                </p>
+                <p>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                        <?php _e('End Date', 'olama-school'); ?>
+                    </label>
+                    <input type="text" name="edit_end_date" id="edit_end_date" required class="widefat olama-datepicker"
+                        autocomplete="off" />
+                </p>
+                <p>
+                    <label><input type="checkbox" name="edit_is_active" id="edit_is_active" value="1" />
+                        <?php _e('Set as Active', 'olama-school'); ?>
+                    </label>
+                </p>
+                <?php submit_button(__('Update Year', 'olama-school'), 'primary', 'update_year', false); ?>
+                <button type="button" class="button"
+                    onclick="document.getElementById('edit-year-form').style.display='none'">
+                    <?php _e('Cancel', 'olama-school'); ?>
+                </button>
+            </form>
+        </div>
+
         <div class="olama-card" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4;">
             <h2 style="margin-top: 0;">
                 <?php _e('Add Academic Year', 'olama-school'); ?>
@@ -500,13 +550,13 @@ if (!defined('ABSPATH')) {
                     <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                         <?php _e('Start Date', 'olama-school'); ?>
                     </label>
-                    <input type="date" name="start_date" required class="widefat" />
+                    <input type="text" name="start_date" required class="widefat olama-datepicker" autocomplete="off" />
                 </p>
                 <p>
                     <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                         <?php _e('End Date', 'olama-school'); ?>
                     </label>
-                    <input type="date" name="end_date" required class="widefat" />
+                    <input type="text" name="end_date" required class="widefat olama-datepicker" autocomplete="off" />
                 </p>
                 <p>
                     <label><input type="checkbox" name="is_active" value="1" />
@@ -520,6 +570,20 @@ if (!defined('ABSPATH')) {
 </div>
 
 <script>
+    function olamaEditYear(btn) {
+        document.getElementById('edit-year-id').value = ''; // Reset optional fields if any
+        const editForm = document.getElementById('edit-year-form');
+        editForm.style.display = 'block';
+
+        document.getElementById('edit_year_id').value = btn.getAttribute('data-id');
+        document.getElementById('edit_year_name').value = btn.getAttribute('data-name');
+        document.getElementById('edit_start_date').value = btn.getAttribute('data-start');
+        document.getElementById('edit_end_date').value = btn.getAttribute('data-end');
+        document.getElementById('edit_is_active').checked = btn.getAttribute('data-active') === '1';
+
+        editForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     function olamaEditEvent(btn) {
         document.getElementById('add-event-form').style.display = 'none';
         const editForm = document.getElementById('edit-event-form');

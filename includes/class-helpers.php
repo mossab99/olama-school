@@ -131,8 +131,7 @@ class Olama_School_Helpers
         if ($custom_format) {
             $format = $custom_format;
         } else {
-            $settings = get_option('olama_school_settings', array());
-            $format = $settings['date_format'] ?? 'd-m-Y';
+            $format = 'd-m-Y';
 
             // Add time if requested
             if ($include_time) {
@@ -141,6 +140,21 @@ class Olama_School_Helpers
         }
 
         return date_i18n($format, $timestamp);
+    }
+
+    /**
+     * Sanitize date from input format to Y-m-d
+     */
+    public static function sanitize_date($date_str)
+    {
+        if (empty($date_str)) {
+            return '';
+        }
+
+        $format = 'd-m-Y';
+
+        $date = DateTime::createFromFormat($format, $date_str);
+        return $date ? $date->format('Y-m-d') : $date_str;
     }
 
     /**
@@ -696,5 +710,55 @@ class Olama_School_Helpers
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Normalize Arabic characters for better string matching
+     */
+    public static function normalize_arabic($string)
+    {
+        $string = trim($string);
+        $string = mb_strtolower($string, 'UTF-8');
+
+        // Replace variations of Alif
+        $string = preg_replace('/[أإآ]/u', 'ا', $string);
+
+        // Replace Teh Marbuta with Heh
+        $string = str_replace('ة', 'ه', $string);
+
+        // Replace Alif Maksura with Yaa
+        $string = str_replace('ى', 'ي', $string);
+
+        // Remove Harakat (vowels/diacritics)
+        $string = preg_replace('/[\x{064B}-\x{0652}]/u', '', $string);
+
+        return $string;
+    }
+
+    /**
+     * Map day names (Arabic/English) to canonical English
+     */
+    public static function get_day_translation($day)
+    {
+        $day = self::normalize_arabic($day);
+
+        $map = array(
+            'sunday' => 'Sunday',
+            'الاحد' => 'Sunday',
+            'monday' => 'Monday',
+            'الاثنين' => 'Monday',
+            'tuesday' => 'Tuesday',
+            'الثلاثاء' => 'Tuesday',
+            'wednesday' => 'Wednesday',
+            'الاربعاء' => 'Wednesday',
+            'thursday' => 'Thursday',
+            'الخميس' => 'Thursday',
+            'friday' => 'Friday',
+            'الجمعه' => 'Friday',
+            'saturday' => 'Saturday',
+            'السبت' => 'Saturday',
+        );
+
+        return $map[$day] ?? null;
     }
 }

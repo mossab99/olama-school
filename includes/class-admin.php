@@ -297,8 +297,25 @@ class Olama_School_Admin
                 $file = $_FILES['olama_schedule_file']['tmp_name'];
 
                 if (($handle = fopen($file, 'r')) !== false) {
-                    // Read header
-                    $header = fgetcsv($handle);
+                    // Handle UTF-8 BOM
+                    $bom = fread($handle, 3);
+                    if ($bom !== "\xEF\xBB\xBF") {
+                        rewind($handle);
+                    }
+
+                    // Read header and detect delimiter
+                    $header_line = fgets($handle);
+                    if (!$header_line) {
+                        wp_redirect(add_query_arg('message', 'import_error_invalid', $redirect_url));
+                        exit;
+                    }
+
+                    $delimiter = ',';
+                    if (strpos($header_line, ';') !== false && strpos($header_line, ',') === false) {
+                        $delimiter = ';';
+                    }
+
+                    $header = str_getcsv($header_line, $delimiter);
 
                     if (!$header || count($header) < 3) {
                         wp_redirect(add_query_arg('message', 'import_error_invalid', $redirect_url));
@@ -309,52 +326,63 @@ class Olama_School_Admin
                         $subject_map_by_name = array();
                         $subject_map_by_code = array();
                         foreach ($subjects as $subj) {
-                            $subject_map_by_name[strtolower($subj->subject_name)] = $subj->id;
+                            $subject_map_by_name[Olama_School_Helpers::normalize_arabic($subj->subject_name)] = $subj->id;
                             if ($subj->subject_code) {
-                                $subject_map_by_code[strtolower($subj->subject_code)] = $subj->id;
+                                $subject_map_by_code[Olama_School_Helpers::normalize_arabic($subj->subject_code)] = $subj->id;
                             }
                         }
 
                         $imported_count = 0;
                         $valid_days = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
 
-                        while (($row = fgetcsv($handle)) !== false) {
-                            if (count($row) < 3)
+                        while (($raw_row = fgetcsv($handle, 0, $delimiter)) !== false) {
+                            if (count($raw_row) < 3)
                                 continue;
 
-                            $day = trim($row[0]);
+                            // Convert row to UTF-8 if it's not
+                            $row = array_map(function ($item) {
+                                if (!mb_check_encoding($item, 'UTF-8')) {
+                                    return mb_convert_encoding($item, 'UTF-8', 'Windows-1256');
+                                }
+                                return $item;
+                            }, $raw_row);
+
+                            $day_raw = trim($row[0]);
+                            $day = Olama_School_Helpers::get_day_translation($day_raw);
+
                             $period = intval($row[1]);
                             $subject_name = trim($row[2]);
                             $subject_code = isset($row[3]) ? trim($row[3]) : '';
 
-                            // Validate day
-                            if (!in_array($day, $valid_days))
+                            if (!$day || empty($subject_name))
                                 continue;
 
                             // Validate period
-                            if ($period < 1 || $period > 8)
+                            if ($period < 1 || $period > 12)
                                 continue;
 
                             // Find subject ID
                             $subject_id = 0;
-                            $subject_name_lower = strtolower($subject_name);
-                            $subject_code_lower = strtolower($subject_code);
+                            $subject_name_norm = Olama_School_Helpers::normalize_arabic($subject_name);
+                            $subject_code_norm = Olama_School_Helpers::normalize_arabic($subject_code);
 
-                            if (isset($subject_map_by_name[$subject_name_lower])) {
-                                $subject_id = $subject_map_by_name[$subject_name_lower];
-                            } elseif ($subject_code && isset($subject_map_by_code[$subject_code_lower])) {
-                                $subject_id = $subject_map_by_code[$subject_code_lower];
+                            if (isset($subject_map_by_name[$subject_name_norm])) {
+                                $subject_id = $subject_map_by_name[$subject_name_norm];
+                            } elseif ($subject_code && isset($subject_map_by_code[$subject_code_norm])) {
+                                $subject_id = $subject_map_by_code[$subject_code_norm];
                             }
 
                             if ($subject_id) {
-                                Olama_School_Schedule::save_schedule_item(array(
+                                $result = Olama_School_Schedule::save_schedule_item(array(
                                     'semester_id' => $semester_id,
                                     'section_id' => $section_id,
                                     'day_name' => $day,
                                     'period_number' => $period,
                                     'subject_id' => $subject_id
                                 ));
-                                $imported_count++;
+                                if ($result !== false) {
+                                    $imported_count++;
+                                }
                             }
                         }
 
@@ -514,12 +542,19 @@ class Olama_School_Admin
         }
 
         wp_enqueue_style('olama-admin-style', OLAMA_SCHOOL_URL . 'assets/css/admin.css', array(), OLAMA_SCHOOL_VERSION);
+        wp_enqueue_style('jquery-ui-datepicker-css', 'https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css');
 
         if (Olama_School_Helpers::is_arabic()) {
             wp_enqueue_style('olama-admin-rtl', OLAMA_SCHOOL_URL . 'assets/css/admin-rtl.css', array('olama-admin-style'), OLAMA_SCHOOL_VERSION);
         }
 
-        wp_enqueue_script('olama-admin-script', OLAMA_SCHOOL_URL . 'assets/js/admin.js', array('jquery'), OLAMA_SCHOOL_VERSION, true);
+        wp_enqueue_script('jquery-ui-datepicker');
+        wp_enqueue_script('olama-admin-script', OLAMA_SCHOOL_URL . 'assets/js/admin.js', array('jquery', 'jquery-ui-datepicker'), OLAMA_SCHOOL_VERSION, true);
+
+        wp_localize_script('olama-admin-script', 'olamaAdmin', array(
+            'dateFormat' => 'dd-mm-yy',
+            'isArabic' => Olama_School_Helpers::is_arabic(),
+        ));
 
         $page = $_GET['page'] ?? '';
 
@@ -816,8 +851,18 @@ class Olama_School_Admin
                 exit;
             }
             if ($_GET['action'] === 'delete' && check_admin_referer('olama_delete_year_' . $year_id)) {
-                Olama_School_Academic::delete_year($year_id);
-                wp_redirect(add_query_arg('olama_msg', 'year_deleted', admin_url('admin.php?page=olama-school-academic')));
+                $force = isset($_GET['force']) && $_GET['force'] === '1';
+                $result = Olama_School_Academic::delete_year($year_id, $force);
+                if (is_wp_error($result)) {
+                    wp_redirect(add_query_arg(array(
+                        'olama_msg' => 'error',
+                        'olama_err' => urlencode($result->get_error_message()),
+                        'olama_err_code' => 'year_dependency',
+                        'err_id' => $year_id
+                    ), $base_url));
+                } else {
+                    wp_redirect(add_query_arg('olama_msg', 'year_deleted', admin_url('admin.php?page=olama-school-academic')));
+                }
                 exit;
             }
         }
@@ -826,11 +871,24 @@ class Olama_School_Admin
         if (isset($_POST['add_year']) && check_admin_referer('olama_add_year')) {
             Olama_School_Academic::add_year(array(
                 'year_name' => sanitize_text_field($_POST['year_name']),
-                'start_date' => sanitize_text_field($_POST['start_date']),
-                'end_date' => sanitize_text_field($_POST['end_date']),
+                'start_date' => Olama_School_Helpers::sanitize_date($_POST['start_date']),
+                'end_date' => Olama_School_Helpers::sanitize_date($_POST['end_date']),
                 'is_active' => isset($_POST['is_active']) ? 1 : 0,
             ));
             wp_redirect(add_query_arg('olama_msg', 'year_added', $base_url));
+            exit;
+        }
+
+        // Handle Update Year
+        if (isset($_POST['update_year']) && check_admin_referer('olama_update_year')) {
+            $year_id = intval($_POST['edit_year_id']);
+            Olama_School_Academic::update_year($year_id, array(
+                'year_name' => sanitize_text_field($_POST['edit_year_name']),
+                'start_date' => Olama_School_Helpers::sanitize_date($_POST['edit_start_date']),
+                'end_date' => Olama_School_Helpers::sanitize_date($_POST['edit_end_date']),
+                'is_active' => isset($_POST['edit_is_active']) ? 1 : 0,
+            ));
+            wp_redirect(add_query_arg('olama_msg', 'year_updated', $base_url));
             exit;
         }
 
@@ -839,8 +897,8 @@ class Olama_School_Admin
             $result = Olama_School_Academic::add_semester(array(
                 'academic_year_id' => intval($_POST['semester_year_id']),
                 'semester_name' => sanitize_text_field($_POST['semester_name']),
-                'start_date' => sanitize_text_field($_POST['sem_start_date']),
-                'end_date' => sanitize_text_field($_POST['sem_end_date']),
+                'start_date' => Olama_School_Helpers::sanitize_date($_POST['sem_start_date']),
+                'end_date' => Olama_School_Helpers::sanitize_date($_POST['sem_end_date']),
                 'is_active' => isset($_POST['is_active']) ? 1 : 0,
             ));
 
@@ -857,8 +915,8 @@ class Olama_School_Admin
             $sem_id = intval($_POST['edit_semester_id']);
             $result = Olama_School_Academic::update_semester($sem_id, array(
                 'semester_name' => sanitize_text_field($_POST['edit_semester_name']),
-                'start_date' => sanitize_text_field($_POST['edit_sem_start_date']),
-                'end_date' => sanitize_text_field($_POST['edit_sem_end_date']),
+                'start_date' => Olama_School_Helpers::sanitize_date($_POST['edit_sem_start_date']),
+                'end_date' => Olama_School_Helpers::sanitize_date($_POST['edit_sem_end_date']),
                 'is_active' => isset($_POST['edit_is_active']) ? 1 : 0,
             ));
 
@@ -879,8 +937,18 @@ class Olama_School_Admin
                 exit;
             }
             if ($_GET['action'] === 'delete_semester' && check_admin_referer('olama_delete_semester_' . $sem_id)) {
-                Olama_School_Academic::delete_semester($sem_id);
-                wp_redirect(add_query_arg('olama_msg', 'semester_deleted', $base_url));
+                $force = isset($_GET['force']) && $_GET['force'] === '1';
+                $result = Olama_School_Academic::delete_semester($sem_id, $force);
+                if (is_wp_error($result)) {
+                    wp_redirect(add_query_arg(array(
+                        'olama_msg' => 'error',
+                        'olama_err' => urlencode($result->get_error_message()),
+                        'olama_err_code' => 'semester_dependency',
+                        'err_id' => $sem_id
+                    ), $base_url));
+                } else {
+                    wp_redirect(add_query_arg('olama_msg', 'semester_deleted', $base_url));
+                }
                 exit;
             }
         }
@@ -890,8 +958,8 @@ class Olama_School_Admin
             $result = Olama_School_Academic::add_event(array(
                 'academic_year_id' => intval($_POST['event_year_id']),
                 'event_description' => sanitize_textarea_field($_POST['event_description']),
-                'start_date' => sanitize_text_field($_POST['event_start_date']),
-                'end_date' => sanitize_text_field($_POST['event_end_date']),
+                'start_date' => Olama_School_Helpers::sanitize_date($_POST['event_start_date']),
+                'end_date' => Olama_School_Helpers::sanitize_date($_POST['event_end_date']),
             ));
 
             if (is_wp_error($result)) {
@@ -907,8 +975,8 @@ class Olama_School_Admin
             $event_id = intval($_POST['edit_event_id']);
             $result = Olama_School_Academic::update_event($event_id, array(
                 'event_description' => sanitize_textarea_field($_POST['edit_event_description']),
-                'start_date' => sanitize_text_field($_POST['edit_event_start_date']),
-                'end_date' => sanitize_text_field($_POST['edit_event_end_date']),
+                'start_date' => Olama_School_Helpers::sanitize_date($_POST['edit_event_start_date']),
+                'end_date' => Olama_School_Helpers::sanitize_date($_POST['edit_event_end_date']),
             ));
 
             if (is_wp_error($result)) {
@@ -950,6 +1018,9 @@ class Olama_School_Admin
                 case 'year_added':
                     $message = __('Academic Year added successfully.', 'olama-school');
                     break;
+                case 'year_updated':
+                    $message = __('Academic Year updated successfully.', 'olama-school');
+                    break;
                 case 'semester_added':
                     $message = __('Semester added successfully.', 'olama-school');
                     break;
@@ -971,11 +1042,29 @@ class Olama_School_Admin
                 case 'error':
                     $msg_type = 'error';
                     $message = isset($_GET['olama_err']) ? urldecode($_GET['olama_err']) : __('An error occurred.', 'olama-school');
+
+                    // Check for specific error codes to add force delete links
+                    if (isset($_GET['olama_err_code']) && isset($_GET['err_id'])) {
+                        $err_id = intval($_GET['err_id']);
+                        $base_url = admin_url('admin.php?page=olama-school-academic');
+                        if (isset($_GET['manage_year'])) {
+                            $base_url = add_query_arg('manage_year', intval($_GET['manage_year']), $base_url);
+                        }
+
+                        if ($_GET['olama_err_code'] === 'year_dependency') {
+                            $force_url = wp_nonce_url(add_query_arg(array('action' => 'delete', 'year_id' => $err_id, 'force' => 1), $base_url), 'olama_delete_year_' . $err_id);
+                            $message .= ' <a href="' . $force_url . '" onclick="return confirm(\'' . esc_js(__('WARNING: This will permanently delete ALL data associated with this year. Are you sure?', 'olama-school')) . '\')">' . __('Force Delete Everything', 'olama-school') . '</a>';
+                        } elseif ($_GET['olama_err_code'] === 'semester_dependency') {
+                            $force_url = wp_nonce_url(add_query_arg(array('action' => 'delete_semester', 'semester_id' => $err_id, 'force' => 1), $base_url), 'olama_delete_semester_' . $err_id);
+                            $message .= ' <a href="' . $force_url . '" onclick="return confirm(\'' . esc_js(__('WARNING: This will permanently delete ALL data associated with this semester. Are you sure?', 'olama-school')) . '\')">' . __('Force Delete Everything', 'olama-school') . '</a>';
+                        }
+                    }
                     break;
             }
 
             if ($message) {
-                echo '<div class="' . $msg_type . ' is-dismissible"><p>' . esc_html(Olama_School_Helpers::translate($message)) . '</p></div>';
+                // Allow HTML in error messages for the "Force Delete" link
+                echo '<div class="' . $msg_type . ' is-dismissible"><p>' . Olama_School_Helpers::translate($message) . '</p></div>';
             }
         }
 
@@ -1075,7 +1164,9 @@ class Olama_School_Admin
 
         // Handle Section submission
         if (isset($_POST['add_section']) && check_admin_referer('olama_add_section')) {
+            $active_year = Olama_School_Academic::get_active_year();
             $result = Olama_School_Section::add_section(array(
+                'academic_year_id' => $active_year ? $active_year->id : 0,
                 'grade_id' => intval($_POST['grade_id']),
                 'section_name' => sanitize_text_field($_POST['section_name']),
                 'room_number' => sanitize_text_field($_POST['room_number']),
@@ -1090,7 +1181,9 @@ class Olama_School_Admin
         // Handle Section Update
         if (isset($_POST['edit_section']) && check_admin_referer('olama_edit_section')) {
             $section_id = intval($_POST['section_id']);
+            $active_year = Olama_School_Academic::get_active_year();
             $result = Olama_School_Section::update_section($section_id, array(
+                'academic_year_id' => $active_year ? $active_year->id : 0,
                 'grade_id' => intval($_POST['grade_id']),
                 'section_name' => sanitize_text_field($_POST['section_name']),
                 'room_number' => sanitize_text_field($_POST['room_number']),
@@ -1273,18 +1366,46 @@ class Olama_School_Admin
     public function render_curriculum_management_page()
     {
         $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'curriculum';
+        // Validate and sanitize base navigation parameters
+        $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : 0;
+        if (!$selected_year_id && class_exists('Olama_School_Academic')) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $selected_year_id = $active_year ? $active_year->id : 0;
+        }
+
+        $selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : 0;
+        if ($selected_year_id && $selected_semester_id) {
+            $semesters = Olama_School_Academic::get_semesters($selected_year_id);
+            $valid_sem = false;
+            foreach ($semesters as $s) {
+                if ($s->id == $selected_semester_id) {
+                    $valid_sem = true;
+                    break;
+                }
+            }
+            if (!$valid_sem) {
+                $selected_semester_id = 0;
+            }
+        }
+
+        $base_params = array(
+            'academic_year_id' => $selected_year_id,
+            'semester_id' => $selected_semester_id,
+            'grade_id' => isset($_GET['grade_id']) ? intval($_GET['grade_id']) : 0,
+        );
+
         ?>
         <div class="wrap olama-school-wrap">
             <h1><?php _e('Curriculum Management', 'olama-school'); ?></h1>
 
             <h2 class="nav-tab-wrapper">
-                <a href="?page=olama-school-curriculum&tab=curriculum"
+                <a href="<?php echo esc_url(add_query_arg(array_merge(array('page' => 'olama-school-curriculum', 'tab' => 'curriculum'), array_filter($base_params)), admin_url('admin.php'))); ?>"
                     class="nav-tab <?php echo $active_tab === 'curriculum' ? 'nav-tab-active' : ''; ?>"><?php _e('Curriculum', 'olama-school'); ?></a>
-                <a href="?page=olama-school-curriculum&tab=timeline"
+                <a href="<?php echo esc_url(add_query_arg(array_merge(array('page' => 'olama-school-curriculum', 'tab' => 'timeline'), array_filter($base_params)), admin_url('admin.php'))); ?>"
                     class="nav-tab <?php echo $active_tab === 'timeline' ? 'nav-tab-active' : ''; ?>"><?php _e('Timeline', 'olama-school'); ?></a>
-                <a href="?page=olama-school-curriculum&tab=bulk_upload"
+                <a href="<?php echo esc_url(add_query_arg(array_merge(array('page' => 'olama-school-curriculum', 'tab' => 'bulk_upload'), array_filter($base_params)), admin_url('admin.php'))); ?>"
                     class="nav-tab <?php echo $active_tab === 'bulk_upload' ? 'nav-tab-active' : ''; ?>"><?php _e('Bulk Upload', 'olama-school'); ?></a>
-                <a href="?page=olama-school-curriculum&tab=analysis"
+                <a href="<?php echo esc_url(add_query_arg(array_merge(array('page' => 'olama-school-curriculum', 'tab' => 'analysis'), array_filter($base_params)), admin_url('admin.php'))); ?>"
                     class="nav-tab <?php echo $active_tab === 'analysis' ? 'nav-tab-active' : ''; ?>"><?php echo Olama_School_Helpers::translate('Analysis'); ?></a>
             </h2>
 
@@ -1394,25 +1515,6 @@ class Olama_School_Admin
                                     </select>
                                 </td>
                             </tr>
-                            <tr valign="top">
-                                <th scope="row"><?php _e('Date Format', 'olama-school'); ?></th>
-                                <td>
-                                    <select name="olama_school_settings[date_format]">
-                                        <option value="d-m-Y" <?php selected($settings['date_format'] ?? 'd-m-Y', 'd-m-Y'); ?>>
-                                            <?php _e('Day-Month-Year (16-01-2026)', 'olama-school'); ?>
-                                        </option>
-                                        <option value="m-d-Y" <?php selected($settings['date_format'] ?? '', 'm-d-Y'); ?>>
-                                            <?php _e('Month-Day-Year (01-16-2026)', 'olama-school'); ?>
-                                        </option>
-                                        <option value="Y-m-d" <?php selected($settings['date_format'] ?? '', 'Y-m-d'); ?>>
-                                            <?php _e('Year-Month-Day (2026-01-16)', 'olama-school'); ?>
-                                        </option>
-                                    </select>
-                                    <p class="description">
-                                        <?php _e('Choose how dates should be displayed throughout the plugin.', 'olama-school'); ?>
-                                    </p>
-                                </td>
-                            </tr>
                         </table>
                         <?php submit_button(); ?>
                     </form>
@@ -1479,6 +1581,8 @@ class Olama_School_Admin
             <h2 class="nav-tab-wrapper">
                 <?php
                 $base_params = array(
+                    'academic_year_id' => isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : 0,
+                    'semester_id' => isset($_GET['semester_id']) ? intval($_GET['semester_id']) : 0,
                     'grade_id' => isset($_GET['grade_id']) ? intval($_GET['grade_id']) : 0,
                     'section_id' => isset($_GET['section_id']) ? intval($_GET['section_id']) : 0,
                     'plan_month' => isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : '',
@@ -1586,6 +1690,19 @@ class Olama_School_Admin
     {
         if (isset($_POST['save_plan']) && check_admin_referer('olama_save_plan', 'olama_plan_nonce')) {
             $data = $_POST;
+
+            // Add semester_id and academic_year_id from GET parameters
+            $data['semester_id'] = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : 0;
+            $data['academic_year_id'] = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : 0;
+
+            // If semester_id is still 0, try to get the active semester
+            if (!$data['semester_id']) {
+                $active_year = Olama_School_Academic::get_active_year();
+                $active_semester = Olama_School_Academic::get_active_semester($active_year ? $active_year->id : 0);
+                $data['semester_id'] = $active_semester ? $active_semester->id : 0;
+                $data['academic_year_id'] = $active_year ? $active_year->id : 0;
+            }
+
             // Sanitize homework fields and notes
             $data['homework_sb'] = sanitize_textarea_field($data['homework_sb'] ?? '');
             $data['homework_eb'] = sanitize_textarea_field($data['homework_eb'] ?? '');
@@ -1658,8 +1775,24 @@ class Olama_School_Admin
         // Academic Infrastructure
         $active_year = Olama_School_Academic::get_active_year();
         $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+
+        $current_semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : [];
         $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
         $selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : ($active_semester ? $active_semester->id : 0);
+
+        // Validate that the selected semester belongs to the selected year
+        $valid_semester = false;
+        if ($selected_semester_id > 0) {
+            foreach ($current_semesters as $sem) {
+                if (intval($sem->id) === $selected_semester_id) {
+                    $valid_semester = true;
+                    break;
+                }
+            }
+        }
+        if (!$valid_semester && !empty($current_semesters)) {
+            $selected_semester_id = intval($current_semesters[0]->id);
+        }
 
         // Date logic: Week start (Sunday) dropdown grouped by month
         $all_weeks = Olama_School_Academic::get_academic_weeks($selected_year_id, $selected_semester_id);
@@ -1678,19 +1811,15 @@ class Olama_School_Admin
         // Sort months chronologically
         ksort($months_weeks);
 
-        // Default month/week logic
-        $today = time();
-        $today_val = date('Y-m-d', $today - ((int) date('w', $today) * 86400)); // Current week's Sunday
+        // Determine the month to show
+        $selected_month = isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : '';
 
-        $initial_week = isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : $today_val;
-        $selected_month = isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : date('Y-m', strtotime($initial_week));
-
-        if (!isset($months_weeks[$selected_month]) && !empty($months_weeks)) {
-            // Fallback to month of today or first available
+        // If the current selected month is not valid for this semester, pick the first available
+        if (empty($selected_month) || !isset($months_weeks[$selected_month])) {
             $today_month = date('Y-m');
             if (isset($months_weeks[$today_month])) {
                 $selected_month = $today_month;
-            } else {
+            } elseif (!empty($months_weeks)) {
                 $m_keys = array_keys($months_weeks);
                 $selected_month = $m_keys[0];
             }
@@ -1698,16 +1827,25 @@ class Olama_School_Admin
 
         $current_month_weeks = $months_weeks[$selected_month] ?? array();
 
-        $week_start = $initial_week;
+        // Determine the week to show
+        $week_start = isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : '';
         $valid_week = false;
-        foreach ($current_month_weeks as $w) {
-            if ($w['val'] === $week_start) {
-                $valid_week = true;
-                break;
+        if (!empty($week_start)) {
+            foreach ($current_month_weeks as $w) {
+                if ($w['val'] === $week_start) {
+                    $valid_week = true;
+                    break;
+                }
             }
         }
+
+        // If not valid, default to first week of the month
         if (!$valid_week && !empty($current_month_weeks)) {
-            $week_start = !empty($current_month_weeks) ? $current_month_weeks[0]['val'] : $today_val;
+            $week_start = $current_month_weeks[0]['val'];
+        } elseif (empty($week_start)) {
+            $today = time();
+            $today_val = date('Y-m-d', $today - ((int) date('w', $today) * 86400));
+            $week_start = $today_val;
         }
 
         $days = array(
@@ -1721,19 +1859,9 @@ class Olama_School_Admin
         $active_day = isset($_GET['active_day']) ? sanitize_text_field($_GET['active_day']) : 'Sunday';
         $selected_date = $days[$active_day];
 
-        // Determine semester_id based on selected_date for subject loading
-        $current_semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : [];
-        $semester_id = 0;
-        $selected_date_ts = strtotime($selected_date);
-        foreach ($current_semesters as $sem) {
-            if ($selected_date_ts >= strtotime($sem->start_date) && $selected_date_ts <= strtotime($sem->end_date)) {
-                $semester_id = $sem->id;
-                break;
-            }
-        }
-        if (!$semester_id && !empty($current_semesters)) {
-            $semester_id = $current_semesters[0]->id;
-        }
+        // Use the selected semester directly for all queries including subject loading
+        // This ensures subjects from the schedule (linked to semester_id) are correctly loaded
+        $semester_id = $selected_semester_id;
 
         $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, date('Y-m-d', strtotime($week_start . ' +4 days')));
         $today_plans = array_filter($all_plans, function ($p) use ($selected_date) {
@@ -2094,6 +2222,10 @@ class Olama_School_Admin
 
         if (empty($_POST['academic_year_id']) || empty($_POST['semester_id']) || empty($_POST['grade_id']) || empty($_POST['subject_id'])) {
             wp_send_json_error(__('Required fields are missing.', 'olama-school'));
+        }
+
+        if (isset($_POST['exam_date'])) {
+            $_POST['exam_date'] = Olama_School_Helpers::sanitize_date($_POST['exam_date']);
         }
 
         $result = Olama_School_Exam::save_exam($_POST);
