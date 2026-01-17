@@ -24,7 +24,7 @@ class Olama_School_DB
 				setting_name varchar(100) NOT NULL,
 				setting_value longtext NOT NULL,
 				PRIMARY KEY  (id),
-				UNIQUE KEY setting_name (setting_name)
+				UNIQUE KEY  setting_name (setting_name)
 			) $charset_collate;",
 
 			'olama_academic_years' => "CREATE TABLE {$wpdb->prefix}olama_academic_years (
@@ -44,7 +44,7 @@ class Olama_School_DB
 				end_date date NOT NULL,
 				is_active tinyint(1) DEFAULT 0 NOT NULL,
 				PRIMARY KEY  (id),
-				KEY academic_year_id (academic_year_id)
+				KEY  academic_year_id (academic_year_id)
 			) $charset_collate;",
 
 			'olama_grades' => "CREATE TABLE {$wpdb->prefix}olama_grades (
@@ -70,8 +70,8 @@ class Olama_School_DB
 				room_number varchar(20) DEFAULT NULL,
 				homeroom_teacher_id bigint(20) UNSIGNED DEFAULT NULL,
 				PRIMARY KEY  (id),
-				KEY academic_year_id (academic_year_id),
-				KEY grade_id (grade_id)
+				KEY  academic_year_id (academic_year_id),
+				KEY  grade_id (grade_id)
 			) $charset_collate;",
 
 			'olama_subjects' => "CREATE TABLE {$wpdb->prefix}olama_subjects (
@@ -82,7 +82,7 @@ class Olama_School_DB
 				color_code varchar(7) DEFAULT NULL,
 				max_weekly_plans tinyint(4) DEFAULT 0 NOT NULL,
 				PRIMARY KEY  (id),
-				KEY grade_id (grade_id)
+				KEY  grade_id (grade_id)
 			) $charset_collate;",
 
 			'olama_teachers' => "CREATE TABLE {$wpdb->prefix}olama_teachers (
@@ -100,7 +100,7 @@ class Olama_School_DB
 				parent_contact varchar(100) DEFAULT NULL,
 				is_active tinyint(1) DEFAULT 1 NOT NULL,
 				PRIMARY KEY  (id),
-				KEY section_id (section_id)
+				KEY  section_id (section_id)
 			) $charset_collate;",
 
 			'olama_plans' => "CREATE TABLE {$wpdb->prefix}olama_plans (
@@ -126,17 +126,17 @@ class Olama_School_DB
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
-				KEY year_semester (academic_year_id, semester_id),
-				KEY section_date (section_id, plan_date),
-				KEY plan_lookup (academic_year_id, section_id, plan_date),
-				KEY subject_id (subject_id),
-				KEY teacher_id (teacher_id)
+				KEY  year_semester (academic_year_id,semester_id),
+				KEY  section_date (section_id,plan_date),
+				KEY  plan_lookup (academic_year_id,section_id,plan_date),
+				KEY  subject_id (subject_id),
+				KEY  teacher_id (teacher_id)
 			) $charset_collate;",
 
 			'olama_plan_questions' => "CREATE TABLE {$wpdb->prefix}olama_plan_questions (
 				plan_id mediumint(9) NOT NULL,
 				question_id mediumint(9) NOT NULL,
-				PRIMARY KEY  (plan_id, question_id)
+				PRIMARY KEY  (plan_id,question_id)
 			) $charset_collate;",
 
 			'olama_templates' => "CREATE TABLE {$wpdb->prefix}olama_templates (
@@ -158,7 +158,7 @@ class Olama_School_DB
 				period_number tinyint(4) NOT NULL,
 				subject_id mediumint(9) NOT NULL,
 				PRIMARY KEY  (id),
-				UNIQUE KEY schedule_slot (semester_id, section_id, day_name, period_number)
+				UNIQUE KEY  schedule_slot (semester_id,section_id,day_name,period_number)
 			) $charset_collate;",
 
 			'olama_curriculum_units' => "CREATE TABLE {$wpdb->prefix}olama_curriculum_units (
@@ -172,7 +172,7 @@ class Olama_School_DB
 				start_date date DEFAULT NULL,
 				end_date date DEFAULT NULL,
 				PRIMARY KEY  (id),
-				KEY unit_lookup (grade_id, subject_id, semester_id)
+				KEY  unit_lookup (grade_id,subject_id,semester_id)
 			) $charset_collate;",
 
 			'olama_curriculum_lessons' => "CREATE TABLE {$wpdb->prefix}olama_curriculum_lessons (
@@ -185,7 +185,7 @@ class Olama_School_DB
 				start_date date DEFAULT NULL,
 				end_date date DEFAULT NULL,
 				PRIMARY KEY  (id),
-				KEY unit_id (unit_id)
+				KEY  unit_id (unit_id)
 			) $charset_collate;",
 
 			'olama_curriculum_questions' => "CREATE TABLE {$wpdb->prefix}olama_curriculum_questions (
@@ -195,7 +195,7 @@ class Olama_School_DB
 				question text NOT NULL,
 				answer text DEFAULT NULL,
 				PRIMARY KEY  (id),
-				KEY lesson_id (lesson_id)
+				KEY  lesson_id (lesson_id)
 			) $charset_collate;",
 
 			'olama_logs' => "CREATE TABLE {$wpdb->prefix}olama_logs (
@@ -206,8 +206,8 @@ class Olama_School_DB
 				ip_address varchar(45) DEFAULT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
-				KEY user_id (user_id),
-				KEY created_at (created_at)
+				KEY  user_id (user_id),
+				KEY  created_at (created_at)
 			) $charset_collate;",
 
 			'olama_academic_events' => "CREATE TABLE {$wpdb->prefix}olama_academic_events (
@@ -217,7 +217,7 @@ class Olama_School_DB
 				start_date date NOT NULL,
 				end_date date NOT NULL,
 				PRIMARY KEY  (id),
-				KEY academic_year_id (academic_year_id)
+				KEY  academic_year_id (academic_year_id)
 			) $charset_collate;",
 
 			'olama_teacher_assignments' => "CREATE TABLE {$wpdb->prefix}olama_teacher_assignments (
@@ -228,10 +228,10 @@ class Olama_School_DB
 				section_id mediumint(9) NOT NULL,
 				subject_id mediumint(9) NOT NULL,
 				PRIMARY KEY  (id),
-				KEY assignment (teacher_id, section_id, subject_id),
-				KEY academic_year_id (academic_year_id),
-				KEY teacher_id (teacher_id),
-				KEY section_id (section_id)
+				KEY  assignment (teacher_id,section_id,subject_id),
+				KEY  academic_year_id (academic_year_id),
+				KEY  teacher_id (teacher_id),
+				KEY  section_id (section_id)
 			) $charset_collate;",
 
 			'olama_teacher_office_hours' => "CREATE TABLE {$wpdb->prefix}olama_teacher_office_hours (
@@ -240,7 +240,7 @@ class Olama_School_DB
 				day_name varchar(20) NOT NULL,
 				available_time text NOT NULL,
 				PRIMARY KEY  (id),
-				KEY teacher_id (teacher_id)
+				KEY  teacher_id (teacher_id)
 			) $charset_collate;",
 
 			'olama_exams' => "CREATE TABLE {$wpdb->prefix}olama_exams (
@@ -259,9 +259,10 @@ class Olama_School_DB
 				teacher_notes text NOT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
-				KEY year_semester (academic_year_id, semester_id),
-				KEY grade_subject (grade_id, subject_id)
+				KEY  year_semester (academic_year_id,semester_id),
+				KEY  grade_subject (grade_id,subject_id)
 			) $charset_collate;"
+
 
 		);
 
