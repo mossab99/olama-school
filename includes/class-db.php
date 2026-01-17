@@ -12,6 +12,7 @@ class Olama_School_DB
 
 	/**
 	 * Create database tables
+	 * 
 	 */
 	public function create_tables()
 	{
