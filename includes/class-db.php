@@ -286,6 +286,10 @@ class Olama_School_DB
 	{
 		global $wpdb;
 
+		// Suppress errors and output during schema updates
+		$wpdb->suppress_errors();
+		ob_start();
+
 		// Check if academic_year_id column exists in olama_sections
 		$column_exists = $wpdb->get_results(
 			"SHOW COLUMNS FROM {$wpdb->prefix}olama_sections LIKE 'academic_year_id'"
@@ -318,5 +322,9 @@ class Olama_School_DB
 
 		// If it doesn't exist, dbDelta will add it; if it does, we skip to avoid duplicate key error
 		// This check prevents the duplicate key error by letting dbDelta handle it only when needed
+
+		// Clean up output buffer and restore error reporting
+		ob_end_clean();
+		$wpdb->show_errors();
 	}
 }
