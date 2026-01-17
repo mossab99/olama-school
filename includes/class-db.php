@@ -32,7 +32,7 @@ class Olama_School_DB
 				year_name varchar(50) NOT NULL,
 				start_date date NOT NULL,
 				end_date date NOT NULL,
-				is_active tinyint(1) DEFAULT 0,
+				is_active tinyint(1) DEFAULT 0 NOT NULL,
 				PRIMARY KEY  (id)
 			) $charset_collate;",
 
@@ -42,7 +42,7 @@ class Olama_School_DB
 				semester_name varchar(50) NOT NULL,
 				start_date date NOT NULL,
 				end_date date NOT NULL,
-				is_active tinyint(1) DEFAULT 0,
+				is_active tinyint(1) DEFAULT 0 NOT NULL,
 				PRIMARY KEY  (id),
 				KEY academic_year_id (academic_year_id)
 			) $charset_collate;",
@@ -51,14 +51,14 @@ class Olama_School_DB
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				grade_name varchar(50) NOT NULL,
 				grade_level varchar(20) NOT NULL,
-				periods_count tinyint(4) DEFAULT 8,
-				max_weekly_plans tinyint(4) DEFAULT 0,
-				max_sun tinyint(4) DEFAULT 0,
-				max_mon tinyint(4) DEFAULT 0,
-				max_tue tinyint(4) DEFAULT 0,
-				max_wed tinyint(4) DEFAULT 0,
-				max_thu tinyint(4) DEFAULT 0,
-				is_active tinyint(1) DEFAULT 1,
+				periods_count tinyint(4) DEFAULT 8 NOT NULL,
+				max_weekly_plans tinyint(4) DEFAULT 0 NOT NULL,
+				max_sun tinyint(4) DEFAULT 0 NOT NULL,
+				max_mon tinyint(4) DEFAULT 0 NOT NULL,
+				max_tue tinyint(4) DEFAULT 0 NOT NULL,
+				max_wed tinyint(4) DEFAULT 0 NOT NULL,
+				max_thu tinyint(4) DEFAULT 0 NOT NULL,
+				is_active tinyint(1) DEFAULT 1 NOT NULL,
 				PRIMARY KEY  (id)
 			) $charset_collate;",
 
@@ -67,8 +67,8 @@ class Olama_School_DB
 				academic_year_id mediumint(9) NOT NULL,
 				grade_id mediumint(9) NOT NULL,
 				section_name varchar(50) NOT NULL,
-				room_number varchar(20),
-				homeroom_teacher_id bigint(20) UNSIGNED,
+				room_number varchar(20) DEFAULT NULL,
+				homeroom_teacher_id bigint(20) UNSIGNED DEFAULT NULL,
 				PRIMARY KEY  (id),
 				KEY academic_year_id (academic_year_id),
 				KEY grade_id (grade_id)
@@ -77,18 +77,18 @@ class Olama_School_DB
 			'olama_subjects' => "CREATE TABLE {$wpdb->prefix}olama_subjects (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				subject_name varchar(100) NOT NULL,
-				subject_code varchar(20),
+				subject_code varchar(20) DEFAULT NULL,
 				grade_id mediumint(9) NOT NULL,
-				color_code varchar(7),
-				max_weekly_plans tinyint(4) DEFAULT 0,
+				color_code varchar(7) DEFAULT NULL,
+				max_weekly_plans tinyint(4) DEFAULT 0 NOT NULL,
 				PRIMARY KEY  (id),
 				KEY grade_id (grade_id)
 			) $charset_collate;",
 
 			'olama_teachers' => "CREATE TABLE {$wpdb->prefix}olama_teachers (
 				id bigint(20) UNSIGNED NOT NULL,
-				employee_id varchar(50),
-				phone_number varchar(20),
+				employee_id varchar(50) DEFAULT NULL,
+				phone_number varchar(20) DEFAULT NULL,
 				PRIMARY KEY  (id)
 			) $charset_collate;",
 
@@ -97,13 +97,11 @@ class Olama_School_DB
 				student_name varchar(100) NOT NULL,
 				student_uid varchar(50) NOT NULL,
 				section_id mediumint(9) NOT NULL,
-				parent_contact varchar(100),
-				is_active tinyint(1) DEFAULT 1,
+				parent_contact varchar(100) DEFAULT NULL,
+				is_active tinyint(1) DEFAULT 1 NOT NULL,
 				PRIMARY KEY  (id),
 				KEY section_id (section_id)
 			) $charset_collate;",
-
-
 
 			'olama_plans' => "CREATE TABLE {$wpdb->prefix}olama_plans (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -114,19 +112,19 @@ class Olama_School_DB
 				teacher_id bigint(20) UNSIGNED NOT NULL,
 				plan_date date NOT NULL,
 				period_number tinyint(4) NOT NULL,
-				unit_id mediumint(9),
-				lesson_id mediumint(9),
-				curriculum_id mediumint(9),
-				custom_topic text,
-				homework_sb varchar(255),
-				homework_eb varchar(255),
-				homework_nb text,
-				homework_ws text,
-				teacher_notes text,
-				rating tinyint(4) DEFAULT 0,
-				status varchar(20) DEFAULT 'draft',
-				created_at datetime DEFAULT CURRENT_TIMESTAMP,
-				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+				unit_id mediumint(9) DEFAULT NULL,
+				lesson_id mediumint(9) DEFAULT NULL,
+				curriculum_id mediumint(9) DEFAULT NULL,
+				custom_topic text DEFAULT NULL,
+				homework_sb varchar(255) DEFAULT NULL,
+				homework_eb varchar(255) DEFAULT NULL,
+				homework_nb text DEFAULT NULL,
+				homework_ws text DEFAULT NULL,
+				teacher_notes text DEFAULT NULL,
+				rating tinyint(4) DEFAULT 0 NOT NULL,
+				status varchar(20) DEFAULT 'draft' NOT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
 				KEY year_semester (academic_year_id, semester_id),
 				KEY section_date (section_id, plan_date),
@@ -148,9 +146,10 @@ class Olama_School_DB
 				subject_id mediumint(9) NOT NULL,
 				template_data longtext NOT NULL,
 				teacher_id bigint(20) UNSIGNED NOT NULL,
-				created_at datetime DEFAULT CURRENT_TIMESTAMP,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id)
 			) $charset_collate;",
+
 			'olama_schedule' => "CREATE TABLE {$wpdb->prefix}olama_schedule (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				semester_id mediumint(9) NOT NULL,
@@ -169,9 +168,9 @@ class Olama_School_DB
 				semester_id mediumint(9) NOT NULL,
 				unit_number varchar(10) NOT NULL,
 				unit_name varchar(255) NOT NULL,
-				objectives text,
-				start_date date,
-				end_date date,
+				objectives text DEFAULT NULL,
+				start_date date DEFAULT NULL,
+				end_date date DEFAULT NULL,
 				PRIMARY KEY  (id),
 				KEY unit_lookup (grade_id, subject_id, semester_id)
 			) $charset_collate;",
@@ -179,12 +178,12 @@ class Olama_School_DB
 			'olama_curriculum_lessons' => "CREATE TABLE {$wpdb->prefix}olama_curriculum_lessons (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				unit_id mediumint(9) NOT NULL,
-				lesson_number varchar(10),
+				lesson_number varchar(10) DEFAULT NULL,
 				lesson_title text NOT NULL,
-				video_url varchar(255),
-				periods tinyint(4) DEFAULT 1,
-				start_date date,
-				end_date date,
+				video_url varchar(255) DEFAULT NULL,
+				periods tinyint(4) DEFAULT 1 NOT NULL,
+				start_date date DEFAULT NULL,
+				end_date date DEFAULT NULL,
 				PRIMARY KEY  (id),
 				KEY unit_id (unit_id)
 			) $charset_collate;",
@@ -192,9 +191,9 @@ class Olama_School_DB
 			'olama_curriculum_questions' => "CREATE TABLE {$wpdb->prefix}olama_curriculum_questions (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				lesson_id mediumint(9) NOT NULL,
-				question_number varchar(10),
+				question_number varchar(10) DEFAULT NULL,
 				question text NOT NULL,
-				answer text,
+				answer text DEFAULT NULL,
 				PRIMARY KEY  (id),
 				KEY lesson_id (lesson_id)
 			) $charset_collate;",
@@ -203,13 +202,14 @@ class Olama_School_DB
 				id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 				user_id bigint(20) UNSIGNED NOT NULL,
 				action varchar(255) NOT NULL,
-				details text,
-				ip_address varchar(45),
-				created_at datetime DEFAULT CURRENT_TIMESTAMP,
+				details text DEFAULT NULL,
+				ip_address varchar(45) DEFAULT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
 				KEY user_id (user_id),
 				KEY created_at (created_at)
 			) $charset_collate;",
+
 			'olama_academic_events' => "CREATE TABLE {$wpdb->prefix}olama_academic_events (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				academic_year_id mediumint(9) NOT NULL,
@@ -219,6 +219,7 @@ class Olama_School_DB
 				PRIMARY KEY  (id),
 				KEY academic_year_id (academic_year_id)
 			) $charset_collate;",
+
 			'olama_teacher_assignments' => "CREATE TABLE {$wpdb->prefix}olama_teacher_assignments (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				academic_year_id mediumint(9) NOT NULL,
@@ -227,11 +228,12 @@ class Olama_School_DB
 				section_id mediumint(9) NOT NULL,
 				subject_id mediumint(9) NOT NULL,
 				PRIMARY KEY  (id),
-				KEY assignment (teacher_id,section_id,subject_id),
+				KEY assignment (teacher_id, section_id, subject_id),
 				KEY academic_year_id (academic_year_id),
 				KEY teacher_id (teacher_id),
 				KEY section_id (section_id)
 			) $charset_collate;",
+
 			'olama_teacher_office_hours' => "CREATE TABLE {$wpdb->prefix}olama_teacher_office_hours (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				teacher_id bigint(20) UNSIGNED NOT NULL,
@@ -240,6 +242,7 @@ class Olama_School_DB
 				PRIMARY KEY  (id),
 				KEY teacher_id (teacher_id)
 			) $charset_collate;",
+
 			'olama_exams' => "CREATE TABLE {$wpdb->prefix}olama_exams (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				academic_year_id mediumint(9) NOT NULL,
@@ -250,15 +253,16 @@ class Olama_School_DB
 				exam_date date NOT NULL,
 				description text NOT NULL,
 				student_book_material text NOT NULL,
-				workbook_material text,
-				exercise_book_material text,
-				notebook_material text,
+				workbook_material text DEFAULT NULL,
+				exercise_book_material text DEFAULT NULL,
+				notebook_material text DEFAULT NULL,
 				teacher_notes text NOT NULL,
-				created_at datetime DEFAULT CURRENT_TIMESTAMP,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
 				KEY year_semester (academic_year_id, semester_id),
 				KEY grade_subject (grade_id, subject_id)
 			) $charset_collate;"
+
 		);
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
