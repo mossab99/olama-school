@@ -16,6 +16,11 @@ class Olama_School_DB
 	public function create_tables()
 	{
 		global $wpdb;
+
+		// Suppress all output during table creation to prevent "unexpected output" errors
+		ob_start();
+		$wpdb->suppress_errors();
+
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$tables = array(
@@ -277,6 +282,10 @@ class Olama_School_DB
 		// Rename existing semesters for better naming convention
 		$wpdb->query("UPDATE {$wpdb->prefix}olama_semesters SET semester_name = 'First Semester' WHERE semester_name = '1st Semester'");
 		$wpdb->query("UPDATE {$wpdb->prefix}olama_semesters SET semester_name = 'Second Semester' WHERE semester_name = '2nd Semester'");
+
+		// Clean up output buffer and restore error reporting
+		ob_end_clean();
+		$wpdb->show_errors();
 	}
 
 	/**
@@ -285,10 +294,6 @@ class Olama_School_DB
 	private function ensure_schema_updates()
 	{
 		global $wpdb;
-
-		// Suppress errors and output during schema updates
-		$wpdb->suppress_errors();
-		ob_start();
 
 		// Check if academic_year_id column exists in olama_sections
 		$column_exists = $wpdb->get_results(
@@ -314,17 +319,5 @@ class Olama_School_DB
 				);
 			}
 		}
-
-		// Check if 'assignment' index exists in olama_teacher_assignments
-		$assignment_index = $wpdb->get_results(
-			"SHOW INDEX FROM {$wpdb->prefix}olama_teacher_assignments WHERE Key_name = 'assignment'"
-		);
-
-		// If it doesn't exist, dbDelta will add it; if it does, we skip to avoid duplicate key error
-		// This check prevents the duplicate key error by letting dbDelta handle it only when needed
-
-		// Clean up output buffer and restore error reporting
-		ob_end_clean();
-		$wpdb->show_errors();
 	}
 }
