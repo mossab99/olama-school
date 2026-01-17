@@ -233,7 +233,6 @@ class Olama_School_DB
 				section_id mediumint(9) NOT NULL,
 				subject_id mediumint(9) NOT NULL,
 				PRIMARY KEY  (id),
-				KEY  assignment (teacher_id,section_id,subject_id),
 				KEY  academic_year_id (academic_year_id),
 				KEY  teacher_id (teacher_id),
 				KEY  section_id (section_id)
@@ -318,6 +317,19 @@ class Olama_School_DB
 					ADD KEY academic_year_id (academic_year_id)"
 				);
 			}
+		}
+
+		// Check if 'assignment' index exists in olama_teacher_assignments
+		$assignment_index = $wpdb->get_results(
+			"SHOW INDEX FROM {$wpdb->prefix}olama_teacher_assignments WHERE Key_name = 'assignment'"
+		);
+
+		if (empty($assignment_index)) {
+			// Add the assignment index if it doesn't exist
+			$wpdb->query(
+				"ALTER TABLE {$wpdb->prefix}olama_teacher_assignments 
+				ADD KEY assignment (teacher_id, section_id, subject_id)"
+			);
 		}
 	}
 }
