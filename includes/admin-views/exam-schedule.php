@@ -9,9 +9,9 @@ if (!defined('ABSPATH')) {
 $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, $selected_grade_id, $selected_subject_id);
 
 $evaluation_types = array(
-    'التقويم الاول' => Olama_School_Helpers::translate('First Exam'),
-    'التقويم الثاني' => Olama_School_Helpers::translate('Second Exam'),
-    'الامتحان النهائي' => Olama_School_Helpers::translate('Final Exam'),
+    'ط§ظ„طھظ‚ظˆظٹظ… ط§ظ„ط§ظˆظ„' => Olama_School_Helpers::translate('First Exam'),
+    'ط§ظ„طھظ‚ظˆظٹظ… ط§ظ„ط«ط§ظ†ظٹ' => Olama_School_Helpers::translate('Second Exam'),
+    'ط§ظ„ط§ظ…طھط­ط§ظ† ط§ظ„ظ†ظ‡ط§ط¦ظٹ' => Olama_School_Helpers::translate('Final Exam'),
 );
 ?>
 

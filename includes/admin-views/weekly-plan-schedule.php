@@ -286,7 +286,7 @@ function olamaPrintSchedule() {
 <div class="olama-schedule-container" style="background: #fff; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.1); padding: 5px; overflow-x: auto;">
     <!-- Dedicated Print Header -->
     <div class="olama-print-header">
-        <h1><?php echo esc_html(get_option('olama_school_settings', [])['school_name_ar'] ?? 'أكاديمية علماء المستقبل'); ?></h1>
+        <h1><?php echo esc_html(get_option('olama_school_settings', [])['school_name_ar'] ?? 'ط£ظƒط§ط¯ظٹظ…ظٹط© ط¹ظ„ظ…ط§ط، ط§ظ„ظ…ط³طھظ‚ط¨ظ„'); ?></h1>
         <p>
             <?php echo esc_html($grades[array_search($selected_grade_id, array_column($grades, 'id'))]->grade_name ?? ''); ?> - 
             <?php echo esc_html($sections[array_search($selected_section_id, array_column($sections, 'id'))]->section_name ?? ''); ?> - 
@@ -349,7 +349,7 @@ function olamaPrintSchedule() {
                                 </select>
                                 <?php if ($item): ?>
                                     <div style="margin-top: 5px; font-size: 11px; color: <?php echo esc_attr($item->color_code ?: '#2271b1'); ?>; font-weight: 600;">
-                                        ● <?php _e('Scheduled', 'olama-school'); ?>
+                                        â—ڈ <?php _e('Scheduled', 'olama-school'); ?>
                                     </div>
                                 <?php endif; ?>
                             </td>

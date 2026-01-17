@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Olama School Helpers Class
  * Shared utility functions used across the plugin

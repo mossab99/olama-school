@@ -4,9 +4,9 @@
  * Plugin URI: https://olama.online/olama-school-weekly-plan
  * Description: A comprehensive WordPress plugin for managing school weekly plans, including hierarchical structures (Grades, Sections), subject management, and teacher/student assignments.
  * Version: 1.3.2
- * Author: د. مصعب الحنيطي
+ * Author: ط¯. ظ…طµط¹ط¨ ط§ظ„ط­ظ†ظٹط·ظٹ
  * Author URI: https://olama.online
- * Text Domain: أكاديمية علماء المستقبل
+ * Text Domain: ط£ظƒط§ط¯ظٹظ…ظٹط© ط¹ظ„ظ…ط§ط، ط§ظ„ظ…ط³طھظ‚ط¨ظ„
  */
 
 if (!defined('ABSPATH')) {
@@ -53,15 +53,28 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-shortcodes.php';
  */
 function olama_school_activate()
 {
-    // Initialize Database
-    $olama_db = new Olama_School_DB();
-    $olama_db->create_tables();
+    // Capture all output during activation to prevent "unexpected output" errors
+    ob_start();
 
-    // Initialize Permissions
-    Olama_School_Permissions::add_capabilities();
+    try {
+        // Initialize Database
+        $olama_db = new Olama_School_DB();
+        $olama_db->create_tables();
 
-    // Flush rewrite rules
-    flush_rewrite_rules();
+        // Initialize Permissions
+        Olama_School_Permissions::add_capabilities();
+
+        // Flush rewrite rules
+        flush_rewrite_rules();
+    } catch (Exception $e) {
+        // Log error but don't output anything
+        error_log('Olama Activation Error: ' . $e->getMessage());
+    }
+
+    // Clean any stray output
+    if (ob_get_length() > 0) {
+        ob_end_clean();
+    }
 }
 register_activation_hook(__FILE__, 'olama_school_activate');
 

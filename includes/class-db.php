@@ -18,10 +18,6 @@ class Olama_School_DB
 	{
 		global $wpdb;
 
-		// Suppress all output during table creation to prevent "unexpected output" errors
-		ob_start();
-		$wpdb->suppress_errors();
-
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$tables = array(
@@ -276,16 +272,11 @@ class Olama_School_DB
 			dbDelta($table_sql);
 		}
 
-		// Manual schema fixes for columns that dbDelta might miss
 		$this->ensure_schema_updates();
 
 		// Rename existing semesters for better naming convention
 		$wpdb->query("UPDATE {$wpdb->prefix}olama_semesters SET semester_name = 'First Semester' WHERE semester_name = '1st Semester'");
 		$wpdb->query("UPDATE {$wpdb->prefix}olama_semesters SET semester_name = 'Second Semester' WHERE semester_name = '2nd Semester'");
-
-		// Clean up output buffer and restore error reporting
-		ob_end_clean();
-		$wpdb->show_errors();
 	}
 
 	/**

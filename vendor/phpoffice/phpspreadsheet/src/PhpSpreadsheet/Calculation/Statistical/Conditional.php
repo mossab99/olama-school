@@ -47,7 +47,7 @@ class Conditional
      * Counts the number of cells that contain numbers within the list of arguments
      *
      * Excel Function:
-     *        AVERAGEIFS(average_range, criteria_range1, criteria1, [criteria_range2, criteria2]…)
+     *        AVERAGEIFS(average_range, criteria_range1, criteria1, [criteria_range2, criteria2]â€¦)
      *
      * @param mixed $args Pairs of Ranges and Criteria
      *
@@ -107,7 +107,7 @@ class Conditional
      * Counts the number of cells that contain numbers within the list of arguments
      *
      * Excel Function:
-     *        COUNTIFS(criteria_range1, criteria1, [criteria_range2, criteria2]…)
+     *        COUNTIFS(criteria_range1, criteria1, [criteria_range2, criteria2]â€¦)
      *
      * @param mixed $args Pairs of Ranges and Criteria
      *
@@ -133,7 +133,7 @@ class Conditional
      * Returns the maximum value within a range of cells that contain numbers within the list of arguments
      *
      * Excel Function:
-     *        MAXIFS(max_range, criteria_range1, criteria1, [criteria_range2, criteria2]…)
+     *        MAXIFS(max_range, criteria_range1, criteria1, [criteria_range2, criteria2]â€¦)
      *
      * @param mixed $args Pairs of Ranges and Criteria
      *
@@ -157,7 +157,7 @@ class Conditional
      * Returns the minimum value within a range of cells that contain numbers within the list of arguments
      *
      * Excel Function:
-     *        MINIFS(min_range, criteria_range1, criteria1, [criteria_range2, criteria2]…)
+     *        MINIFS(min_range, criteria_range1, criteria1, [criteria_range2, criteria2]â€¦)
      *
      * @param mixed $args Pairs of Ranges and Criteria
      *
@@ -203,7 +203,7 @@ class Conditional
      * Counts the number of cells that contain numbers within the list of arguments
      *
      * Excel Function:
-     *        SUMIFS(average_range, criteria_range1, criteria1, [criteria_range2, criteria2]…)
+     *        SUMIFS(average_range, criteria_range1, criteria1, [criteria_range2, criteria2]â€¦)
      *
      * @param mixed $args Pairs of Ranges and Criteria
      *

@@ -105,7 +105,7 @@ class ConvertUOM
         'h' => ['Group' => self::CATEGORY_POWER, 'Unit Name' => 'Horsepower', 'AllowPrefix' => false],
         'W' => ['Group' => self::CATEGORY_POWER, 'Unit Name' => 'Watt', 'AllowPrefix' => true],
         'w' => ['Group' => self::CATEGORY_POWER, 'Unit Name' => 'Watt', 'AllowPrefix' => true],
-        'PS' => ['Group' => self::CATEGORY_POWER, 'Unit Name' => 'Pferdestärke', 'AllowPrefix' => false],
+        'PS' => ['Group' => self::CATEGORY_POWER, 'Unit Name' => 'Pferdestأ¤rke', 'AllowPrefix' => false],
         // Magnetism
         'T' => ['Group' => self::CATEGORY_MAGNETISM, 'Unit Name' => 'Tesla', 'AllowPrefix' => true],
         'ga' => ['Group' => self::CATEGORY_MAGNETISM, 'Unit Name' => 'Gauss', 'AllowPrefix' => true],
@@ -117,7 +117,7 @@ class ConvertUOM
         'K' => ['Group' => self::CATEGORY_TEMPERATURE, 'Unit Name' => 'Kelvin', 'AllowPrefix' => false],
         'kel' => ['Group' => self::CATEGORY_TEMPERATURE, 'Unit Name' => 'Kelvin', 'AllowPrefix' => false],
         'Rank' => ['Group' => self::CATEGORY_TEMPERATURE, 'Unit Name' => 'Degrees Rankine', 'AllowPrefix' => false],
-        'Reau' => ['Group' => self::CATEGORY_TEMPERATURE, 'Unit Name' => 'Degrees Réaumur', 'AllowPrefix' => false],
+        'Reau' => ['Group' => self::CATEGORY_TEMPERATURE, 'Unit Name' => 'Degrees Rأ©aumur', 'AllowPrefix' => false],
         // Volume
         'l' => ['Group' => self::CATEGORY_VOLUME, 'Unit Name' => 'Litre', 'AllowPrefix' => true],
         'L' => ['Group' => self::CATEGORY_VOLUME, 'Unit Name' => 'Litre', 'AllowPrefix' => true],

@@ -84,11 +84,11 @@ class NumberFormat extends Supervisor
     const FORMAT_CURRENCY_USD_INTEGER = '$#,##0_-';
     const FORMAT_CURRENCY_USD = '$#,##0.00_-';
     /** @deprecated 1.28 use FORMAT_CURRENCY_EUR_INTEGER instead */
-    const FORMAT_CURRENCY_EUR_SIMPLE = '#,##0_-"€"';
-    const FORMAT_CURRENCY_EUR_INTEGER = '#,##0_-[$€]';
-    const FORMAT_CURRENCY_EUR = '#,##0.00_-[$€]';
+    const FORMAT_CURRENCY_EUR_SIMPLE = '#,##0_-"â‚¬"';
+    const FORMAT_CURRENCY_EUR_INTEGER = '#,##0_-[$â‚¬]';
+    const FORMAT_CURRENCY_EUR = '#,##0.00_-[$â‚¬]';
     const FORMAT_ACCOUNTING_USD = '_("$"* #,##0.00_);_("$"* \(#,##0.00\);_("$"* "-"??_);_(@_)';
-    const FORMAT_ACCOUNTING_EUR = '_("€"* #,##0.00_);_("€"* \(#,##0.00\);_("€"* "-"??_);_(@_)';
+    const FORMAT_ACCOUNTING_EUR = '_("â‚¬"* #,##0.00_);_("â‚¬"* \(#,##0.00\);_("â‚¬"* "-"??_);_(@_)';
 
     /**
      * Excel built-in number formats.
@@ -351,20 +351,20 @@ class NumberFormat extends Supervisor
             self::$builtInFormats[70] = 't# ??/??';
 
             // JPN
-            self::$builtInFormats[28] = '[$-411]ggge"年"m"月"d"日"';
-            self::$builtInFormats[29] = '[$-411]ggge"年"m"月"d"日"';
-            self::$builtInFormats[31] = 'yyyy"年"m"月"d"日"';
-            self::$builtInFormats[32] = 'h"時"mm"分"';
-            self::$builtInFormats[33] = 'h"時"mm"分"ss"秒"';
-            self::$builtInFormats[34] = 'yyyy"年"m"月"';
-            self::$builtInFormats[35] = 'm"月"d"日"';
-            self::$builtInFormats[51] = '[$-411]ggge"年"m"月"d"日"';
-            self::$builtInFormats[52] = 'yyyy"年"m"月"';
-            self::$builtInFormats[53] = 'm"月"d"日"';
-            self::$builtInFormats[54] = '[$-411]ggge"年"m"月"d"日"';
-            self::$builtInFormats[55] = 'yyyy"年"m"月"';
-            self::$builtInFormats[56] = 'm"月"d"日"';
-            self::$builtInFormats[58] = '[$-411]ggge"年"m"月"d"日"';
+            self::$builtInFormats[28] = '[$-411]ggge"ه¹´"m"وœˆ"d"و—¥"';
+            self::$builtInFormats[29] = '[$-411]ggge"ه¹´"m"وœˆ"d"و—¥"';
+            self::$builtInFormats[31] = 'yyyy"ه¹´"m"وœˆ"d"و—¥"';
+            self::$builtInFormats[32] = 'h"و™‚"mm"هˆ†"';
+            self::$builtInFormats[33] = 'h"و™‚"mm"هˆ†"ss"ç§’"';
+            self::$builtInFormats[34] = 'yyyy"ه¹´"m"وœˆ"';
+            self::$builtInFormats[35] = 'm"وœˆ"d"و—¥"';
+            self::$builtInFormats[51] = '[$-411]ggge"ه¹´"m"وœˆ"d"و—¥"';
+            self::$builtInFormats[52] = 'yyyy"ه¹´"m"وœˆ"';
+            self::$builtInFormats[53] = 'm"وœˆ"d"و—¥"';
+            self::$builtInFormats[54] = '[$-411]ggge"ه¹´"m"وœˆ"d"و—¥"';
+            self::$builtInFormats[55] = 'yyyy"ه¹´"m"وœˆ"';
+            self::$builtInFormats[56] = 'm"وœˆ"d"و—¥"';
+            self::$builtInFormats[58] = '[$-411]ggge"ه¹´"m"وœˆ"d"و—¥"';
 
             // Flip array (for faster lookups)
             self::$flippedBuiltInFormats = array_flip(self::$builtInFormats);

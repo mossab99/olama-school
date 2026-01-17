@@ -347,7 +347,7 @@ class Statistical
      * Counts the number of cells that contain numbers within the list of arguments
      *
      * Excel Function:
-     *        COUNTIFS(criteria_range1, criteria1, [criteria_range2, criteria2]…)
+     *        COUNTIFS(criteria_range1, criteria1, [criteria_range2, criteria2]â€¦)
      *
      * @deprecated 1.17.0
      *      Use the COUNTIFS() method in the Statistical\Conditional class instead
@@ -1720,7 +1720,7 @@ class Statistical
      * Returns the one-tailed P-value of a z-test.
      *
      * For a given hypothesized population mean, x, Z.TEST returns the probability that the sample mean would be
-     *     greater than the average of observations in the data set (array) — that is, the observed sample mean.
+     *     greater than the average of observations in the data set (array) â€” that is, the observed sample mean.
      *
      * @deprecated 1.18.0
      *      Use the zTest() method in the Statistical\Distributions\StandardNormal class instead

@@ -157,7 +157,7 @@ class Slk extends BaseReader
 
             // explode each row at semicolons while taking into account that literal semicolon (;)
             // is escaped like this (;;)
-            $rowData = explode("\t", str_replace('¤', ';', str_replace(';', "\t", str_replace(';;', '¤', rtrim($rowData)))));
+            $rowData = explode("\t", str_replace('آ¤', ';', str_replace(';', "\t", str_replace(';;', 'آ¤', rtrim($rowData)))));
 
             $dataType = array_shift($rowData);
             if ($dataType == 'B') {
@@ -530,7 +530,7 @@ class Slk extends BaseReader
 
             // explode each row at semicolons while taking into account that literal semicolon (;)
             // is escaped like this (;;)
-            $rowData = explode("\t", str_replace('¤', ';', str_replace(';', "\t", str_replace(';;', '¤', rtrim($rowDataTxt)))));
+            $rowData = explode("\t", str_replace('آ¤', ';', str_replace(';', "\t", str_replace(';;', 'آ¤', rtrim($rowDataTxt)))));
 
             $dataType = array_shift($rowData);
             if ($dataType == 'P') {

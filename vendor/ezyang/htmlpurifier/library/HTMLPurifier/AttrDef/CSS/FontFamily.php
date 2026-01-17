@@ -123,13 +123,13 @@ class HTMLPurifier_AttrDef_CSS_FontFamily extends HTMLPurifier_AttrDef
             //    of these codepoints is basically uniform, even for
             //    punctuation-like codepoints.  These characters can
             //    show up in non-Western pages and are supported by most
-            //    major browsers, for example: "ＭＳ 明朝" is a
+            //    major browsers, for example: "ï¼­ï¼³ وکژوœ‌" is a
             //    legitimate font-name
-            //    <http://ja.wikipedia.org/wiki/MS_明朝>.  See
+            //    <http://ja.wikipedia.org/wiki/MS_وکژوœ‌>.  See
             //    the CSS3 spec for more examples:
             //    <http://www.w3.org/TR/2011/WD-css3-fonts-20110324/localizedfamilynames.png>
             //    You can see live samples of these on the Internet:
-            //    <http://www.google.co.jp/search?q=font-family+ＭＳ+明朝|ゴシック>
+            //    <http://www.google.co.jp/search?q=font-family+ï¼­ï¼³+وکژوœ‌|م‚´م‚·مƒƒم‚¯>
             //    However, most of these fonts have ASCII equivalents:
             //    for example, 'MS Mincho', and it's considered
             //    professional to use ASCII font names instead of

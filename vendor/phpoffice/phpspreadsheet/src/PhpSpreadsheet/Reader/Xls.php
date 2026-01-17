@@ -7407,7 +7407,7 @@ class Xls extends BaseReader
                     // todo: check if we have identified the whole set of special characters
                     // it seems that the following characters are not accepted for sheet names
                     // and we may assume that they are not present: []*/:\?
-                    if (preg_match("/[ !\"@#£$%&{()}<>=+'|^,;-]/u", $sheetRange)) {
+                    if (preg_match("/[ !\"@#آ£$%&{()}<>=+'|^,;-]/u", $sheetRange)) {
                         $sheetRange = "'$sheetRange'";
                     }
 
