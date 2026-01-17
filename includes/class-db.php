@@ -271,8 +271,52 @@ class Olama_School_DB
 			dbDelta($table_sql);
 		}
 
+		// Manual schema fixes for columns that dbDelta might miss
+		$this->ensure_schema_updates();
+
 		// Rename existing semesters for better naming convention
 		$wpdb->query("UPDATE {$wpdb->prefix}olama_semesters SET semester_name = 'First Semester' WHERE semester_name = '1st Semester'");
 		$wpdb->query("UPDATE {$wpdb->prefix}olama_semesters SET semester_name = 'Second Semester' WHERE semester_name = '2nd Semester'");
+	}
+
+	/**
+	 * Ensure critical schema updates that dbDelta might miss
+	 */
+	private function ensure_schema_updates()
+	{
+		global $wpdb;
+
+		// Check if academic_year_id column exists in olama_sections
+		$column_exists = $wpdb->get_results(
+			"SHOW COLUMNS FROM {$wpdb->prefix}olama_sections LIKE 'academic_year_id'"
+		);
+
+		if (empty($column_exists)) {
+			// Add the missing column
+			$wpdb->query(
+				"ALTER TABLE {$wpdb->prefix}olama_sections 
+				ADD COLUMN academic_year_id mediumint(9) NOT NULL AFTER id"
+			);
+
+			// Add the index if it doesn't exist
+			$index_exists = $wpdb->get_results(
+				"SHOW INDEX FROM {$wpdb->prefix}olama_sections WHERE Key_name = 'academic_year_id'"
+			);
+
+			if (empty($index_exists)) {
+				$wpdb->query(
+					"ALTER TABLE {$wpdb->prefix}olama_sections 
+					ADD KEY academic_year_id (academic_year_id)"
+				);
+			}
+		}
+
+		// Check if 'assignment' index exists in olama_teacher_assignments
+		$assignment_index = $wpdb->get_results(
+			"SHOW INDEX FROM {$wpdb->prefix}olama_teacher_assignments WHERE Key_name = 'assignment'"
+		);
+
+		// If it doesn't exist, dbDelta will add it; if it does, we skip to avoid duplicate key error
+		// This check prevents the duplicate key error by letting dbDelta handle it only when needed
 	}
 }
