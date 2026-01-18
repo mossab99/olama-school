@@ -232,7 +232,8 @@ class Olama_School_DB
 				PRIMARY KEY  (id),
 				KEY  academic_year_id (academic_year_id),
 				KEY  teacher_id (teacher_id),
-				KEY  section_id (section_id)
+				KEY  section_id (section_id),
+				KEY  assignment (teacher_id, section_id, subject_id)
 			) $charset_collate;",
 
 			'olama_teacher_office_hours' => "CREATE TABLE {$wpdb->prefix}olama_teacher_office_hours (
@@ -323,5 +324,39 @@ class Olama_School_DB
 				ADD KEY assignment (teacher_id, section_id, subject_id)"
 			);
 		}
+	}
+
+	public function drop_tables()
+	{
+		global $wpdb;
+
+		$tables = array(
+			'olama_exams',
+			'olama_teacher_office_hours',
+			'olama_teacher_assignments',
+			'olama_academic_events',
+			'olama_logs',
+			'olama_curriculum_questions',
+			'olama_curriculum_lessons',
+			'olama_curriculum_units',
+			'olama_schedule',
+			'olama_templates',
+			'olama_plan_questions',
+			'olama_plans',
+			'olama_students',
+			'olama_teachers',
+			'olama_subjects',
+			'olama_sections',
+			'olama_grades',
+			'olama_semesters',
+			'olama_academic_years',
+			'olama_settings'
+		);
+
+		foreach ($tables as $table) {
+			$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}$table");
+		}
+
+		delete_option('olama_school_version');
 	}
 }

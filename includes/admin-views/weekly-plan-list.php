@@ -45,7 +45,7 @@ foreach ($all_weeks as $val => $label) {
     $months_weeks[$m_key_start][] = array('val' => $val, 'label' => $label);
 
     // Check if week ends in a different month
-    $m_key_end = date('Y-m', strtotime($val . ' +4 days'));
+    $m_key_end = date('Y-m', strtotime($val . ' + 4 days'));
     if ($m_key_end !== $m_key_start) {
         $months_weeks[$m_key_end][] = array('val' => $val, 'label' => $label);
     }
@@ -76,13 +76,13 @@ if (!$valid_week && !empty($current_month_weeks)) {
 
 $days = array(
     'Sunday' => date('Y-m-d', strtotime($week_start)),
-    'Monday' => date('Y-m-d', strtotime($week_start . ' +1 day')),
-    'Tuesday' => date('Y-m-d', strtotime($week_start . ' +2 days')),
-    'Wednesday' => date('Y-m-d', strtotime($week_start . ' +3 days')),
-    'Thursday' => date('Y-m-d', strtotime($week_start . ' +4 days')),
+    'Monday' => date('Y-m-d', strtotime($week_start . ' + 1 day')),
+    'Tuesday' => date('Y-m-d', strtotime($week_start . ' + 2 days')),
+    'Wednesday' => date('Y-m-d', strtotime($week_start . ' + 3 days')),
+    'Thursday' => date('Y-m-d', strtotime($week_start . ' + 4 days')),
 );
 
-$all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, date('Y-m-d', strtotime($week_start . ' +4 days')));
+$all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, date('Y-m-d', strtotime($week_start . ' + 4 days')));
 
 // Group plans by date
 $grouped_plans = array();
@@ -143,26 +143,6 @@ if ($current_semester_id && $selected_grade_id) {
         }
     }
 
-    // 5. Build Analysis Data
-    foreach ($all_grade_subjects as $sub) {
-        $cs = $stats_map[$sub->id] ?? null;
-        if (!$cs || $cs->lesson_count == 0) {
-            continue; // Skip subjects not in curriculum for this semester
-        }
-
-        $p_count = $plan_subject_counts[$sub->id] ?? 0;
-        $p_coverage = $total_plans_count > 0 ? ($p_count / $total_plans_count) : 0;
-        $c_coverage = $total_curr_lessons > 0 ? ($cs->lesson_count / $total_curr_lessons) : 0;
-
-        $analysis_data[] = [
-            'name' => $sub->subject_name,
-            'plan_coverage' => $p_coverage,
-            'curr_coverage' => $c_coverage,
-            'plan_count' => $p_count,
-            'curr_lessons' => $cs->lesson_count
-        ];
-    }
-
     // Find the selected grade to get its limits
     $selected_grade_obj = null;
     foreach ($grades as $g) {
@@ -172,6 +152,33 @@ if ($current_semester_id && $selected_grade_id) {
         }
     }
     $grade_max_plans = $selected_grade_obj ? intval($selected_grade_obj->max_weekly_plans) : 0;
+
+    // 5. Build Analysis Data
+    foreach ($all_grade_subjects as $sub) {
+        $cs = $stats_map[$sub->id] ?? null;
+        if (!$cs || $cs->lesson_count == 0) {
+            continue; // Skip subjects not in curriculum for this semester
+        }
+
+        $p_count = $plan_subject_counts[$sub->id] ?? 0;
+
+        // Plan Coverage (relative to Grade Max)
+        $p_coverage = $grade_max_plans > 0 ? ($p_count / $grade_max_plans) : 0;
+
+        // Subject Coverage (relative to Subject Max)
+        $sub_max = intval($sub->max_weekly_plans);
+        $s_coverage = $sub_max > 0 ? ($p_count / $sub_max) : 0;
+
+        $analysis_data[] = [
+            'name' => $sub->subject_name,
+            'plan_coverage' => $p_coverage,
+            'sub_coverage' => $s_coverage,
+            'p_count' => $p_count,
+            'sub_max' => $sub_max,
+            'lesson_count' => $cs->lesson_count,
+            'total_lessons' => $total_curr_lessons
+        ];
+    }
 }
 ?>
 
@@ -341,6 +348,9 @@ if ($current_semester_id && $selected_grade_id) {
                                     <?php echo Olama_School_Helpers::translate('Subject Name'); ?>
                                 </th>
                                 <th style="font-weight: 700; background: #f8fafc; color: #475569; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Subject Coverage'); ?>
+                                </th>
+                                <th style="font-weight: 700; background: #f8fafc; color: #475569; text-align: center;">
                                     <?php echo Olama_School_Helpers::translate('Plan Coverage'); ?>
                                 </th>
                                 <th style="font-weight: 700; background: #f8fafc; color: #475569; text-align: center;">
@@ -352,46 +362,77 @@ if ($current_semester_id && $selected_grade_id) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($analysis_data as $row):
-                                $diff = $row['plan_coverage'] - $row['curr_coverage'];
+                            <?php
+                            $sum_sc_plans = 0;
+                            $sum_sc_limit = 0;
+                            foreach ($analysis_data as $row) {
+                                $sum_sc_plans += $row['p_count'];
+                                $sum_sc_limit += $row['sub_max'];
+                            }
+
+                            foreach ($analysis_data as $row):
+                                $sc_pct = $row['sub_coverage'] * 100;
+                                $pc_pct = $row['plan_coverage'] * 100;
+                                $cc_pct = $row['total_lessons'] > 0 ? ($row['lesson_count'] / $row['total_lessons']) * 100 : 0;
+
+                                $diff = $pc_pct - $cc_pct;
+
                                 $status_color = '#10b981'; // Green
                                 $status_icon = 'dashicons-yes';
-                                $status_text = Olama_School_Helpers::translate('Optimal');
+                                $status_label = Olama_School_Helpers::translate('Optimal');
+                                $bg_color = 'rgba(16, 185, 129, 0.1)';
 
-                                if ($diff > 0.05) {
+                                if ($diff > 3) {
+                                    $status_label = Olama_School_Helpers::translate('High');
                                     $status_color = '#f59e0b'; // Amber
                                     $status_icon = 'dashicons-arrow-up-alt';
-                                    $status_text = Olama_School_Helpers::translate('High');
-                                } elseif ($diff < -0.05) {
+                                    $bg_color = 'rgba(245, 158, 11, 0.1)';
+                                } elseif ($diff < -3) {
+                                    $status_label = Olama_School_Helpers::translate('Low');
                                     $status_color = '#ef4444'; // Red
                                     $status_icon = 'dashicons-arrow-down-alt';
-                                    $status_text = Olama_School_Helpers::translate('Low');
+                                    $bg_color = 'rgba(239, 68, 68, 0.1)';
                                 }
                                 ?>
                                 <tr>
                                     <td style="font-weight: 600; color: #334155;"><?php echo esc_html($row['name']); ?></td>
                                     <td style="text-align: center;">
                                         <div style="display: flex; flex-direction: column; align-items: center;">
+                                            <?php
+                                            $sc_color = '#1e293b'; // Default
+                                            if ($sc_pct >= 80)
+                                                $sc_color = '#10b981'; // Green
+                                            elseif ($sc_pct < 50)
+                                                $sc_color = '#ef4444'; // Red
+                                            ?>
                                             <span
-                                                style="font-weight: 700; color: #1e293b;"><?php echo number_format($row['plan_coverage'] * 100, 1); ?>%</span>
+                                                style="font-weight: 700; color: <?php echo $sc_color; ?>;"><?php echo number_format($sc_pct, 1); ?>%</span>
                                             <small
-                                                style="color: #64748b; font-size: 0.75rem;"><?php printf(Olama_School_Helpers::translate('(%d plans)'), $row['plan_count']); ?></small>
+                                                style="color: #64748b; font-size: 0.75rem;"><?php printf(Olama_School_Helpers::translate('%d / %d plans'), $row['p_count'], $row['sub_max']); ?></small>
                                         </div>
                                     </td>
                                     <td style="text-align: center;">
                                         <div style="display: flex; flex-direction: column; align-items: center;">
                                             <span
-                                                style="font-weight: 700; color: #1e293b;"><?php echo number_format($row['curr_coverage'] * 100, 1); ?>%</span>
+                                                style="font-weight: 700; color: #1e293b;"><?php echo number_format($pc_pct, 1); ?>%</span>
                                             <small
-                                                style="color: #64748b; font-size: 0.75rem;"><?php printf(Olama_School_Helpers::translate('(%d lessons)'), $row['curr_lessons']); ?></small>
+                                                style="color: #64748b; font-size: 0.75rem;"><?php printf(Olama_School_Helpers::translate('%d / %d plans'), $row['p_count'], $grade_max_plans); ?></small>
+                                        </div>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <div style="display: flex; flex-direction: column; align-items: center;">
+                                            <span
+                                                style="font-weight: 700; color: #1e293b;"><?php echo number_format($cc_pct, 1); ?>%</span>
+                                            <small
+                                                style="color: #64748b; font-size: 0.75rem;"><?php printf(Olama_School_Helpers::translate('(%d lessons)'), $row['lesson_count']); ?></small>
                                         </div>
                                     </td>
                                     <td style="text-align: center;">
                                         <div
-                                            style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: <?php echo $status_color; ?>15; color: <?php echo $status_color; ?>; font-weight: 600; font-size: 0.85rem;">
+                                            style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 14px; border-radius: 20px; background: <?php echo $bg_color; ?>; color: <?php echo $status_color; ?>; font-weight: 700; font-size: 0.85rem; border: 1px solid <?php echo $status_color; ?>30; min-width: 90px;">
                                             <span class="dashicons <?php echo $status_icon; ?>"
                                                 style="font-size: 16px; width: 16px; height: 16px;"></span>
-                                            <?php echo $status_text; ?>
+                                            <?php echo $status_label; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -399,18 +440,15 @@ if ($current_semester_id && $selected_grade_id) {
                         </tbody>
                         <?php if ($grade_max_plans > 0):
                             $weekly_coverage_pct = $total_plans_count / $grade_max_plans;
-                            $status_color = '#10b981'; // Green
-                            $status_text = Olama_School_Helpers::translate('Optimal');
-                            $status_icon = 'dashicons-yes';
+                            $status_class = 'status-low';
+                            $status_text = Olama_School_Helpers::translate('Low');
 
-                            if ($weekly_coverage_pct > 1.05) {
-                                $status_color = '#f59e0b'; // Amber
-                                $status_icon = 'dashicons-arrow-up-alt';
+                            if ($weekly_coverage_pct >= 1) {
+                                $status_text = Olama_School_Helpers::translate('Optimal');
+                                $status_class = 'status-ontime';
+                            } elseif ($weekly_coverage_pct >= 0.8) {
                                 $status_text = Olama_School_Helpers::translate('High');
-                            } elseif ($weekly_coverage_pct < 0.95) {
-                                $status_color = '#ef4444'; // Red
-                                $status_icon = 'dashicons-arrow-down-alt';
-                                $status_text = Olama_School_Helpers::translate('Low');
+                                $status_class = 'status-high';
                             }
                             ?>
                             <tfoot>
@@ -419,24 +457,58 @@ if ($current_semester_id && $selected_grade_id) {
                                         <?php echo Olama_School_Helpers::translate('Weekly Coverage Total'); ?>
                                     </td>
                                     <td style="text-align: center; padding: 15px;">
+                                        <?php
+                                        $total_sc_pct_val = $sum_sc_limit > 0 ? ($sum_sc_plans / $sum_sc_limit) * 100 : 0;
+                                        ?>
+                                        <div style="display: flex; flex-direction: column; align-items: center;">
+                                            <span style="font-weight: 800; color: #1e293b; font-size: 1.1rem;">
+                                                <?php echo number_format($total_sc_pct_val, 1); ?>%
+                                            </span>
+                                            <small style="color: #475569; font-weight: 600;">
+                                                <?php printf(Olama_School_Helpers::translate('%d / %d plans'), $sum_sc_plans, $sum_sc_limit); ?>
+                                            </small>
+                                        </div>
+                                    </td>
+                                    <td style="text-align: center; padding: 15px;">
                                         <div style="display: flex; flex-direction: column; align-items: center;">
                                             <span style="font-weight: 800; color: #1e293b; font-size: 1.1rem;">
                                                 <?php echo number_format($weekly_coverage_pct * 100, 1); ?>%
                                             </span>
                                             <small style="color: #475569; font-weight: 600;">
-                                                <?php printf(Olama_School_Helpers::translate('%d / %d Plans'), $total_plans_count, $grade_max_plans); ?>
+                                                <?php printf(Olama_School_Helpers::translate('%d / %d plans'), $total_plans_count, $grade_max_plans); ?>
                                             </small>
                                         </div>
                                     </td>
                                     <td style="text-align: center; color: #94a3b8; padding: 15px; font-style: italic;">
                                         -
                                     </td>
-                                    <td style="text-align: center; padding: 15px;">
+                                    <td style="padding: 20px; text-align: center;">
+                                        <?php
+                                        $total_pct_val = $weekly_coverage_pct * 100;
+                                        $status_color = '#10b981'; // Green
+                                        $status_icon = 'dashicons-yes';
+                                        $status_label = Olama_School_Helpers::translate('Optimal');
+                                        $bg_color = 'rgba(16, 185, 129, 0.1)';
+
+                                        if ($total_pct_val >= 95) {
+                                            // Optimal
+                                        } elseif ($total_pct_val >= 80) {
+                                            $status_color = '#f59e0b'; // Amber
+                                            $status_icon = 'dashicons-arrow-up-alt';
+                                            $status_label = Olama_School_Helpers::translate('High');
+                                            $bg_color = 'rgba(245, 158, 11, 0.1)';
+                                        } else {
+                                            $status_color = '#ef4444'; // Red
+                                            $status_icon = 'dashicons-arrow-down-alt';
+                                            $status_label = Olama_School_Helpers::translate('Low');
+                                            $bg_color = 'rgba(239, 68, 68, 0.1)';
+                                        }
+                                        ?>
                                         <div
-                                            style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px; border-radius: 20px; background: <?php echo $status_color; ?>25; color: <?php echo $status_color; ?>; font-weight: 700; font-size: 0.9rem; border: 1px solid <?php echo $status_color; ?>40;">
+                                            style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 18px; border-radius: 20px; background: <?php echo $bg_color; ?>; color: <?php echo $status_color; ?>; font-weight: 800; font-size: 0.9rem; border: 1px solid <?php echo $status_color; ?>30; min-width: 100px;">
                                             <span class="dashicons <?php echo $status_icon; ?>"
                                                 style="font-size: 18px; width: 18px; height: 18px;"></span>
-                                            <?php echo $status_text; ?>
+                                            <?php echo $status_label; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -445,11 +517,31 @@ if ($current_semester_id && $selected_grade_id) {
                     </table>
                 </div>
 
-                <div
-                    style="margin-top: 15px; padding: 12px; background: #f0f9ff; border-radius: 6px; border: 1px solid #e0f2fe; color: #0369a1; font-size: 0.85rem;">
-                    <i class="dashicons dashicons-info"
-                        style="font-size: 16px; vertical-align: middle; margin-right: 4px;"></i>
-                    <?php echo Olama_School_Helpers::translate('Plan Coverage is calculated as (Plans for Subject / Total Plans for the Week). Curriculum Coverage is calculated based on the total lessons assigned to this grade in the current semester.'); ?>
+                <!-- Info Block -->
+                <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                    <h4
+                        style="margin: 0 0 10px 0; font-size: 0.9rem; color: #475569; display: flex; align-items: center; gap: 5px;">
+                        <span class="dashicons dashicons-info" style="font-size: 18px; width: 18px; height: 18px;"></span>
+                        <?php echo Olama_School_Helpers::translate('Guide & Definitions'); ?>
+                    </h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #f1f5f9;">
+                            <strong style="color: #1e293b; font-size: 0.85rem; display: block; margin-bottom: 4px;">
+                                <?php echo Olama_School_Helpers::translate('Plan Coverage'); ?>
+                            </strong>
+                            <p style="margin: 0; font-size: 0.8rem; color: #64748b; line-height: 1.4;">
+                                <?php echo Olama_School_Helpers::translate('Shows the percentage of coverage of the required total number of plans (how many did you cover out of the required number per week compared to all subjects).'); ?>
+                            </p>
+                        </div>
+                        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #f1f5f9;">
+                            <strong style="color: #1e293b; font-size: 0.85rem; display: block; margin-bottom: 4px;">
+                                <?php echo Olama_School_Helpers::translate('Subject Coverage'); ?>
+                            </strong>
+                            <p style="margin: 0; font-size: 0.8rem; color: #64748b; line-height: 1.4;">
+                                <?php echo Olama_School_Helpers::translate('Shows the percentage of coverage of the required subject total number of plans (how many did you cover out of the required number per subject during the week).'); ?>
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

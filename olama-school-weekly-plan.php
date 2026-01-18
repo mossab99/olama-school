@@ -100,6 +100,14 @@ function olama_school_init()
     // Load translations
     load_plugin_textdomain('olama-school', false, dirname(plugin_basename(__FILE__)) . '/languages');
 
+    // Schema Updates
+    $installed_ver = get_option('olama_school_version');
+    if ($installed_ver !== OLAMA_SCHOOL_VERSION) {
+        $olama_db = new Olama_School_DB();
+        $olama_db->create_tables();
+        update_option('olama_school_version', OLAMA_SCHOOL_VERSION);
+    }
+
     // Initialize Permissions (ensure caps are updated if code changes)
     Olama_School_Permissions::init();
 
@@ -113,6 +121,23 @@ function olama_school_init()
     new Olama_School_Shortcodes();
 }
 add_action('plugins_loaded', 'olama_school_init');
+
+/**
+ * Check for DB Reset Action
+ */
+function olama_check_db_reset()
+{
+    if (is_admin() && isset($_GET['action']) && $_GET['action'] === 'olama_retabulate' && current_user_can('manage_options')) {
+        $olama_db = new Olama_School_DB();
+        $olama_db->drop_tables();
+        $olama_db->create_tables();
+
+        add_action('admin_notices', function () {
+            echo '<div class="notice notice-success is-dismissible"><p>All Olama School tables have been successfully dropped and recreated.</p></div>';
+        });
+    }
+}
+add_action('admin_init', 'olama_check_db_reset');
 
 /**
  * Force Arabic locale if set in plugin settings
