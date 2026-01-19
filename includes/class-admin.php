@@ -25,9 +25,14 @@ class Olama_School_Admin
         add_action('admin_init', array($this, 'handle_office_hours_save'));
         add_action('admin_init', array($this, 'handle_exam_save'));
         add_action('admin_init', array($this, 'handle_academic_calendar_actions'));
+        add_action('admin_init', array($this, 'handle_subject_actions'));
         add_action('wp_ajax_olama_save_exam', array($this, 'ajax_save_exam'));
         add_action('wp_ajax_olama_get_semesters', array($this, 'ajax_get_semesters'));
         add_action('wp_ajax_olama_get_subjects', array($this, 'ajax_get_subjects'));
+        add_action('wp_ajax_olama_get_student_history', array($this, 'ajax_get_enrollment_history'));
+        add_action('wp_ajax_olama_handle_plan_approval', array($this, 'ajax_handle_plan_approval'));
+        add_action('wp_ajax_olama_mark_notification_read', array($this, 'ajax_mark_notification_read'));
+        add_action('wp_ajax_olama_get_notifications', array($this, 'ajax_get_notifications'));
 
         // Whitelabel Footer
         add_filter('admin_footer_text', array($this, 'whitelabel_footer'));
@@ -616,6 +621,11 @@ class Olama_School_Admin
                     'onTime' => Olama_School_Helpers::translate('On-time'),
                     'delayedBy' => Olama_School_Helpers::translate('Delayed by %d days'),
                     'bypassBy' => Olama_School_Helpers::translate('Bypass by %d days'),
+                    'approve' => Olama_School_Helpers::translate('Approve'),
+                    'requestEdits' => Olama_School_Helpers::translate('Request Edits'),
+                    'sending' => Olama_School_Helpers::translate('Sending...'),
+                    'approving' => Olama_School_Helpers::translate('Approving...'),
+                    'enterFeedback' => Olama_School_Helpers::translate('Please enter some feedback.'),
                 )
             ));
         }
@@ -722,6 +732,9 @@ class Olama_School_Admin
         if (isset($_GET['page']) && $_GET['page'] === 'olama-school-plans') {
             wp_enqueue_script('olama-plan-list-script', OLAMA_SCHOOL_URL . 'assets/js/plan-list.js', array('jquery'), OLAMA_SCHOOL_VERSION, true);
             wp_localize_script('olama-plan-list-script', 'olamaPlanList', array(
+                'isSupervisor' => current_user_can('olama_manage_plans'),
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('olama_admin_nonce'),
                 'i18n' => array(
                     'details' => Olama_School_Helpers::translate('Plan Details'),
                     'subject' => Olama_School_Helpers::translate('Subject'),
@@ -1225,49 +1238,84 @@ class Olama_School_Admin
     }
 
     /**
-     * Render subjects page content
+     * Handle Subject Actions (Add, Edit, Delete, Clear)
      */
-    public function render_subjects_page_content()
+    public function handle_subject_actions()
     {
-        // Handle Subject submission (Add)
-        if (isset($_POST['add_subject']) && check_admin_referer('olama_add_subject')) {
-            Olama_School_Subject::add_subject(array(
-                'subject_name' => sanitize_text_field($_POST['subject_name']),
-                'subject_code' => sanitize_text_field($_POST['subject_code']),
-                'grade_id' => intval($_POST['grade_id']),
-                'color_code' => sanitize_hex_color($_POST['color_code']),
-            ));
-            echo '<div class="updated"><p>' . __('Subject added successfully.', 'olama-school') . '</p></div>';
-        }
+        // Handle Subject submission (Add/Edit)
+        if (isset($_POST['subject_action_type'])) {
+            // Verify nonce
+            if (!wp_verify_nonce($_POST['_wpnonce'], 'olama_subject_action')) {
+                wp_die(__('Security check failed. Please try again.', 'olama-school'));
+            } else {
+                $is_active = isset($_POST['is_active']) ? intval($_POST['is_active']) : 0;
+                $data = array(
+                    'subject_name' => sanitize_text_field($_POST['subject_name']),
+                    'subject_code' => sanitize_text_field($_POST['subject_code']),
+                    'grade_id' => intval($_POST['grade_id']),
+                    'color_code' => sanitize_hex_color($_POST['color_code']),
+                    'is_active' => $is_active,
+                );
 
-        // Handle Subject update (Edit)
-        if (isset($_POST['edit_subject']) && check_admin_referer('olama_edit_subject')) {
-            $subject_id = intval($_POST['subject_id']);
-            Olama_School_Subject::update_subject($subject_id, array(
-                'subject_name' => sanitize_text_field($_POST['subject_name']),
-                'subject_code' => sanitize_text_field($_POST['subject_code']),
-                'grade_id' => intval($_POST['grade_id']),
-                'color_code' => sanitize_hex_color($_POST['color_code']),
-            ));
-            echo '<div class="updated"><p>' . __('Subject updated successfully.', 'olama-school') . '</p></div>';
+                $success = false;
+                if ($_POST['subject_action_type'] === 'edit') {
+                    $subject_id = intval($_POST['subject_id']);
+                    $result = Olama_School_Subject::update_subject($subject_id, $data);
+                    if ($result !== false) {
+                        set_transient('olama_subject_msg', __('Subject updated successfully.', 'olama-school'), 30);
+                        $success = true;
+                    }
+                } else {
+                    $result = Olama_School_Subject::add_subject($data);
+                    if ($result !== false) {
+                        set_transient('olama_subject_msg', __('Subject added successfully.', 'olama-school'), 30);
+                        $success = true;
+                    }
+                }
+
+                if ($success) {
+                    wp_safe_redirect(admin_url('admin.php?page=olama-school-academic&tab=subjects'));
+                    exit;
+                } else {
+                    set_transient('olama_subject_error', __('Failed to save subject. Please check for errors.', 'olama-school'), 30);
+                }
+            }
         }
 
         // Handle Subject delete
         if (isset($_GET['action']) && $_GET['action'] === 'delete_subject' && isset($_GET['subject_id'])) {
             $subject_id = intval($_GET['subject_id']);
-            if (check_admin_referer('olama_delete_subject_' . $subject_id)) {
+            if (isset($_GET['_wpnonce']) && wp_verify_nonce($_GET['_wpnonce'], 'olama_delete_subject_' . $subject_id)) {
                 Olama_School_Subject::delete_subject($subject_id);
-                echo '<div class="updated"><p>' . __('Subject deleted.', 'olama-school') . '</p></div>';
+                set_transient('olama_subject_msg', __('Subject deleted.', 'olama-school'), 30);
+                wp_safe_redirect(admin_url('admin.php?page=olama-school-academic&tab=subjects'));
+                exit;
             }
         }
 
         // Handle Clear All Subjects
         if (isset($_GET['action']) && $_GET['action'] === 'clear_all_subjects') {
-            if (check_admin_referer('olama_clear_all_subjects')) {
+            if (isset($_GET['_wpnonce']) && wp_verify_nonce($_GET['_wpnonce'], 'olama_clear_all_subjects')) {
                 global $wpdb;
                 $wpdb->query("DELETE FROM {$wpdb->prefix}olama_subjects");
-                echo '<div class="updated"><p>' . Olama_School_Helpers::translate('All subjects cleared successfully!') . '</p></div>';
+                set_transient('olama_subject_msg', Olama_School_Helpers::translate('All subjects cleared successfully!'), 30);
+                wp_safe_redirect(admin_url('admin.php?page=olama-school-academic&tab=subjects'));
+                exit;
             }
+        }
+    }
+
+    public function render_subjects_page_content()
+    {
+        // Display transient messages
+        if ($msg = get_transient('olama_subject_msg')) {
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($msg) . '</p></div>';
+            delete_transient('olama_subject_msg');
+        }
+
+        if ($error = get_transient('olama_subject_error')) {
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error) . '</p></div>';
+            delete_transient('olama_subject_error');
         }
 
         $grades = Olama_School_Grade::get_grades();
@@ -1319,15 +1367,59 @@ class Olama_School_Admin
      */
     public function render_users_page()
     {
-        // Handle Student submission
-        if (isset($_POST['add_student']) && check_admin_referer('olama_add_student')) {
-            Olama_School_Student::add_student(array(
+        // Handle Student Registration
+        if (isset($_POST['register_student']) && check_admin_referer('olama_register_student')) {
+            $student_id = Olama_School_Student::register_student(array(
                 'student_name' => sanitize_text_field($_POST['student_name']),
-                'student_id_number' => sanitize_text_field($_POST['student_id_number']),
-                'grade_id' => intval($_POST['grade_id']),
-                'section_id' => intval($_POST['section_id']),
+                'student_uid' => sanitize_text_field($_POST['student_id_number']),
+                'family_id' => sanitize_text_field($_POST['family_id'] ?? ''),
             ));
-            echo '<div class="updated"><p>' . __('Student added successfully.', 'olama-school') . '</p></div>';
+            if ($student_id) {
+                echo '<div class="updated"><p>' . __('Student registered successfully.', 'olama-school') . '</p></div>';
+            }
+        }
+
+        // Handle Student Update
+        if (isset($_POST['update_student']) && check_admin_referer('olama_update_student')) {
+            $result = Olama_School_Student::update_student(intval($_POST['student_id']), array(
+                'student_name' => sanitize_text_field($_POST['student_name']),
+                'student_uid' => sanitize_text_field($_POST['student_id_number']),
+                'family_id' => sanitize_text_field($_POST['family_id'] ?? ''),
+            ));
+            if ($result) {
+                echo '<div class="updated"><p>' . __('Student information updated.', 'olama-school') . '</p></div>';
+            }
+        }
+
+        // Handle Student Deletion
+        if (isset($_POST['delete_student']) && check_admin_referer('olama_delete_student')) {
+            $result = Olama_School_Student::delete_student(intval($_POST['student_id']));
+            if ($result) {
+                echo '<div class="updated"><p>' . __('Student and all enrollments deleted.', 'olama-school') . '</p></div>';
+            }
+        }
+
+        // Handle Student Unenrollment
+        if (isset($_POST['unenroll_student']) && check_admin_referer('olama_unenroll_student')) {
+            $result = Olama_School_Student::unenroll_student(
+                intval($_POST['student_id']),
+                intval($_POST['academic_year_id'] ?? 0)
+            );
+            if ($result) {
+                echo '<div class="updated"><p>' . __('Student unenrolled successfully.', 'olama-school') . '</p></div>';
+            }
+        }
+
+        // Handle Student Enrollment
+        if (isset($_POST['enroll_student']) && check_admin_referer('olama_enroll_student')) {
+            $result = Olama_School_Student::enroll_student(
+                intval($_POST['student_id']),
+                intval($_POST['section_id']),
+                intval($_POST['academic_year_id'])
+            );
+            if ($result) {
+                echo '<div class="updated"><p>' . __('Student enrolled successfully.', 'olama-school') . '</p></div>';
+            }
         }
 
         // Handle Teacher update
@@ -1346,12 +1438,15 @@ class Olama_School_Admin
         $sections = array();
         $students = array();
         $teachers = array();
-        $admin_users = array();
+        $academic_years = array();
 
         if ($active_tab === 'students') {
             $grades = Olama_School_Grade::get_grades();
             $sections = Olama_School_Section::get_sections();
-            $students = Olama_School_Student::get_students();
+            $academic_years = class_exists('Olama_School_Academic') ? Olama_School_Academic::get_years() : array();
+
+            // Fetch registry (year_id = 0)
+            $students = Olama_School_Student::get_students(array('academic_year_id' => 0));
         } elseif ($active_tab === 'teachers') {
             $teachers = Olama_School_Teacher::get_teachers();
         }
@@ -2255,7 +2350,445 @@ class Olama_School_Admin
     public function ajax_get_subjects()
     {
         $grade_id = intval($_GET['grade_id']);
-        $subjects = Olama_School_Subject::get_subjects_by_grade($grade_id);
+        $subjects = Olama_School_Subject::get_subjects_by_grade($grade_id, true);
         wp_send_json_success($subjects);
+    }
+
+    /**
+     * AJAX: Get student enrollment history
+     */
+    public function ajax_get_enrollment_history()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        $student_id = isset($_GET['student_id']) ? intval($_GET['student_id']) : 0;
+        if (!$student_id) {
+            wp_send_json_error('Invalid student ID');
+        }
+
+        $history = Olama_School_Student::get_enrollment_history($student_id);
+        wp_send_json_success($history);
+    }
+
+    /**
+     * Get Extended Dashboard Stats
+     */
+    public static function get_dashboard_extended_stats()
+    {
+        global $wpdb;
+
+        $stats = array();
+
+        // Total Students
+        $stats['total_students'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}olama_students");
+
+        // Enrolled Students
+        $active_year = Olama_School_Academic::get_active_year();
+        $active_year_id = $active_year ? $active_year->id : 0;
+
+        $stats['enrolled_students'] = 0;
+        if ($active_year_id) {
+            $stats['enrolled_students'] = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(DISTINCT student_id) FROM {$wpdb->prefix}olama_student_enrollment WHERE academic_year_id = %d",
+                $active_year_id
+            ));
+        }
+
+        // Enrollment Percentage
+        $stats['enrollment_pct'] = $stats['total_students'] > 0 ? round(($stats['enrolled_students'] / $stats['total_students']) * 100) : 0;
+
+        // Plan Compliance
+        $stats['plan_compliance'] = 0;
+        if ($active_year_id) {
+            $total_sections = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}olama_sections WHERE academic_year_id = %d",
+                $active_year_id
+            ));
+
+            if ($total_sections > 0) {
+                $start_of_week = date('Y-m-d', strtotime('last Sunday'));
+                $end_of_week = date('Y-m-d', strtotime('next Saturday'));
+
+                $planned_sections = $wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(DISTINCT section_id) FROM {$wpdb->prefix}olama_plans 
+                    WHERE academic_year_id = %d AND plan_date BETWEEN %s AND %s",
+                    $active_year_id,
+                    $start_of_week,
+                    $end_of_week
+                ));
+
+                $stats['plan_compliance'] = round(($planned_sections / $total_sections) * 100);
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Get System Alerts
+     */
+    public static function get_system_alerts()
+    {
+        global $wpdb;
+        $alerts = array();
+
+        $active_year = Olama_School_Academic::get_active_year();
+        $active_year_id = $active_year ? $active_year->id : 0;
+
+        if (!$active_year_id) {
+            $alerts[] = array(
+                'type' => 'warning',
+                'message' => __('No active academic year found.', 'olama-school'),
+                'icon' => 'dashicons-warning'
+            );
+            return $alerts;
+        }
+
+        $unassigned_sections = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_sections WHERE academic_year_id = %d AND homeroom_teacher_id IS NULL",
+            $active_year_id
+        ));
+
+        if ($unassigned_sections > 0) {
+            $alerts[] = array(
+                'type' => 'error',
+                'message' => sprintf(_n('%d section missing teacher.', '%d sections missing teachers.', $unassigned_sections, 'olama-school'), $unassigned_sections),
+                'icon' => 'dashicons-admin-users'
+            );
+        }
+
+        $next_sunday = date('Y-m-d', strtotime('next Sunday'));
+        $next_saturday = date('Y-m-d', strtotime('next Sunday + 6 days'));
+
+        $sections_planned = $wpdb->get_col($wpdb->prepare(
+            "SELECT DISTINCT section_id FROM {$wpdb->prefix}olama_plans WHERE academic_year_id = %d AND plan_date BETWEEN %s AND %s",
+            $active_year_id,
+            $next_sunday,
+            $next_saturday
+        ));
+
+        $total_sections_ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}olama_sections WHERE academic_year_id = %d",
+            $active_year_id
+        ));
+
+        $missing_plans = count(array_diff((array) $total_sections_ids, (array) $sections_planned));
+
+        if ($missing_plans > 0) {
+            $alerts[] = array(
+                'type' => 'warning',
+                'message' => sprintf(_n('%d section missing plans.', '%d sections missing plans.', $missing_plans, 'olama-school'), $missing_plans),
+                'icon' => 'dashicons-calendar-alt'
+            );
+        }
+
+        return $alerts;
+    }
+
+    /**
+     * Get Pending Plans for Review
+     */
+    public static function get_pending_plans_for_review($limit = 10)
+    {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare("
+            SELECT p.*, s.subject_name, sec.section_name, g.grade_name, u.display_name as teacher_name
+            FROM {$wpdb->prefix}olama_plans p
+            JOIN {$wpdb->prefix}olama_subjects s ON p.subject_id = s.id
+            JOIN {$wpdb->prefix}olama_sections sec ON p.section_id = sec.id
+            JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id
+            JOIN {$wpdb->users} u ON p.teacher_id = u.ID
+            WHERE p.status = 'submitted'
+            ORDER BY p.created_at ASC
+            LIMIT %d
+        ", $limit));
+    }
+
+    /**
+     * Get Weekly Coverage Data
+     */
+    public static function get_weekly_coverage_data()
+    {
+        global $wpdb;
+
+        $active_year = Olama_School_Academic::get_active_year();
+        $active_year_id = $active_year ? $active_year->id : 0;
+
+        if (!$active_year_id)
+            return array();
+
+        $start_of_week = date('Y-m-d', strtotime('last Sunday'));
+        $end_of_week = date('Y-m-d', strtotime('next Saturday'));
+
+        // Get all sections for the active year
+        $sections = $wpdb->get_results($wpdb->prepare("
+            SELECT id, section_name, grade_id 
+            FROM {$wpdb->prefix}olama_sections 
+            WHERE academic_year_id = %d
+        ", $active_year_id));
+
+        // Get plan statuses for the week
+        $plans = $wpdb->get_results($wpdb->prepare("
+            SELECT section_id, subject_id, status 
+            FROM {$wpdb->prefix}olama_plans 
+            WHERE academic_year_id = %d AND plan_date BETWEEN %s AND %s
+        ", $active_year_id, $start_of_week, $end_of_week));
+
+        $coverage = array();
+        foreach ($sections as $sec) {
+            $coverage[$sec->id] = array(
+                'name' => $sec->section_name,
+                'plans' => array()
+            );
+        }
+
+        foreach ($plans as $plan) {
+            if (isset($coverage[$plan->section_id])) {
+                $coverage[$plan->section_id]['plans'][$plan->subject_id] = $plan->status;
+            }
+        }
+
+        return $coverage;
+    }
+
+    /**
+     * AJAX: Handle Plan Approval
+     */
+    public function ajax_handle_plan_approval()
+    {
+        global $wpdb;
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        if (!current_user_can('olama_manage_plans')) {
+            wp_send_json_error(__('Permission denied.', 'olama-school'));
+        }
+
+        $plan_id = isset($_POST['plan_id']) ? intval($_POST['plan_id']) : 0;
+        $new_status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
+
+        if (!$plan_id || !in_array($new_status, array('approved', 'draft'))) {
+            wp_send_json_error(__('Invalid request parameters.', 'olama-school'));
+        }
+
+        $result = Olama_School_Plan::update_status($plan_id, $new_status);
+
+        if ($result) {
+            // Log the action
+            Olama_School_Logger::log(
+                sprintf('Plan %s by supervisor', $new_status),
+                sprintf('Plan ID %d changed to %s', $plan_id, $new_status)
+            );
+            // Notify teacher of the status change (Phase 3)
+            $plan = $wpdb->get_row($wpdb->prepare("
+                SELECT p.teacher_id, s.subject_name 
+                FROM {$wpdb->prefix}olama_plans p
+                JOIN {$wpdb->prefix}olama_subjects s ON p.subject_id = s.id
+                WHERE p.id = %d
+            ", $plan_id));
+
+            if ($plan) {
+                $feedback = isset($_POST['feedback']) ? sanitize_textarea_field($_POST['feedback']) : '';
+                $status_label = ($new_status === 'approved') ? __('Approved', 'olama-school') : (($new_status === 'draft') ? __('Rejected/Needs Edits', 'olama-school') : $new_status);
+
+                if (!empty($feedback)) {
+                    $msg = sprintf(__('Your plan for %s has been %s. Feedback: %s', 'olama-school'), $plan->subject_name, $status_label, $feedback);
+                } else {
+                    $msg = sprintf(__('Your plan for %s has been %s.', 'olama-school'), $plan->subject_name, $status_label);
+                }
+
+                self::create_notification($plan->teacher_id, 'plan_status', $msg);
+            }
+
+            wp_send_json_success(array('message' => sprintf(__('Plan %s successfully.', 'olama-school'), $new_status)));
+        } else {
+            wp_send_json_error(__('Database error: Could not update plan status.', 'olama-school'));
+        }
+    }
+
+    /**
+     * Get teaching schedule for a specific day
+     */
+    public static function get_teacher_daily_schedule($teacher_id, $day_name = null)
+    {
+        global $wpdb;
+
+        if (!$day_name) {
+            $day_name = date('l'); // Today's English day name
+        }
+
+        $active_year = Olama_School_Academic::get_active_year();
+        $active_semester = Olama_School_Academic::get_active_semester();
+
+        if (!$active_year || !$active_semester)
+            return array();
+
+        return $wpdb->get_results($wpdb->prepare("
+            SELECT sch.*, sub.subject_name, sec.section_name, g.grade_name, p.status as plan_status, p.id as plan_id
+            FROM {$wpdb->prefix}olama_schedule sch
+            JOIN {$wpdb->prefix}olama_teacher_assignments ta ON ta.section_id = sch.section_id AND ta.subject_id = sch.subject_id
+            JOIN {$wpdb->prefix}olama_subjects sub ON sch.subject_id = sub.id
+            JOIN {$wpdb->prefix}olama_sections sec ON sch.section_id = sec.id
+            JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id
+            LEFT JOIN {$wpdb->prefix}olama_plans p ON p.section_id = sch.section_id 
+                AND p.subject_id = sch.subject_id 
+                AND p.plan_date = %s 
+                AND p.period_number = sch.period_number
+            WHERE ta.teacher_id = %d 
+                AND ta.academic_year_id = %d 
+                AND sch.semester_id = %d
+                AND sch.day_name = %s
+            ORDER BY sch.period_number ASC
+        ", date('Y-m-d'), $teacher_id, $active_year->id, $active_semester->id, $day_name));
+    }
+
+    /**
+     * Get personal plan stats for a teacher
+     */
+    public static function get_teacher_personal_stats($teacher_id)
+    {
+        global $wpdb;
+        $active_year = Olama_School_Academic::get_active_year();
+        if (!$active_year)
+            return array('total' => 0, 'approved' => 0, 'pending' => 0, 'draft' => 0);
+
+        $stats = $wpdb->get_results($wpdb->prepare("
+            SELECT status, COUNT(*) as count 
+            FROM {$wpdb->prefix}olama_plans 
+            WHERE teacher_id = %d AND academic_year_id = %d
+            GROUP BY status
+        ", $teacher_id, $active_year->id));
+
+        $res = array('total' => 0, 'approved' => 0, 'pending' => 0, 'draft' => 0);
+        foreach ($stats as $s) {
+            if ($s->status == 'approved')
+                $res['approved'] = $s->count;
+            if ($s->status == 'submitted')
+                $res['pending'] = $s->count;
+            if ($s->status == 'draft')
+                $res['draft'] = $s->count;
+            $res['total'] += $s->count;
+        }
+        return $res;
+    }
+
+    /**
+     * Get progress for subjects assigned to a teacher
+     */
+    public static function get_teacher_subjects_progress($teacher_id)
+    {
+        global $wpdb;
+        $active_year = Olama_School_Academic::get_active_year();
+        $active_semester = Olama_School_Academic::get_active_semester();
+        if (!$active_year || !$active_semester)
+            return array();
+
+        // Get all subjects assigned to this teacher
+        $assignments = $wpdb->get_results($wpdb->prepare("
+            SELECT ta.subject_id, ta.section_id, sub.subject_name, sec.section_name, g.grade_name
+            FROM {$wpdb->prefix}olama_teacher_assignments ta
+            JOIN {$wpdb->prefix}olama_subjects sub ON ta.subject_id = sub.id
+            JOIN {$wpdb->prefix}olama_sections sec ON ta.section_id = sec.id
+            JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id
+            WHERE ta.teacher_id = %d AND ta.academic_year_id = %d
+        ", $teacher_id, $active_year->id));
+
+        foreach ($assignments as &$a) {
+            // Count total lessons in curriculum for this subject/grade/semester
+            $total_lessons = $wpdb->get_var($wpdb->prepare("
+                SELECT COUNT(cl.id)
+                FROM {$wpdb->prefix}olama_curriculum_lessons cl
+                JOIN {$wpdb->prefix}olama_curriculum_units cu ON cl.unit_id = cu.id
+                WHERE cu.subject_id = %d AND cu.grade_id = (SELECT grade_id FROM {$wpdb->prefix}olama_sections WHERE id = %d) AND cu.semester_id = %d
+            ", $a->subject_id, $a->section_id, $active_semester->id));
+
+            // Count distinct lessons covered in approved plans
+            $covered_lessons = $wpdb->get_var($wpdb->prepare("
+                SELECT COUNT(DISTINCT lesson_id)
+                FROM {$wpdb->prefix}olama_plans
+                WHERE section_id = %d AND subject_id = %d AND academic_year_id = %d AND status = 'approved' AND lesson_id IS NOT NULL
+            ", $a->section_id, $a->subject_id, $active_year->id));
+
+            $a->total_lessons = (int) $total_lessons;
+            $a->covered_lessons = (int) $covered_lessons;
+            $a->percentage = $total_lessons > 0 ? round(($covered_lessons / $total_lessons) * 100) : 0;
+        }
+
+        return $assignments;
+    }
+    /**
+     * Create a notification for a user (Phase 3)
+     */
+    public static function create_notification($user_id, $type, $message)
+    {
+        global $wpdb;
+        return $wpdb->insert(
+            "{$wpdb->prefix}olama_notifications",
+            array(
+                'user_id' => $user_id,
+                'notification_type' => $type,
+                'message' => $message,
+                'is_read' => 0,
+                'created_at' => current_time('mysql')
+            )
+        );
+    }
+
+    /**
+     * Get user notifications (Phase 3)
+     */
+    public static function get_user_notifications($user_id, $unread_only = true)
+    {
+        global $wpdb;
+        $where = $unread_only ? "WHERE user_id = %d AND is_read = 0" : "WHERE user_id = %d";
+        return $wpdb->get_results($wpdb->prepare("
+            SELECT * FROM {$wpdb->prefix}olama_notifications 
+            $where 
+            ORDER BY created_at DESC LIMIT 20
+        ", $user_id));
+    }
+
+    /**
+     * AJAX: Mark notification as read (Phase 3)
+     */
+    public function ajax_mark_notification_read()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+        global $wpdb;
+        $notif_id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        $user_id = get_current_user_id();
+
+        if ($notif_id > 0) {
+            $wpdb->update(
+                "{$wpdb->prefix}olama_notifications",
+                array('is_read' => 1),
+                array('id' => $notif_id, 'user_id' => $user_id)
+            );
+        } else {
+            // Mark all for user
+            $wpdb->update(
+                "{$wpdb->prefix}olama_notifications",
+                array('is_read' => 1),
+                array('user_id' => $user_id)
+            );
+        }
+
+        wp_send_json_success();
+    }
+
+    /**
+     * AJAX: Get notifications (Phase 3)
+     */
+    public function ajax_get_notifications()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+        $user_id = get_current_user_id();
+        $notifications = self::get_user_notifications($user_id, true);
+
+        // Format created_at
+        foreach ($notifications as &$n) {
+            $n->time_ago = Olama_School_Helpers::time_ago($n->created_at);
+        }
+
+        wp_send_json_success($notifications);
     }
 }

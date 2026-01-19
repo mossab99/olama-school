@@ -131,6 +131,7 @@ class Olama_School_Schedule
             FROM {$wpdb->prefix}olama_schedule s 
             JOIN {$wpdb->prefix}olama_subjects subj ON s.subject_id = subj.id 
             WHERE s.section_id = %d AND s.day_name = %s AND s.semester_id = %d
+            AND subj.is_active = 1
             ORDER BY subj.subject_name ASC",
             $section_id,
             $day_name,

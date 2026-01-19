@@ -189,13 +189,22 @@ class Olama_School_Importer
                 $section_id = self::get_id_by_name($wpdb->prefix . 'olama_sections', 'section_name', $row['section_name'] ?? '');
 
                 if ($grade_id && $section_id) {
-                    $wpdb->insert($wpdb->prefix . 'olama_students', array(
+                    $student_data = array(
                         'student_name' => $row['student_name'],
                         'student_id_number' => $row['student_id_number'],
-                        'grade_id' => $grade_id,
                         'section_id' => $section_id,
-                    ));
-                    $imported_count++;
+                    );
+
+                    // Add current academic year if possible
+                    if (class_exists('Olama_School_Academic')) {
+                        $active_year = Olama_School_Academic::get_active_year();
+                        $student_data['academic_year_id'] = $active_year ? $active_year->id : 0;
+                    }
+
+                    $student_id = Olama_School_Student::add_student($student_data);
+                    if ($student_id) {
+                        $imported_count++;
+                    }
                 }
             }
             fclose($handle);

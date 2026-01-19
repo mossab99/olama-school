@@ -31,7 +31,7 @@ if (!empty($sections)) {
 $sec2_id = isset($_GET['sec2']) ? intval($_GET['sec2']) : ($sections[1]->id ?? 0);
 
 // Fetch subjects for this grade
-$subjects = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_subjects WHERE grade_id = %d", $selected_grade_id));
+$subjects = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_subjects WHERE grade_id = %d AND is_active = 1", $selected_grade_id));
 ?>
 
 <div class="olama-comparison-container">

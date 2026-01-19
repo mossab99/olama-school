@@ -83,6 +83,7 @@ class Olama_School_DB
 				grade_id mediumint(9) NOT NULL,
 				color_code varchar(7) DEFAULT NULL,
 				max_weekly_plans tinyint(4) DEFAULT 0 NOT NULL,
+				is_active tinyint(1) DEFAULT 1 NOT NULL,
 				PRIMARY KEY  (id),
 				KEY  grade_id (grade_id)
 			) $charset_collate;",
@@ -98,11 +99,22 @@ class Olama_School_DB
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				student_name varchar(100) NOT NULL,
 				student_uid varchar(50) NOT NULL,
-				section_id mediumint(9) NOT NULL,
-				parent_contact varchar(100) DEFAULT NULL,
+				family_id varchar(50) DEFAULT NULL,
 				is_active tinyint(1) DEFAULT 1 NOT NULL,
+				PRIMARY KEY  (id)
+			) $charset_collate;",
+
+			'olama_student_enrollment' => "CREATE TABLE {$wpdb->prefix}olama_student_enrollment (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				student_id mediumint(9) NOT NULL,
+				academic_year_id mediumint(9) NOT NULL,
+				section_id mediumint(9) NOT NULL,
+				enrollment_date date DEFAULT NULL,
+				status varchar(20) DEFAULT 'active' NOT NULL,
 				PRIMARY KEY  (id),
-				KEY  section_id (section_id)
+				KEY student_id (student_id),
+				KEY academic_year_id (academic_year_id),
+				KEY section_id (section_id)
 			) $charset_collate;",
 
 			'olama_plans' => "CREATE TABLE {$wpdb->prefix}olama_plans (
@@ -263,6 +275,25 @@ class Olama_School_DB
 				PRIMARY KEY  (id),
 				KEY  year_semester (academic_year_id,semester_id),
 				KEY  grade_subject (grade_id,subject_id)
+			) $charset_collate;",
+
+			'olama_user_preferences' => "CREATE TABLE {$wpdb->prefix}olama_user_preferences (
+				user_id bigint(20) UNSIGNED NOT NULL,
+				preference_key varchar(100) NOT NULL,
+				preference_value longtext,
+				PRIMARY KEY (user_id, preference_key)
+			) $charset_collate;",
+
+			'olama_notifications' => "CREATE TABLE {$wpdb->prefix}olama_notifications (
+				id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+				user_id bigint(20) UNSIGNED NOT NULL,
+				notification_type varchar(50) NOT NULL,
+				message text NOT NULL,
+				is_read tinyint(1) DEFAULT 0,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP,
+				PRIMARY KEY (id),
+				KEY user_id (user_id),
+				KEY is_read (is_read)
 			) $charset_collate;"
 
 
@@ -324,6 +355,26 @@ class Olama_School_DB
 				ADD KEY assignment (teacher_id, section_id, subject_id)"
 			);
 		}
+
+		// Check if is_active column exists in olama_subjects
+		$subject_active_exists = $wpdb->get_results(
+			"SHOW COLUMNS FROM {$wpdb->prefix}olama_subjects LIKE 'is_active'"
+		);
+
+		if (empty($subject_active_exists)) {
+			$wpdb->query(
+				"ALTER TABLE {$wpdb->prefix}olama_subjects 
+				ADD COLUMN is_active tinyint(1) DEFAULT 1 NOT NULL"
+			);
+		}
+
+		// Ensure student schema updates
+		$student_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_students");
+		$col_names = wp_list_pluck($student_cols, 'Field');
+
+		if (!in_array('family_id', $col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_students ADD COLUMN family_id varchar(50) DEFAULT NULL AFTER student_uid");
+		}
 	}
 
 	public function drop_tables()
@@ -350,7 +401,9 @@ class Olama_School_DB
 			'olama_grades',
 			'olama_semesters',
 			'olama_academic_years',
-			'olama_settings'
+			'olama_settings',
+			'olama_user_preferences',
+			'olama_notifications'
 		);
 
 		foreach ($tables as $table) {

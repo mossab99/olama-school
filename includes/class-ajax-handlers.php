@@ -232,7 +232,7 @@ class Olama_School_Ajax_Handlers
         }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
         $grade_id = intval($_REQUEST['grade_id']);
-        $subjects = Olama_School_Subject::get_by_grade($grade_id);
+        $subjects = Olama_School_Subject::get_by_grade($grade_id, true);
         wp_send_json_success($subjects);
     }
 
@@ -435,7 +435,7 @@ class Olama_School_Ajax_Handlers
 
         $active_year = Olama_School_Academic::get_active_year();
         $assigned_subjects = Olama_School_Teacher::get_assigned_subjects($teacher_id, $section_id, $active_year ? $active_year->id : 0);
-        $all_grade_subjects = Olama_School_Subject::get_by_grade($grade_id);
+        $all_grade_subjects = Olama_School_Subject::get_by_grade($grade_id, true);
 
         wp_send_json_success(array(
             'assigned' => $assigned_subjects,

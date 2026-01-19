@@ -47,7 +47,7 @@ class Olama_School_Permissions
             $role->add_cap('olama_view_plans');
             $role->add_cap('olama_view_reports');
 
-            // Administrative capabilities
+            // Administrative and Supervisor capabilities
             if ($role_name === 'administrator' || $role_name === 'editor') {
                 $role->add_cap('olama_manage_settings');
                 $role->add_cap('olama_manage_academic_structure');
@@ -55,6 +55,9 @@ class Olama_School_Permissions
                 $role->add_cap('olama_import_export_data');
                 $role->add_cap('olama_view_logs');
                 $role->add_cap('olama_approve_plans');
+                $role->add_cap('olama_manage_plans'); // Supervisor dashboard cap
+                $role->add_cap('olama_create_plans'); // Admins can be teachers
+                $role->add_cap('olama_manage_own_plans');
             }
 
             // Teacher specific capabilities (Author and Teacher role mapping)

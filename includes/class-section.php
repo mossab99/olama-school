@@ -137,9 +137,9 @@ class Olama_School_Section
     {
         global $wpdb;
 
-        // Check for related records (students)
+        // Check for related records (enrollments)
         $count = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_students WHERE section_id = %d",
+            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_student_enrollment WHERE section_id = %d",
             $id
         ));
 

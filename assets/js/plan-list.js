@@ -118,11 +118,99 @@ jQuery(document).ready(function ($) {
 
         html += `</div>`; // End Single Column
 
+        // Section 4: Actions (Phase 3)
+        if (olamaPlanList.isSupervisor) {
+            html += `<div class="olama-detail-group" style="border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px;">
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="button button-primary olama-approve-btn" data-id="${plan.id}" style="height: 35px; min-width: 100px;">
+                        <span class="dashicons dashicons-yes-alt" style="margin-top: 6px;"></span> ${i18n.approve}
+                    </button>
+                    <button class="button olama-reject-btn" data-id="${plan.id}" style="height: 35px; min-width: 100px;">
+                        <span class="dashicons dashicons-dismiss" style="margin-top: 6px;"></span> ${i18n.requestEdits}
+                    </button>
+                </div>
+            </div>`;
+        }
+
         card.html(html).fadeIn();
 
         $('html, body').animate({
             scrollTop: container.offset().top - 50
         }, 500);
+    });
+
+    // --- Phase 3: Review Logic ---
+    var currentPlanId = null;
+
+    $(document).on('click', '.olama-approve-btn', function () {
+        var $btn = $(this);
+        var planId = $btn.data('id');
+        var i18n = olamaPlanList.i18n;
+
+        $btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> ' + i18n.approving);
+
+        $.ajax({
+            url: olamaPlanList.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'olama_handle_plan_approval',
+                plan_id: planId,
+                status: 'published',
+                nonce: olamaPlanList.nonce
+            },
+            success: function (response) {
+                if (response.success) {
+                    window.location.reload();
+                } else {
+                    alert(response.data || 'Error processing request');
+                    $btn.prop('disabled', false).html('<span class="dashicons dashicons-yes-alt"></span> ' + i18n.approve);
+                }
+            }
+        });
+    });
+
+    $(document).on('click', '.olama-reject-btn', function () {
+        currentPlanId = $(this).data('id');
+        $('#olama-feedback-text').val('');
+        $('#olama-feedback-modal').css('display', 'flex');
+    });
+
+    $('.olama-modal-cancel').on('click', function () {
+        $('#olama-feedback-modal').hide();
+    });
+
+    $('.olama-modal-submit').on('click', function () {
+        var feedback = $('#olama-feedback-text').val();
+        var i18n = olamaPlanList.i18n;
+
+        if (!feedback.trim()) {
+            alert(i18n.enterFeedback);
+            return;
+        }
+
+        $(this).prop('disabled', true).text(i18n.sending);
+
+        $.ajax({
+            url: olamaPlanList.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'olama_handle_plan_approval',
+                plan_id: currentPlanId,
+                status: 'draft',
+                feedback: feedback,
+                nonce: olamaPlanList.nonce
+            },
+            success: function (response) {
+                $('#olama-feedback-modal').hide();
+                $('.olama-modal-submit').prop('disabled', false).text(i18n.requestEdits);
+
+                if (response.success) {
+                    window.location.reload();
+                } else {
+                    alert(response.data || 'Error processing request');
+                }
+            }
+        });
     });
 
     // Bulk Approve Functionality

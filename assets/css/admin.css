@@ -498,3 +498,93 @@
 #olama-subject-select option.olama-filled-subject.is-editing {
 	display: block !important;
 }
+
+/* Modal Styles */
+.olama-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.olama-modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    width: 50%;
+    max-width: 600px;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    animation: olamaModalSlideIn 0.3s ease-out;
+}
+
+@keyframes olamaModalSlideIn {
+    from { transform: translateY(-30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.olama-modal-header {
+    padding: 20px 25px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.olama-modal-header h2 {
+    margin: 0 !important;
+    font-size: 1.25rem;
+    color: #1e293b;
+    font-weight: 700;
+}
+
+.olama-modal-close {
+    color: #94a3b8;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.olama-modal-close:hover {
+    color: #ef4444;
+}
+
+.olama-modal-body {
+    padding: 25px;
+}
+
+.olama-modal-footer {
+    padding: 20px 25px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Status Pills */
+.olama-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.olama-status-published {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.olama-status-draft {
+    background-color: #f1f5f9;
+    color: #475569;
+}

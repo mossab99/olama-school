@@ -143,6 +143,40 @@ class Olama_School_Helpers
     }
 
     /**
+     * Get a human-readable time ago string
+     */
+    public static function time_ago($datetime, $full = false)
+    {
+        $now = new DateTime;
+        $ago = new DateTime($datetime);
+        $diff = $now->diff($ago);
+
+        $diff->w = floor($diff->d / 7);
+        $diff->d -= $diff->w * 7;
+
+        $string = array(
+            'y' => 'year',
+            'm' => 'month',
+            'w' => 'week',
+            'd' => 'day',
+            'h' => 'hour',
+            'i' => 'minute',
+            's' => 'second',
+        );
+        foreach ($string as $k => &$v) {
+            if ($diff->$k) {
+                $v = $diff->$k . ' ' . __($v . ($diff->$k > 1 ? 's' : ''), 'olama-school');
+            } else {
+                unset($string[$k]);
+            }
+        }
+
+        if (!$full)
+            $string = array_slice($string, 0, 1);
+        return $string ? implode(', ', $string) . ' ' . __('ago', 'olama-school') : __('just now', 'olama-school');
+    }
+
+    /**
      * Sanitize date from input format to Y-m-d
      */
     public static function sanitize_date($date_str)
@@ -699,6 +733,30 @@ class Olama_School_Helpers
         'Week %d' => 'الأسبوع %d',
         '%d / %d Lessons' => 'درس %d / %d',
         'Total Grade Coverage' => 'إجمالي تغطية الصف',
+        'year' => 'سنة',
+        'years' => 'سنوات',
+        'month' => 'شهر',
+        'months' => 'شهور',
+        'week' => 'أسبوع',
+        'weeks' => 'أسابيع',
+        'day' => 'يوم',
+        'days' => 'أيام',
+        'hour' => 'ساعة',
+        'hours' => 'ساعات',
+        'minute' => 'دقيقة',
+        'minutes' => 'دقائق',
+        'second' => 'ثانية',
+        'seconds' => 'ثواني',
+        'ago' => 'مضت',
+        'just now' => 'الآن',
+        'Approve' => 'اعتماد',
+        'Request Edits' => 'طلب تعديل',
+        'Send & Request Edits' => 'إرسال وطلب تعديل',
+        'Please provide feedback to the teacher about why this plan needs changes.' => 'يرجى تقديم ملاحظات للمعلم حول سبب حاجة هذه الخطة لتعديلات.',
+        'Enter your comments here...' => 'أدخل ملاحظاتك هنا...',
+        'Please enter some feedback.' => 'يرجى إدخال ملاحظات.',
+        'Sending...' => 'جاري الإرسال...',
+        'Approving...' => 'جاري الاعتماد...',
         );
 
         return $map[$text] ?? $text;

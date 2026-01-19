@@ -149,25 +149,25 @@ if (!defined('ABSPATH')) {
                             <option value="">
                                 <?php _e('-- Select Subject --', 'olama-school'); ?>
                             </option>
-               <?php
-               // semester_id is already calculated in class-admin.php
-               $scheduled_subjects = Olama_School_Schedule::get_unique_subjects_for_day($selected_section_id, $active_day, $semester_id);
+                            <?php
+                            // semester_id is already calculated in class-admin.php
+                            $scheduled_subjects = Olama_School_Schedule::get_unique_subjects_for_day($selected_section_id, $active_day, $semester_id);
 
-               $filled_subject_ids = array_map(function ($p) {
-                   return $p->subject_id;
-               }, $today_plans);
+                            $filled_subject_ids = array_map(function ($p) {
+                                return $p->subject_id;
+                            }, $today_plans);
 
-               if (!current_user_can('manage_options')) {
-                   $teacher_id = get_current_user_id();
-                   $assigned_ids = Olama_School_Teacher::get_assigned_subjects($teacher_id, $selected_section_id);
-                   $scheduled_subjects = array_filter($scheduled_subjects, function ($subj) use ($assigned_ids) {
-                       return in_array($subj->id, $assigned_ids);
-                   });
-               }
+                            if (!current_user_can('manage_options')) {
+                                $teacher_id = get_current_user_id();
+                                $assigned_ids = Olama_School_Teacher::get_assigned_subjects($teacher_id, $selected_section_id);
+                                $scheduled_subjects = array_filter($scheduled_subjects, function ($subj) use ($assigned_ids) {
+                                    return in_array($subj->id, $assigned_ids);
+                                });
+                            }
 
-               foreach ($scheduled_subjects as $subj):
-                   $is_filled = in_array($subj->id, $filled_subject_ids);
-                   ?>
+                            foreach ($scheduled_subjects as $subj):
+                                $is_filled = in_array($subj->id, $filled_subject_ids);
+                                ?>
                                 <option value="<?php echo $subj->id; ?>" <?php echo $is_filled ? 'data-filled="true" class="olama-filled-subject"' : ''; ?>>
                                     <?php echo esc_html($subj->subject_name); ?>
                                 </option>
@@ -266,10 +266,13 @@ if (!defined('ABSPATH')) {
                         style="margin-right: 15px; display: none; height: 46px; font-weight: 600;">
                         <?php _e('Cancel', 'olama-school'); ?>
                     </button>
-                    <input type="submit" name="save_plan" id="olama-save-plan-btn"
-                        class="button button-primary button-large"
-                        style="height: 46px; padding: 0 30px; font-weight: 600;"
+                    <input type="submit" name="save_plan" id="olama-save-plan-btn" class="button button-large"
+                        style="height: 46px; padding: 0 25px; font-weight: 600; margin-right: 10px;"
                         value="<?php _e('Save as Draft', 'olama-school'); ?>" />
+                    <button type="button" id="olama-submit-plan-btn" class="button button-primary button-large"
+                        style="height: 46px; padding: 0 30px; font-weight: 600;">
+                        <?php _e('Submit for Review', 'olama-school'); ?>
+                    </button>
                 </div>
             </form>
         </div>

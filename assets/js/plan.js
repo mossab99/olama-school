@@ -6,6 +6,7 @@ jQuery(document).ready(function ($) {
     const $questionsList = $('#olama-questions-list');
     const $planIdInput = $('#olama-plan-id');
     const $saveButton = $('#olama-save-plan-btn');
+    const $submitButton = $('#olama-submit-plan-btn');
     const $cancelButton = $('#olama-cancel-edit-btn');
 
     // Homework and Notes fields
@@ -324,6 +325,13 @@ jQuery(document).ready(function ($) {
         $('html, body').animate({
             scrollTop: $('#olama-weekly-plan-form').offset().top - 50
         }, 500);
+    });
+
+    // Handle Submit button
+    $submitButton.on('click', function (e) {
+        e.preventDefault();
+        $('#olama-plan-status').val('submitted');
+        $('#olama-weekly-plan-form').submit();
     });
 
     // Handle Delete Plan

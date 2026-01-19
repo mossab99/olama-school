@@ -183,6 +183,28 @@ if ($current_semester_id && $selected_grade_id) {
 ?>
 
 <div class="olama-plan-list-container">
+    <?php if (current_user_can('olama_manage_plans')): ?>
+        <!-- Feedback Modal HTML (Phase 3) -->
+        <div id="olama-feedback-modal"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+            <div
+                style="background: #fff; padding: 30px; border-radius: 12px; width: 450px; box-shadow: 0 15px 40px rgba(0,0,0,0.2);">
+                <h3 style="margin-top: 0;"><?php echo Olama_School_Helpers::translate('Request Edits'); ?></h3>
+                <p style="color: #666; font-size: 0.9em;">
+                    <?php echo Olama_School_Helpers::translate('Please provide feedback to the teacher about why this plan needs changes.'); ?>
+                </p>
+                <textarea id="olama-feedback-text"
+                    style="width: 100%; height: 120px; margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: none;"
+                    placeholder="<?php echo Olama_School_Helpers::translate('Enter your comments here...'); ?>"></textarea>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button
+                        class="button olama-modal-cancel"><?php echo Olama_School_Helpers::translate('Cancel'); ?></button>
+                    <button
+                        class="button button-primary olama-modal-submit"><?php echo Olama_School_Helpers::translate('Send & Request Edits'); ?></button>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- Filters -->
     <div class="olama-filter-section"
