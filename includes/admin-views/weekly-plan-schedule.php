@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) exit;
 
 $grades = Olama_School_Grade::get_grades();
 $teachers = Olama_School_Teacher::get_teachers();
+$is_admin = current_user_can('manage_options');
 
 $selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : ($grades[0]->id ?? 0);
 
@@ -136,8 +137,10 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
                         <td><?php echo esc_html(__($ss->grade_name, 'olama-school')); ?></td>
                         <td><?php echo esc_html(__($ss->section_name, 'olama-school')); ?></td>
                         <td>
-                            <a href="<?php echo admin_url('admin.php?page=olama-school-plans&tab=schedule&grade_id=' . $ss->grade_id . '&section_id=' . $ss->section_id . '&semester_id=' . $ss->semester_id); ?>" class="button button-small"><?php _e('Edit', 'olama-school'); ?></a>
-                            <a href="<?php echo wp_nonce_url(add_query_arg(['action' => 'delete_full_schedule', 'section_id' => $ss->section_id, 'semester_id' => $ss->semester_id]), 'olama_delete_full_schedule'); ?>" class="button button-small button-link-delete" onclick="return confirm('<?php esc_attr_e('Delete this entire schedule?', 'olama-school'); ?>')"><?php _e('Delete', 'olama-school'); ?></a>
+                            <a href="<?php echo admin_url('admin.php?page=olama-school-plans&tab=schedule&grade_id=' . $ss->grade_id . '&section_id=' . $ss->section_id . '&semester_id=' . $ss->semester_id); ?>" class="button button-small"><?php _e('View', 'olama-school'); ?></a>
+                            <?php if ($is_admin): ?>
+                                <a href="<?php echo wp_nonce_url(add_query_arg(['action' => 'delete_full_schedule', 'section_id' => $ss->section_id, 'semester_id' => $ss->semester_id]), 'olama_delete_full_schedule'); ?>" class="button button-small button-link-delete" onclick="return confirm('<?php esc_attr_e('Delete this entire schedule?', 'olama-school'); ?>')"><?php _e('Delete', 'olama-school'); ?></a>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -209,18 +212,20 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
                 </button>
             </form>
 
-            <!-- Import Schedule CSV -->
-            <form method="post" action="" enctype="multipart/form-data" style="display: inline-flex; gap: 5px; align-items: center; margin: 0;">
-                <?php wp_nonce_field('olama_import_schedule'); ?>
-                <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>" />
-                <input type="hidden" name="section_id" value="<?php echo $selected_section_id; ?>" />
-                <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>" />
-                <input type="file" name="olama_schedule_file" accept=".csv" required style="font-size: 12px;" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?> />
-                <button type="submit" name="olama_import_schedule" value="1" class="button button-primary" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
-                    <span class="dashicons dashicons-upload" style="margin-top: 4px;"></span>
-                    <?php echo Olama_School_Helpers::translate('Import Schedule'); ?>
-                </button>
-            </form>
+            <?php if ($is_admin): ?>
+                <!-- Import Schedule CSV -->
+                <form method="post" action="" enctype="multipart/form-data" style="display: inline-flex; gap: 5px; align-items: center; margin: 0;">
+                    <?php wp_nonce_field('olama_import_schedule'); ?>
+                    <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>" />
+                    <input type="hidden" name="section_id" value="<?php echo $selected_section_id; ?>" />
+                    <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>" />
+                    <input type="file" name="olama_schedule_file" accept=".csv" required style="font-size: 12px;" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?> />
+                    <button type="submit" name="olama_import_schedule" value="1" class="button button-primary" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
+                        <span class="dashicons dashicons-upload" style="margin-top: 4px;"></span>
+                        <?php echo Olama_School_Helpers::translate('Import Schedule'); ?>
+                    </button>
+                </form>
+            <?php endif; ?>
 
             <div style="border-left: 1px solid #ddd; height: 30px;"></div>
 
@@ -301,12 +306,14 @@ function olamaPrintSchedule() {
         <input type="hidden" name="section_id" value="<?php echo $selected_section_id; ?>" />
         <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>" />
 
-        <div style="display: flex; justify-content: flex-end; padding: 10px;">
-            <button type="submit" name="olama_save_bulk_schedule" value="1" class="button button-primary" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
-                <span class="dashicons dashicons-saved" style="margin-top: 4px;"></span>
-                <?php _e('Save Master Schedule', 'olama-school'); ?>
-            </button>
-        </div>
+        <?php if ($is_admin): ?>
+            <div style="display: flex; justify-content: flex-end; padding: 10px;">
+                <button type="submit" name="olama_save_bulk_schedule" value="1" class="button button-primary" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
+                    <span class="dashicons dashicons-saved" style="margin-top: 4px;"></span>
+                    <?php _e('Save Master Schedule', 'olama-school'); ?>
+                </button>
+            </div>
+        <?php endif; ?>
 
         <table class="wp-list-table widefat fixed striped" style="border: none;">
             <thead>
@@ -339,7 +346,7 @@ function olamaPrintSchedule() {
                             $item_subject_id = $item ? $item->subject_id : 0;
                             ?>
                             <td style="padding: 15px; border-right: 1px solid #eee; vertical-align: top;">
-                                <select name="schedule[<?php echo esc_attr($day); ?>][<?php echo $period; ?>]" style="width: 100%; font-size: 12px;">
+                                <select name="schedule[<?php echo esc_attr($day); ?>][<?php echo $period; ?>]" style="width: 100%; font-size: 12px;" <?php disabled(!$is_admin); ?>>
                                     <option value=""><?php _e('-- Select Subject --', 'olama-school'); ?></option>
                                     <?php foreach ($subjects as $subject): ?>
                                         <option value="<?php echo $subject->id; ?>" <?php selected($item_subject_id, $subject->id); ?>>
@@ -359,11 +366,13 @@ function olamaPrintSchedule() {
             </tbody>
         </table>
 
-        <div style="display: flex; justify-content: flex-end; padding: 20px;">
-            <button type="submit" name="olama_save_bulk_schedule" value="1" class="button button-primary button-large" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
-                <span class="dashicons dashicons-saved" style="margin-top: 4px;"></span>
-                <?php _e('Save Master Schedule', 'olama-school'); ?>
-            </button>
-        </div>
+        <?php if ($is_admin): ?>
+            <div style="display: flex; justify-content: flex-end; padding: 20px;">
+                <button type="submit" name="olama_save_bulk_schedule" value="1" class="button button-primary button-large" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
+                    <span class="dashicons dashicons-saved" style="margin-top: 4px;"></span>
+                    <?php _e('Save Master Schedule', 'olama-school'); ?>
+                </button>
+            </div>
+        <?php endif; ?>
     </form>
 </div>

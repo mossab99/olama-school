@@ -8,6 +8,8 @@ if (!defined('ABSPATH'))
 $grades = Olama_School_Grade::get_grades();
 $selected_grade_id = isset($_GET['manage_grade']) ? intval($_GET['manage_grade']) : 0;
 
+$is_admin = current_user_can('manage_options');
+
 $subjects = [];
 if ($selected_grade_id) {
     $subjects = Olama_School_Subject::get_by_grade($selected_grade_id);
@@ -88,7 +90,8 @@ if (isset($_GET['message'])) {
                                     <input type="number" name="grade_limit[<?php echo $grade->id; ?>]"
                                         class="olama-weekly-limit-input" data-grade-id="<?php echo $grade->id; ?>"
                                         value="<?php echo intval($grade->max_weekly_plans); ?>" min="0"
-                                        style="width: 70px; border-radius: 4px; border: 1px solid #cbd5e1; padding: 4px 8px;">
+                                        style="width: 70px; border-radius: 4px; border: 1px solid #cbd5e1; padding: 4px 8px;"
+                                        <?php disabled(!$is_admin); ?>>
                                 </div>
                             </td>
                             <td style="padding: 12px 20px;">
@@ -107,7 +110,8 @@ if (isset($_GET['message'])) {
                                                 name="grade_daily_max[<?php echo $grade->id; ?>][<?php echo $key; ?>]"
                                                 class="olama-daily-limit-input-<?php echo $grade->id; ?> olama-day-limit-field"
                                                 value="<?php echo $value; ?>" min="0"
-                                                style="width: 100%; border-radius: 4px; border: 1px solid #cbd5e1; padding: 4px; font-size: 12px; text-align: center;">
+                                                style="width: 100%; border-radius: 4px; border: 1px solid #cbd5e1; padding: 4px; font-size: 12px; text-align: center;"
+                                                <?php disabled(!$is_admin); ?>>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -198,7 +202,8 @@ if (isset($_GET['message'])) {
                                         <div style="display: flex; align-items: center; gap: 8px;">
                                             <input type="number" name="subject_limit[<?php echo $subject->id; ?>]"
                                                 value="<?php echo intval($subject->max_weekly_plans); ?>" min="0"
-                                                style="width: 70px; border-radius: 4px; border: 1px solid #cbd5e1; padding: 4px 8px;">
+                                                style="width: 70px; border-radius: 4px; border: 1px solid #cbd5e1; padding: 4px 8px;"
+                                                <?php disabled(!$is_admin); ?>>
                                             <span
                                                 style="font-size: 11px; color: #64748b;"><?php _e('plans', 'olama-school'); ?></span>
                                         </div>
@@ -223,11 +228,13 @@ if (isset($_GET['message'])) {
                 <a href="<?php echo admin_url('admin.php?page=olama-school-plans&tab=load'); ?>"
                     class="button button-secondary"><?php _e('Close Subject Limits', 'olama-school'); ?></a>
             <?php endif; ?>
-            <button type="submit" name="olama_save_plan_load" value="1" class="button button-primary button-large"
-                style="height: 40px; padding: 0 25px;">
-                <span class="dashicons dashicons-saved" style="margin-top: 8px;"></span>
-                <?php _e('Save All Load Settings', 'olama-school'); ?>
-            </button>
+            <?php if ($is_admin): ?>
+                <button type="submit" name="olama_save_plan_load" value="1" class="button button-primary button-large"
+                    style="height: 40px; padding: 0 25px;">
+                    <span class="dashicons dashicons-saved" style="margin-top: 8px;"></span>
+                    <?php _e('Save All Load Settings', 'olama-school'); ?>
+                </button>
+            <?php endif; ?>
         </div>
     </form>
 </div>
