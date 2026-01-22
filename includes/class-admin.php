@@ -749,7 +749,9 @@ class Olama_School_Admin
                     'teacherNotes' => Olama_School_Helpers::translate('Teacher Notes'),
                     'status' => Olama_School_Helpers::translate('Status'),
                     'draft' => Olama_School_Helpers::translate('Draft'),
-                    'published' => Olama_School_Helpers::translate('Published'),
+                    'submitted' => Olama_School_Helpers::translate('Submitted'),
+                    'approved' => Olama_School_Helpers::translate('Approved'),
+                    'published' => Olama_School_Helpers::translate('Approved'), // Legacy
                     'noDetails' => Olama_School_Helpers::translate('Click on a plan to see details.'),
                     'confirmBulkApprove' => Olama_School_Helpers::translate('Are you sure you want to approve (publish) all plans for this week and section?'),
                     'bulkApproveSuccess' => Olama_School_Helpers::translate('All plans have been approved successfully.'),
@@ -1783,7 +1785,7 @@ class Olama_School_Admin
      */
     public function render_plan_page_content()
     {
-        if (isset($_POST['save_plan']) && check_admin_referer('olama_save_plan', 'olama_plan_nonce')) {
+        if ((isset($_POST['save_plan']) || isset($_POST['plan_id'])) && check_admin_referer('olama_save_plan', 'olama_plan_nonce')) {
             $data = $_POST;
 
             // Add semester_id and academic_year_id from GET parameters
@@ -1815,18 +1817,7 @@ class Olama_School_Admin
 
         $grades = Olama_School_Grade::get_grades();
 
-        if (!current_user_can('manage_options')) {
-            $user_id = get_current_user_id();
-            global $wpdb;
-            $assigned_grade_ids = $wpdb->get_col($wpdb->prepare(
-                "SELECT DISTINCT grade_id FROM {$wpdb->prefix}olama_teacher_assignments WHERE teacher_id = %d",
-                $user_id
-            ));
-            $grades = array_filter($grades, function ($g) use ($assigned_grade_ids) {
-                return in_array($g->id, $assigned_grade_ids);
-            });
-            $grades = array_values($grades);
-        }
+
         if (!$grades) {
             echo '<div class="error"><p>' . __('Please create grades first.', 'olama-school') . '</p></div>';
             return;
@@ -1835,19 +1826,7 @@ class Olama_School_Admin
         $selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : (isset($grades[0]->id) ? intval($grades[0]->id) : 0);
         $sections = Olama_School_Section::get_by_grade($selected_grade_id);
 
-        if (!current_user_can('manage_options')) {
-            $user_id = get_current_user_id();
-            global $wpdb;
-            $assigned_section_ids = $wpdb->get_col($wpdb->prepare(
-                "SELECT DISTINCT section_id FROM {$wpdb->prefix}olama_teacher_assignments WHERE teacher_id = %d AND grade_id = %d",
-                $user_id,
-                $selected_grade_id
-            ));
-            $sections = array_filter($sections, function ($s) use ($assigned_section_ids) {
-                return in_array($s->id, $assigned_section_ids);
-            });
-            $sections = array_values($sections);
-        }
+
 
         $selected_section_id = 0;
         if (!empty($sections)) {

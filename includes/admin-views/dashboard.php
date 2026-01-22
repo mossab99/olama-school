@@ -583,7 +583,7 @@ jQuery(document).ready(function($) {
             data: {
                 action: 'olama_handle_plan_approval',
                 plan_id: planId,
-                status: 'published',
+                status: 'approved',
                 nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
             },
             success: function(response) {

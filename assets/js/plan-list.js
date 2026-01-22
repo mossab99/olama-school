@@ -68,8 +68,16 @@ jQuery(document).ready(function ($) {
         }
 
         // Add Status instead of Rating
-        const statusLabel = plan.status === 'published' ? i18n.published : i18n.draft;
-        const statusClass = plan.status === 'published' ? 'olama-status-published' : 'olama-status-draft';
+        let statusLabel = i18n.draft;
+        let statusClass = 'olama-status-draft';
+
+        if (plan.status === 'approved' || plan.status === 'published') {
+            statusLabel = i18n.approved;
+            statusClass = 'olama-status-published';
+        } else if (plan.status === 'submitted') {
+            statusLabel = i18n.submitted;
+            statusClass = 'olama-status-submitted';
+        }
 
         html += `<div class="olama-detail-section">
             <span class="olama-detail-label">${i18n.status}</span>
@@ -155,7 +163,7 @@ jQuery(document).ready(function ($) {
             data: {
                 action: 'olama_handle_plan_approval',
                 plan_id: planId,
-                status: 'published',
+                status: 'approved',
                 nonce: olamaPlanList.nonce
             },
             success: function (response) {

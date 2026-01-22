@@ -315,9 +315,20 @@ if ($current_semester_id && $selected_grade_id) {
                                 <?php endif; ?>
 
                                 <?php
-                                $status_badge_text = $plan->status === 'published' ? Olama_School_Helpers::translate('Published') : Olama_School_Helpers::translate('Draft');
-                                $status_badge_color = $plan->status === 'published' ? '#10b981' : '#64748b';
-                                $status_badge_bg = $plan->status === 'published' ? '#dcfce7' : '#f1f5f9';
+                                $status = $plan->status;
+                                $status_badge_text = Olama_School_Helpers::translate('Draft');
+                                $status_badge_color = '#64748b';
+                                $status_badge_bg = '#f1f5f9';
+
+                                if ($status === 'approved' || $status === 'published') {
+                                    $status_badge_text = Olama_School_Helpers::translate('Approved');
+                                    $status_badge_color = '#10b981';
+                                    $status_badge_bg = '#dcfce7';
+                                } elseif ($status === 'submitted') {
+                                    $status_badge_text = Olama_School_Helpers::translate('Submitted');
+                                    $status_badge_color = '#d97706';
+                                    $status_badge_bg = '#fef3c7';
+                                }
                                 ?>
                                 <div class="olama-status-badge"
                                     style="display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-bottom: 5px; color: <?php echo $status_badge_color; ?>; background: <?php echo $status_badge_bg; ?>;">

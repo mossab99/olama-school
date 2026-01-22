@@ -157,13 +157,7 @@ if (!defined('ABSPATH')) {
                                 return $p->subject_id;
                             }, $today_plans);
 
-                            if (!current_user_can('manage_options')) {
-                                $teacher_id = get_current_user_id();
-                                $assigned_ids = Olama_School_Teacher::get_assigned_subjects($teacher_id, $selected_section_id);
-                                $scheduled_subjects = array_filter($scheduled_subjects, function ($subj) use ($assigned_ids) {
-                                    return in_array($subj->id, $assigned_ids);
-                                });
-                            }
+
 
                             foreach ($scheduled_subjects as $subj):
                                 $is_filled = in_array($subj->id, $filled_subject_ids);

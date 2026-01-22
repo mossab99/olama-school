@@ -379,7 +379,7 @@ class Olama_School_Ajax_Handlers
         $week_end = date('Y-m-d', strtotime($week_start . ' +4 days'));
 
         $result = $wpdb->query($wpdb->prepare(
-            "UPDATE {$wpdb->prefix}olama_plans SET status = 'published' 
+            "UPDATE {$wpdb->prefix}olama_plans SET status = 'approved' 
              WHERE section_id = %d AND plan_date >= %s AND plan_date <= %s",
             $section_id,
             $week_start,

@@ -232,7 +232,7 @@ class Olama_School_Shortcodes
             if ($is_admin) {
                 return true; // Admins can see everything
             }
-            return $p->status === 'published';
+            return $p->status === 'approved' || $p->status === 'published';
         });
 
         if (empty($all_plans)) {
@@ -243,7 +243,7 @@ class Olama_School_Shortcodes
 
         if (empty($plans)) {
             return '<div class="olama-no-plans" style="padding: 30px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; color: #92400e; text-align: center; font-weight: 600;">' .
-                Olama_School_Helpers::translate('No published plans found for this week, but drafts exist.') .
+                Olama_School_Helpers::translate('No approved plans found for this week, but drafts exist.') .
                 '</div>';
         }
 
