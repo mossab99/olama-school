@@ -31,7 +31,7 @@ $days = array(
             <div style="display: flex; align-items: center; gap: 10px;">
                 <label style="font-weight: 600; color: #475569;"><?php _e('Switch Teacher:', 'olama-school'); ?></label>
                 <select
-                    onchange="window.location.href='<?php echo admin_url('admin.php?page=olama-school-plans&tab=office_hours&teacher_id='); ?>' + this.value">
+                    onchange="window.location.href='<?php echo admin_url('admin.php?page=olama-school-academic&tab=office_hours&teacher_id='); ?>' + this.value">
                     <?php foreach ($teachers as $t): ?>
                         <option value="<?php echo $t->ID; ?>" <?php selected($selected_teacher_id, $t->ID); ?>>
                             <?php echo esc_html($t->display_name); ?>
@@ -49,7 +49,7 @@ $days = array(
     <?php endif; ?>
 
     <form method="post" id="olama-office-hours-form"
-        action="<?php echo admin_url('admin.php?page=olama-school-plans&tab=office_hours'); ?>">
+        action="<?php echo admin_url('admin.php?page=olama-school-academic&tab=office_hours'); ?>">
         <?php wp_nonce_field('olama_save_office_hours', 'olama_office_hours_nonce'); ?>
         <input type="hidden" name="teacher_id" value="<?php echo $selected_teacher_id; ?>">
         <input type="hidden" name="olama_save_office_hours" value="1">

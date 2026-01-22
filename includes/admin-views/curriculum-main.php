@@ -13,12 +13,6 @@ $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_ye
 $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
 ?>
 
-<h1>
-    <?php echo Olama_School_Helpers::translate('Curriculum Management'); ?>
-</h1>
-
-<div style="margin-bottom: 20px;"></div>
-
 <?php
 if ($import_message = get_transient('olama_import_message')) {
     echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($import_message) . '</p></div>';
@@ -30,7 +24,7 @@ if ($import_error = get_transient('olama_import_error')) {
 }
 ?>
 
-<!-- Section 1: Filters -->
+<!-- Filters Section -->
 <div class="olama-card" style="margin-bottom: 20px;">
     <div class="olama-filter-row">
         <div class="olama-filter-item">
@@ -81,68 +75,62 @@ if ($import_error = get_transient('olama_import_error')) {
         </div>
     </div>
 
-    <!-- Export / Import Section -->
+    <!-- Export / Import / Delete Section -->
     <div
-        style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-        <form method="post" id="olama-export-curriculum-form" style="margin: 0;">
+        style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; align-items: center; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px;">
+        <form method="post" id="olama-export-curriculum-form" style="margin: 0; flex-shrink: 0;">
             <?php wp_nonce_field('olama_export_curriculum'); ?>
             <input type="hidden" name="olama_export_curriculum" value="true">
             <input type="hidden" name="semester_id" class="curriculum-hidden-semester">
             <input type="hidden" name="grade_id" class="curriculum-hidden-grade">
             <input type="hidden" name="subject_id" class="curriculum-hidden-subject">
-            <button type="submit" class="button button-secondary" id="olama-export-curriculum-btn" disabled>
+            <button type="submit" class="button button-secondary" id="olama-export-curriculum-btn" disabled
+                style="white-space: nowrap;">
                 <span class="dashicons dashicons-download" style="margin-top: 4px;"></span>
                 <?php echo Olama_School_Helpers::translate('Export Curriculum CSV'); ?>
             </button>
         </form>
 
-        <div style="height: 24px; width: 1px; background: #cbd5e1; display: inline-block;"></div>
-
         <form method="post" enctype="multipart/form-data" id="olama-import-curriculum-form"
-            style="margin: 0; display: flex; align-items: center; gap: 10px;">
+            style="margin: 0; display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
             <?php wp_nonce_field('olama_import_curriculum'); ?>
             <input type="hidden" name="olama_import_type" value="curriculum">
             <input type="hidden" name="semester_id" class="curriculum-hidden-semester">
             <input type="hidden" name="grade_id" class="curriculum-hidden-grade">
             <input type="hidden" name="subject_id" class="curriculum-hidden-subject">
 
-            <input type="file" name="olama_import_file" accept=".csv" required style="max-width: 200px;"
+            <input type="file" name="olama_import_file" accept=".csv" required style="max-width: 150px;"
                 id="olama-import-curriculum-file" disabled>
 
-            <button type="submit" class="button button-primary" id="olama-import-curriculum-btn" disabled>
+            <button type="submit" class="button button-primary" id="olama-import-curriculum-btn" disabled
+                style="white-space: nowrap;">
                 <span class="dashicons dashicons-upload" style="margin-top: 4px;"></span>
                 <?php echo Olama_School_Helpers::translate('Import Curriculum CSV'); ?>
             </button>
         </form>
 
-        <div style="height: 24px; width: 1px; background: #cbd5e1; display: inline-block;"></div>
-
         <button type="button" class="button button-link-delete" id="olama-clear-curriculum-btn" disabled
-            style="color: #dc2626;">
+            style="color: #dc2626; flex-shrink: 0; white-space: nowrap;">
             <span class="dashicons dashicons-trash" style="margin-top: 4px;"></span>
             <?php echo Olama_School_Helpers::translate('Clear Curriculum'); ?>
         </button>
 
-        <div style="height: 24px; width: 1px; background: #cbd5e1; display: inline-block;"></div>
-
         <button type="button" class="button button-link-delete" id="olama-clear-grade-curriculum-btn" disabled
-            style="color: #b91c1c; font-weight: 600;">
+            style="color: #b91c1c; font-weight: 600; flex-shrink: 0; white-space: nowrap;">
             <span class="dashicons dashicons-trash" style="margin-top: 4px;"></span>
             <?php echo Olama_School_Helpers::translate('Clear Grade Curriculum'); ?>
         </button>
 
-        <div style="height: 24px; width: 1px; background: #cbd5e1; display: inline-block;"></div>
-
         <button type="button" class="button button-primary" id="olama-force-clear-all-curriculum-btn"
-            style="background: #dc2626; border-color: #dc2626; font-weight: 800; color: white;">
+            style="background: #dc2626; border-color: #dc2626; font-weight: 800; color: white; flex-shrink: 0; white-space: nowrap;">
             <span class="dashicons dashicons-warning" style="margin-top: 4px;"></span>
             <?php echo Olama_School_Helpers::translate('FORCE DELETE EVERYTHING'); ?>
         </button>
-
-        <p class="description" style="margin: 0; font-size: 11px; color: #64748b;">
-            <?php echo Olama_School_Helpers::translate('Select Semester, Grade, and Subject to enable Export/Import.'); ?>
-        </p>
     </div>
+    <p class="description" style="margin-top: 10px; font-size: 11px; color: #64748b;">
+        <?php echo Olama_School_Helpers::translate('Select Semester, Grade, and Subject to enable Export/Import.'); ?> |
+        <strong><?php echo Olama_School_Helpers::translate('Note: "Force Delete Everything" only deletes curriculum for the selected year.'); ?></strong>
+    </p>
 </div>
 
 <div class="curriculum-grid"

@@ -832,38 +832,64 @@ jQuery(document).ready(function ($) {
         });
     });
 
-    // --- Force Clear ALL Curriculum Data (Global) ---
+    // --- Force Clear ALL Curriculum Data (Scoped to Year) ---
     $('#olama-force-clear-all-curriculum-btn').on('click', function () {
-        const confirm1 = confirm('CRITICAL WARNING: This will delete ALL curriculum data (Units, Lessons, Questions) across ALL academic years, semesters, and subjects. This action is IRREVERSIBLE!\n\nAre you absolutely sure?');
+        const yearId = $('#curriculum-year').val();
+        const yearName = $('#curriculum-year option:selected').text();
+        const semesterId = $('#curriculum-semester').val();
+        const gradeId = $('#curriculum-grade').val();
+
+        if (!yearId) {
+            alert(olamaCurriculum.i18n.selectYearFirst || 'Please select an academic year first.');
+            return;
+        }
+
+        // 1. Check if password is set
+        if (!olamaCurriculum.isDeletionPasswordSet) {
+            alert(olamaCurriculum.i18n.securityError);
+            return;
+        }
+
+        // 2. Ask for password first
+        const password = prompt(olamaCurriculum.i18n.securityAuth);
+        if (!password) {
+            alert(olamaCurriculum.i18n.wipeCancelledPassword);
+            return;
+        }
+
+        // 3. Continue with other confirmations
+        let criticalMsg = olamaCurriculum.i18n.criticalWarning.replace('{year}', yearName);
+        const confirm1 = confirm(criticalMsg);
         if (!confirm1) return;
 
-        const confirm2 = confirm('SECOND CONFIRMATION: Are you REALLY sure? All your data will be permanently lost.');
-        if (!confirm2) return;
-
-        const typedConfirm = prompt('FINAL CONFIRMATION: To proceed, please type "DELETE" in the box below:');
+        const typedConfirm = prompt(olamaCurriculum.i18n.finalConfirmation);
         if (typedConfirm !== 'DELETE') {
-            alert('Wipe cancelled. Re-confirmation mismatched.');
+            alert(olamaCurriculum.i18n.wipeCancelledConfirm);
             return;
         }
 
         const $btn = $(this);
         const originalText = $btn.html();
-        $btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin" style="margin-top: 4px;"></span> ' + (olamaCurriculum.i18n.deleting || 'DELETING EVERYTHING...'));
+        $btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin" style="margin-top: 4px;"></span> ' + (olamaCurriculum.i18n.deleting || 'DELETING...'));
 
         $.ajax({
             url: olamaCurriculum.ajaxUrl,
             method: 'POST',
             data: {
                 action: 'olama_force_clear_all_curriculum',
+                academic_year_id: yearId,
+                semester_id: semesterId,
+                grade_id: gradeId,
+                password: password,
                 nonce: olamaCurriculum.nonce
             },
             success: function (response) {
                 if (response.success) {
-                    alert(response.data.message || 'Global curriculum wipe completed successfully!');
+                    alert(response.data.message || (olamaCurriculum.i18n.globalWipeSuccess || 'Global curriculum wipe completed successfully!'));
                     // Refresh the entire page to reset everything
                     window.location.reload();
                 } else {
-                    alert(response.data.message || 'Error performing global wipe.');
+                    alert(response.data.message || (olamaCurriculum.i18n.errorPerformingWipe || 'Error performing global wipe.'));
                     $btn.prop('disabled', false).html(originalText);
                 }
             },

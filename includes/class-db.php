@@ -294,6 +294,18 @@ class Olama_School_DB
 				PRIMARY KEY (id),
 				KEY user_id (user_id),
 				KEY is_read (is_read)
+			) $charset_collate;",
+
+			'olama_stationary' => "CREATE TABLE {$wpdb->prefix}olama_stationary (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
+				grade_id mediumint(9) NOT NULL,
+				notebooks text DEFAULT NULL,
+				stationary text DEFAULT NULL,
+				teacher_notes text DEFAULT NULL,
+				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY grade_year (academic_year_id, grade_id)
 			) $charset_collate;"
 
 
@@ -382,6 +394,7 @@ class Olama_School_DB
 		global $wpdb;
 
 		$tables = array(
+			'olama_stationary',
 			'olama_exams',
 			'olama_teacher_office_hours',
 			'olama_teacher_assignments',

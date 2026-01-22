@@ -24,6 +24,7 @@ class Olama_School_Admin
         add_action('admin_init', array($this, 'handle_plan_load_save'));
         add_action('admin_init', array($this, 'handle_office_hours_save'));
         add_action('admin_init', array($this, 'handle_exam_save'));
+        add_action('admin_init', array($this, 'handle_stationary_save'));
         add_action('admin_init', array($this, 'handle_academic_calendar_actions'));
         add_action('admin_init', array($this, 'handle_subject_actions'));
         add_action('admin_init', array($this, 'handle_teacher_settings_save'));
@@ -425,7 +426,7 @@ class Olama_School_Admin
         if (isset($_POST['olama_save_exam']) && check_admin_referer('olama_save_exam', 'olama_exam_nonce_field')) {
             $result = Olama_School_Exam::save_exam($_POST);
 
-            $redirect_url = admin_url('admin.php?page=olama-school-academic&tab=exam_schedule');
+            $redirect_url = admin_url('admin.php?page=olama-school-exams&tab=exam_schedule');
             $redirect_url = add_query_arg(array(
                 'academic_year_id' => intval($_POST['academic_year_id']),
                 'semester_id' => intval($_POST['semester_id']),
@@ -447,6 +448,30 @@ class Olama_School_Admin
                 wp_redirect($redirect_url);
                 exit;
             }
+        }
+    }
+
+    /**
+     * Handle Stationary Save
+     */
+    public function handle_stationary_save()
+    {
+        if (wp_doing_ajax()) {
+            return;
+        }
+
+        if (isset($_POST['olama_save_stationary']) && check_admin_referer('olama_save_stationary', 'olama_stationary_nonce_field')) {
+            $result = Olama_School_Stationary::save_stationary($_POST);
+
+            $redirect_url = admin_url('admin.php?page=olama-school-academic&tab=stationary');
+            $redirect_url = add_query_arg(array(
+                'academic_year_id' => intval($_POST['academic_year_id']),
+                'grade_id' => intval($_POST['grade_id']),
+                'message' => is_wp_error($result) ? 'error' : 'stationary_saved'
+            ), $redirect_url);
+
+            wp_redirect($redirect_url);
+            exit;
         }
     }
 
@@ -493,8 +518,8 @@ class Olama_School_Admin
 
         add_submenu_page(
             'olama-school',
-            __('Dashboard', 'olama-school'),
-            __('Dashboard', 'olama-school'),
+            Olama_School_Helpers::translate('Dashboard'),
+            Olama_School_Helpers::translate('Dashboard'),
             'olama_view_plans',
             'olama-school',
             array($this, 'render_dashboard_page')
@@ -502,8 +527,8 @@ class Olama_School_Admin
 
         add_submenu_page(
             'olama-school',
-            __('Reports', 'olama-school'),
-            __('Reports', 'olama-school'),
+            Olama_School_Helpers::translate('Reports'),
+            Olama_School_Helpers::translate('Reports'),
             'olama_view_reports',
             'olama-school-reports',
             array($this, 'render_reports_page')
@@ -511,8 +536,8 @@ class Olama_School_Admin
 
         add_submenu_page(
             'olama-school',
-            __('Weekly Plan Management', 'olama-school'),
-            __('Weekly Plan Management', 'olama-school'),
+            Olama_School_Helpers::translate('Weekly Plan Management'),
+            Olama_School_Helpers::translate('Weekly Plan Management'),
             'olama_view_plans',
             'olama-school-plans',
             array($this, 'render_weekly_plan_management_page')
@@ -520,17 +545,17 @@ class Olama_School_Admin
 
         add_submenu_page(
             'olama-school',
-            __('Academic Management', 'olama-school'),
-            __('Academic Management', 'olama-school'),
-            'olama_manage_academic_structure',
+            Olama_School_Helpers::translate('Academic Management'),
+            Olama_School_Helpers::translate('Academic Management'),
+            'olama_view_plans', // Changed from olama_manage_academic_structure to allow teachers access
             'olama-school-academic',
             array($this, 'render_academic_management_page')
         );
 
         add_submenu_page(
             'olama-school',
-            __('Curriculum Management', 'olama-school'),
-            __('Curriculum Management', 'olama-school'),
+            Olama_School_Helpers::translate('Curriculum Management'),
+            Olama_School_Helpers::translate('Curriculum Management'),
             'olama_manage_curriculum',
             'olama-school-curriculum',
             array($this, 'render_curriculum_management_page')
@@ -538,8 +563,17 @@ class Olama_School_Admin
 
         add_submenu_page(
             'olama-school',
-            __('Users & Permissions', 'olama-school'),
-            __('Users & Permissions', 'olama-school'),
+            Olama_School_Helpers::translate('Exam Management'),
+            Olama_School_Helpers::translate('Exam Management'),
+            'olama_manage_academic_structure',
+            'olama-school-exams',
+            array($this, 'render_exam_management_page')
+        );
+
+        add_submenu_page(
+            'olama-school',
+            Olama_School_Helpers::translate('Users & Permissions'),
+            Olama_School_Helpers::translate('Users & Permissions'),
             'olama_manage_settings',
             'olama-school-users',
             array($this, 'render_users_page')
@@ -547,8 +581,8 @@ class Olama_School_Admin
 
         add_submenu_page(
             'olama-school',
-            __('Settings', 'olama-school'),
-            __('Settings', 'olama-school'),
+            Olama_School_Helpers::translate('Settings'),
+            Olama_School_Helpers::translate('Settings'),
             'olama_view_plans',
             'olama-school-settings',
             array($this, 'render_settings_page')
@@ -662,9 +696,11 @@ class Olama_School_Admin
         if (isset($_GET['page']) && $_GET['page'] === 'olama-school-curriculum') {
             wp_enqueue_style('olama-curriculum-style', OLAMA_SCHOOL_URL . 'assets/css/curriculum.css', array('olama-admin-style'), OLAMA_SCHOOL_VERSION);
             wp_enqueue_script('olama-curriculum-script', OLAMA_SCHOOL_URL . 'assets/js/curriculum.js', array('jquery'), OLAMA_SCHOOL_VERSION, true);
+            $settings = get_option('olama_school_settings', array());
             wp_localize_script('olama-curriculum-script', 'olamaCurriculum', array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('olama_curriculum_nonce'),
+                'isDeletionPasswordSet' => !empty($settings['deletion_password']),
                 'i18n' => array(
                     'selectSubject' => Olama_School_Helpers::translate('Select Subject'),
                     'noUnits' => Olama_School_Helpers::translate('No units found for this subject.'),
@@ -694,6 +730,15 @@ class Olama_School_Admin
                     'curriculumCleared' => Olama_School_Helpers::translate('Curriculum cleared successfully!'),
                     'errorClearingCurriculum' => Olama_School_Helpers::translate('Error clearing curriculum.'),
                     'selectAll' => Olama_School_Helpers::translate('Please select semester, grade, and subject.'),
+                    'securityError' => Olama_School_Helpers::translate('SECURITY ERROR: Admin Deletion Password not found.\nPlease navigate to Settings > General and set a deletion password before attempting this action.'),
+                    'securityAuth' => Olama_School_Helpers::translate('SECURITY AUTHORIZATION REQUIRED: Please enter the Admin Deletion Password:'),
+                    'criticalWarning' => Olama_School_Helpers::translate('CRITICAL WARNING: This will delete ALL curriculum data (Units, Lessons, Questions) for the selected year: {year}. This action is IRREVERSIBLE!\n\nAre you absolutely sure?'),
+                    'finalConfirmation' => Olama_School_Helpers::translate('FINAL CONFIRMATION: To proceed, please type "DELETE" in the box below:'),
+                    'wipeCancelledPassword' => Olama_School_Helpers::translate('Wipe cancelled. Password is required.'),
+                    'wipeCancelledConfirm' => Olama_School_Helpers::translate('Wipe cancelled. Final confirmation mismatched.'),
+                    'selectYearFirst' => Olama_School_Helpers::translate('Please select an academic year first.'),
+                    'globalWipeSuccess' => Olama_School_Helpers::translate('Global curriculum wipe completed successfully!'),
+                    'errorPerformingWipe' => Olama_School_Helpers::translate('Error performing global wipe.'),
                 )
             ));
         }
@@ -825,47 +870,68 @@ class Olama_School_Admin
     public function render_academic_management_page()
     {
         $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'calendar';
+        $can_manage = current_user_can('olama_manage_academic_structure');
+
+        // If teacher and no specific tab, default to office_hours
+        if (!$can_manage && !isset($_GET['tab'])) {
+            $active_tab = 'office_hours';
+        }
         ?>
-        <div class="wrap olama-school-wrap">
-            <h1><?php _e('Academic Management', 'olama-school'); ?></h1>
+                        <div class="wrap olama-school-wrap">
+                            <h1><?php _e('Academic Management', 'olama-school'); ?></h1>
 
-            <h2 class="nav-tab-wrapper">
-                <a href="?page=olama-school-academic&tab=calendar"
-                    class="nav-tab <?php echo $active_tab === 'calendar' ? 'nav-tab-active' : ''; ?>"><?php _e('Academic Calendar', 'olama-school'); ?></a>
-                <a href="?page=olama-school-academic&tab=grades"
-                    class="nav-tab <?php echo $active_tab === 'grades' ? 'nav-tab-active' : ''; ?>"><?php _e('Grades & Sections', 'olama-school'); ?></a>
-                <a href="?page=olama-school-academic&tab=subjects"
-                    class="nav-tab <?php echo $active_tab === 'subjects' ? 'nav-tab-active' : ''; ?>"><?php _e('Subjects', 'olama-school'); ?></a>
-                <a href="?page=olama-school-academic&tab=assign_teachers"
-                    class="nav-tab <?php echo $active_tab === 'assign_teachers' ? 'nav-tab-active' : ''; ?>"><?php _e('Assign Teachers to Subjects', 'olama-school'); ?></a>
-                <a href="?page=olama-school-academic&tab=exam_schedule"
-                    class="nav-tab <?php echo $active_tab === 'exam_schedule' ? 'nav-tab-active' : ''; ?>"><?php _e('Exam Schedule', 'olama-school'); ?></a>
-            </h2>
+                            <h2 class="nav-tab-wrapper">
+                                <?php if ($can_manage): ?>
+                                            <a href="?page=olama-school-academic&tab=calendar"
+                                                class="nav-tab <?php echo $active_tab === 'calendar' ? 'nav-tab-active' : ''; ?>"><?php _e('Academic Calendar', 'olama-school'); ?></a>
+                                            <a href="?page=olama-school-academic&tab=grades"
+                                                class="nav-tab <?php echo $active_tab === 'grades' ? 'nav-tab-active' : ''; ?>"><?php _e('Grades & Sections', 'olama-school'); ?></a>
+                                            <a href="?page=olama-school-academic&tab=subjects"
+                                                class="nav-tab <?php echo $active_tab === 'subjects' ? 'nav-tab-active' : ''; ?>"><?php _e('Subjects', 'olama-school'); ?></a>
+                                            <a href="?page=olama-school-academic&tab=assign_teachers"
+                                                class="nav-tab <?php echo $active_tab === 'assign_teachers' ? 'nav-tab-active' : ''; ?>"><?php _e('Assign Teachers to Subjects', 'olama-school'); ?></a>
+                                            <a href="?page=olama-school-academic&tab=stationary"
+                                                class="nav-tab <?php echo $active_tab === 'stationary' ? 'nav-tab-active' : ''; ?>"><?php echo Olama_School_Helpers::translate('Stationary'); ?></a>
+                                <?php endif; ?>
+                                <a href="?page=olama-school-academic&tab=office_hours"
+                                    class="nav-tab <?php echo $active_tab === 'office_hours' ? 'nav-tab-active' : ''; ?>"><?php _e('Office Hours', 'olama-school'); ?></a>
+                            </h2>
 
-            <div class="olama-tab-content" style="margin-top: 20px;">
-                <?php
-                switch ($active_tab) {
-                    case 'grades':
-                        $this->render_grades_page_content();
-                        break;
-                    case 'subjects':
-                        $this->render_subjects_page_content();
-                        break;
-                    case 'assign_teachers':
-                        $this->render_teacher_assignments_page_content();
-                        break;
-                    case 'exam_schedule':
-                        $this->render_exam_schedule_content();
-                        break;
-                    case 'calendar':
-                    default:
-                        $this->render_academic_page_content();
-                        break;
-                }
-                ?>
-            </div>
-        </div>
-        <?php
+                            <div class="olama-tab-content" style="margin-top: 20px;">
+                                <?php
+                                switch ($active_tab) {
+                                    case 'grades':
+                                        if ($can_manage)
+                                            $this->render_grades_page_content();
+                                        break;
+                                    case 'subjects':
+                                        if ($can_manage)
+                                            $this->render_subjects_page_content();
+                                        break;
+                                    case 'assign_teachers':
+                                        if ($can_manage)
+                                            $this->render_teacher_assignments_page_content();
+                                        break;
+                                    case 'stationary':
+                                        if ($can_manage)
+                                            $this->render_stationary_page_content();
+                                        break;
+                                    case 'office_hours':
+                                        $this->render_teacher_office_hours_page_content();
+                                        break;
+                                    case 'calendar':
+                                    default:
+                                        if ($can_manage) {
+                                            $this->render_academic_page_content();
+                                        } else {
+                                            $this->render_teacher_office_hours_page_content();
+                                        }
+                                        break;
+                                }
+                                ?>
+                            </div>
+                        </div>
+                        <?php
     }
 
     /**
@@ -1521,41 +1587,70 @@ class Olama_School_Admin
         );
 
         ?>
-        <div class="wrap olama-school-wrap">
-            <h1><?php _e('Curriculum Management', 'olama-school'); ?></h1>
+                        <div class="wrap olama-school-wrap">
+                            <h1><?php echo Olama_School_Helpers::translate('Curriculum Management'); ?></h1>
 
-            <h2 class="nav-tab-wrapper">
-                <a href="<?php echo esc_url(add_query_arg(array_merge(array('page' => 'olama-school-curriculum', 'tab' => 'curriculum'), array_filter($base_params)), admin_url('admin.php'))); ?>"
-                    class="nav-tab <?php echo $active_tab === 'curriculum' ? 'nav-tab-active' : ''; ?>"><?php _e('Curriculum', 'olama-school'); ?></a>
-                <a href="<?php echo esc_url(add_query_arg(array_merge(array('page' => 'olama-school-curriculum', 'tab' => 'timeline'), array_filter($base_params)), admin_url('admin.php'))); ?>"
-                    class="nav-tab <?php echo $active_tab === 'timeline' ? 'nav-tab-active' : ''; ?>"><?php _e('Timeline', 'olama-school'); ?></a>
-                <a href="<?php echo esc_url(add_query_arg(array_merge(array('page' => 'olama-school-curriculum', 'tab' => 'bulk_upload'), array_filter($base_params)), admin_url('admin.php'))); ?>"
-                    class="nav-tab <?php echo $active_tab === 'bulk_upload' ? 'nav-tab-active' : ''; ?>"><?php _e('Bulk Upload', 'olama-school'); ?></a>
-                <a href="<?php echo esc_url(add_query_arg(array_merge(array('page' => 'olama-school-curriculum', 'tab' => 'analysis'), array_filter($base_params)), admin_url('admin.php'))); ?>"
-                    class="nav-tab <?php echo $active_tab === 'analysis' ? 'nav-tab-active' : ''; ?>"><?php echo Olama_School_Helpers::translate('Analysis'); ?></a>
-            </h2>
+                            <h2 class="nav-tab-wrapper">
+                                <a href="<?php echo esc_url(add_query_arg(array_merge(array('page' => 'olama-school-curriculum', 'tab' => 'curriculum'), array_filter($base_params)), admin_url('admin.php'))); ?>"
+                                    class="nav-tab <?php echo $active_tab === 'curriculum' ? 'nav-tab-active' : ''; ?>"><?php echo Olama_School_Helpers::translate('Curriculum'); ?></a>
+                                <a href="<?php echo esc_url(add_query_arg(array_merge(array('page' => 'olama-school-curriculum', 'tab' => 'timeline'), array_filter($base_params)), admin_url('admin.php'))); ?>"
+                                    class="nav-tab <?php echo $active_tab === 'timeline' ? 'nav-tab-active' : ''; ?>"><?php echo Olama_School_Helpers::translate('Timeline'); ?></a>
+                                <a href="<?php echo esc_url(add_query_arg(array_merge(array('page' => 'olama-school-curriculum', 'tab' => 'bulk_upload'), array_filter($base_params)), admin_url('admin.php'))); ?>"
+                                    class="nav-tab <?php echo $active_tab === 'bulk_upload' ? 'nav-tab-active' : ''; ?>"><?php echo Olama_School_Helpers::translate('Bulk Upload'); ?></a>
+                                <a href="<?php echo esc_url(add_query_arg(array_merge(array('page' => 'olama-school-curriculum', 'tab' => 'analysis'), array_filter($base_params)), admin_url('admin.php'))); ?>"
+                                    class="nav-tab <?php echo $active_tab === 'analysis' ? 'nav-tab-active' : ''; ?>"><?php echo Olama_School_Helpers::translate('Analysis'); ?></a>
+                            </h2>
 
-            <div class="olama-tab-content" style="margin-top: 20px;">
-                <?php
-                switch ($active_tab) {
-                    case 'timeline':
-                        $this->render_timeline_page_content();
-                        break;
-                    case 'bulk_upload':
-                        $this->render_bulk_upload_page_content();
-                        break;
-                    case 'analysis':
-                        $this->render_curriculum_analysis_page_content();
-                        break;
-                    case 'curriculum':
-                    default:
-                        $this->render_curriculum_page_content();
-                        break;
-                }
-                ?>
-            </div>
-        </div>
-        <?php
+                            <div class="olama-tab-content" style="margin-top: 20px;">
+                                <?php
+                                switch ($active_tab) {
+                                    case 'timeline':
+                                        $this->render_timeline_page_content();
+                                        break;
+                                    case 'bulk_upload':
+                                        $this->render_bulk_upload_page_content();
+                                        break;
+                                    case 'analysis':
+                                        $this->render_curriculum_analysis_page_content();
+                                        break;
+                                    case 'curriculum':
+                                    default:
+                                        $this->render_curriculum_page_content();
+                                        break;
+                                }
+                                ?>
+                            </div>
+                        </div>
+                        <?php
+    }
+
+    /**
+     * Render unified Exam Management page with tabs
+     */
+    public function render_exam_management_page()
+    {
+        $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'exam_schedule';
+        ?>
+                        <div class="wrap olama-school-wrap">
+                            <h1><?php echo Olama_School_Helpers::translate('Exam Management'); ?></h1>
+
+                            <h2 class="nav-tab-wrapper">
+                                <a href="?page=olama-school-exams&tab=exam_schedule"
+                                    class="nav-tab <?php echo $active_tab === 'exam_schedule' ? 'nav-tab-active' : ''; ?>"><?php echo Olama_School_Helpers::translate('Exam Schedule'); ?></a>
+                            </h2>
+
+                            <div class="olama-tab-content" style="margin-top: 20px;">
+                                <?php
+                                switch ($active_tab) {
+                                    case 'exam_schedule':
+                                    default:
+                                        $this->render_exam_schedule_content();
+                                        break;
+                                }
+                                ?>
+                            </div>
+                        </div>
+                        <?php
     }
 
     /**
@@ -1565,103 +1660,123 @@ class Olama_School_Admin
     {
         $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'general';
         ?>
-        <div class="wrap olama-school-wrap">
-            <h1 style="font-weight: 700; color: #1e293b; margin-bottom: 25px;">
-                <?php _e('Plugin Settings', 'olama-school'); ?>
-            </h1>
+                        <div class="wrap olama-school-wrap">
+                            <h1 style="font-weight: 700; color: #1e293b; margin-bottom: 25px;">
+                                <?php _e('Plugin Settings', 'olama-school'); ?>
+                            </h1>
 
-            <h2 class="nav-tab-wrapper">
-                <a href="?page=olama-school-settings&tab=general"
-                    class="nav-tab <?php echo $active_tab === 'general' ? 'nav-tab-active' : ''; ?>">
-                    <?php _e('General Settings', 'olama-school'); ?>
-                </a>
-                <?php if (current_user_can('manage_options')): ?>
-                    <a href="?page=olama-school-settings&tab=shortcode"
-                        class="nav-tab <?php echo $active_tab === 'shortcode' ? 'nav-tab-active' : ''; ?>">
-                        <?php _e('Shortcode Generator', 'olama-school'); ?>
-                    </a>
-                <?php endif; ?>
-            </h2>
+                            <h2 class="nav-tab-wrapper">
+                                <a href="?page=olama-school-settings&tab=general"
+                                    class="nav-tab <?php echo $active_tab === 'general' ? 'nav-tab-active' : ''; ?>">
+                                    <?php _e('General Settings', 'olama-school'); ?>
+                                </a>
+                                <?php if (current_user_can('manage_options')): ?>
+                                            <a href="?page=olama-school-settings&tab=shortcode"
+                                                class="nav-tab <?php echo $active_tab === 'shortcode' ? 'nav-tab-active' : ''; ?>">
+                                                <?php _e('Shortcode Generator', 'olama-school'); ?>
+                                            </a>
+                                <?php endif; ?>
+                            </h2>
 
-            <div class="olama-tab-content" style="margin-top: 20px;">
-                <?php if ($active_tab === 'general'): ?>
-                    <?php
-                    $is_admin = current_user_can('manage_options');
-                    $settings = get_option('olama_school_settings', array());
-                    ?>
-                    <form method="post" action="<?php echo $is_admin ? 'options.php' : ''; ?>">
+                            <div class="olama-tab-content" style="margin-top: 20px;">
+                                <?php if ($active_tab === 'general'): ?>
+                                            <?php
+                                            $is_admin = current_user_can('manage_options');
+                                            $settings = get_option('olama_school_settings', array());
+                                            ?>
+                                            <form method="post" action="<?php echo $is_admin ? 'options.php' : ''; ?>">
+                                                <?php
+                                                if ($is_admin) {
+                                                    settings_fields('olama_school_settings_group');
+                                                    do_settings_sections('olama_school_settings_group');
+                                                } else {
+                                                    wp_nonce_field('olama_teacher_settings_save', 'olama_teacher_settings_nonce');
+                                                    echo '<input type="hidden" name="olama_teacher_save" value="1" />';
+                                                }
+                                                ?>
+                                                <table class="form-table">
+                                                    <tr valign="top">
+                                                        <th scope="row"><?php _e('School Name (Arabic)', 'olama-school'); ?></th>
+                                                        <td><input type="text" name="olama_school_settings[school_name_ar]"
+                                                                value="<?php echo esc_attr($settings['school_name_ar'] ?? ''); ?>" class="regular-text"
+                                                                <?php echo !$is_admin ? 'disabled' : ''; ?> />
+                                                        </td>
+                                                    </tr>
+                                                    <tr valign="top">
+                                                        <th scope="row"><?php _e('School Name (English)', 'olama-school'); ?></th>
+                                                        <td><input type="text" name="olama_school_settings[school_name_en]"
+                                                                value="<?php echo esc_attr($settings['school_name_en'] ?? ''); ?>" class="regular-text"
+                                                                <?php echo !$is_admin ? 'disabled' : ''; ?> />
+                                                        </td>
+                                                    </tr>
+                                                    <tr valign="top">
+                                                        <th scope="row"><?php _e('School Start Day', 'olama-school'); ?></th>
+                                                        <td>
+                                                            <select name="olama_school_settings[start_day]" <?php echo !$is_admin ? 'disabled' : ''; ?>>
+                                                                <?php
+                                                                $days = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
+                                                                foreach ($days as $day): ?>
+                                                                            <option value="<?php echo strtolower($day); ?>" <?php selected($settings['start_day'] ?? 'monday', strtolower($day)); ?>>
+                                                                                <?php echo $day; ?>
+                                                                            </option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                    <tr valign="top">
+                                                        <th scope="row"><?php _e('School Last Day', 'olama-school'); ?></th>
+                                                        <td>
+                                                            <select name="olama_school_settings[last_day]" <?php echo !$is_admin ? 'disabled' : ''; ?>>
+                                                                <?php foreach ($days as $day): ?>
+                                                                            <option value="<?php echo strtolower($day); ?>" <?php selected($settings['last_day'] ?? 'friday', strtolower($day)); ?>>
+                                                                                <?php echo $day; ?>
+                                                                            </option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                    <tr valign="top">
+                                                        <th scope="row"><?php _e('Default Language', 'olama-school'); ?></th>
+                                                        <td>
+                                                            <select name="olama_school_settings[default_lang]">
+                                                                <option value="ar" <?php selected($settings['default_lang'] ?? '', 'ar'); ?>>
+                                                                    <?php _e('Arabic', 'olama-school'); ?>
+                                                                </option>
+                                                                <option value="en" <?php selected($settings['default_lang'] ?? '', 'en'); ?>>
+                                                                    <?php _e('English', 'olama-school'); ?>
+                                                                </option>
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                    <?php if ($is_admin): ?>
+                                                                <tr>
+                                                                    <th colspan="2" style="padding-top: 30px;">
+                                                                        <h3 style="margin:0; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+                                                                            <?php _e('Security Settings', 'olama-school'); ?>
+                                                                        </h3>
+                                                                    </th>
+                                                                </tr>
+                                                                <tr valign="top">
+                                                                    <th scope="row"><?php _e('Admin Deletion Password', 'olama-school'); ?></th>
+                                                                    <td>
+                                                                        <input type="password" name="olama_school_settings[deletion_password]"
+                                                                            value="<?php echo esc_attr($settings['deletion_password'] ?? ''); ?>"
+                                                                            class="regular-text" />
+                                                                        <p class="description">
+                                                                            <?php _e('Required for the "Force Delete Everything" feature in Curriculum Management.', 'olama-school'); ?>
+                                                                        </p>
+                                                                    </td>
+                                                                </tr>
+                                                    <?php endif; ?>
+                                                </table>
+                                                <?php submit_button(); ?>
+                                            </form>
+                                <?php else: ?>
+                                            <?php $this->render_shortcode_generator_content(); ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                         <?php
-                        if ($is_admin) {
-                            settings_fields('olama_school_settings_group');
-                            do_settings_sections('olama_school_settings_group');
-                        } else {
-                            wp_nonce_field('olama_teacher_settings_save', 'olama_teacher_settings_nonce');
-                            echo '<input type="hidden" name="olama_teacher_save" value="1" />';
-                        }
-                        ?>
-                        <table class="form-table">
-                            <tr valign="top">
-                                <th scope="row"><?php _e('School Name (Arabic)', 'olama-school'); ?></th>
-                                <td><input type="text" name="olama_school_settings[school_name_ar]"
-                                        value="<?php echo esc_attr($settings['school_name_ar'] ?? ''); ?>" class="regular-text"
-                                        <?php echo !$is_admin ? 'disabled' : ''; ?> />
-                                </td>
-                            </tr>
-                            <tr valign="top">
-                                <th scope="row"><?php _e('School Name (English)', 'olama-school'); ?></th>
-                                <td><input type="text" name="olama_school_settings[school_name_en]"
-                                        value="<?php echo esc_attr($settings['school_name_en'] ?? ''); ?>" class="regular-text"
-                                        <?php echo !$is_admin ? 'disabled' : ''; ?> />
-                                </td>
-                            </tr>
-                            <tr valign="top">
-                                <th scope="row"><?php _e('School Start Day', 'olama-school'); ?></th>
-                                <td>
-                                    <select name="olama_school_settings[start_day]" <?php echo !$is_admin ? 'disabled' : ''; ?>>
-                                        <?php
-                                        $days = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
-                                        foreach ($days as $day): ?>
-                                            <option value="<?php echo strtolower($day); ?>" <?php selected($settings['start_day'] ?? 'monday', strtolower($day)); ?>>
-                                                <?php echo $day; ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr valign="top">
-                                <th scope="row"><?php _e('School Last Day', 'olama-school'); ?></th>
-                                <td>
-                                    <select name="olama_school_settings[last_day]" <?php echo !$is_admin ? 'disabled' : ''; ?>>
-                                        <?php foreach ($days as $day): ?>
-                                            <option value="<?php echo strtolower($day); ?>" <?php selected($settings['last_day'] ?? 'friday', strtolower($day)); ?>>
-                                                <?php echo $day; ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr valign="top">
-                                <th scope="row"><?php _e('Default Language', 'olama-school'); ?></th>
-                                <td>
-                                    <select name="olama_school_settings[default_lang]">
-                                        <option value="ar" <?php selected($settings['default_lang'] ?? '', 'ar'); ?>>
-                                            <?php _e('Arabic', 'olama-school'); ?>
-                                        </option>
-                                        <option value="en" <?php selected($settings['default_lang'] ?? '', 'en'); ?>>
-                                            <?php _e('English', 'olama-school'); ?>
-                                        </option>
-                                    </select>
-                                </td>
-                            </tr>
-                        </table>
-                        <?php submit_button(); ?>
-                    </form>
-                <?php else: ?>
-                    <?php $this->render_shortcode_generator_content(); ?>
-                <?php endif; ?>
-            </div>
-        </div>
-        <?php
     }
 
     /**
@@ -1711,69 +1826,66 @@ class Olama_School_Admin
     {
         $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'creation';
         ?>
-        <div class="wrap olama-school-wrap">
-            <h1 style="font-weight: 700; color: #1e293b; margin-bottom: 25px;">
-                <?php _e('Weekly Plan Management', 'olama-school'); ?>
-            </h1>
+                        <div class="wrap olama-school-wrap">
+                            <h1 style="font-weight: 700; color: #1e293b; margin-bottom: 25px;">
+                                <?php _e('Weekly Plan Management', 'olama-school'); ?>
+                            </h1>
 
-            <h2 class="nav-tab-wrapper">
-                <?php
-                $base_params = array(
-                    'academic_year_id' => isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : 0,
-                    'semester_id' => isset($_GET['semester_id']) ? intval($_GET['semester_id']) : 0,
-                    'grade_id' => isset($_GET['grade_id']) ? intval($_GET['grade_id']) : 0,
-                    'section_id' => isset($_GET['section_id']) ? intval($_GET['section_id']) : 0,
-                    'plan_month' => isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : '',
-                    'week_start' => isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : '',
-                );
+                            <h2 class="nav-tab-wrapper">
+                                <?php
+                                $base_params = array(
+                                    'academic_year_id' => isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : 0,
+                                    'semester_id' => isset($_GET['semester_id']) ? intval($_GET['semester_id']) : 0,
+                                    'grade_id' => isset($_GET['grade_id']) ? intval($_GET['grade_id']) : 0,
+                                    'section_id' => isset($_GET['section_id']) ? intval($_GET['section_id']) : 0,
+                                    'plan_month' => isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : '',
+                                    'week_start' => isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : '',
+                                );
 
-                // For comparison tab, we might have different param names, but let's keep it simple for now and align the main ones
-                $tabs = array(
-                    'creation' => __('Plan Creation', 'olama-school'),
-                    'list' => __('Plan List', 'olama-school'),
-                    'comparison' => __('Plan Comparison', 'olama-school'),
-                    'schedule' => __('Weekly Schedule', 'olama-school'),
-                );
+                                // For comparison tab, we might have different param names, but let's keep it simple for now and align the main ones
+                                $tabs = array(
+                                    'creation' => __('Plan Creation', 'olama-school'),
+                                    'list' => __('Plan List', 'olama-school'),
+                                    'comparison' => __('Plan Comparison', 'olama-school'),
+                                    'schedule' => __('Weekly Schedule', 'olama-school'),
+                                );
 
-                if (current_user_can('manage_options')) {
-                    $tabs['data'] = __('Data Management', 'olama-school');
-                }
+                                if (current_user_can('manage_options')) {
+                                    $tabs['data'] = __('Data Management', 'olama-school');
+                                }
 
-                $tabs = array_merge($tabs, array(
-                    'load' => __('Plan Load', 'olama-school'),
-                    'coverage' => __('Curriculum Coverage', 'olama-school'),
-                    'office_hours' => __('Office Hours', 'olama-school'),
-                ));
+                                $tabs = array_merge($tabs, array(
+                                    'load' => __('Plan Load', 'olama-school'),
+                                    'coverage' => __('Curriculum Coverage', 'olama-school'),
+                                ));
 
-                foreach ($tabs as $tab_slug => $tab_label):
-                    $url = add_query_arg(array_merge(array('page' => 'olama-school-plans', 'tab' => $tab_slug), array_filter($base_params)), admin_url('admin.php'));
-                    ?>
-                    <a href="<?php echo esc_url($url); ?>"
-                        class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; ?>"><?php echo esc_html($tab_label); ?></a>
-                <?php endforeach; ?>
-            </h2>
+                                foreach ($tabs as $tab_slug => $tab_label):
+                                    $url = add_query_arg(array_merge(array('page' => 'olama-school-plans', 'tab' => $tab_slug), array_filter($base_params)), admin_url('admin.php'));
+                                    ?>
+                                            <a href="<?php echo esc_url($url); ?>"
+                                                class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; ?>"><?php echo esc_html($tab_label); ?></a>
+                                <?php endforeach; ?>
+                            </h2>
 
-            <div class="olama-tab-content" style="margin-top: 20px;">
-                <?php if ($active_tab === 'creation'): ?>
-                    <?php $this->render_plan_page_content(); ?>
-                <?php elseif ($active_tab === 'list'): ?>
-                    <?php $this->render_plan_list_page_content(); ?>
-                <?php elseif ($active_tab === 'comparison'): ?>
-                    <?php $this->render_comparison_page_content(); ?>
-                <?php elseif ($active_tab === 'schedule'): ?>
-                    <?php $this->render_schedule_page_content(); ?>
-                <?php elseif ($active_tab === 'data'): ?>
-                    <?php $this->render_data_management_page_content(); ?>
-                <?php elseif ($active_tab === 'load'): ?>
-                    <?php $this->render_plan_load_page_content(); ?>
-                <?php elseif ($active_tab === 'coverage'): ?>
-                    <?php $this->render_curriculum_coverage_page_content(); ?>
-                <?php elseif ($active_tab === 'office_hours'): ?>
-                    <?php $this->render_teacher_office_hours_page_content(); ?>
-                <?php endif; ?>
-            </div>
-        </div>
-        <?php
+                            <div class="olama-tab-content" style="margin-top: 20px;">
+                                <?php if ($active_tab === 'creation'): ?>
+                                            <?php $this->render_plan_page_content(); ?>
+                                <?php elseif ($active_tab === 'list'): ?>
+                                            <?php $this->render_plan_list_page_content(); ?>
+                                <?php elseif ($active_tab === 'comparison'): ?>
+                                            <?php $this->render_comparison_page_content(); ?>
+                                <?php elseif ($active_tab === 'schedule'): ?>
+                                            <?php $this->render_schedule_page_content(); ?>
+                                <?php elseif ($active_tab === 'data'): ?>
+                                            <?php $this->render_data_management_page_content(); ?>
+                                <?php elseif ($active_tab === 'load'): ?>
+                                            <?php $this->render_plan_load_page_content(); ?>
+                                <?php elseif ($active_tab === 'coverage'): ?>
+                                            <?php $this->render_curriculum_coverage_page_content(); ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php
     }
 
     /**
@@ -1788,10 +1900,11 @@ class Olama_School_Admin
             Olama_School_Teacher::save_office_hours($teacher_id, $slots);
 
             $url = add_query_arg(array(
+                'page' => 'olama-school-academic',
                 'tab' => 'office_hours',
                 'teacher_id' => $teacher_id,
                 'message' => 'office_hours_saved'
-            ), admin_url('admin.php?page=olama-school-plans'));
+            ), admin_url('admin.php'));
 
             wp_redirect($url);
             exit;
@@ -2162,43 +2275,43 @@ class Olama_School_Admin
         }
 
         ?>
-        <div class="olama-permissions-container">
-            <form method="post">
-                <?php wp_nonce_field('olama_save_permissions'); ?>
-                <div style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-                    <table class="wp-list-table widefat fixed striped">
-                        <thead>
-                            <tr>
-                                <th style="width: 250px;"><?php _e('Capability', 'olama-school'); ?></th>
-                                <?php foreach ($roles as $label): ?>
-                                    <th><?php echo esc_html($label); ?></th>
-                                <?php endforeach; ?>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($capabilities as $cap => $cap_label): ?>
-                                <tr>
-                                    <td><strong><?php echo esc_html($cap_label); ?></strong></td>
-                                    <?php foreach ($roles as $role_name => $label):
-                                        $role = get_role($role_name);
-                                        $has_cap = $role ? $role->has_cap($cap) : false;
-                                        ?>
-                                        <td>
-                                            <input type="checkbox"
-                                                name="caps[<?php echo esc_attr($role_name); ?>][<?php echo esc_attr($cap); ?>]" <?php checked($has_cap); ?>>
-                                        </td>
-                                    <?php endforeach; ?>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <div style="margin-top: 20px;">
-                    <?php submit_button(__('Save All Permissions', 'olama-school'), 'primary', 'save_permissions'); ?>
-                </div>
-            </form>
-        </div>
-        <?php
+                        <div class="olama-permissions-container">
+                            <form method="post">
+                                <?php wp_nonce_field('olama_save_permissions'); ?>
+                                <div style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                                    <table class="wp-list-table widefat fixed striped">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 250px;"><?php _e('Capability', 'olama-school'); ?></th>
+                                                <?php foreach ($roles as $label): ?>
+                                                            <th><?php echo esc_html($label); ?></th>
+                                                <?php endforeach; ?>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($capabilities as $cap => $cap_label): ?>
+                                                        <tr>
+                                                            <td><strong><?php echo esc_html($cap_label); ?></strong></td>
+                                                            <?php foreach ($roles as $role_name => $label):
+                                                                $role = get_role($role_name);
+                                                                $has_cap = $role ? $role->has_cap($cap) : false;
+                                                                ?>
+                                                                        <td>
+                                                                            <input type="checkbox"
+                                                                                name="caps[<?php echo esc_attr($role_name); ?>][<?php echo esc_attr($cap); ?>]" <?php checked($has_cap); ?>>
+                                                                        </td>
+                                                            <?php endforeach; ?>
+                                                        </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div style="margin-top: 20px;">
+                                    <?php submit_button(__('Save All Permissions', 'olama-school'), 'primary', 'save_permissions'); ?>
+                                </div>
+                            </form>
+                        </div>
+                        <?php
     }
 
     /**
@@ -2218,75 +2331,75 @@ class Olama_School_Admin
         ");
 
         ?>
-        <div class="olama-logs-container" style="background: #f0f2f5; padding: 20px; border-radius: 12px;">
+                        <div class="olama-logs-container" style="background: #f0f2f5; padding: 20px; border-radius: 12px;">
 
-            <div
-                style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 30px;">
-                <h2 style="margin-top: 0;"><?php _e('Recent Activities (Audit Log)', 'olama-school'); ?></h2>
-                <table class="wp-list-table widefat fixed striped">
-                    <thead>
-                        <tr>
-                            <th><?php _e('Date/Time', 'olama-school'); ?></th>
-                            <th><?php _e('User', 'olama-school'); ?></th>
-                            <th><?php _e('Action', 'olama-school'); ?></th>
-                            <th><?php _e('Details', 'olama-school'); ?></th>
-                            <th><?php _e('IP Address', 'olama-school'); ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($logs):
-                            foreach ($logs as $log): ?>
-                                <tr>
-                                    <td><?php echo esc_html($log->created_at); ?></td>
-                                    <td><?php echo esc_html($log->display_name ?: 'System'); ?></td>
-                                    <td><span class="badge"
-                                            style="background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 11px;"><?php echo esc_html($log->action); ?></span>
-                                    </td>
-                                    <td><?php echo esc_html($log->details); ?></td>
-                                    <td><?php echo esc_html($log->ip_address); ?></td>
-                                </tr>
-                            <?php endforeach; else: ?>
-                            <tr>
-                                <td colspan="5"><?php _e('No logs found.', 'olama-school'); ?></td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+                            <div
+                                style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 30px;">
+                                <h2 style="margin-top: 0;"><?php _e('Recent Activities (Audit Log)', 'olama-school'); ?></h2>
+                                <table class="wp-list-table widefat fixed striped">
+                                    <thead>
+                                        <tr>
+                                            <th><?php _e('Date/Time', 'olama-school'); ?></th>
+                                            <th><?php _e('User', 'olama-school'); ?></th>
+                                            <th><?php _e('Action', 'olama-school'); ?></th>
+                                            <th><?php _e('Details', 'olama-school'); ?></th>
+                                            <th><?php _e('IP Address', 'olama-school'); ?></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if ($logs):
+                                            foreach ($logs as $log): ?>
+                                                                <tr>
+                                                                    <td><?php echo esc_html($log->created_at); ?></td>
+                                                                    <td><?php echo esc_html($log->display_name ?: 'System'); ?></td>
+                                                                    <td><span class="badge"
+                                                                            style="background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 11px;"><?php echo esc_html($log->action); ?></span>
+                                                                    </td>
+                                                                    <td><?php echo esc_html($log->details); ?></td>
+                                                                    <td><?php echo esc_html($log->ip_address); ?></td>
+                                                                </tr>
+                                                    <?php endforeach; else: ?>
+                                                    <tr>
+                                                        <td colspan="5"><?php _e('No logs found.', 'olama-school'); ?></td>
+                                                    </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
 
-            <div style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-                <h2 style="margin-top: 0;"><?php _e('Notification Settings', 'olama-school'); ?></h2>
-                <form method="post" action="options.php">
-                    <?php
-                    settings_fields('olama_notifications_group');
-                    $notif_email = get_option('olama_admin_email', get_option('admin_email'));
-                    $enable_notifs = get_option('olama_enable_notifs', 'yes');
-                    ?>
-                    <table class="form-table">
-                        <tr>
-                            <th scope="row"><?php _e('Admin Notification Email', 'olama-school'); ?></th>
-                            <td><input type="email" name="olama_admin_email" value="<?php echo esc_attr($notif_email); ?>"
-                                    class="regular-text"></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><?php _e('Enable Email Notifications', 'olama-school'); ?></th>
-                            <td>
-                                <select name="olama_enable_notifs">
-                                    <option value="yes" <?php selected($enable_notifs, 'yes'); ?>>
-                                        <?php _e('Yes', 'olama-school'); ?>
-                                    </option>
-                                    <option value="no" <?php selected($enable_notifs, 'no'); ?>>
-                                        <?php _e('No', 'olama-school'); ?>
-                                    </option>
-                                </select>
-                            </td>
-                        </tr>
-                    </table>
-                    <?php submit_button(); ?>
-                </form>
-            </div>
-        </div>
-        <?php
+                            <div style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                                <h2 style="margin-top: 0;"><?php _e('Notification Settings', 'olama-school'); ?></h2>
+                                <form method="post" action="options.php">
+                                    <?php
+                                    settings_fields('olama_notifications_group');
+                                    $notif_email = get_option('olama_admin_email', get_option('admin_email'));
+                                    $enable_notifs = get_option('olama_enable_notifs', 'yes');
+                                    ?>
+                                    <table class="form-table">
+                                        <tr>
+                                            <th scope="row"><?php _e('Admin Notification Email', 'olama-school'); ?></th>
+                                            <td><input type="email" name="olama_admin_email" value="<?php echo esc_attr($notif_email); ?>"
+                                                    class="regular-text"></td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row"><?php _e('Enable Email Notifications', 'olama-school'); ?></th>
+                                            <td>
+                                                <select name="olama_enable_notifs">
+                                                    <option value="yes" <?php selected($enable_notifs, 'yes'); ?>>
+                                                        <?php _e('Yes', 'olama-school'); ?>
+                                                    </option>
+                                                    <option value="no" <?php selected($enable_notifs, 'no'); ?>>
+                                                        <?php _e('No', 'olama-school'); ?>
+                                                    </option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <?php submit_button(); ?>
+                                </form>
+                            </div>
+                        </div>
+                        <?php
     }
 
     /**
@@ -2327,6 +2440,23 @@ class Olama_School_Admin
     public function render_teacher_assignments_page_content()
     {
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/academic-assignments.php';
+    }
+
+    /**
+     * Render Stationary Tab Content
+     */
+    public function render_stationary_page_content()
+    {
+        $years = Olama_School_Academic::get_years();
+        $active_year = Olama_School_Academic::get_active_year();
+        $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+
+        $grades = Olama_School_Grade::get_grades();
+        $selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : (!empty($grades) ? $grades[0]->id : 0);
+
+        $stationary_data = Olama_School_Stationary::get_stationary($selected_year_id, $selected_grade_id);
+
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/stationary.php';
     }
 
     /**

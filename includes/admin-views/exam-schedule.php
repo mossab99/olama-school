@@ -40,32 +40,36 @@ $evaluation_types = array(
     <div class="olama-filter-bar"
         style="background: #fff; padding: 15px; border: 1px solid #ccd0d4; margin-bottom: 20px; border-radius: 4px;">
         <form method="get" action="" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-            <input type="hidden" name="page" value="olama-school-academic">
+            <input type="hidden" name="page" value="olama-school-exams">
             <input type="hidden" name="tab" value="exam_schedule">
             <select name="academic_year_id" style="min-width: 140px;">
                 <?php foreach ($years as $y): ?>
                     <option value="<?php echo $y->id; ?>" <?php selected($selected_year_id, $y->id); ?>>
-                        <?php echo esc_html($y->year_name); ?></option>
+                        <?php echo esc_html($y->year_name); ?>
+                    </option>
                 <?php endforeach; ?>
             </select>
             <select name="semester_id" style="min-width: 140px;">
                 <?php foreach ($semesters as $s): ?>
                     <option value="<?php echo $s->id; ?>" <?php selected($selected_semester_id, $s->id); ?>>
-                        <?php echo esc_html($s->semester_name); ?></option>
+                        <?php echo esc_html($s->semester_name); ?>
+                    </option>
                 <?php endforeach; ?>
             </select>
             <select name="grade_id" onchange="this.form.subject_id.value=0; this.form.submit();"
                 style="min-width: 140px;">
                 <?php foreach ($grades as $g): ?>
                     <option value="<?php echo $g->id; ?>" <?php selected($selected_grade_id, $g->id); ?>>
-                        <?php echo esc_html($g->grade_name); ?></option>
+                        <?php echo esc_html($g->grade_name); ?>
+                    </option>
                 <?php endforeach; ?>
             </select>
             <select name="subject_id" style="min-width: 140px;">
                 <option value="0"><?php _e('All Subjects', 'olama-school'); ?></option>
                 <?php foreach ($subjects as $sb): ?>
                     <option value="<?php echo $sb->id; ?>" <?php selected($selected_subject_id, $sb->id); ?>>
-                        <?php echo esc_html($sb->subject_name); ?></option>
+                        <?php echo esc_html($sb->subject_name); ?>
+                    </option>
                 <?php endforeach; ?>
             </select>
             <button type="submit" class="button button-secondary"><?php _e('Search', 'olama-school'); ?></button>
@@ -82,7 +86,8 @@ $evaluation_types = array(
                     <th style="font-weight: 600;"><?php echo Olama_School_Helpers::translate('Date'); ?></th>
                     <th style="font-weight: 600;"><?php echo Olama_School_Helpers::translate('Description'); ?></th>
                     <th style="width: 100px; text-align: center; font-weight: 600;">
-                        <?php _e('Actions', 'olama-school'); ?></th>
+                        <?php _e('Actions', 'olama-school'); ?>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -110,7 +115,7 @@ $evaluation_types = array(
                                     data-exam='<?php echo json_encode($exam); ?>' title="<?php _e('Edit', 'olama-school'); ?>">
                                     <span class="dashicons dashicons-edit"></span>
                                 </button>
-                                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-academic&tab=exam_schedule&action=delete_exam&exam_id=' . $exam->id), 'olama_delete_exam_' . $exam->id); ?>"
+                                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-exams&tab=exam_schedule&action=delete_exam&exam_id=' . $exam->id), 'olama_delete_exam_' . $exam->id); ?>"
                                     class="button button-small"
                                     onclick="return confirm('<?php _e('Are you sure?', 'olama-school'); ?>')"
                                     title="<?php _e('Delete', 'olama-school'); ?>">
@@ -157,7 +162,8 @@ $evaluation_types = array(
                             <option value=""><?php _e('Choose the subject', 'olama-school'); ?></option>
                             <?php foreach ($subjects as $sb): ?>
                                 <option value="<?php echo $sb->id; ?>" <?php selected($selected_subject_id, $sb->id); ?>>
-                                    <?php echo esc_html($sb->subject_name); ?></option>
+                                    <?php echo esc_html($sb->subject_name); ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>

@@ -714,28 +714,65 @@ class Olama_School_Ajax_Handlers
      */
     public function force_clear_all_curriculum()
     {
-        // Clean any existing output buffers to prevent them from breaking the JSON response
         while (ob_get_level()) {
             ob_end_clean();
         }
-
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
 
         if (!current_user_can('manage_options')) {
             wp_send_json_error(array('message' => __('Only administrators can perform a global wipe.', 'olama-school')));
         }
 
+        $password = isset($_POST['password']) ? $_POST['password'] : '';
+        $year_id = isset($_POST['academic_year_id']) ? intval($_POST['academic_year_id']) : 0;
+        $semester_id = isset($_POST['semester_id']) ? intval($_POST['semester_id']) : 0;
+        $grade_id = isset($_POST['grade_id']) ? intval($_POST['grade_id']) : 0;
+
+        if (!$year_id) {
+            wp_send_json_error(array('message' => Olama_School_Helpers::translate('Missing parameters.')));
+        }
+
+        $settings = get_option('olama_school_settings', array());
+        $stored_password = $settings['deletion_password'] ?? '';
+
+        if (empty($stored_password)) {
+            wp_send_json_error(array('message' => Olama_School_Helpers::translate('Please set a deletion password in General Settings first.')));
+        }
+
+        if ($password !== $stored_password) {
+            wp_send_json_error(array('message' => Olama_School_Helpers::translate('Invalid deletion password.')));
+        }
+
         global $wpdb;
 
-        // Attempt to increase execution time for large deletions
         if (function_exists('set_time_limit')) {
             @set_time_limit(300);
         }
 
-        // We use DELETE instead of TRUNCATE for better compatibility with different DB users
-        $q_res = $wpdb->query("DELETE FROM {$wpdb->prefix}olama_curriculum_questions");
-        $l_res = $wpdb->query("DELETE FROM {$wpdb->prefix}olama_curriculum_lessons");
-        $u_res = $wpdb->query("DELETE FROM {$wpdb->prefix}olama_curriculum_units");
+        // Delete cascaded: Questions -> Lessons -> Units for the selected year
+        $wpdb->query($wpdb->prepare(
+            "DELETE q FROM {$wpdb->prefix}olama_curriculum_questions q
+             JOIN {$wpdb->prefix}olama_curriculum_lessons l ON q.lesson_id = l.id
+             JOIN {$wpdb->prefix}olama_curriculum_units u ON l.unit_id = u.id
+             JOIN {$wpdb->prefix}olama_semesters s ON u.semester_id = s.id
+             WHERE s.academic_year_id = %d",
+            $year_id
+        ));
+
+        $wpdb->query($wpdb->prepare(
+            "DELETE l FROM {$wpdb->prefix}olama_curriculum_lessons l
+             JOIN {$wpdb->prefix}olama_curriculum_units u ON l.unit_id = u.id
+             JOIN {$wpdb->prefix}olama_semesters s ON u.semester_id = s.id
+             WHERE s.academic_year_id = %d",
+            $year_id
+        ));
+
+        $wpdb->query($wpdb->prepare(
+            "DELETE u FROM {$wpdb->prefix}olama_curriculum_units u
+             JOIN {$wpdb->prefix}olama_semesters s ON u.semester_id = s.id
+             WHERE s.academic_year_id = %d",
+            $year_id
+        ));
 
         if ($wpdb->last_error) {
             wp_send_json_error(array(
@@ -743,11 +780,17 @@ class Olama_School_Ajax_Handlers
             ));
         }
 
-        // Log the activity
+        $year_name = $wpdb->get_var($wpdb->prepare("SELECT year_name FROM {$wpdb->prefix}olama_academic_years WHERE id = %d", $year_id));
+        $semester_name = $semester_id ? $wpdb->get_var($wpdb->prepare("SELECT semester_name FROM {$wpdb->prefix}olama_semesters WHERE id = %d", $semester_id)) : Olama_School_Helpers::translate('All');
+        $grade_name = $grade_id ? $wpdb->get_var($wpdb->prepare("SELECT grade_name FROM {$wpdb->prefix}olama_grades WHERE id = %d", $grade_id)) : Olama_School_Helpers::translate('All');
+
         if (class_exists('Olama_School_Logger')) {
-            Olama_School_Logger::log('curriculum_global_wipe', 'GLOBAL CURRICULUM WIPE: All units, lessons, and questions were deleted.');
+            Olama_School_Logger::log('curriculum_year_wipe', sprintf('YEAR CURRICULUM WIPE: All units, lessons, and questions were deleted for year: %s', $year_name));
         }
 
-        wp_send_json_success(array('message' => __('Global curriculum wipe completed successfully!', 'olama-school')));
+        $msg = Olama_School_Helpers::translate('Curriculum wipe for Year: {year}, Semester: {semester}, Grade: {grade} completed successfully!');
+        $msg = str_replace(['{year}', '{semester}', '{grade}'], [$year_name, $semester_name, $grade_name], $msg);
+
+        wp_send_json_success(array('message' => $msg));
     }
 }
