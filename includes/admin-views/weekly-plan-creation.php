@@ -294,7 +294,8 @@ if (!defined('ABSPATH')) {
                         'homework_ws' => $plan->homework_ws,
                         'teacher_notes' => $plan->teacher_notes,
                         'question_ids' => $q_ids,
-                        'status' => $plan->status
+                        'status' => $plan->status,
+                        'teacher_name' => $plan->teacher_name ?? ''
                     ]);
                     ?>
                     <div class="olama-plan-item" data-plan="<?php echo esc_attr($plan_json); ?>"
@@ -304,6 +305,14 @@ if (!defined('ABSPATH')) {
                                 <?php echo esc_html($plan->subject_name); ?>
                             </strong>
                             <div style="display: flex; gap: 8px; align-items: center;">
+                                <?php if (!empty($plan->teacher_name)): ?>
+                                    <span class="teacher-badge"
+                                        style="font-size: 0.75em; padding: 2px 8px; border-radius: 12px; background: #e2e8f0; color: #475569; font-weight: 600;">
+                                        <i class="dashicons dashicons-admin-users"
+                                            style="font-size: 14px; width: 14px; height: 14px; margin-top: 2px;"></i>
+                                        <?php echo esc_html($plan->teacher_name); ?>
+                                    </span>
+                                <?php endif; ?>
                                 <span class="status-badge <?php echo esc_attr($plan->status); ?>"
                                     style="font-size: 0.8em; padding: 2px 8px; border-radius: 12px; background: #eee; color: #666;">
                                     <?php echo __(ucfirst($plan->status), 'olama-school'); ?>

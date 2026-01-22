@@ -17,11 +17,12 @@ class Olama_School_Plan
     {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(
-            "SELECT p.*, s.subject_name, s.color_code, u.unit_number, u.unit_name, l.lesson_number, l.lesson_title, l.start_date as lesson_start_date, l.end_date as lesson_end_date 
+            "SELECT p.*, s.subject_name, s.color_code, u.unit_number, u.unit_name, l.lesson_number, l.lesson_title, l.start_date as lesson_start_date, l.end_date as lesson_end_date, users.display_name as teacher_name 
             FROM {$wpdb->prefix}olama_plans p 
             LEFT JOIN {$wpdb->prefix}olama_subjects s ON p.subject_id = s.id 
             LEFT JOIN {$wpdb->prefix}olama_curriculum_units u ON p.unit_id = u.id 
             LEFT JOIN {$wpdb->prefix}olama_curriculum_lessons l ON p.lesson_id = l.id 
+            LEFT JOIN {$wpdb->users} users ON p.teacher_id = users.ID 
             WHERE p.section_id = %d AND p.plan_date BETWEEN %s AND %s 
             ORDER BY p.plan_date ASC, p.period_number ASC",
             $section_id,

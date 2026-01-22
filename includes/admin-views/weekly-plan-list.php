@@ -335,6 +335,15 @@ if ($current_semester_id && $selected_grade_id) {
                                     <?php echo esc_html($status_badge_text); ?>
                                 </div>
 
+                                <?php if (!empty($plan->teacher_name)): ?>
+                                    <div class="olama-teacher-badge"
+                                        style="display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-bottom: 5px; color: #475569; background: #e2e8f0; margin-left: 4px;">
+                                        <i class="dashicons dashicons-admin-users"
+                                            style="font-size: 12px; width: 12px; height: 12px; margin-top: 1px;"></i>
+                                        <?php echo esc_html($plan->teacher_name); ?>
+                                    </div>
+                                <?php endif; ?>
+
                                 <div
                                     style="font-weight: 700; color: <?php echo esc_attr($plan->color_code); ?>; font-size: 0.9em; margin-bottom: 4px;">
                                     <?php echo esc_html($plan->subject_name); ?>
