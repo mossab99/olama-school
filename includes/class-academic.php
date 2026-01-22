@@ -516,7 +516,7 @@ class Olama_School_Academic
      * Get all academic weeks for the active year
      * Format: Sunday Date => "(Sunday:date - Thursday:date)"
      */
-    public static function get_academic_weeks($year_id = null, $semester_id = null)
+    public static function get_academic_weeks($year_id = null, $semester_id = null, $full_info = false)
     {
         if (!$year_id) {
             $active_year = self::get_active_year();
@@ -531,7 +531,7 @@ class Olama_School_Academic
         $date_format = isset($settings['date_format']) ? $settings['date_format'] : 'd-m-Y';
         $format_key = str_replace('-', '', $date_format); // dmY, mdY, or Ymd
 
-        $cache_key = 'olama_academic_weeks_' . $year_id . ($semester_id ? '_s' . $semester_id : '') . '_' . $format_key;
+        $cache_key = 'olama_academic_weeks_' . $year_id . ($semester_id ? '_s' . $semester_id : '') . '_' . $format_key . ($full_info ? '_full' : '');
         $weeks = get_transient($cache_key);
         if ($weeks !== false) {
             return $weeks;
@@ -552,6 +552,7 @@ class Olama_School_Academic
         }
 
         $weeks = array();
+        $week_num = 1;
         foreach ($semesters as $semester) {
             $start_ts = strtotime($semester->start_date);
             $end_ts = strtotime($semester->end_date);
@@ -567,11 +568,22 @@ class Olama_School_Academic
                 // Check overlap with semester
                 $week_end_ts = $current_sunday + (4 * 86400);
                 if ($week_end_ts >= $start_ts && $current_sunday <= $end_ts) {
-                    $weeks[$week_start] = sprintf(
+                    $label = sprintf(
                         '(%s - %s)',
                         Olama_School_Helpers::format_date($current_sunday),
                         Olama_School_Helpers::format_date($current_sunday + (4 * 86400))
                     );
+
+                    if ($full_info) {
+                        $weeks[$week_start] = array(
+                            'number' => $week_num++,
+                            'start' => $week_start,
+                            'end' => $week_end,
+                            'label' => $label
+                        );
+                    } else {
+                        $weeks[$week_start] = $label;
+                    }
                 }
 
                 $current_sunday += (7 * 86400); // Next Sunday

@@ -727,6 +727,7 @@ class Olama_School_Helpers
         'Subject Coverage' => 'تغطية المادة',
         'Semester:' => 'الفصل الدراسي:',
         'Week:' => 'الأسبوع:',
+        'Year:' => 'السنة:',
         'Section:' => 'الشعبة:',
         'All Weeks' => 'جميع الأسابيع',
         'Week %d (%s)' => 'الأسبوع %d (%s)',

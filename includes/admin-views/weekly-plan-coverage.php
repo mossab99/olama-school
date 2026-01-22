@@ -8,7 +8,13 @@ if (!defined('ABSPATH'))
 global $wpdb;
 
 // 1. Get Academic Infrastructure
-$active_year = Olama_School_Academic::get_active_year();
+$requested_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : 0;
+if ($requested_year_id) {
+    $active_year = Olama_School_Academic::get_year($requested_year_id);
+} else {
+    $active_year = Olama_School_Academic::get_active_year();
+}
+
 if (!$active_year) {
     echo '<div class="error"><p>' . __('Please activate an academic year first.', 'olama-school') . '</p></div>';
     return;
@@ -27,7 +33,7 @@ $default_semester_id = $active_semester ? intval($active_semester->id) : (isset(
 $selected_semester_id = isset($_GET['coverage_semester']) ? intval($_GET['coverage_semester']) : $default_semester_id;
 $selected_grade_id = isset($_GET['coverage_grade']) ? intval($_GET['coverage_grade']) : 0;
 
-$sections = $selected_grade_id ? Olama_School_Section::get_by_grade($selected_grade_id) : [];
+$sections = $selected_grade_id ? Olama_School_Section::get_by_grade($selected_grade_id, $active_year->id) : [];
 $selected_section_id = (isset($_GET['coverage_section']) && $_GET['coverage_section'] != '0') ? intval($_GET['coverage_section']) : (isset($sections[0]->id) ? intval($sections[0]->id) : 0);
 
 $current_semester = null;
@@ -44,12 +50,13 @@ if (!$current_semester && !empty($semesters)) {
     $selected_semester_id = intval($current_semester->id);
 }
 
+$years = Olama_School_Academic::get_years();
 $grades = Olama_School_Grade::get_grades();
 // Getting subjects with limits
 $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_grade_id) : [];
 
 // 3. Determine Effective Date Range for filtering plans (Sunday to Thursday alignment)
-$semester_weeks = Olama_School_Academic::get_academic_weeks($active_year->id, $selected_semester_id);
+$semester_weeks = Olama_School_Academic::get_academic_weeks($active_year->id, $selected_semester_id, true);
 $effective_start = $current_semester->start_date;
 $effective_end = $current_semester->end_date;
 
@@ -101,6 +108,20 @@ if (!$selected_week && !empty($semester_weeks)) {
 
         <div
             style="display: flex; align-items: center; gap: 15px; background: #f8fafc; padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+
+            <label
+                style="font-weight: 600; color: #64748b;"><?php echo Olama_School_Helpers::translate('Year:'); ?></label>
+            <select onchange="window.location.href=add_query_arg('academic_year_id', this.value)"
+                style="border-radius: 4px; border-color: #cbd5e1; font-weight: 600; color: #1e293b;">
+                <?php foreach ($years as $yr): ?>
+                    <option value="<?php echo $yr->id; ?>" <?php selected($active_year->id, $yr->id); ?>>
+                        <?php echo esc_html($yr->year_name); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+
+            <div style="border-left: 1px solid #e2e8f0; height: 20px; margin: 0 5px;"></div>
+
             <?php if ($selected_grade_id && !empty($sections)): ?>
                 <div
                     style="display: flex; align-items: center; gap: 10px; border-inline-end: 1px solid #e2e8f0; padding-inline-end: 15px; margin-inline-end: 5px;">
@@ -133,8 +154,8 @@ if (!$selected_week && !empty($semester_weeks)) {
             <select onchange="window.location.href=add_query_arg('coverage_week', this.value)"
                 style="border-radius: 4px; border-color: #cbd5e1; font-weight: 600; color: #1e293b;">
                 <option value=""><?php echo Olama_School_Helpers::translate('All Weeks'); ?></option>
-                <?php foreach ($semester_weeks as $start_date => $week_dates):
-                    $label = sprintf(Olama_School_Helpers::translate('Week %d (%s)'), $week_dates['number'], Olama_School_Helpers::format_date($start_date));
+                <?php foreach ($semester_weeks as $start_date => $week_data):
+                    $label = sprintf(Olama_School_Helpers::translate('Week %d (%s)'), $week_data['number'], Olama_School_Helpers::format_date($start_date));
                     ?>
                     <option value="<?php echo esc_attr($start_date); ?>" <?php selected($selected_week, $start_date); ?>>
                         <?php echo esc_html($label); ?>
@@ -154,7 +175,7 @@ if (!$selected_week && !empty($semester_weeks)) {
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 <?php foreach ($grades as $grade):
                     $is_active = (intval($grade->id) === $selected_grade_id);
-                    $url = add_query_arg(array('coverage_grade' => $grade->id, 'coverage_section' => 0));
+                    $url = add_query_arg(array('coverage_grade' => $grade->id, 'coverage_section' => 0, 'academic_year_id' => $active_year->id));
                     ?>
                     <a href="<?php echo esc_url($url); ?>"
                         style="padding: 12px 15px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.2s;
@@ -205,26 +226,28 @@ if (!$selected_week && !empty($semester_weeks)) {
                         </div>
                     </div>
 
-                    <table class="wp-list-table widefat fixed striped" style="border: none; box-shadow: none;">
+                    <table class="wp-list-table widefat striped"
+                        style="border: none; box-shadow: none; table-layout: auto;">
                         <thead>
-                            <tr style="background: #f1f5f9;">
-                                <th style="padding: 15px 20px; font-weight: 700; color: #475569;">
+                            <tr style="background: #f8fafc;">
+                                <th
+                                    style="padding: 15px 20px; font-weight: 700; color: #475569; text-align: left; min-width: 200px;">
                                     <?php echo Olama_School_Helpers::translate('Subject Name'); ?>
                                 </th>
                                 <th
-                                    style="padding: 15px 20px; font-weight: 700; color: #475569; width: 150px; text-align: center;">
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 120px; text-align: center;">
                                     <?php echo Olama_School_Helpers::translate('Subject Coverage'); ?>
                                 </th>
                                 <th
-                                    style="padding: 15px 20px; font-weight: 700; color: #475569; width: 150px; text-align: center;">
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 120px; text-align: center;">
                                     <?php echo Olama_School_Helpers::translate('Plan Coverage'); ?>
                                 </th>
                                 <th
-                                    style="padding: 15px 20px; font-weight: 700; color: #475569; width: 180px; text-align: center;">
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 150px; text-align: center;">
                                     <?php echo Olama_School_Helpers::translate('Curriculum Coverage'); ?>
                                 </th>
                                 <th
-                                    style="padding: 15px 20px; font-weight: 700; color: #475569; text-align: center; width: 120px;">
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; text-align: center; width: 110px;">
                                     <?php echo Olama_School_Helpers::translate('Status'); ?>
                                 </th>
                             </tr>
@@ -320,7 +343,7 @@ if (!$selected_week && !empty($semester_weeks)) {
                                     }
                                     ?>
                                     <tr>
-                                        <td style="padding: 15px 20px;">
+                                        <td style="padding: 15px 20px; text-align: left;">
                                             <div style="display: flex; align-items: center; gap: 10px;">
                                                 <span class="dashicons dashicons-book"
                                                     style="color: <?php echo esc_attr($subject->color_code); ?>;"></span>
@@ -328,7 +351,7 @@ if (!$selected_week && !empty($semester_weeks)) {
                                                     style="font-weight: 600; color: #1e293b;"><?php echo esc_html($subject->subject_name); ?></span>
                                             </div>
                                         </td>
-                                        <td style="padding: 15px 20px; text-align: center;">
+                                        <td style="padding: 15px 10px; text-align: center;">
                                             <?php
                                             $sc_color = '#1e293b'; // Default
                                             if ($subj_cov_pct >= 80)
@@ -343,20 +366,20 @@ if (!$selected_week && !empty($semester_weeks)) {
                                                 <?php echo $plans_count . ' / ' . $subject_limit; ?>
                                             </div>
                                         </td>
-                                        <td style="padding: 15px 20px; text-align: center;">
+                                        <td style="padding: 15px 10px; text-align: center;">
                                             <div style="font-weight: 700; color: #1e293b;"><?php echo $plan_cov_pct; ?>%</div>
                                             <div style="font-size: 11px; color: #64748b;">
                                                 <?php echo $plans_count . ' / ' . $grade_max_plans; ?>
                                             </div>
                                         </td>
-                                        <td style="padding: 15px 20px; text-align: center;">
+                                        <td style="padding: 15px 10px; text-align: center;">
                                             <div style="font-weight: 700; color: #1e293b;"><?php echo $curriculum_weight_pct; ?>%
                                             </div>
                                             <div style="font-size: 11px; color: #64748b;">
                                                 <?php printf(Olama_School_Helpers::translate('%d / %d Lessons'), $total_lessons, $total_grade_lessons); ?>
                                             </div>
                                         </td>
-                                        <td style="padding: 15px 20px; text-align: center;">
+                                        <td style="padding: 15px 10px; text-align: center;">
                                             <?php
                                             $status_color = '#10b981'; // Green
                                             $status_icon = 'dashicons-yes';
