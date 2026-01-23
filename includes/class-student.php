@@ -180,6 +180,22 @@ class Olama_School_Student
     }
 
     /**
+     * Get specific enrollment record for a student in a specific year
+     */
+    public static function get_student_enrollment($student_id, $academic_year_id)
+    {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT e.*, sec.grade_id 
+             FROM {$wpdb->prefix}olama_student_enrollment e 
+             JOIN {$wpdb->prefix}olama_sections sec ON e.section_id = sec.id
+             WHERE e.student_id = %d AND e.academic_year_id = %d",
+            $student_id,
+            $academic_year_id
+        ));
+    }
+
+    /**
      * Add student (deprecated, kept for compatibility if needed elsewhere temporarily)
      */
     public static function add_student($data)

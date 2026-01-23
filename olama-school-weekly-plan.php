@@ -3,10 +3,10 @@
  * Plugin Name: Olama School System
  * Plugin URI: https://olama.online/olama-school-weekly-plan
  * Description: A comprehensive WordPress plugin for managing school weekly plans, including hierarchical structures (Grades, Sections), subject management, and teacher/student assignments.
- * Version: 1.3.5
- * Author: ط¯. ظ…طµط¹ط¨ ط§ظ„ط­ظ†ظٹط·ظٹ
+ * Version: 1.4.6
+ * Author: د. مصعب الحنيطي
  * Author URI: https://olama.online
- * Text Domain: ط£ظƒط§ط¯ظٹظ…ظٹط© ط¹ظ„ظ…ط§ط، ط§ظ„ظ…ط³طھظ‚ط¨ظ„
+ * Text Domain: أكاديمية علماء المستقبل
  */
 
 if (!defined('ABSPATH')) {
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define Constants
-define('OLAMA_SCHOOL_VERSION', '1.4.4');
+define('OLAMA_SCHOOL_VERSION', '1.4.6');
 define('OLAMA_SCHOOL_PATH', plugin_dir_path(__FILE__));
 define('OLAMA_SCHOOL_URL', plugin_dir_url(__FILE__));
 
@@ -36,6 +36,12 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-curriculum.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-plan.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-exam.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-stationary.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-kg-template.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-kg-curriculum.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-kg-evaluation.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-kg-curriculum-manager.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-kg-evaluation-form.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-kg-report-generator.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-schedule.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-units.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-lessons.php';

@@ -296,6 +296,73 @@ class Olama_School_DB
 				KEY is_read (is_read)
 			) $charset_collate;",
 
+			'olama_kg_templates' => "CREATE TABLE {$wpdb->prefix}olama_kg_templates (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
+				grade_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) DEFAULT NULL,
+				template_name varchar(255) NOT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				KEY year_grade (academic_year_id, grade_id)
+			) $charset_collate;",
+
+			'olama_kg_domains' => "CREATE TABLE {$wpdb->prefix}olama_kg_domains (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				template_id mediumint(9) NOT NULL,
+				grade_id mediumint(9) DEFAULT NULL,
+				title_ar varchar(255) NOT NULL,
+				sort_order int(11) DEFAULT 0 NOT NULL,
+				PRIMARY KEY  (id),
+				KEY template_id (template_id)
+			) $charset_collate;",
+
+			'olama_kg_categories' => "CREATE TABLE {$wpdb->prefix}olama_kg_categories (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				domain_id mediumint(9) NOT NULL,
+				title_ar varchar(255) NOT NULL,
+				sort_order int(11) DEFAULT 0 NOT NULL,
+				PRIMARY KEY  (id),
+				KEY domain_id (domain_id)
+			) $charset_collate;",
+
+			'olama_kg_indicators' => "CREATE TABLE {$wpdb->prefix}olama_kg_indicators (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				category_id mediumint(9) NOT NULL,
+				indicator_text text NOT NULL,
+				sort_order int(11) DEFAULT 0 NOT NULL,
+				PRIMARY KEY  (id),
+				KEY category_id (category_id)
+			) $charset_collate;",
+
+			'olama_kg_evaluations' => "CREATE TABLE {$wpdb->prefix}olama_kg_evaluations (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				template_id mediumint(9) NOT NULL,
+				student_id mediumint(9) NOT NULL,
+				teacher_id bigint(20) UNSIGNED NOT NULL,
+				academic_year_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL,
+				status varchar(20) DEFAULT 'draft' NOT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				KEY template_id (template_id),
+				KEY student_id (student_id),
+				KEY teacher_id (teacher_id),
+				KEY year_semester (academic_year_id, semester_id)
+			) $charset_collate;",
+
+			'olama_kg_evaluation_scores' => "CREATE TABLE {$wpdb->prefix}olama_kg_evaluation_scores (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				evaluation_id mediumint(9) NOT NULL,
+				indicator_id mediumint(9) NOT NULL,
+				score tinyint(1) DEFAULT NULL,
+				notes text DEFAULT NULL,
+				PRIMARY KEY  (id),
+				KEY evaluation_id (evaluation_id),
+				KEY indicator_id (indicator_id)
+			) $charset_collate;",
+
 			'olama_stationary' => "CREATE TABLE {$wpdb->prefix}olama_stationary (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				academic_year_id mediumint(9) NOT NULL,
@@ -387,6 +454,19 @@ class Olama_School_DB
 		if (!in_array('family_id', $col_names)) {
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_students ADD COLUMN family_id varchar(50) DEFAULT NULL AFTER student_uid");
 		}
+
+		// KG Template Migration
+		$kg_domain_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_kg_domains");
+		$kg_domain_col_names = wp_list_pluck($kg_domain_cols, 'Field');
+		if (!in_array('template_id', $kg_domain_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_kg_domains ADD COLUMN template_id mediumint(9) NOT NULL AFTER id");
+		}
+
+		$kg_eval_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_kg_evaluations");
+		$kg_eval_col_names = wp_list_pluck($kg_eval_cols, 'Field');
+		if (!in_array('template_id', $kg_eval_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_kg_evaluations ADD COLUMN template_id mediumint(9) NOT NULL AFTER id");
+		}
 	}
 
 	public function drop_tables()
@@ -394,6 +474,11 @@ class Olama_School_DB
 		global $wpdb;
 
 		$tables = array(
+			'olama_kg_evaluation_scores',
+			'olama_kg_evaluations',
+			'olama_kg_indicators',
+			'olama_kg_categories',
+			'olama_kg_domains',
 			'olama_stationary',
 			'olama_exams',
 			'olama_teacher_office_hours',

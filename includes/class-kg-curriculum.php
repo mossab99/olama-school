@@ -1,0 +1,132 @@
+<?php
+/**
+ * KG Curriculum Management Class
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class Olama_School_KG_Curriculum
+{
+    /**
+     * Domains CRUD
+     */
+    public static function get_domains($template_id)
+    {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}olama_kg_domains WHERE template_id = %d ORDER BY sort_order ASC",
+            $template_id
+        ));
+    }
+
+    public static function save_domain($data)
+    {
+        global $wpdb;
+        $fields = array(
+            'template_id' => intval($data['template_id']),
+            'title_ar' => sanitize_text_field($data['title_ar']),
+            'sort_order' => intval($data['sort_order'] ?? 0)
+        );
+
+        if (!empty($data['id'])) {
+            return $wpdb->update("{$wpdb->prefix}olama_kg_domains", $fields, array('id' => intval($data['id'])));
+        }
+        return $wpdb->insert("{$wpdb->prefix}olama_kg_domains", $fields);
+    }
+
+    public static function delete_domain($id)
+    {
+        global $wpdb;
+        // Delete categories and indicators first (Cascading logic in code)
+        $categories = self::get_categories($id);
+        foreach ($categories as $cat) {
+            self::delete_category($cat->id);
+        }
+        return $wpdb->delete("{$wpdb->prefix}olama_kg_domains", array('id' => intval($id)));
+    }
+
+    /**
+     * Categories CRUD
+     */
+    public static function get_categories($domain_id)
+    {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}olama_kg_categories WHERE domain_id = %d ORDER BY sort_order ASC",
+            $domain_id
+        ));
+    }
+
+    public static function save_category($data)
+    {
+        global $wpdb;
+        $fields = array(
+            'domain_id' => intval($data['domain_id']),
+            'title_ar' => sanitize_text_field($data['title_ar']),
+            'sort_order' => intval($data['sort_order'] ?? 0)
+        );
+
+        if (!empty($data['id'])) {
+            return $wpdb->update("{$wpdb->prefix}olama_kg_categories", $fields, array('id' => intval($data['id'])));
+        }
+        return $wpdb->insert("{$wpdb->prefix}olama_kg_categories", $fields);
+    }
+
+    public static function delete_category($id)
+    {
+        global $wpdb;
+        // Delete indicators first
+        $wpdb->delete("{$wpdb->prefix}olama_kg_indicators", array('category_id' => intval($id)));
+        return $wpdb->delete("{$wpdb->prefix}olama_kg_categories", array('id' => intval($id)));
+    }
+
+    /**
+     * Indicators CRUD
+     */
+    public static function get_indicators($category_id)
+    {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}olama_kg_indicators WHERE category_id = %d ORDER BY sort_order ASC",
+            $category_id
+        ));
+    }
+
+    public static function save_indicator($data)
+    {
+        global $wpdb;
+        $fields = array(
+            'category_id' => intval($data['category_id']),
+            'indicator_text' => sanitize_textarea_field($data['indicator_text']),
+            'sort_order' => intval($data['sort_order'] ?? 0)
+        );
+
+        if (!empty($data['id'])) {
+            return $wpdb->update("{$wpdb->prefix}olama_kg_indicators", $fields, array('id' => intval($data['id'])));
+        }
+        return $wpdb->insert("{$wpdb->prefix}olama_kg_indicators", $fields);
+    }
+
+    public static function delete_indicator($id)
+    {
+        global $wpdb;
+        return $wpdb->delete("{$wpdb->prefix}olama_kg_indicators", array('id' => intval($id)));
+    }
+
+    /**
+     * Bulk Data Retrieval for Evaluation Form
+     */
+    public static function get_full_curriculum($template_id)
+    {
+        $domains = self::get_domains($template_id);
+        foreach ($domains as &$domain) {
+            $domain->categories = self::get_categories($domain->id);
+            foreach ($domain->categories as &$category) {
+                $category->indicators = self::get_indicators($category->id);
+            }
+        }
+        return $domains;
+    }
+}
