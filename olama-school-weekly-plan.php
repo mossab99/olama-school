@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define Constants
-define('OLAMA_SCHOOL_VERSION', '1.4.6');
+define('OLAMA_SCHOOL_VERSION', '1.5.0');
 define('OLAMA_SCHOOL_PATH', plugin_dir_path(__FILE__));
 define('OLAMA_SCHOOL_URL', plugin_dir_url(__FILE__));
 
@@ -36,12 +36,12 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-curriculum.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-plan.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-exam.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-stationary.php';
-require_once OLAMA_SCHOOL_PATH . 'includes/class-kg-template.php';
-require_once OLAMA_SCHOOL_PATH . 'includes/class-kg-curriculum.php';
-require_once OLAMA_SCHOOL_PATH . 'includes/class-kg-evaluation.php';
-require_once OLAMA_SCHOOL_PATH . 'includes/class-kg-curriculum-manager.php';
-require_once OLAMA_SCHOOL_PATH . 'includes/class-kg-evaluation-form.php';
-require_once OLAMA_SCHOOL_PATH . 'includes/class-kg-report-generator.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-template.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-curriculum.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-record.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-manager.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-form.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-report.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-schedule.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-units.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-lessons.php';

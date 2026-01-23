@@ -1,20 +1,20 @@
 <?php
 /**
- * KG Report Generator
+ * School Evaluation Report Generator
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Olama_School_KG_Report_Generator
+class Olama_School_EV_Report
 {
     public static function render_report($evaluation_id)
     {
         global $wpdb;
         $evaluation = $wpdb->get_row($wpdb->prepare(
             "SELECT e.*, s.student_name, s.student_uid, y.year_name, sem.semester_name, g.grade_name, sec.grade_id
-             FROM {$wpdb->prefix}olama_kg_evaluations e
+             FROM {$wpdb->prefix}olama_ev_records e
              JOIN {$wpdb->prefix}olama_students s ON e.student_id = s.id
              JOIN {$wpdb->prefix}olama_student_enrollment en ON s.id = en.student_id AND e.academic_year_id = en.academic_year_id
              JOIN {$wpdb->prefix}olama_sections sec ON en.section_id = sec.id
@@ -29,9 +29,9 @@ class Olama_School_KG_Report_Generator
             wp_die('Evaluation not found.');
         }
 
-        $curriculum = Olama_School_KG_Curriculum::get_full_curriculum($evaluation->template_id);
-        $scores = Olama_School_KG_Evaluation::get_scores($evaluation_id);
+        $curriculum = Olama_School_EV_Curriculum::get_full_curriculum($evaluation->template_id);
+        $scores = Olama_School_EV_Record::get_scores($evaluation_id);
 
-        include OLAMA_SCHOOL_PATH . 'includes/admin-views/kg-report-print.php';
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/ev-report-print.php';
     }
 }

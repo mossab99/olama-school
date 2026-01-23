@@ -1,13 +1,13 @@
 <?php
 /**
- * KG Evaluation Form (Teacher UI Logic)
+ * Evaluation Form (Teacher UI Logic)
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Olama_School_KG_Evaluation_Form
+class Olama_School_EV_Form
 {
     public function render_page()
     {
@@ -39,19 +39,19 @@ class Olama_School_KG_Evaluation_Form
             $enrollment = Olama_School_Student::get_student_enrollment($selected_student_id, $selected_year_id);
             if ($enrollment) {
                 // Fetch templates for this grade
-                $templates = Olama_School_KG_Template::get_templates($enrollment->grade_id, $selected_year_id);
+                $templates = Olama_School_EV_Template::get_templates($enrollment->grade_id, $selected_year_id);
 
                 if ($selected_template_id) {
-                    $curriculum = Olama_School_KG_Curriculum::get_full_curriculum($selected_template_id);
-                    $evaluation = Olama_School_KG_Evaluation::get_evaluation($selected_student_id, $selected_year_id, $selected_semester_id, $selected_template_id);
+                    $curriculum = Olama_School_EV_Curriculum::get_full_curriculum($selected_template_id);
+                    $evaluation = Olama_School_EV_Record::get_evaluation($selected_student_id, $selected_year_id, $selected_semester_id, $selected_template_id);
                     if ($evaluation) {
-                        $scores = Olama_School_KG_Evaluation::get_scores($evaluation->id);
+                        $scores = Olama_School_EV_Record::get_scores($evaluation->id);
                     }
                 }
             }
         }
 
-        include OLAMA_SCHOOL_PATH . 'includes/admin-views/kg-evaluation-form.php';
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/ev-form.php';
     }
 
     /**
@@ -59,24 +59,24 @@ class Olama_School_KG_Evaluation_Form
      */
     public function handle_save()
     {
-        if (!isset($_POST['olama_kg_save_eval']) || !is_user_logged_in()) {
+        if (!isset($_POST['olama_ev_save_eval']) || !is_user_logged_in()) {
             return;
         }
 
-        check_admin_referer('olama_kg_evaluation_save', 'olama_kg_evaluation_save');
+        check_admin_referer('olama_ev_save', 'olama_ev_save');
 
-        $evaluation_id = Olama_School_KG_Evaluation::save_evaluation($_POST);
+        $evaluation_id = Olama_School_EV_Record::save_evaluation($_POST);
 
         if (isset($_POST['scores']) && is_array($_POST['scores'])) {
             foreach ($_POST['scores'] as $indicator_id => $data) {
                 $score = isset($data['score']) ? $data['score'] : null;
                 $notes = isset($data['notes']) ? $data['notes'] : '';
-                Olama_School_KG_Evaluation::save_score($evaluation_id, $indicator_id, $score, $notes);
+                Olama_School_EV_Record::save_score($evaluation_id, $indicator_id, $score, $notes);
             }
         }
 
         $redirect_url = remove_query_arg('message', wp_get_referer());
-        $redirect_url = add_query_arg('message', 'kg_eval_saved', $redirect_url);
+        $redirect_url = add_query_arg('message', 'ev_eval_saved', $redirect_url);
         wp_redirect($redirect_url);
         exit;
     }
@@ -93,11 +93,11 @@ class Olama_School_KG_Evaluation_Form
         }
 
         $data = $_POST['evaluation_data'];
-        $evaluation_id = Olama_School_KG_Evaluation::save_evaluation($data);
+        $evaluation_id = Olama_School_EV_Record::save_evaluation($data);
 
         if (isset($data['scores']) && is_array($data['scores'])) {
             foreach ($data['scores'] as $score_entry) {
-                Olama_School_KG_Evaluation::save_score(
+                Olama_School_EV_Record::save_score(
                     $evaluation_id,
                     $score_entry['indicator_id'],
                     $score_entry['score'],

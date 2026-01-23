@@ -1,6 +1,6 @@
 <?php
 /**
- * KG Report Print View
+ * Evaluation Report Print View
  */
 if (!defined('ABSPATH')) {
     exit;
@@ -11,9 +11,7 @@ if (!defined('ABSPATH')) {
 
 <head>
     <meta charset="UTF-8">
-    <title>
-        <?php _e('Student Evaluation Report', 'olama-school'); ?>
-    </title>
+    <title><?php echo Olama_School_Helpers::translate('Student Evaluation Report'); ?></title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -35,25 +33,27 @@ if (!defined('ABSPATH')) {
             font-weight: bold;
         }
 
-        table.kg-report-table {
+        table.ev-report-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 30px;
         }
 
-        table.kg-report-table th,
-        table.kg-report-table td {
+        table.ev-report-table th,
+        table.ev-report-table td {
             border: 1px solid #333;
             padding: 10px;
             text-align: center;
         }
 
-        table.kg-report-table th {
+        table.ev-report-table th {
             background: #f0f0f0;
         }
 
-        table.kg-report-table .text-left {
-            text-align: <?php echo Olama_School_Helpers::is_arabic() ? 'right' : 'left'; ?>;
+        table.ev-report-table .text-left {
+            text-align:
+                <?php echo Olama_School_Helpers::is_arabic() ? 'right' : 'left'; ?>
+            ;
         }
 
         .domain-row {
@@ -102,50 +102,42 @@ if (!defined('ABSPATH')) {
     <div class="no-print"
         style="background: #fdf6b2; padding: 15px; border: 1px solid #e3a008; margin-bottom: 20px; text-align: center;">
         <button onclick="window.print()" class="button button-primary">
-            <?php _e('Print Report', 'olama-school'); ?>
+            <?php echo Olama_School_Helpers::translate('Print Report'); ?>
         </button>
     </div>
 
     <div class="report-header">
-        <h1>
-            <?php echo Olama_School_Helpers::translate('Olama School'); ?>
-        </h1>
-        <h2>
-            <?php echo Olama_School_Helpers::translate('Evaluation Form'); ?>
-        </h2>
+        <h1><?php echo Olama_School_Helpers::translate('Olama School'); ?></h1>
+        <h2><?php echo Olama_School_Helpers::translate('Student Evaluation Report'); ?></h2>
         <p>
-            <?php echo esc_html($evaluation->year_name); ?> -
-            <?php echo esc_html($evaluation->semester_name); ?>
+            <?php echo esc_html(Olama_School_Helpers::translate($evaluation->year_name)); ?> -
+            <?php echo esc_html(Olama_School_Helpers::translate($evaluation->semester_name)); ?>
         </p>
     </div>
 
     <div class="student-info">
         <div>
-            <?php echo Olama_School_Helpers::translate('Select Student'); ?>:
+            <?php echo Olama_School_Helpers::translate('Student Name'); ?>:
             <?php echo esc_html($evaluation->student_name); ?>
         </div>
         <div>
-            <?php _e('Grade:', 'olama-school'); ?>
-            <?php echo esc_html($evaluation->grade_name); ?>
+            <?php echo Olama_School_Helpers::translate('Grade'); ?>:
+            <?php echo esc_html(Olama_School_Helpers::translate($evaluation->grade_name)); ?>
         </div>
         <div>
-            <?php _e('ID:', 'olama-school'); ?>
+            <?php echo Olama_School_Helpers::translate('ID'); ?>:
             <?php echo esc_html($evaluation->student_uid); ?>
         </div>
     </div>
 
-    <table class="kg-report-table">
+    <table class="ev-report-table">
         <thead>
             <tr>
                 <th rowspan="2" class="text-left">
                     <?php echo Olama_School_Helpers::translate('Indicator Text'); ?>
                 </th>
-                <th colspan="3">
-                    <?php _e('Evaluation', 'olama-school'); ?>
-                </th>
-                <th rowspan="2">
-                    <?php _e('Notes', 'olama-school'); ?>
-                </th>
+                <th colspan="3"><?php echo Olama_School_Helpers::translate('Evaluation'); ?></th>
+                <th rowspan="2"><?php echo Olama_School_Helpers::translate('Notes'); ?></th>
             </tr>
             <tr>
                 <th style="width: 60px;">M (أتقن)</th>
@@ -174,18 +166,10 @@ if (!defined('ABSPATH')) {
                             <td class="text-left" style="padding-right: 40px;">
                                 <?php echo esc_html($indicator->indicator_text); ?>
                             </td>
-                            <td>
-                                <?php echo $score == 3 ? '<span class="checkmark">✔</span>' : ''; ?>
-                            </td>
-                            <td>
-                                <?php echo $score == 2 ? '<span class="checkmark">✔</span>' : ''; ?>
-                            </td>
-                            <td>
-                                <?php echo $score == 1 ? '<span class="checkmark">✔</span>' : ''; ?>
-                            </td>
-                            <td style="font-size: 0.9em;">
-                                <?php echo esc_html($note); ?>
-                            </td>
+                            <td><?php echo $score == 3 ? '<span class="checkmark">✔</span>' : ''; ?></td>
+                            <td><?php echo $score == 2 ? '<span class="checkmark">✔</span>' : ''; ?></td>
+                            <td><?php echo $score == 1 ? '<span class="checkmark">✔</span>' : ''; ?></td>
+                            <td style="font-size: 0.9em;"><?php echo esc_html($note); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endforeach; ?>
@@ -194,15 +178,9 @@ if (!defined('ABSPATH')) {
     </table>
 
     <div class="footer-sig">
-        <div class="sig-box">
-            <?php _e('Class Teacher', 'olama-school'); ?>
-        </div>
-        <div class="sig-box">
-            <?php _e('Supervisor', 'olama-school'); ?>
-        </div>
-        <div class="sig-box">
-            <?php _e('Parent Signature', 'olama-school'); ?>
-        </div>
+        <div class="sig-box"><?php echo Olama_School_Helpers::translate('Class Teacher'); ?></div>
+        <div class="sig-box"><?php echo Olama_School_Helpers::translate('Supervisor'); ?></div>
+        <div class="sig-box"><?php echo Olama_School_Helpers::translate('Parent Signature'); ?></div>
     </div>
 </body>
 

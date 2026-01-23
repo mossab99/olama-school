@@ -1,13 +1,13 @@
 <?php
 /**
- * KG Curriculum Management Class
+ * School Evaluation Curriculum Management Class
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Olama_School_KG_Curriculum
+class Olama_School_EV_Curriculum
 {
     /**
      * Domains CRUD
@@ -16,7 +16,7 @@ class Olama_School_KG_Curriculum
     {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_kg_domains WHERE template_id = %d ORDER BY sort_order ASC",
+            "SELECT * FROM {$wpdb->prefix}olama_ev_domains WHERE template_id = %d ORDER BY sort_order ASC",
             $template_id
         ));
     }
@@ -31,9 +31,9 @@ class Olama_School_KG_Curriculum
         );
 
         if (!empty($data['id'])) {
-            return $wpdb->update("{$wpdb->prefix}olama_kg_domains", $fields, array('id' => intval($data['id'])));
+            return $wpdb->update("{$wpdb->prefix}olama_ev_domains", $fields, array('id' => intval($data['id'])));
         }
-        return $wpdb->insert("{$wpdb->prefix}olama_kg_domains", $fields);
+        return $wpdb->insert("{$wpdb->prefix}olama_ev_domains", $fields);
     }
 
     public static function delete_domain($id)
@@ -44,7 +44,7 @@ class Olama_School_KG_Curriculum
         foreach ($categories as $cat) {
             self::delete_category($cat->id);
         }
-        return $wpdb->delete("{$wpdb->prefix}olama_kg_domains", array('id' => intval($id)));
+        return $wpdb->delete("{$wpdb->prefix}olama_ev_domains", array('id' => intval($id)));
     }
 
     /**
@@ -54,7 +54,7 @@ class Olama_School_KG_Curriculum
     {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_kg_categories WHERE domain_id = %d ORDER BY sort_order ASC",
+            "SELECT * FROM {$wpdb->prefix}olama_ev_categories WHERE domain_id = %d ORDER BY sort_order ASC",
             $domain_id
         ));
     }
@@ -69,17 +69,17 @@ class Olama_School_KG_Curriculum
         );
 
         if (!empty($data['id'])) {
-            return $wpdb->update("{$wpdb->prefix}olama_kg_categories", $fields, array('id' => intval($data['id'])));
+            return $wpdb->update("{$wpdb->prefix}olama_ev_categories", $fields, array('id' => intval($data['id'])));
         }
-        return $wpdb->insert("{$wpdb->prefix}olama_kg_categories", $fields);
+        return $wpdb->insert("{$wpdb->prefix}olama_ev_categories", $fields);
     }
 
     public static function delete_category($id)
     {
         global $wpdb;
         // Delete indicators first
-        $wpdb->delete("{$wpdb->prefix}olama_kg_indicators", array('category_id' => intval($id)));
-        return $wpdb->delete("{$wpdb->prefix}olama_kg_categories", array('id' => intval($id)));
+        $wpdb->delete("{$wpdb->prefix}olama_ev_indicators", array('category_id' => intval($id)));
+        return $wpdb->delete("{$wpdb->prefix}olama_ev_categories", array('id' => intval($id)));
     }
 
     /**
@@ -89,7 +89,7 @@ class Olama_School_KG_Curriculum
     {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_kg_indicators WHERE category_id = %d ORDER BY sort_order ASC",
+            "SELECT * FROM {$wpdb->prefix}olama_ev_indicators WHERE category_id = %d ORDER BY sort_order ASC",
             $category_id
         ));
     }
@@ -104,15 +104,15 @@ class Olama_School_KG_Curriculum
         );
 
         if (!empty($data['id'])) {
-            return $wpdb->update("{$wpdb->prefix}olama_kg_indicators", $fields, array('id' => intval($data['id'])));
+            return $wpdb->update("{$wpdb->prefix}olama_ev_indicators", $fields, array('id' => intval($data['id'])));
         }
-        return $wpdb->insert("{$wpdb->prefix}olama_kg_indicators", $fields);
+        return $wpdb->insert("{$wpdb->prefix}olama_ev_indicators", $fields);
     }
 
     public static function delete_indicator($id)
     {
         global $wpdb;
-        return $wpdb->delete("{$wpdb->prefix}olama_kg_indicators", array('id' => intval($id)));
+        return $wpdb->delete("{$wpdb->prefix}olama_ev_indicators", array('id' => intval($id)));
     }
 
     /**

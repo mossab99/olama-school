@@ -296,7 +296,7 @@ class Olama_School_DB
 				KEY is_read (is_read)
 			) $charset_collate;",
 
-			'olama_kg_templates' => "CREATE TABLE {$wpdb->prefix}olama_kg_templates (
+			'olama_ev_templates' => "CREATE TABLE {$wpdb->prefix}olama_ev_templates (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				academic_year_id mediumint(9) NOT NULL,
 				grade_id mediumint(9) NOT NULL,
@@ -307,7 +307,7 @@ class Olama_School_DB
 				KEY year_grade (academic_year_id, grade_id)
 			) $charset_collate;",
 
-			'olama_kg_domains' => "CREATE TABLE {$wpdb->prefix}olama_kg_domains (
+			'olama_ev_domains' => "CREATE TABLE {$wpdb->prefix}olama_ev_domains (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				template_id mediumint(9) NOT NULL,
 				grade_id mediumint(9) DEFAULT NULL,
@@ -317,7 +317,7 @@ class Olama_School_DB
 				KEY template_id (template_id)
 			) $charset_collate;",
 
-			'olama_kg_categories' => "CREATE TABLE {$wpdb->prefix}olama_kg_categories (
+			'olama_ev_categories' => "CREATE TABLE {$wpdb->prefix}olama_ev_categories (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				domain_id mediumint(9) NOT NULL,
 				title_ar varchar(255) NOT NULL,
@@ -326,7 +326,7 @@ class Olama_School_DB
 				KEY domain_id (domain_id)
 			) $charset_collate;",
 
-			'olama_kg_indicators' => "CREATE TABLE {$wpdb->prefix}olama_kg_indicators (
+			'olama_ev_indicators' => "CREATE TABLE {$wpdb->prefix}olama_ev_indicators (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				category_id mediumint(9) NOT NULL,
 				indicator_text text NOT NULL,
@@ -335,7 +335,7 @@ class Olama_School_DB
 				KEY category_id (category_id)
 			) $charset_collate;",
 
-			'olama_kg_evaluations' => "CREATE TABLE {$wpdb->prefix}olama_kg_evaluations (
+			'olama_ev_records' => "CREATE TABLE {$wpdb->prefix}olama_ev_records (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				template_id mediumint(9) NOT NULL,
 				student_id mediumint(9) NOT NULL,
@@ -352,7 +352,7 @@ class Olama_School_DB
 				KEY year_semester (academic_year_id, semester_id)
 			) $charset_collate;",
 
-			'olama_kg_evaluation_scores' => "CREATE TABLE {$wpdb->prefix}olama_kg_evaluation_scores (
+			'olama_ev_scores' => "CREATE TABLE {$wpdb->prefix}olama_ev_scores (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				evaluation_id mediumint(9) NOT NULL,
 				indicator_id mediumint(9) NOT NULL,
@@ -455,17 +455,27 @@ class Olama_School_DB
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_students ADD COLUMN family_id varchar(50) DEFAULT NULL AFTER student_uid");
 		}
 
-		// KG Template Migration
-		$kg_domain_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_kg_domains");
-		$kg_domain_col_names = wp_list_pluck($kg_domain_cols, 'Field');
-		if (!in_array('template_id', $kg_domain_col_names)) {
-			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_kg_domains ADD COLUMN template_id mediumint(9) NOT NULL AFTER id");
-		}
+		// EV Template Migration (one-time rename)
+		$kg_ev_tables = array(
+			'olama_kg_templates' => 'olama_ev_templates',
+			'olama_kg_domains' => 'olama_ev_domains',
+			'olama_kg_categories' => 'olama_ev_categories',
+			'olama_kg_indicators' => 'olama_ev_indicators',
+			'olama_kg_evaluations' => 'olama_ev_records',
+			'olama_kg_evaluation_scores' => 'olama_ev_scores'
+		);
 
-		$kg_eval_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_kg_evaluations");
-		$kg_eval_col_names = wp_list_pluck($kg_eval_cols, 'Field');
-		if (!in_array('template_id', $kg_eval_col_names)) {
-			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_kg_evaluations ADD COLUMN template_id mediumint(9) NOT NULL AFTER id");
+		foreach ($kg_ev_tables as $old_name => $new_name) {
+			$old_full = $wpdb->prefix . $old_name;
+			$new_full = $wpdb->prefix . $new_name;
+			if ($wpdb->get_var("SHOW TABLES LIKE '$old_full'") === $old_full) {
+				if ($wpdb->get_var("SHOW TABLES LIKE '$new_full'") !== $new_full) {
+					$wpdb->query("RENAME TABLE $old_full TO $new_full");
+				} else {
+					// Both exist, just drop the old one (or keep it, but rename is better)
+					$wpdb->query("DROP TABLE $old_full");
+				}
+			}
 		}
 	}
 
@@ -474,11 +484,12 @@ class Olama_School_DB
 		global $wpdb;
 
 		$tables = array(
-			'olama_kg_evaluation_scores',
-			'olama_kg_evaluations',
-			'olama_kg_indicators',
-			'olama_kg_categories',
-			'olama_kg_domains',
+			'olama_ev_scores',
+			'olama_ev_records',
+			'olama_ev_indicators',
+			'olama_ev_categories',
+			'olama_ev_domains',
+			'olama_ev_templates',
 			'olama_stationary',
 			'olama_exams',
 			'olama_teacher_office_hours',

@@ -1,13 +1,13 @@
 <?php
 /**
- * KG Student Evaluation Class
+ * School Student Evaluation Record Class
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Olama_School_KG_Evaluation
+class Olama_School_EV_Record
 {
     /**
      * Get evaluation record
@@ -16,7 +16,7 @@ class Olama_School_KG_Evaluation
     {
         global $wpdb;
         return $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_kg_evaluations 
+            "SELECT * FROM {$wpdb->prefix}olama_ev_records 
              WHERE student_id = %d AND academic_year_id = %d AND semester_id = %d AND template_id = %d",
             $student_id,
             $year_id,
@@ -44,10 +44,10 @@ class Olama_School_KG_Evaluation
         $existing = self::get_evaluation($fields['student_id'], $fields['academic_year_id'], $fields['semester_id'], $fields['template_id']);
 
         if ($existing) {
-            $wpdb->update("{$wpdb->prefix}olama_kg_evaluations", $fields, array('id' => $existing->id));
+            $wpdb->update("{$wpdb->prefix}olama_ev_records", $fields, array('id' => $existing->id));
             return $existing->id;
         } else {
-            $wpdb->insert("{$wpdb->prefix}olama_kg_evaluations", $fields);
+            $wpdb->insert("{$wpdb->prefix}olama_ev_records", $fields);
             return $wpdb->insert_id;
         }
     }
@@ -59,7 +59,7 @@ class Olama_School_KG_Evaluation
     {
         global $wpdb;
         $results = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_kg_evaluation_scores WHERE evaluation_id = %d",
+            "SELECT * FROM {$wpdb->prefix}olama_ev_scores WHERE evaluation_id = %d",
             $evaluation_id
         ));
 
@@ -85,16 +85,16 @@ class Olama_School_KG_Evaluation
         );
 
         $existing = $wpdb->get_row($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}olama_kg_evaluation_scores 
+            "SELECT id FROM {$wpdb->prefix}olama_ev_scores 
              WHERE evaluation_id = %d AND indicator_id = %d",
             $evaluation_id,
             $indicator_id
         ));
 
         if ($existing) {
-            return $wpdb->update("{$wpdb->prefix}olama_kg_evaluation_scores", $fields, array('id' => $existing->id));
+            return $wpdb->update("{$wpdb->prefix}olama_ev_scores", $fields, array('id' => $existing->id));
         } else {
-            return $wpdb->insert("{$wpdb->prefix}olama_kg_evaluation_scores", $fields);
+            return $wpdb->insert("{$wpdb->prefix}olama_ev_scores", $fields);
         }
     }
 }
