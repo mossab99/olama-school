@@ -19,35 +19,39 @@ class Olama_School_EV_Form
         $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
         $selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : (!empty($semesters) ? $semesters[0]->id : 0);
 
-        $sections = Olama_School_Section::get_sections();
+        // Get sections ONLY for the selected academic year
+        $sections = Olama_School_Section::get_sections_by_year($selected_year_id);
         $selected_section_id = isset($_GET['section_id']) ? intval($_GET['section_id']) : (!empty($sections) ? $sections[0]->id : 0);
 
         $students = array();
-        if ($selected_section_id) {
-            $students = Olama_School_Student::get_students(array('section_id' => $selected_section_id, 'academic_year_id' => $selected_year_id));
-        }
-        $selected_student_id = isset($_GET['student_id']) ? intval($_GET['student_id']) : 0;
-
         $templates = array();
         $selected_template_id = isset($_GET['template_id']) ? intval($_GET['template_id']) : 0;
+        $evaluation_statuses = array();
 
+        if ($selected_section_id) {
+            $students = Olama_School_Student::get_students(array('section_id' => $selected_section_id, 'academic_year_id' => $selected_year_id));
+
+            // Fetch templates early based on section's grade
+            $section = Olama_School_Section::get_section($selected_section_id);
+            if ($section) {
+                $templates = Olama_School_EV_Template::get_templates($section->grade_id, $selected_year_id);
+            }
+
+            if ($selected_template_id) {
+                $evaluation_statuses = Olama_School_EV_Record::get_student_evaluation_statuses($selected_year_id, $selected_semester_id, $selected_template_id);
+            }
+        }
+
+        $selected_student_id = isset($_GET['student_id']) ? intval($_GET['student_id']) : 0;
         $curriculum = array();
         $evaluation = null;
         $scores = array();
 
-        if ($selected_student_id) {
-            $enrollment = Olama_School_Student::get_student_enrollment($selected_student_id, $selected_year_id);
-            if ($enrollment) {
-                // Fetch templates for this grade
-                $templates = Olama_School_EV_Template::get_templates($enrollment->grade_id, $selected_year_id);
-
-                if ($selected_template_id) {
-                    $curriculum = Olama_School_EV_Curriculum::get_full_curriculum($selected_template_id);
-                    $evaluation = Olama_School_EV_Record::get_evaluation($selected_student_id, $selected_year_id, $selected_semester_id, $selected_template_id);
-                    if ($evaluation) {
-                        $scores = Olama_School_EV_Record::get_scores($evaluation->id);
-                    }
-                }
+        if ($selected_student_id && $selected_template_id) {
+            $curriculum = Olama_School_EV_Curriculum::get_full_curriculum($selected_template_id);
+            $evaluation = Olama_School_EV_Record::get_evaluation($selected_student_id, $selected_year_id, $selected_semester_id, $selected_template_id);
+            if ($evaluation) {
+                $scores = Olama_School_EV_Record::get_scores($evaluation->id);
             }
         }
 
@@ -77,6 +81,11 @@ class Olama_School_EV_Form
 
         $redirect_url = remove_query_arg('message', wp_get_referer());
         $redirect_url = add_query_arg('message', 'ev_eval_saved', $redirect_url);
+
+        if (isset($_POST['status']) && $_POST['status'] === 'published') {
+            $redirect_url = admin_url('admin.php?action=ev_print_report&evaluation_id=' . $evaluation_id);
+        }
+
         wp_redirect($redirect_url);
         exit;
     }

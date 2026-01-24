@@ -299,4 +299,137 @@ class Olama_School_Exporter
 
         exit;
     }
+
+    /**
+     * Export all families and their students to CSV
+     */
+    public static function export_families_csv()
+    {
+        global $wpdb;
+
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_export_families')) {
+            wp_die(__('Security check failed.', 'olama-school'));
+        }
+
+        if (!current_user_can('olama_import_export_data')) {
+            wp_die(__('You do not have permission to export families.', 'olama-school'));
+        }
+
+        $filename = 'olama-families-' . date('Y-m-d') . '.csv';
+
+        // Fetch families joined with students for a comprehensive export
+        $data = $wpdb->get_results("
+            SELECT f.*, s.student_name, s.student_uid, s.dob, s.national_id, s.gender
+            FROM {$wpdb->prefix}olama_families f
+            LEFT JOIN {$wpdb->prefix}olama_students s ON f.family_uid = s.family_id
+            ORDER BY f.family_name ASC, s.student_name ASC
+        ");
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+
+        $output = fopen('php://output', 'w');
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        fputcsv($output, array(
+            __('Family ID', 'olama-school'),
+            __('Family Name', 'olama-school'),
+            __('Father Mobile', 'olama-school'),
+            __('Mother Mobile', 'olama-school'),
+            __('Address', 'olama-school'),
+            __('Student ID', 'olama-school'),
+            __('Student Name', 'olama-school'),
+            __('DOB', 'olama-school'),
+            __('National ID', 'olama-school'),
+            __('Sex', 'olama-school')
+        ));
+
+        if ($data) {
+            foreach ($data as $row) {
+                fputcsv($output, array(
+                    $row->family_uid,
+                    $row->family_name,
+                    $row->father_mobile,
+                    $row->mother_mobile,
+                    $row->address,
+                    $row->student_uid ?? '',
+                    $row->student_name ?? '',
+                    $row->dob ?? '',
+                    $row->national_id ?? '',
+                    $row->gender ?? ''
+                ));
+            }
+        }
+
+        fclose($output);
+        exit;
+    }
+
+    /**
+     * Export Student Enrollment Registry to CSV
+     */
+    public static function export_students_enrollment_csv()
+    {
+        global $wpdb;
+
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_export_students')) {
+            wp_die(__('Security check failed.', 'olama-school'));
+        }
+
+        if (!current_user_can('olama_import_export_data')) {
+            wp_die(__('You do not have permission to export students.', 'olama-school'));
+        }
+
+        $filename = 'olama-students-enrollment-' . date('Y-m-d') . '.csv';
+
+        // Fetch ALL students (Registry) with their LATEST enrollment info if any
+        $query = "SELECT s.*, e.section_id, e.academic_year_id, e.status as enrollment_status, 
+                  g.grade_name, sec.section_name, ay.year_name as academic_year_name,
+                  f.family_name, f.family_uid as f_uid
+                  FROM {$wpdb->prefix}olama_students s 
+                  LEFT JOIN {$wpdb->prefix}olama_families f ON s.family_id = f.family_uid
+                  LEFT JOIN (
+                      SELECT e1.* FROM {$wpdb->prefix}olama_student_enrollment e1
+                      WHERE e1.id = (SELECT MAX(id) FROM {$wpdb->prefix}olama_student_enrollment e2 WHERE e2.student_id = e1.student_id)
+                  ) e ON s.id = e.student_id 
+                  LEFT JOIN {$wpdb->prefix}olama_sections sec ON e.section_id = sec.id 
+                  LEFT JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id 
+                  LEFT JOIN {$wpdb->prefix}olama_academic_years ay ON e.academic_year_id = ay.id
+                  ORDER BY s.student_name ASC";
+
+        $data = $wpdb->get_results($query);
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+
+        $output = fopen('php://output', 'w');
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        fputcsv($output, array(
+            __('Name', 'olama-school'),
+            __('ID Number', 'olama-school'),
+            __('Family ID', 'olama-school'),
+            __('Year', 'olama-school'),
+            __('Grade', 'olama-school'),
+            __('Section', 'olama-school'),
+            __('Status', 'olama-school')
+        ));
+
+        if ($data) {
+            foreach ($data as $row) {
+                fputcsv($output, array(
+                    $row->student_name,
+                    $row->student_uid,
+                    $row->family_id ?? '-',
+                    $row->academic_year_name ?? '-',
+                    $row->grade_name ?? '-',
+                    $row->section_name ?? '-',
+                    $row->section_id ? __('Enrolled', 'olama-school') : __('Not Enrolled', 'olama-school')
+                ));
+            }
+        }
+
+        fclose($output);
+        exit;
+    }
 }

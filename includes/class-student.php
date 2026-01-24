@@ -44,8 +44,10 @@ class Olama_School_Student
         } else {
             // Fetch ALL students (Registry) with their LATEST enrollment info if any
             $query = "SELECT s.*, e.section_id, e.academic_year_id, e.status as enrollment_status, 
-                      g.grade_name, sec.section_name, ay.year_name as academic_year_name
+                      g.grade_name, sec.section_name, ay.year_name as academic_year_name,
+                      f.family_name, f.family_uid as f_uid
                       FROM {$wpdb->prefix}olama_students s 
+                      LEFT JOIN {$wpdb->prefix}olama_families f ON s.family_id = f.family_uid
                       LEFT JOIN (
                           SELECT e1.* FROM {$wpdb->prefix}olama_student_enrollment e1
                           WHERE e1.id = (SELECT MAX(id) FROM {$wpdb->prefix}olama_student_enrollment e2 WHERE e2.student_id = e1.student_id)
@@ -77,6 +79,9 @@ class Olama_School_Student
                 'student_name' => $data['student_name'],
                 'student_uid' => $data['student_uid'] ?? $data['student_id_number'],
                 'family_id' => $data['family_id'] ?? null,
+                'dob' => !empty($data['dob']) ? $data['dob'] : null,
+                'national_id' => $data['national_id'] ?? null,
+                'gender' => $data['gender'] ?? null,
                 'is_active' => 1
             )
         );
@@ -221,6 +226,12 @@ class Olama_School_Student
             $update_data['student_uid'] = $data['student_uid'];
         if (isset($data['family_id']))
             $update_data['family_id'] = $data['family_id'];
+        if (isset($data['dob']))
+            $update_data['dob'] = !empty($data['dob']) ? $data['dob'] : null;
+        if (isset($data['national_id']))
+            $update_data['national_id'] = $data['national_id'];
+        if (isset($data['gender']))
+            $update_data['gender'] = $data['gender'];
         if (isset($data['is_active']))
             $update_data['is_active'] = intval($data['is_active']);
 
@@ -261,5 +272,10 @@ class Olama_School_Student
     {
         global $wpdb;
         $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_olama_students_list%'");
+        // Also explicitly delete common keys if possible or just use the DB query if no object cache
+        // If object cache is present, we might need a different approach, but this is a good start.
+        if (function_exists('wp_cache_delete')) {
+            wp_cache_delete('olama_students_list_0_0', 'transient');
+        }
     }
 }

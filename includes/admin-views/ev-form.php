@@ -77,35 +77,41 @@ if (!defined('ABSPATH')) {
 
                 <div style="flex: 1; min-width: 150px;">
                     <label class="olama-label">
+                        <?php echo Olama_School_Helpers::translate('Select Evaluation (Title)'); ?>
+                    </label>
+                    <select name="template_id" onchange="this.form.submit()" style="width: 100%;">
+                        <option value=""><?php echo Olama_School_Helpers::translate('-- Select --'); ?></option>
+                        <?php foreach ($templates as $t): ?>
+                            <option value="<?php echo $t->id; ?>" <?php selected($selected_template_id, $t->id); ?>>
+                                <?php echo esc_html($t->template_name); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div style="flex: 1; min-width: 150px;">
+                    <label class="olama-label">
                         <?php echo Olama_School_Helpers::translate('Select Student'); ?>
                     </label>
                     <select name="student_id" onchange="this.form.submit()" style="width: 100%;">
                         <option value="">
                             <?php echo Olama_School_Helpers::translate('Choose a Student...'); ?>
                         </option>
-                        <?php foreach ($students as $stu): ?>
+                        <?php foreach ($students as $stu):
+                            $status = isset($evaluation_statuses[$stu->id]) ? $evaluation_statuses[$stu->id] : '';
+                            $tag = '';
+                            if ($status === 'published') {
+                                $tag = ' - ' . Olama_School_Helpers::translate('Evaluated');
+                            } elseif ($status === 'draft') {
+                                $tag = ' - ' . Olama_School_Helpers::translate('In Progress');
+                            }
+                            ?>
                             <option value="<?php echo $stu->id; ?>" <?php selected($selected_student_id, $stu->id); ?>>
-                                <?php echo esc_html($stu->student_name); ?>
+                                <?php echo esc_html($stu->student_name . $tag); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-
-                <?php if ($selected_student_id): ?>
-                    <div style="flex: 1; min-width: 150px;">
-                        <label class="olama-label">
-                            <?php echo Olama_School_Helpers::translate('Select Evaluation (Title)'); ?>
-                        </label>
-                        <select name="template_id" onchange="this.form.submit()" style="width: 100%;">
-                            <option value=""><?php echo Olama_School_Helpers::translate('-- Select --'); ?></option>
-                            <?php foreach ($templates as $t): ?>
-                                <option value="<?php echo $t->id; ?>" <?php selected($selected_template_id, $t->id); ?>>
-                                    <?php echo esc_html($t->template_name); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                <?php endif; ?>
             </div>
         </form>
     </div>
@@ -164,29 +170,27 @@ if (!defined('ABSPATH')) {
                                             <?php echo esc_html($indicator->indicator_text); ?>
                                         </td>
                                         <td style="padding: 15px 20px;">
-                                            <div class="ev-scoring-grid" style="display: flex; gap: 8px; justify-content: flex-end;">
-                                                <label class="ev-score-option mastered <?php echo $saved_score == 3 ? 'active' : ''; ?>"
-                                                    title="<?php echo Olama_School_Helpers::translate('Mastered'); ?>">
-                                                    <input type="radio" name="scores[<?php echo $indicator->id; ?>][score]" value="3"
-                                                        <?php checked($saved_score, 3); ?> style="display: none;">
-                                                    <span class="ev-circle"></span>
-                                                    <span class="ev-label">أتقن</span>
-                                                </label>
-                                                <label class="ev-score-option partial <?php echo $saved_score == 2 ? 'active' : ''; ?>"
-                                                    title="<?php echo Olama_School_Helpers::translate('Partially Mastered'); ?>">
-                                                    <input type="radio" name="scores[<?php echo $indicator->id; ?>][score]" value="2"
-                                                        <?php checked($saved_score, 2); ?> style="display: none;">
-                                                    <span class="ev-circle"></span>
-                                                    <span class="ev-label">أتقن جزئيا</span>
-                                                </label>
-                                                <label
-                                                    class="ev-score-option not-mastered <?php echo $saved_score == 1 ? 'active' : ''; ?>"
-                                                    title="<?php echo Olama_School_Helpers::translate('Not Mastered'); ?>">
-                                                    <input type="radio" name="scores[<?php echo $indicator->id; ?>][score]" value="1"
-                                                        <?php checked($saved_score, 1); ?> style="display: none;">
-                                                    <span class="ev-circle"></span>
-                                                    <span class="ev-label">لم يتقن</span>
-                                                </label>
+                                            <div class="ev-scoring-grid" style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: nowrap; align-items: center;">
+                                                <?php
+                                                $score_config = Olama_School_EV_Template::get_score_config($selected_template_id);
+                                                $total_levels = count($score_config);
+                                                $i = 0;
+                                                foreach ($score_config as $val => $label):
+                                                    $i++;
+                                                    // Dynamic color assignment
+                                                    $color_class = 'not-mastered';
+                                                    if ($i === 1) $color_class = 'mastered';
+                                                    elseif ($i === $total_levels) $color_class = 'not-mastered';
+                                                    elseif ($i === 2 && $total_levels > 2) $color_class = 'partial';
+                                                    ?>
+                                                    <label class="ev-score-option <?php echo $color_class; ?> <?php echo $saved_score == $val ? 'active' : ''; ?>"
+                                                        title="<?php echo esc_attr(Olama_School_Helpers::translate($label)); ?>">
+                                                        <input type="radio" name="scores[<?php echo $indicator->id; ?>][score]" value="<?php echo $val; ?>"
+                                                            <?php checked($saved_score, $val); ?> style="display: none;">
+                                                        <span class="ev-circle"></span>
+                                                        <span class="ev-label"><?php echo esc_html(Olama_School_Helpers::translate($label)); ?></span>
+                                                    </label>
+                                                <?php endforeach; ?>
 
                                                 <button type="button"
                                                     class="ev-note-trigger <?php echo !empty($saved_notes) ? 'has-note' : ''; ?>"
@@ -253,10 +257,11 @@ if (!defined('ABSPATH')) {
         border-radius: 10px;
         border: 1px solid #e2e8f0;
         cursor: pointer;
-        min-width: 90px;
-        min-height: 60px;
+        min-width: 80px;
+        min-height: 55px;
         transition: all 0.2s ease;
         background: #fff;
+        flex-shrink: 0;
     }
 
     .ev-score-option .ev-circle {
@@ -320,6 +325,14 @@ if (!defined('ABSPATH')) {
 
     .ev-note-trigger.has-note {
         color: #6366f1 !important;
+    }
+
+    .ev-row:nth-child(even) {
+        background: #f8fafc;
+    }
+
+    .ev-row:hover {
+        background: #f1f5f9;
     }
 
     <?php if (Olama_School_Helpers::is_arabic()): ?>

@@ -27,6 +27,34 @@ class Olama_School_Section
     }
 
     /**
+     * Get all sections for a specific academic year
+     */
+    public static function get_sections_by_year($academic_year_id = 0)
+    {
+        if (!$academic_year_id) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $academic_year_id = $active_year ? $active_year->id : 0;
+        }
+
+        $cache_key = 'all_sections_year_' . $academic_year_id;
+        if (isset(self::$cache[$cache_key])) {
+            return self::$cache[$cache_key];
+        }
+
+        global $wpdb;
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT s.*, g.grade_name 
+             FROM {$wpdb->prefix}olama_sections s 
+             JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id 
+             WHERE s.academic_year_id = %d 
+             ORDER BY g.grade_level, s.section_name",
+            $academic_year_id
+        ));
+        self::$cache[$cache_key] = $results;
+        return $results;
+    }
+
+    /**
      * Get sections by grade and academic year
      */
     public static function get_by_grade($grade_id, $academic_year_id = 0)

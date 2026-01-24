@@ -33,11 +33,29 @@ class Olama_School_EV_Template
     public static function save_template($data)
     {
         global $wpdb;
+
+        $score_input = isset($data['score_config']) ? $data['score_config'] : array();
+
+        // Filter out empty labels and limit to 5
+        $score_filtered = array_filter($score_input, function ($label) {
+            return !empty(trim($label));
+        });
+        $score_filtered = array_values($score_filtered); // Reset keys
+        $score_filtered = array_slice($score_filtered, 0, 5);
+
+        $final_config = array();
+        $total = count($score_filtered);
+        foreach ($score_filtered as $index => $label) {
+            // Highest label gets highest numeric value (starts from 1 up to N)
+            $final_config[$total - $index] = $label;
+        }
+
         $fields = array(
             'academic_year_id' => intval($data['academic_year_id']),
             'grade_id' => intval($data['grade_id']),
             'semester_id' => intval($data['semester_id'] ?? 0),
             'template_name' => sanitize_text_field($data['template_name']),
+            'score_config' => !empty($final_config) ? maybe_serialize($final_config) : null,
         );
 
         if (!empty($data['id'])) {
@@ -47,6 +65,28 @@ class Olama_School_EV_Template
 
         $wpdb->insert("{$wpdb->prefix}olama_ev_templates", $fields);
         return $wpdb->insert_id;
+    }
+
+    public static function get_default_score_config()
+    {
+        return array(
+            3 => 'Mastered',
+            2 => 'Partially Mastered',
+            1 => 'Not Mastered'
+        );
+    }
+
+    public static function get_score_config($template_id)
+    {
+        $template = self::get_template($template_id);
+        if ($template && !empty($template->score_config)) {
+            $config = maybe_unserialize($template->score_config);
+            if (is_array($config)) {
+                krsort($config); // Sort key descending (highest score first)
+                return $config;
+            }
+        }
+        return self::get_default_score_config();
     }
 
     public static function delete_template($id)

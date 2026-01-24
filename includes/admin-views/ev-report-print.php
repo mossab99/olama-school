@@ -73,6 +73,10 @@ if (!defined('ABSPATH')) {
             color: #000;
         }
 
+        table.ev-report-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
         .footer-sig {
             margin-top: 50px;
             display: flex;
@@ -130,31 +134,34 @@ if (!defined('ABSPATH')) {
         </div>
     </div>
 
+    <?php $score_config = Olama_School_EV_Template::get_score_config($evaluation->template_id); ?>
     <table class="ev-report-table">
         <thead>
             <tr>
                 <th rowspan="2" class="text-left">
                     <?php echo Olama_School_Helpers::translate('Indicator Text'); ?>
                 </th>
-                <th colspan="3"><?php echo Olama_School_Helpers::translate('Evaluation'); ?></th>
+                <th colspan="<?php echo count($score_config); ?>">
+                    <?php echo Olama_School_Helpers::translate('Evaluation'); ?>
+                </th>
                 <th rowspan="2"><?php echo Olama_School_Helpers::translate('Notes'); ?></th>
             </tr>
             <tr>
-                <th style="width: 60px;">M (أتقن)</th>
-                <th style="width: 60px;">P (جزء)</th>
-                <th style="width: 60px;">N (لم)</th>
+                <?php foreach ($score_config as $label): ?>
+                    <th style="min-width: 60px;"><?php echo esc_html(Olama_School_Helpers::translate($label)); ?></th>
+                <?php endforeach; ?>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($curriculum as $domain): ?>
                 <tr class="domain-row">
-                    <td colspan="5" class="text-left">
+                    <td colspan="<?php echo count($score_config) + 2; ?>" class="text-left">
                         <?php echo esc_html($domain->title_ar); ?>
                     </td>
                 </tr>
                 <?php foreach ($domain->categories as $category): ?>
                     <tr class="category-row">
-                        <td colspan="5" class="text-left" style="padding-right: 30px;">
+                        <td colspan="<?php echo count($score_config) + 2; ?>" class="text-left" style="padding-right: 30px;">
                             <?php echo esc_html($category->title_ar); ?>
                         </td>
                     </tr>
@@ -166,9 +173,9 @@ if (!defined('ABSPATH')) {
                             <td class="text-left" style="padding-right: 40px;">
                                 <?php echo esc_html($indicator->indicator_text); ?>
                             </td>
-                            <td><?php echo $score == 3 ? '<span class="checkmark">✔</span>' : ''; ?></td>
-                            <td><?php echo $score == 2 ? '<span class="checkmark">✔</span>' : ''; ?></td>
-                            <td><?php echo $score == 1 ? '<span class="checkmark">✔</span>' : ''; ?></td>
+                            <?php foreach ($score_config as $val => $label): ?>
+                                <td><?php echo $score == $val ? '<span class="checkmark">✔</span>' : ''; ?></td>
+                            <?php endforeach; ?>
                             <td style="font-size: 0.9em;"><?php echo esc_html($note); ?></td>
                         </tr>
                     <?php endforeach; ?>

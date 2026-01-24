@@ -72,15 +72,31 @@ if (!defined('ABSPATH')) {
             <input type="hidden" name="academic_year_id" value="<?php echo $selected_year_id; ?>">
             <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>">
 
-            <div style="display: flex; gap: 15px; align-items: flex-end;">
-                <div style="flex: 3;">
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">
+                <div style="flex: 2; min-width: 300px;">
                     <label
                         class="olama-label"><?php echo Olama_School_Helpers::translate('Evaluation Title (e.g., Progress Report Q1)'); ?></label>
                     <input type="text" name="template_name" required
                         style="width: 100%; height: 40px; border-radius: 6px; font-size: 1.1em;">
                 </div>
+                <div style="flex: 1; min-width: 250px;">
+                    <label
+                        class="olama-label"><?php echo Olama_School_Helpers::translate('Score Labels (Max 5, Highest to Lowest)'); ?></label>
+                    <div id="score-labels-container" style="display: flex; flex-direction: column; gap: 5px;">
+                        <input type="text" name="score_config[]" placeholder="e.g., Mastered" style="width: 100%;">
+                        <input type="text" name="score_config[]" placeholder="e.g., Partially Mastered"
+                            style="width: 100%;">
+                        <input type="text" name="score_config[]" placeholder="e.g., Not Mastered" style="width: 100%;">
+                        <input type="text" name="score_config[]" placeholder="e.g., (Optional Level 4)"
+                            style="width: 100%;">
+                        <input type="text" name="score_config[]" placeholder="e.g., (Optional Level 5)"
+                            style="width: 100%;">
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: right;">
                 <button type="submit" class="button button-primary"
-                    style="height: 40px; padding: 0 30px; font-weight: 600;">
+                    style="height: 40px; padding: 0 40px; font-weight: 600;">
                     <?php echo Olama_School_Helpers::translate('Confirm & Create'); ?>
                 </button>
             </div>
@@ -135,7 +151,17 @@ if (!defined('ABSPATH')) {
         </div>
 
         <!-- Detail View: Managing Specific Evaluation Structure -->
-    <?php else: ?>
+    <?php else:
+        if (!$current_template): ?>
+            <div class="notice notice-error">
+                <p><?php echo Olama_School_Helpers::translate('Evaluation template not found.'); ?></p>
+            </div>
+            <a href="<?php echo remove_query_arg('template_id'); ?>" class="button button-secondary">
+                <?php echo Olama_School_Helpers::translate('Back to List'); ?>
+            </a>
+            <?php return; ?>
+        <?php endif; ?>
+
         <div
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #1e293b; color: #fff; padding: 15px 25px; border-radius: 8px;">
             <div>
@@ -147,6 +173,10 @@ if (!defined('ABSPATH')) {
                 </p>
             </div>
             <div style="display: flex; gap: 10px;">
+                <button type="button" class="button button-primary" onclick="jQuery('#edit-template-form').toggle();">
+                    <span class="dashicons dashicons-admin-generic" style="margin-top: 4px;"></span>
+                    <?php echo Olama_School_Helpers::translate('Settings'); ?>
+                </button>
                 <button type="button" class="button button-primary" onclick="jQuery('#add-domain-form').toggle();">
                     <?php echo Olama_School_Helpers::translate('Add Domain'); ?>
                 </button>
@@ -155,6 +185,47 @@ if (!defined('ABSPATH')) {
                     <?php echo Olama_School_Helpers::translate('Back to List'); ?>
                 </a>
             </div>
+        </div>
+
+        <!-- Edit Template Form -->
+        <div id="edit-template-form" class="olama-card"
+            style="display: none; background: #f8fafc; padding: 25px; border: 2px solid #6366f1; border-radius: 8px; margin-bottom: 25px;">
+            <h3 style="margin-top:0;"><?php echo Olama_School_Helpers::translate('Edit Template Settings'); ?></h3>
+            <form method="post" action="">
+                <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
+                <input type="hidden" name="olama_ev_action" value="save_template">
+                <input type="hidden" name="id" value="<?php echo $current_template->id; ?>">
+                <input type="hidden" name="academic_year_id" value="<?php echo $current_template->academic_year_id; ?>">
+                <input type="hidden" name="grade_id" value="<?php echo $current_template->grade_id; ?>">
+
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">
+                    <div style="flex: 2; min-width: 300px;">
+                        <label class="olama-label"><?php echo Olama_School_Helpers::translate('Template Name'); ?></label>
+                        <input type="text" name="template_name"
+                            value="<?php echo esc_attr($current_template->template_name); ?>" required
+                            style="width: 100%; height: 40px; border-radius: 6px;">
+                    </div>
+                    <?php
+                    $current_config = Olama_School_EV_Template::get_score_config($current_template->id);
+                    $config_values = array_values($current_config);
+                    ?>
+                    <div style="flex: 1; min-width: 250px;">
+                        <label
+                            class="olama-label"><?php echo Olama_School_Helpers::translate('Score Labels (Max 5, Highest to Lowest)'); ?></label>
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <?php for ($i = 0; $i < 5; $i++): ?>
+                                <input type="text" name="score_config[]" placeholder="Level <?php echo ($i + 1); ?>"
+                                    value="<?php echo esc_attr($config_values[$i] ?? ''); ?>" style="width: 100%;">
+                            <?php endfor; ?>
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <button type="submit" class="button button-primary" style="height: 40px; padding: 0 40px;">
+                        <?php echo Olama_School_Helpers::translate('Save Changes'); ?>
+                    </button>
+                </div>
+            </form>
         </div>
 
         <!-- Add Domain Form -->

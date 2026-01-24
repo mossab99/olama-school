@@ -95,11 +95,26 @@ class Olama_School_DB
 				PRIMARY KEY  (id)
 			) $charset_collate;",
 
+			'olama_families' => "CREATE TABLE {$wpdb->prefix}olama_families (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				family_uid varchar(50) NOT NULL,
+				family_name varchar(255) NOT NULL,
+				mother_mobile varchar(20) DEFAULT NULL,
+				father_mobile varchar(20) DEFAULT NULL,
+				address text DEFAULT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY family_uid (family_uid)
+			) $charset_collate;",
+
 			'olama_students' => "CREATE TABLE {$wpdb->prefix}olama_students (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				student_name varchar(100) NOT NULL,
 				student_uid varchar(50) NOT NULL,
 				family_id varchar(50) DEFAULT NULL,
+				dob date DEFAULT NULL,
+				national_id varchar(50) DEFAULT NULL,
+				gender varchar(20) DEFAULT NULL,
 				is_active tinyint(1) DEFAULT 1 NOT NULL,
 				PRIMARY KEY  (id)
 			) $charset_collate;",
@@ -302,6 +317,7 @@ class Olama_School_DB
 				grade_id mediumint(9) NOT NULL,
 				semester_id mediumint(9) DEFAULT NULL,
 				template_name varchar(255) NOT NULL,
+				score_config longtext DEFAULT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
 				KEY year_grade (academic_year_id, grade_id)
@@ -455,6 +471,18 @@ class Olama_School_DB
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_students ADD COLUMN family_id varchar(50) DEFAULT NULL AFTER student_uid");
 		}
 
+		if (!in_array('dob', $col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_students ADD COLUMN dob date DEFAULT NULL AFTER family_id");
+		}
+
+		if (!in_array('national_id', $col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_students ADD COLUMN national_id varchar(50) DEFAULT NULL AFTER dob");
+		}
+
+		if (!in_array('gender', $col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_students ADD COLUMN gender varchar(20) DEFAULT NULL AFTER national_id");
+		}
+
 		// EV Template Migration (one-time rename)
 		$kg_ev_tables = array(
 			'olama_kg_templates' => 'olama_ev_templates',
@@ -476,6 +504,18 @@ class Olama_School_DB
 					$wpdb->query("DROP TABLE $old_full");
 				}
 			}
+		}
+
+		// Check if score_config column exists in olama_ev_templates
+		$ev_template_config_exists = $wpdb->get_results(
+			"SHOW COLUMNS FROM {$wpdb->prefix}olama_ev_templates LIKE 'score_config'"
+		);
+
+		if (empty($ev_template_config_exists)) {
+			$wpdb->query(
+				"ALTER TABLE {$wpdb->prefix}olama_ev_templates 
+				ADD COLUMN score_config longtext DEFAULT NULL AFTER template_name"
+			);
 		}
 	}
 

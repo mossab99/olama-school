@@ -97,4 +97,25 @@ class Olama_School_EV_Record
             return $wpdb->insert("{$wpdb->prefix}olama_ev_scores", $fields);
         }
     }
+
+    /**
+     * Get statuses of student evaluations for a specific context
+     */
+    public static function get_student_evaluation_statuses($year_id, $semester_id, $template_id)
+    {
+        global $wpdb;
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT student_id, status FROM {$wpdb->prefix}olama_ev_records 
+             WHERE academic_year_id = %d AND semester_id = %d AND template_id = %d",
+            $year_id,
+            $semester_id,
+            $template_id
+        ));
+
+        $statuses = array();
+        foreach ($results as $row) {
+            $statuses[$row->student_id] = $row->status;
+        }
+        return $statuses;
+    }
 }

@@ -1054,4 +1054,358 @@ class Olama_School_Importer
             );
         }
     }
+
+    /**
+     * Import families from CSV
+     */
+    public static function import_families_csv()
+    {
+        global $wpdb;
+
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_import_families')) {
+            wp_die(__('Security check failed.', 'olama-school'));
+        }
+
+        if (!current_user_can('olama_import_export_data')) {
+            wp_die(__('You do not have permission to import families.', 'olama-school'));
+        }
+
+        if (empty($_FILES['olama_import_file']['tmp_name'])) {
+            wp_die(__('Please upload a valid CSV file.', 'olama-school'));
+        }
+
+        $file = $_FILES['olama_import_file']['tmp_name'];
+        $handle = fopen($file, 'r');
+
+        if ($handle !== false) {
+            $bom = fread($handle, 3);
+            if ($bom !== "\xEF\xBB\xBF")
+                rewind($handle);
+
+            $headers = fgetcsv($handle);
+            if (!$headers)
+                wp_die(__('Invalid CSV header.', 'olama-school'));
+
+            $fields_map = array(
+                'family_uid' => array('family id', 'id', 'رقم العائلة', 'العائلة', __('Family ID', 'olama-school')),
+                'family_name' => array('family name', 'name', 'اسم العائلة', __('Family Name', 'olama-school')),
+                'father_mobile' => array('father mobile', 'father', 'جوال الأب', __('Father Mobile', 'olama-school')),
+                'mother_mobile' => array('mother mobile', 'mother', 'جوال الأم', __('Mother Mobile', 'olama-school')),
+                'address' => array('address', 'العنوان', __('Address', 'olama-school'))
+            );
+
+            foreach ($headers as $index => $header) {
+                $header_clean = strtolower(trim($header));
+                foreach ($fields_map as $field_key => $variations) {
+                    foreach ($variations as $var) {
+                        if ($header_clean === strtolower(trim($var))) {
+                            $map[$field_key] = $index;
+                            break 2;
+                        }
+                    }
+                }
+            }
+
+            $imported_count = 0;
+            while (($data = fgetcsv($handle)) !== false) {
+                $row = array();
+                foreach ($map as $field => $index) {
+                    $row[$field] = isset($data[$index]) ? trim($data[$index]) : '';
+                }
+
+                if (empty($row['family_uid']) || empty($row['family_name']))
+                    continue;
+
+                $exist_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}olama_families WHERE family_uid = %s", $row['family_uid']));
+
+                $family_data = array(
+                    'family_uid' => $row['family_uid'],
+                    'family_name' => $row['family_name'],
+                    'father_mobile' => $row['father_mobile'],
+                    'mother_mobile' => $row['mother_mobile'],
+                    'address' => $row['address']
+                );
+
+                if ($exist_id) {
+                    $wpdb->update("{$wpdb->prefix}olama_families", $family_data, array('id' => $exist_id));
+                } else {
+                    $wpdb->insert("{$wpdb->prefix}olama_families", $family_data);
+                }
+                $imported_count++;
+            }
+            fclose($handle);
+            set_transient('olama_import_message', sprintf(__('%d families processed successfully.', 'olama-school'), $imported_count), 30);
+        }
+
+        wp_redirect(admin_url('admin.php?page=olama-school-users&tab=families&import=success'));
+        exit;
+    }
+
+    /**
+     * Import students and enroll them
+     */
+    public static function import_students_enrollment_csv()
+    {
+        // Increase limits for large file imports
+        @set_time_limit(0); // No time limit
+        @ini_set('max_execution_time', 0);
+        @ini_set('memory_limit', '512M');
+
+        // Disable output buffering to prevent memory issues
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // Custom debug logger - writes to plugin folder for debugging
+        $debug_file = OLAMA_SCHOOL_PATH . 'import_debug.log';
+        $log = function ($msg) use ($debug_file) {
+            file_put_contents($debug_file, date('Y-m-d H:i:s') . ' - ' . $msg . "\n", FILE_APPEND);
+        };
+
+        // Clear previous log
+        file_put_contents($debug_file, "=== IMPORT STARTED ===\n");
+
+        $log('Function called!');
+        $log('POST: ' . json_encode($_POST, JSON_UNESCAPED_UNICODE));
+        $log('FILES: ' . json_encode($_FILES, JSON_UNESCAPED_UNICODE));
+
+        error_log('========================================');
+        error_log('Student Import: FUNCTION CALLED!');
+        error_log('Student Import: POST data: ' . print_r($_POST, true));
+        error_log('Student Import: FILES data: ' . print_r($_FILES, true));
+        error_log('========================================');
+
+        global $wpdb;
+
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_import_students_enrollment')) {
+            $log('ERROR: Nonce verification failed!');
+            error_log('Student Import: ERROR - Nonce verification failed!');
+            wp_die(__('Security check failed.', 'olama-school'));
+        }
+
+        if (!current_user_can('olama_import_export_data')) {
+            $log('ERROR: User lacks permission!');
+            error_log('Student Import: ERROR - User lacks permission!');
+            wp_die(__('You do not have permission to import students.', 'olama-school'));
+        }
+
+        if (empty($_FILES['olama_import_file']['tmp_name'])) {
+            $log('ERROR: No file uploaded!');
+            error_log('Student Import: ERROR - No file uploaded!');
+            wp_die(__('Please upload a valid CSV file.', 'olama-school'));
+        }
+
+        $file = $_FILES['olama_import_file']['tmp_name'];
+        $log('File path: ' . $file);
+        error_log('Student Import: File path: ' . $file);
+        error_log('Student Import: File exists: ' . (file_exists($file) ? 'YES' : 'NO'));
+        $handle = fopen($file, 'r');
+
+        if ($handle !== false) {
+            error_log('Student Import: File opened successfully.');
+
+            // 1. Skip BOM and detect delimiter
+            $bom = fread($handle, 3);
+            if ($bom !== "\xEF\xBB\xBF")
+                rewind($handle);
+
+            $first_line = fgets($handle);
+            error_log('Student Import: First line: ' . $first_line);
+
+            $delimiter = ',';
+            if (strpos($first_line, ';') !== false && strpos($first_line, ',') === false)
+                $delimiter = ';';
+            elseif (strpos($first_line, "\t") !== false)
+                $delimiter = "\t";
+            error_log('Student Import: Detected delimiter: ' . $delimiter);
+
+            rewind($handle);
+            if ($bom === "\xEF\xBB\xBF")
+                fread($handle, 3); // Skip BOM again after rewind
+
+            $headers = fgetcsv($handle, 0, $delimiter);
+            error_log('Student Import: Raw Headers: ' . print_r($headers, true));
+
+            if (!$headers) {
+                error_log('Student Import: FAILED to read headers.');
+                set_transient('olama_import_error', __('Could not read CSV headers.', 'olama-school'), 30);
+                wp_redirect(admin_url('admin.php?page=olama-school-users&tab=students'));
+                exit;
+            }
+
+            $fields_map = array(
+                'student_name' => array('name', 'student name', 'الاسم', 'اسم الطالب'),
+                'student_uid' => array('id number', 'student id', 'رقم الهوية', 'الرقم الأكاديمي'),
+                'family_id' => array('family id', 'family', 'رقم العائلة', 'العائلة'),
+                'year_name' => array('year', 'academic year', 'السنة', 'السنة الدراسية'),
+                'grade_name' => array('grade', 'المرحلة', 'الصف'),
+                'section_name' => array('section', 'الشعبة', 'الفصل')
+            );
+
+            $map = array();
+            $log('Raw headers from CSV: ' . json_encode($headers, JSON_UNESCAPED_UNICODE));
+
+            foreach ($headers as $index => $header) {
+                $header_clean = trim($header);
+                if (function_exists('mb_strtolower')) {
+                    $header_clean = mb_strtolower($header_clean, 'UTF-8');
+                } else {
+                    $header_clean = strtolower($header_clean);
+                }
+                // Strip non-printable manually to be safe
+                $header_clean = preg_replace('/[\x00-\x1F\x7F]/', '', $header_clean);
+
+                $log('Header[' . $index . '] = "' . $header_clean . '"');
+
+                foreach ($fields_map as $field_key => $variations) {
+                    // Skip if this field is already mapped
+                    if (isset($map[$field_key])) {
+                        continue;
+                    }
+
+                    foreach ($variations as $var) {
+                        $v_clean = trim($var);
+                        if (function_exists('mb_strtolower')) {
+                            $v_clean = mb_strtolower($v_clean, 'UTF-8');
+                        } else {
+                            $v_clean = strtolower($v_clean);
+                        }
+
+                        // EXACT MATCH ONLY - no more partial matches that cause confusion
+                        if ($header_clean === $v_clean) {
+                            $map[$field_key] = $index;
+                            $log('  -> Mapped "' . $header_clean . '" to field "' . $field_key . '" (index ' . $index . ')');
+                            break 2;
+                        }
+                    }
+                }
+            }
+
+            $log('Final column map: ' . json_encode($map, JSON_UNESCAPED_UNICODE));
+            error_log('Student Import: Map final: ' . print_r($map, true));
+
+            // Validate essential headers
+            if (!isset($map['student_name']) || !isset($map['student_uid'])) {
+                error_log('Student Import: FAILED - Missing essential headers.');
+                set_transient('olama_import_error', __('Missing essential columns: Name or ID Number.', 'olama-school'), 30);
+                wp_redirect(admin_url('admin.php?page=olama-school-users&tab=students'));
+                exit;
+            }
+
+            $count = 0;
+            $enrolled_count = 0;
+            $row_number = 0;
+
+            // Get active year as default
+            $active_year_id = 0;
+            if (class_exists('Olama_School_Academic')) {
+                $active_year = Olama_School_Academic::get_active_year();
+                if ($active_year)
+                    $active_year_id = $active_year->id;
+            }
+
+            while (($data = fgetcsv($handle, 0, $delimiter)) !== false) {
+                $row_number++;
+
+                // Log progress every 100 rows to avoid memory issues
+                if ($row_number % 100 === 0) {
+                    $log('Processing row ' . $row_number . '...');
+                    // Free up memory periodically
+                    if (function_exists('gc_collect_cycles')) {
+                        gc_collect_cycles();
+                    }
+                }
+
+                $row = array();
+                foreach ($map as $field => $index) {
+                    $val = isset($data[$index]) ? trim($data[$index]) : '';
+                    // Encoding check
+                    if (!preg_match('//u', $val) && function_exists('mb_convert_encoding')) {
+                        $val = mb_convert_encoding($val, 'UTF-8', 'Windows-1256');
+                    }
+                    $row[$field] = $val;
+                }
+
+                if (empty($row['student_name']) || empty($row['student_uid'])) {
+                    continue;
+                }
+
+                // 1. Get or Create Student
+                $student_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}olama_students WHERE student_uid = %s", $row['student_uid']));
+                $student_payload = array(
+                    'student_name' => $row['student_name'],
+                    'student_uid' => $row['student_uid'],
+                    'family_id' => $row['family_id']
+                );
+
+                if ($student_id) {
+                    $wpdb->update("{$wpdb->prefix}olama_students", $student_payload, array('id' => $student_id));
+                } else {
+                    $wpdb->insert("{$wpdb->prefix}olama_students", $student_payload);
+                    $student_id = $wpdb->insert_id;
+                }
+
+                // 2. Handle Enrollment
+                $year_name = !empty($row['year_name']) ? $row['year_name'] : '';
+                $grade_name = !empty($row['grade_name']) ? $row['grade_name'] : '';
+                $section_name = !empty($row['section_name']) ? $row['section_name'] : '';
+
+                if (!empty($grade_name) && !empty($section_name)) {
+                    $year_id = !empty($year_name) ? self::get_id_by_name($wpdb->prefix . 'olama_academic_years', 'year_name', $year_name) : $active_year_id;
+                    $grade_id = self::get_id_by_name($wpdb->prefix . 'olama_grades', 'grade_name', $grade_name);
+
+                    if (!$grade_id) {
+                        // Grade not found - skip enrollment for this row
+                        $count++;
+                        continue;
+                    }
+
+                    if ($year_id && $grade_id) {
+                        $section_id = $wpdb->get_var($wpdb->prepare(
+                            "SELECT id FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d AND section_name = %s AND academic_year_id = %d",
+                            $grade_id,
+                            $section_name,
+                            $year_id
+                        ));
+
+                        if ($section_id) {
+                            $exists = $wpdb->get_var($wpdb->prepare(
+                                "SELECT id FROM {$wpdb->prefix}olama_student_enrollment WHERE student_id = %d AND academic_year_id = %d",
+                                $student_id,
+                                $year_id
+                            ));
+
+                            $enroll_data = array(
+                                'student_id' => $student_id,
+                                'academic_year_id' => $year_id,
+                                'section_id' => $section_id,
+                                'status' => 'active',
+                                'enrollment_date' => current_time('mysql', 1)
+                            );
+
+                            if ($exists) {
+                                $wpdb->update("{$wpdb->prefix}olama_student_enrollment", $enroll_data, array('id' => $exists));
+                            } else {
+                                $wpdb->insert("{$wpdb->prefix}olama_student_enrollment", $enroll_data);
+                            }
+                            $enrolled_count++;
+                        }
+                    }
+                }
+                $count++;
+            }
+            fclose($handle);
+
+            if (class_exists('Olama_School_Student'))
+                Olama_School_Student::clear_cache();
+
+            set_transient('olama_import_message', sprintf(__('%d students processed. %d enrolled.', 'olama-school'), $count, $enrolled_count), 30);
+            error_log('Student Import: FINISHED. Count: ' . $count);
+        } else {
+            error_log('Student Import: FAILED to open handle.');
+        }
+
+        wp_redirect(admin_url('admin.php?page=olama-school-users&tab=students&import=success'));
+        exit;
+    }
 }
