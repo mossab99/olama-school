@@ -8,7 +8,7 @@ if (!defined('ABSPATH'))
 $grades = Olama_School_Grade::get_grades();
 $selected_grade_id = isset($_GET['manage_grade']) ? intval($_GET['manage_grade']) : 0;
 
-$is_admin = current_user_can('manage_options');
+$is_admin = Olama_School_Permissions::can('olama_manage_plans_load');
 
 $subjects = [];
 if ($selected_grade_id) {

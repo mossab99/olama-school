@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) exit;
 
 $grades = Olama_School_Grade::get_grades();
 $teachers = Olama_School_Teacher::get_teachers();
-$is_admin = current_user_can('manage_options');
+$is_admin = Olama_School_Permissions::can('olama_manage_plans_schedule');
 
 $selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : ($grades[0]->id ?? 0);
 

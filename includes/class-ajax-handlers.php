@@ -61,6 +61,10 @@ class Olama_School_Ajax_Handlers
         }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
 
+        if (!Olama_School_Permissions::can('olama_manage_curriculum_list')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
         $received_data = array(
             'grade_id' => isset($_POST['grade_id']) ? $_POST['grade_id'] : 'NOT SET',
             'subject_id' => isset($_POST['subject_id']) ? $_POST['subject_id'] : 'NOT SET',
@@ -102,6 +106,11 @@ class Olama_School_Ajax_Handlers
             ob_end_clean();
         }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_manage_curriculum_list')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
         $result = Olama_School_Unit::delete_unit(intval($_POST['id']));
 
         if (is_wp_error($result)) {
@@ -121,6 +130,10 @@ class Olama_School_Ajax_Handlers
             ob_end_clean();
         }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_manage_curriculum_list')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
 
         $received_data = array(
             'unit_id' => isset($_POST['unit_id']) ? $_POST['unit_id'] : 'NOT SET',
@@ -158,6 +171,11 @@ class Olama_School_Ajax_Handlers
             ob_end_clean();
         }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_manage_curriculum_list')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
         $result = Olama_School_Lesson::delete_lesson(intval($_POST['id']));
 
         if (is_wp_error($result)) {
@@ -177,6 +195,11 @@ class Olama_School_Ajax_Handlers
             ob_end_clean();
         }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_manage_curriculum_list')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
         $result = Olama_School_Question_Bank::save_question($_POST);
 
         if (is_wp_error($result)) {
@@ -213,6 +236,11 @@ class Olama_School_Ajax_Handlers
             ob_end_clean();
         }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_manage_curriculum_list')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
         $id = intval($_POST['id']);
         if ($id > 0) {
             Olama_School_Question_Bank::delete_question($id);
@@ -328,6 +356,10 @@ class Olama_School_Ajax_Handlers
             wp_send_json_error(__('Nonce verification failed.', 'olama-school'));
         }
 
+        if (!Olama_School_Permissions::can('olama_manage_curriculum_timeline')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
         $data_json = isset($_POST['timeline_data']) ? $_POST['timeline_data'] : '';
         $log_entry .= "Raw Data (start): " . substr($data_json, 0, 1000) . "\n";
         $log_entry .= "Raw Data Length: " . strlen($data_json) . "\n";
@@ -416,7 +448,7 @@ class Olama_School_Ajax_Handlers
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
 
-        if (!current_user_can('manage_options')) {
+        if (!Olama_School_Permissions::can('olama_approve_plans')) {
             wp_send_json_error(__('Unauthorized', 'olama-school'));
         }
 
@@ -771,8 +803,8 @@ class Olama_School_Ajax_Handlers
         }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
 
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Only administrators can perform a global wipe.', 'olama-school')));
+        if (!Olama_School_Permissions::can('olama_manage_curriculum_list')) {
+            wp_send_json_error(array('message' => __('Unauthorized access.', 'olama-school')));
         }
 
         $password = isset($_POST['password']) ? $_POST['password'] : '';

@@ -21,3 +21,22 @@ U126: RAW(, ) -> DB(, ) | Result: 0
   L708: RAW(, ) -> DB(, ) | Result: 0
   L709: RAW(, ) -> DB(, ) | Result: 0
 Summary: Processed 17 items. Success recorded for 17 updates.
+--- Save Request 2026-01-26 21:18:22 ---
+Raw Data (start): [{\"id\":135,\"start_date\":\"2025-09-01\",\"end_date\":\"2025-09-30\",\"lessons\":[{\"id\":758,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":759,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":760,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":761,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":762,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":763,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"}]},{\"id\":136,\"start_date\":\"\",\"end_date\":\"\",\"lessons\":[{\"id\":764,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":765,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":766,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"}]},{\"id\":137,\"start_date\":\"\",\"end_date\":\"\",\"lessons\":[{\"id\":767,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":768,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":769,\"start_date\":
+Raw Data Length: 1044
+U135: RAW(2025-09-01, 2025-09-30) -> DB(2025-09-01, 2025-09-30) | Result: 1
+  L758: RAW(, ) -> DB(, ) | Result: 0
+  L759: RAW(, ) -> DB(, ) | Result: 0
+  L760: RAW(, ) -> DB(, ) | Result: 0
+  L761: RAW(, ) -> DB(, ) | Result: 0
+  L762: RAW(, ) -> DB(, ) | Result: 0
+  L763: RAW(, ) -> DB(, ) | Result: 0
+U136: RAW(, ) -> DB(, ) | Result: 0
+  L764: RAW(, ) -> DB(, ) | Result: 0
+  L765: RAW(, ) -> DB(, ) | Result: 0
+  L766: RAW(, ) -> DB(, ) | Result: 0
+U137: RAW(, ) -> DB(, ) | Result: 0
+  L767: RAW(, ) -> DB(, ) | Result: 0
+  L768: RAW(, ) -> DB(, ) | Result: 0
+  L769: RAW(, ) -> DB(, ) | Result: 0
+Summary: Processed 15 items. Success recorded for 15 updates.

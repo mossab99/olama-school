@@ -36,7 +36,7 @@ class Olama_School_EV_Manager
      */
     public function handle_actions()
     {
-        if (!isset($_POST['olama_ev_action']) || !current_user_can('manage_options')) {
+        if (!isset($_POST['olama_ev_action']) || !Olama_School_Permissions::can('olama_manage_evaluation_mgmt')) {
             return;
         }
 

@@ -22,7 +22,7 @@ class Olama_School_Importer
         }
 
         // Check permissions
-        if (!current_user_can('olama_import_export_data')) {
+        if (!Olama_School_Permissions::can('olama_manage_plans_data')) {
             wp_die(__('You do not have permission to import data.', 'olama-school'));
         }
 
@@ -136,7 +136,7 @@ class Olama_School_Importer
         }
 
         // Check permissions
-        if (!current_user_can('olama_manage_academic_structure')) {
+        if (!Olama_School_Permissions::can('olama_manage_users_students')) {
             wp_die(__('You do not have permission to import students.', 'olama-school'));
         }
 
@@ -231,7 +231,7 @@ class Olama_School_Importer
         }
 
         // Check permissions
-        if (!current_user_can('olama_manage_curriculum')) {
+        if (!Olama_School_Permissions::can('olama_manage_curriculum_list')) {
             set_transient('olama_import_error', __('You do not have permission to import curriculum data.', 'olama-school'), 30);
             wp_redirect(admin_url('admin.php?page=olama-school-curriculum'));
             exit;
@@ -411,7 +411,7 @@ class Olama_School_Importer
         }
 
         // Check permissions
-        if (!current_user_can('olama_manage_academic_structure')) {
+        if (!Olama_School_Permissions::can('olama_manage_academic_subjects')) {
             wp_die(__('You do not have permission to import subjects.', 'olama-school'));
         }
 
@@ -529,7 +529,7 @@ class Olama_School_Importer
         }
 
         // Check permissions
-        if (!current_user_can('olama_manage_academic_structure')) {
+        if (!Olama_School_Permissions::can('olama_manage_academic_grades')) {
             wp_die(__('You do not have permission to import grade data.', 'olama-school'));
         }
 

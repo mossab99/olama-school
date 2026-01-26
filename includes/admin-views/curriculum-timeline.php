@@ -14,16 +14,15 @@ $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_
 
 <div class="olama-timeline-container">
     <div class="olama-card" style="margin-bottom: 20px; padding: 20px;">
-        <form method="get" id="olama-timeline-filters">
-            <input type="hidden" name="page" value="olama-school-curriculum" />
-            <input type="hidden" name="tab" value="timeline" />
-            <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
-        </form>
-        <div style="margin-bottom: 15px;"></div>
         <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 200px;">
-                <label class="olama-label">
-                    <?php echo Olama_School_Helpers::translate('Select Semester'); ?>
+            <form method="get" id="olama-timeline-filters" style="margin: 0; display: contents;">
+                <input type="hidden" name="page" value="olama-school-curriculum" />
+                <input type="hidden" name="tab" value="timeline" />
+                <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+            </form>
+            <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                    <?php echo Olama_School_Helpers::translate('Semester'); ?>
                 </label>
                 <select id="timeline-semester" class="olama-select">
                     <option value="">
@@ -38,9 +37,9 @@ $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div style="flex: 1; min-width: 200px;">
-                <label class="olama-label">
-                    <?php echo Olama_School_Helpers::translate('Select Grade'); ?>
+            <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                    <?php echo Olama_School_Helpers::translate('Grade'); ?>
                 </label>
                 <select id="timeline-grade" class="olama-select">
                     <option value="">
@@ -53,9 +52,9 @@ $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div style="flex: 1; min-width: 200px;">
-                <label class="olama-label">
-                    <?php echo Olama_School_Helpers::translate('Select Subject'); ?>
+            <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                    <?php echo Olama_School_Helpers::translate('Subject'); ?>
                 </label>
                 <select id="timeline-subject" class="olama-select" disabled>
                     <option value="">

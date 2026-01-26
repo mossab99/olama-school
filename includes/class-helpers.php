@@ -69,7 +69,7 @@ class Olama_School_Helpers
      */
     public static function filter_by_assignment($items, $user_id, $type = 'grades', $grade_id = 0)
     {
-        if (current_user_can('manage_options')) {
+        if (Olama_School_Permissions::can('olama_manage_academic_assignment')) {
             return $items;
         }
 

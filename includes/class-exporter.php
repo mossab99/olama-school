@@ -22,7 +22,7 @@ class Olama_School_Exporter
         }
 
         // Check permissions
-        if (!current_user_can('olama_import_export_data')) {
+        if (!Olama_School_Permissions::can('olama_manage_plans_data')) {
             wp_die(__('You do not have permission to export data.', 'olama-school'));
         }
 
@@ -101,7 +101,7 @@ class Olama_School_Exporter
         }
 
         // Check permissions
-        if (!current_user_can('olama_manage_curriculum')) {
+        if (!Olama_School_Permissions::can('olama_manage_curriculum_list')) {
             wp_die(__('You do not have permission to export curriculum data.', 'olama-school'));
         }
 
@@ -183,7 +183,7 @@ class Olama_School_Exporter
         }
 
         // Check permissions
-        if (!current_user_can('olama_manage_academic_structure')) {
+        if (!Olama_School_Permissions::can('olama_manage_academic_subjects')) {
             wp_die(__('You do not have permission to export subjects.', 'olama-school'));
         }
 
@@ -247,7 +247,7 @@ class Olama_School_Exporter
         }
 
         // Check permissions
-        if (!current_user_can('olama_manage_academic_structure')) {
+        if (!Olama_School_Permissions::can('olama_manage_academic_grades')) {
             wp_die(__('You do not have permission to export grade data.', 'olama-school'));
         }
 
@@ -311,7 +311,7 @@ class Olama_School_Exporter
             wp_die(__('Security check failed.', 'olama-school'));
         }
 
-        if (!current_user_can('olama_import_export_data')) {
+        if (!Olama_School_Permissions::can('olama_manage_users_families')) {
             wp_die(__('You do not have permission to export families.', 'olama-school'));
         }
 
@@ -376,7 +376,7 @@ class Olama_School_Exporter
             wp_die(__('Security check failed.', 'olama-school'));
         }
 
-        if (!current_user_can('olama_import_export_data')) {
+        if (!Olama_School_Permissions::can('olama_manage_users_students')) {
             wp_die(__('You do not have permission to export students.', 'olama-school'));
         }
 

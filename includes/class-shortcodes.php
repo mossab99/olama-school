@@ -225,7 +225,7 @@ class Olama_School_Shortcodes
         $week_end = date('Y-m-d', strtotime($week_start . ' +4 days'));
         $all_plans = Olama_School_Plan::get_plans($section_id, $week_start, $week_end);
 
-        $is_admin = current_user_can('manage_options') || current_user_can('olama_view_reports');
+        $is_admin = Olama_School_Permissions::can('olama_view_reports_summary');
 
         // Filter plans based on status and user role
         $plans = array_filter($all_plans, function ($p) use ($is_admin) {
