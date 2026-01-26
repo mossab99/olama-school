@@ -112,6 +112,13 @@ class Olama_School_Permissions
                     'olama_manage_users_logs' => __('View Activity Logs', 'olama-school'),
                 )
             ),
+            'settings' => array(
+                'label' => __('Settings', 'olama-school'),
+                'caps' => array(
+                    'olama_access_settings_mgmt' => __('Access Management', 'olama-school'),
+                    'olama_manage_settings_general' => __('General Settings', 'olama-school'),
+                )
+            ),
         );
     }
 
@@ -174,6 +181,8 @@ class Olama_School_Permissions
             $role->add_cap('olama_view_plans');
             $role->add_cap('olama_view_reports');
             if ($role_name === 'administrator' || $role_name === 'editor') {
+                $role->add_cap('olama_access_settings_mgmt');
+                $role->add_cap('olama_manage_settings_general');
                 $role->add_cap('olama_manage_settings');
                 $role->add_cap('olama_manage_academic_structure');
                 $role->add_cap('olama_manage_curriculum');

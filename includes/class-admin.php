@@ -661,7 +661,7 @@ class Olama_School_Admin
             'olama-school',
             Olama_School_Helpers::translate('Settings'),
             Olama_School_Helpers::translate('Settings'),
-            'olama_manage_settings_general',
+            'olama_access_settings_mgmt',
             'olama-school-settings',
             array($this, 'render_settings_page')
         );
