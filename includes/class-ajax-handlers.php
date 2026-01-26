@@ -329,6 +329,7 @@ class Olama_School_Ajax_Handlers
         }
 
         $data_json = isset($_POST['timeline_data']) ? $_POST['timeline_data'] : '';
+        $log_entry .= "Raw Data (start): " . substr($data_json, 0, 1000) . "\n";
         $log_entry .= "Raw Data Length: " . strlen($data_json) . "\n";
 
         $data = json_decode(stripslashes($data_json), true);
