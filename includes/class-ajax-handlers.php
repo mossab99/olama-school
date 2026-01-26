@@ -316,15 +316,25 @@ class Olama_School_Ajax_Handlers
 
     public function save_timeline_dates()
     {
+        $log_file = dirname(__FILE__) . '/olama_save_debug.log';
+        $log_entry = "--- Save Request " . current_time('mysql') . " ---\n";
+
         while (ob_get_level()) {
             ob_end_clean();
         }
-        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        if (!check_ajax_referer('olama_admin_nonce', 'nonce', false)) {
+            file_put_contents($log_file, $log_entry . "Nonce Check Failed\n", FILE_APPEND);
+            wp_send_json_error(__('Nonce verification failed.', 'olama-school'));
+        }
 
         $data_json = isset($_POST['timeline_data']) ? $_POST['timeline_data'] : '';
-        $data = json_decode(stripslashes($data_json), true);
+        $log_entry .= "Raw Data Length: " . strlen($data_json) . "\n";
 
-        if (!$data || !is_array($data)) {
+        $data = json_decode(stripslashes($data_json), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $log_entry .= "JSON Decode Error: " . json_last_error_msg() . "\n";
+            file_put_contents($log_file, $log_entry, FILE_APPEND);
             wp_send_json_error(__('Invalid data format.', 'olama-school'));
         }
 
@@ -332,32 +342,73 @@ class Olama_School_Ajax_Handlers
         $units_table = $wpdb->prefix . 'olama_curriculum_units';
         $lessons_table = $wpdb->prefix . 'olama_curriculum_lessons';
 
+        $total_items = 0;
+        $success_items = 0;
+        $errors = array();
+
+        $log_details = "";
         foreach ($data as $unit) {
-            $wpdb->update(
+            if (!isset($unit['id']))
+                continue;
+
+            $unit_id = intval($unit['id']);
+            $raw_start = $unit['start_date'] ?? 'missing';
+            $raw_end = $unit['end_date'] ?? 'missing';
+
+            $unit_start = !empty($unit['start_date']) && $unit['start_date'] !== 'undefined' ? Olama_School_Helpers::sanitize_date($unit['start_date']) : null;
+            $unit_end = !empty($unit['end_date']) && $unit['end_date'] !== 'undefined' ? Olama_School_Helpers::sanitize_date($unit['end_date']) : null;
+
+            $res = $wpdb->update(
                 $units_table,
-                array(
-                    'start_date' => !empty($unit['start_date']) ? Olama_School_Helpers::sanitize_date($unit['start_date']) : null,
-                    'end_date' => !empty($unit['end_date']) ? Olama_School_Helpers::sanitize_date($unit['end_date']) : null
-                ),
-                array('id' => intval($unit['id']))
+                array('start_date' => $unit_start, 'end_date' => $unit_end),
+                array('id' => $unit_id)
             );
+
+            $log_details .= "U$unit_id: RAW($raw_start, $raw_end) -> DB($unit_start, $unit_end) | Result: $res\n";
+            $success_items++;
+            $total_items++;
 
             if (!empty($unit['lessons']) && is_array($unit['lessons'])) {
                 foreach ($unit['lessons'] as $lesson) {
-                    $wpdb->update(
+                    if (!isset($lesson['id']))
+                        continue;
+
+                    $lesson_id = intval($lesson['id']);
+                    $l_raw_start = $lesson['start_date'] ?? 'missing';
+                    $l_raw_end = $lesson['end_date'] ?? 'missing';
+
+                    $lesson_start = !empty($lesson['start_date']) && $lesson['start_date'] !== 'undefined' ? Olama_School_Helpers::sanitize_date($lesson['start_date']) : null;
+                    $lesson_end = !empty($lesson['end_date']) && $lesson['end_date'] !== 'undefined' ? Olama_School_Helpers::sanitize_date($lesson['end_date']) : null;
+                    $periods = isset($lesson['periods']) ? intval($lesson['periods']) : 1;
+
+                    $res = $wpdb->update(
                         $lessons_table,
-                        array(
-                            'start_date' => !empty($lesson['start_date']) ? Olama_School_Helpers::sanitize_date($lesson['start_date']) : null,
-                            'end_date' => !empty($lesson['end_date']) ? Olama_School_Helpers::sanitize_date($lesson['end_date']) : null,
-                            'periods' => isset($lesson['periods']) ? intval($lesson['periods']) : 1
-                        ),
-                        array('id' => intval($lesson['id']))
+                        array('start_date' => $lesson_start, 'end_date' => $lesson_end, 'periods' => $periods),
+                        array('id' => $lesson_id)
                     );
+
+                    $log_details .= "  L$lesson_id: RAW($l_raw_start, $l_raw_end) -> DB($lesson_start, $lesson_end) | Result: $res\n";
+                    $success_items++;
+                    $total_items++;
                 }
             }
         }
 
-        wp_send_json_success(__('Timeline dates saved successfully.', 'olama-school'));
+        $log_entry .= $log_details;
+        $log_entry .= "Summary: Processed $total_items items. Success recorded for $success_items updates.\n";
+        if (!empty($errors)) {
+            $log_entry .= "First Error: " . $errors[0] . "\n";
+        }
+        file_put_contents($log_file, $log_entry, FILE_APPEND);
+
+        if ($success_items === 0 && $total_items > 0) {
+            wp_send_json_error(array(
+                'message' => __('No records were saved.', 'olama-school'),
+                'details' => $errors
+            ));
+        }
+
+        wp_send_json_success(sprintf(__('Successfully saved %d items.', 'olama-school'), $success_items));
     }
 
     public function bulk_approve_plans()

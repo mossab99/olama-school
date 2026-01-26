@@ -1,0 +1,23 @@
+--- Save Request 2026-01-26 21:11:47 ---
+Raw Data Length: 1178
+Processed 17 items. Success: 17. Errors: 0
+--- Save Request 2026-01-26 21:13:16 ---
+Raw Data Length: 1238
+U123: RAW(2025-09-01, 2025-09-30) -> DB(2025-09-01, 2025-09-30) | Result: 0
+  L697: RAW(2025-09-01, 2025-09-15) -> DB(2025-09-01, 2025-09-15) | Result: 1
+  L698: RAW(2025-09-16, 2025-09-18) -> DB(2025-09-16, 2025-09-18) | Result: 1
+  L699: RAW(2025-09-19, 2025-09-30) -> DB(2025-09-19, 2025-09-30) | Result: 1
+U124: RAW(, ) -> DB(, ) | Result: 0
+  L700: RAW(, ) -> DB(, ) | Result: 0
+  L701: RAW(, ) -> DB(, ) | Result: 0
+  L702: RAW(, ) -> DB(, ) | Result: 0
+  L703: RAW(, ) -> DB(, ) | Result: 0
+U125: RAW(, ) -> DB(, ) | Result: 0
+  L704: RAW(, ) -> DB(, ) | Result: 0
+  L705: RAW(, ) -> DB(, ) | Result: 0
+  L706: RAW(, ) -> DB(, ) | Result: 0
+U126: RAW(, ) -> DB(, ) | Result: 0
+  L707: RAW(, ) -> DB(, ) | Result: 0
+  L708: RAW(, ) -> DB(, ) | Result: 0
+  L709: RAW(, ) -> DB(, ) | Result: 0
+Summary: Processed 17 items. Success recorded for 17 updates.

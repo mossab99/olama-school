@@ -185,10 +185,26 @@ class Olama_School_Helpers
             return '';
         }
 
-        $format = 'd-m-Y';
+        // Try Y-m-d format first (from JavaScript data-raw attribute)
+        $date = DateTime::createFromFormat('Y-m-d', $date_str);
+        if ($date && $date->format('Y-m-d') === $date_str) {
+            return $date_str; // Already in correct format for database
+        }
 
-        $date = DateTime::createFromFormat($format, $date_str);
-        return $date ? $date->format('Y-m-d') : $date_str;
+        // Try d-m-Y format (from display format)
+        $date = DateTime::createFromFormat('d-m-Y', $date_str);
+        if ($date) {
+            return $date->format('Y-m-d');
+        }
+
+        // Try m-d-Y format as fallback
+        $date = DateTime::createFromFormat('m-d-Y', $date_str);
+        if ($date) {
+            return $date->format('Y-m-d');
+        }
+
+        // Return original if no format matches (might already be valid)
+        return $date_str;
     }
 
     /**

@@ -180,10 +180,44 @@ jQuery(document).ready(function ($) {
         });
     }
 
-    // Validation logic
-    $(document).on('change', '.timeline-date-input', function () {
+    // Sync data-raw for manual input and validation
+    $(document).on('change input blur', '.timeline-date-input', function () {
+        const $el = $(this);
+        const val = $el.val();
+        if (!val) {
+            $el.attr('data-raw', '');
+        } else if (val.split('-').length === 3) {
+            // Try to sync manually typed dates (d-m-Y) to data-raw (Y-m-d)
+            const parts = val.split('-');
+            let d, m, y;
+            if (parts[2].length === 4) { // d-m-Y format
+                d = parts[0]; m = parts[1]; y = parts[2];
+            } else if (parts[0].length === 4) { // Y-m-d format
+                y = parts[0]; m = parts[1]; d = parts[2];
+            }
+            if (y && m && d) {
+                $el.attr('data-raw', `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`);
+            }
+        }
         validateAll();
     });
+
+    function getEffectiveDate($el) {
+        let val = $el.val();
+        let raw = $el.attr('data-raw');
+
+        if (!val) return '';
+
+        // If it looks like d-m-Y, normalize to Y-m-d for comparison/saving
+        if (val.split('-').length === 3) {
+            const parts = val.split('-');
+            if (parts[2].length === 4) { // d-m-Y
+                return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
+        }
+
+        return raw || val || '';
+    }
 
     function validateAll() {
         // Clear all previous errors
@@ -194,8 +228,8 @@ jQuery(document).ready(function ($) {
 
         $('.timeline-unit-row').each(function () {
             const $unitRow = $(this);
-            const unitStart = $unitRow.find('.unit-start').attr('data-raw');
-            const unitEnd = $unitRow.find('.unit-end').attr('data-raw');
+            const unitStart = getEffectiveDate($unitRow.find('.unit-start'));
+            const unitEnd = getEffectiveDate($unitRow.find('.unit-end'));
 
             if (unitStart && unitEnd) {
                 unitDates.push({
@@ -204,7 +238,7 @@ jQuery(document).ready(function ($) {
                     el: $unitRow
                 });
 
-                // Unit start vs end
+                // Unit start vs end (works for Y-m-d strings)
                 if (unitStart > unitEnd) {
                     showError($unitRow.find('.unit-start'), olamaTimeline.i18n.dateInvalid);
                     showError($unitRow.find('.unit-end'), olamaTimeline.i18n.dateInvalid);
@@ -222,8 +256,8 @@ jQuery(document).ready(function ($) {
             // Lessons within units
             $unitRow.find('.timeline-lesson-row').each(function () {
                 const $lessonRow = $(this);
-                const lessonStart = $lessonRow.find('.lesson-start').attr('data-raw');
-                const lessonEnd = $lessonRow.find('.lesson-end').attr('data-raw');
+                const lessonStart = getEffectiveDate($lessonRow.find('.lesson-start'));
+                const lessonEnd = getEffectiveDate($lessonRow.find('.lesson-end'));
 
                 if (lessonStart) {
                     if (unitStart && lessonStart < unitStart) {
@@ -273,7 +307,10 @@ jQuery(document).ready(function ($) {
 
     // Save Timeline
     $saveBtn.on('click', function () {
+        console.log('Olama: Save All Dates button clicked');
+
         if ($('.input-error:visible').length > 0) {
+            console.warn('Olama: Save blocked by validation errors');
             alert(olamaTimeline.i18n.fixErrors);
             return;
         }
@@ -283,8 +320,8 @@ jQuery(document).ready(function ($) {
             const $unitRow = $(this);
             const unit = {
                 id: $unitRow.data('id'),
-                start_date: $unitRow.find('.unit-start').attr('data-raw'),
-                end_date: $unitRow.find('.unit-end').attr('data-raw'),
+                start_date: getEffectiveDate($unitRow.find('.unit-start')),
+                end_date: getEffectiveDate($unitRow.find('.unit-end')),
                 lessons: []
             };
 
@@ -292,14 +329,16 @@ jQuery(document).ready(function ($) {
                 const $lessonRow = $(this);
                 unit.lessons.push({
                     id: $lessonRow.data('id'),
-                    start_date: $lessonRow.find('.lesson-start').attr('data-raw'),
-                    end_date: $lessonRow.find('.lesson-end').attr('data-raw'),
+                    start_date: getEffectiveDate($lessonRow.find('.lesson-start')),
+                    end_date: getEffectiveDate($lessonRow.find('.lesson-end')),
                     periods: $lessonRow.find('.lesson-periods').val()
                 });
             });
 
             data.push(unit);
         });
+
+        console.log('Olama: Sending data to server:', data);
 
         $saveBtn.prop('disabled', true).addClass('saving').text(olamaTimeline.i18n.saving);
 
