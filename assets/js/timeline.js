@@ -203,20 +203,24 @@ jQuery(document).ready(function ($) {
     });
 
     function getEffectiveDate($el) {
-        let val = $el.val();
+        let val = $el.val() ? $el.val().trim() : '';
         let raw = $el.attr('data-raw');
 
         if (!val) return '';
 
-        // If it looks like d-m-Y, normalize to Y-m-d for comparison/saving
-        if (val.split('-').length === 3) {
-            const parts = val.split('-');
-            if (parts[2].length === 4) { // d-m-Y
+        // Try to normalize d-m-Y to Y-m-d
+        const parts = val.split('-');
+        if (parts.length === 3) {
+            if (parts[2].length === 4) { // d-m-Y format
                 return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
+            if (parts[0].length === 4) { // Y-m-d format
+                return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
             }
         }
 
-        return raw || val || '';
+        // Fallback to raw if val didn't match a pattern but raw exists
+        return raw || val;
     }
 
     function validateAll() {
