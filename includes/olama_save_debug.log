@@ -40,3 +40,24 @@ U137: RAW(, ) -> DB(, ) | Result: 0
   L768: RAW(, ) -> DB(, ) | Result: 0
   L769: RAW(, ) -> DB(, ) | Result: 0
 Summary: Processed 15 items. Success recorded for 15 updates.
+--- Save Request 2026-01-27 00:00:20 ---
+Raw Data (start): [{\"id\":123,\"start_date\":\"2025-09-01\",\"end_date\":\"2025-09-30\",\"lessons\":[{\"id\":697,\"start_date\":\"2025-09-01\",\"end_date\":\"2025-09-15\",\"periods\":\"1\"},{\"id\":698,\"start_date\":\"2025-09-16\",\"end_date\":\"2025-09-18\",\"periods\":\"1\"},{\"id\":699,\"start_date\":\"2025-09-19\",\"end_date\":\"2025-09-30\",\"periods\":\"1\"}]},{\"id\":124,\"start_date\":\"2025-10-01\",\"end_date\":\"2025-10-30\",\"lessons\":[{\"id\":700,\"start_date\":\"2025-10-01\",\"end_date\":\"2025-10-15\",\"periods\":\"1\"},{\"id\":701,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":702,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":703,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"}]},{\"id\":125,\"start_date\":\"\",\"end_date\":\"\",\"lessons\":[{\"id\":704,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":705,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1\"},{\"id\":706,\"start_date\":\"\",\"end_date\":\"\",\"periods\":\"1
+Raw Data Length: 1278
+U123: RAW(2025-09-01, 2025-09-30) -> DB(2025-09-01, 2025-09-30) | Result: 0
+  L697: RAW(2025-09-01, 2025-09-15) -> DB(2025-09-01, 2025-09-15) | Result: 0
+  L698: RAW(2025-09-16, 2025-09-18) -> DB(2025-09-16, 2025-09-18) | Result: 0
+  L699: RAW(2025-09-19, 2025-09-30) -> DB(2025-09-19, 2025-09-30) | Result: 0
+U124: RAW(2025-10-01, 2025-10-30) -> DB(2025-10-01, 2025-10-30) | Result: 1
+  L700: RAW(2025-10-01, 2025-10-15) -> DB(2025-10-01, 2025-10-15) | Result: 1
+  L701: RAW(, ) -> DB(, ) | Result: 0
+  L702: RAW(, ) -> DB(, ) | Result: 0
+  L703: RAW(, ) -> DB(, ) | Result: 0
+U125: RAW(, ) -> DB(, ) | Result: 0
+  L704: RAW(, ) -> DB(, ) | Result: 0
+  L705: RAW(, ) -> DB(, ) | Result: 0
+  L706: RAW(, ) -> DB(, ) | Result: 0
+U126: RAW(, ) -> DB(, ) | Result: 0
+  L707: RAW(, ) -> DB(, ) | Result: 0
+  L708: RAW(, ) -> DB(, ) | Result: 0
+  L709: RAW(, ) -> DB(, ) | Result: 0
+Summary: Processed 17 items. Success recorded for 17 updates.

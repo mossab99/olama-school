@@ -259,6 +259,15 @@ class Olama_School_Ajax_Handlers
             ob_end_clean();
         }
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
+
+        if (
+            !Olama_School_Permissions::can('olama_manage_curriculum_list') &&
+            !Olama_School_Permissions::can('olama_manage_curriculum_timeline') &&
+            !Olama_School_Permissions::can('olama_manage_academic_assignment')
+        ) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
         $grade_id = intval($_REQUEST['grade_id']);
         $subjects = Olama_School_Subject::get_by_grade($grade_id, true);
         wp_send_json_success($subjects);
@@ -302,6 +311,10 @@ class Olama_School_Ajax_Handlers
             ob_end_clean();
         }
         check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_manage_curriculum_timeline')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
 
         $semester_id = intval($_REQUEST['semester_id']);
         $grade_id = intval($_REQUEST['grade_id']);
