@@ -899,50 +899,56 @@ class Olama_School_Ajax_Handlers
      */
     public function handle_plan_approval()
     {
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
+        try {
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
 
-        check_ajax_referer('olama_admin_nonce', 'nonce');
+            if (!wp_verify_nonce(isset($_POST['nonce']) ? $_POST['nonce'] : '', 'olama_admin_nonce')) {
+                wp_send_json_error(__('Session expired. Please refresh the page.', 'olama-school'));
+            }
 
-        if (!current_user_can('olama_manage_plans')) {
-            wp_send_json_error(__('Unauthorized access.', 'olama-school'));
-        }
+            if (!Olama_School_Permissions::can('olama_approve_plans')) {
+                wp_send_json_error(__('Unauthorized access.', 'olama-school'));
+            }
 
-        global $wpdb;
-        $plan_id = isset($_POST['plan_id']) ? intval($_POST['plan_id']) : 0;
-        $status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
-        $feedback = isset($_POST['feedback']) ? sanitize_textarea_field($_POST['feedback']) : '';
+            global $wpdb;
+            $plan_id = isset($_POST['plan_id']) ? intval($_POST['plan_id']) : 0;
+            $status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
+            $feedback = isset($_POST['feedback']) ? sanitize_textarea_field($_POST['feedback']) : '';
 
-        if (!$plan_id) {
-            wp_send_json_error(__('Invalid plan ID.', 'olama-school'));
-        }
+            if (!$plan_id) {
+                wp_send_json_error(__('Invalid plan ID.', 'olama-school'));
+            }
 
-        // Validate status
-        $allowed_statuses = array('draft', 'approved', 'submitted');
-        if (!in_array($status, $allowed_statuses)) {
-            wp_send_json_error(__('Invalid status.', 'olama-school'));
-        }
+            $allowed_statuses = array('draft', 'approved', 'submitted');
+            if (!in_array($status, $allowed_statuses)) {
+                wp_send_json_error(__('Invalid status.', 'olama-school'));
+            }
 
-        $data = array('status' => $status);
+            $data = array('status' => $status);
 
-        // If feedback is provided, append it to teacher notes
-        if (!empty($feedback)) {
-            $current_plan = $wpdb->get_row($wpdb->prepare("SELECT teacher_notes FROM {$wpdb->prefix}olama_plans WHERE id = %d", $plan_id));
-            $new_notes = ($current_plan ? $current_plan->teacher_notes : '') . "\n\n[" . date('Y-m-d H:i') . "] Supervisor Feedback: " . $feedback;
-            $data['teacher_notes'] = $new_notes;
-        }
+            if (!empty($feedback)) {
+                $current_plan = $wpdb->get_row($wpdb->prepare("SELECT supervisor_feedback FROM {$wpdb->prefix}olama_plans WHERE id = %d", $plan_id));
+                $existing_feedback = $current_plan ? $current_plan->supervisor_feedback : '';
+                $new_feedback = "[" . date('Y-m-d H:i') . "] " . $feedback;
+                $data['supervisor_feedback'] = $existing_feedback ? $existing_feedback . "\n" . $new_feedback : $new_feedback;
+            }
 
-        $updated = $wpdb->update(
-            "{$wpdb->prefix}olama_plans",
-            $data,
-            array('id' => $plan_id)
-        );
+            $updated = $wpdb->update(
+                "{$wpdb->prefix}olama_plans",
+                $data,
+                array('id' => $plan_id)
+            );
 
-        if ($updated !== false) {
-            wp_send_json_success(__('Plan status updated successfully.', 'olama-school'));
-        } else {
-            wp_send_json_error(__('Failed to update plan status.', 'olama-school'));
+            if ($updated !== false) {
+                wp_send_json_success(__('Plan status updated successfully.', 'olama-school'));
+            } else {
+                wp_send_json_error(__('Failed to update plan status.', 'olama-school'));
+            }
+        } catch (\Throwable $th) {
+            error_log('Olama Review Crash: ' . $th->getMessage());
+            wp_send_json_error('Server Error: ' . $th->getMessage());
         }
     }
 }

@@ -150,6 +150,7 @@ class Olama_School_DB
 				homework_nb text DEFAULT NULL,
 				homework_ws text DEFAULT NULL,
 				teacher_notes text DEFAULT NULL,
+				supervisor_feedback text DEFAULT NULL,
 				rating tinyint(4) DEFAULT 0 NOT NULL,
 				status varchar(20) DEFAULT 'draft' NOT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,

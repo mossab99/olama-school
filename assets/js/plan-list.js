@@ -41,6 +41,20 @@ jQuery(document).ready(function ($) {
             html += `<center><div class="olama-detail-status ${status.class}">${status.label}</div></center>`;
         }
 
+        // Supervisor Feedback Section (at the top, danger styled)
+        if (plan.supervisor_feedback && plan.supervisor_feedback.trim()) {
+            const feedbackLines = plan.supervisor_feedback.split('\n').filter(line => line.trim());
+            html += `<div class="olama-supervisor-feedback">
+                <div class="olama-detail-group-title">
+                    <span class="dashicons dashicons-warning"></span>
+                    ${i18n.supervisorFeedback}
+                </div>
+                <div class="olama-supervisor-feedback-list">
+                    ${feedbackLines.map(line => `<div class="olama-feedback-item">${line}</div>`).join('')}
+                </div>
+            </div>`;
+        }
+
         html += `<div class="olama-details-single-column">`;
 
         // Section 1: General Info
@@ -209,14 +223,19 @@ jQuery(document).ready(function ($) {
                 nonce: olamaPlanList.nonce
             },
             success: function (response) {
-                $('#olama-feedback-modal').hide();
-                $('.olama-modal-submit').prop('disabled', false).text(i18n.requestEdits);
-
+                console.log('Olama Review Response:', response);
                 if (response.success) {
                     window.location.reload();
                 } else {
                     alert(response.data || 'Error processing request');
+                    $('.olama-modal-submit').prop('disabled', false).text(i18n.requestEdits);
                 }
+            },
+            error: function (xhr, status, error) {
+                console.error('Olama Review AJAX Error:', status, error, xhr.responseText);
+                var errorMsg = (i18n.communicationError || 'Communication error occurred') + ': ' + xhr.status + ' ' + error;
+                alert(errorMsg);
+                $('.olama-modal-submit').prop('disabled', false).text(i18n.requestEdits);
             }
         });
     });
@@ -238,7 +257,7 @@ jQuery(document).ready(function ($) {
         btn.html('<span class="dashicons dashicons-update spin"></span> ' + (i18n.approving || 'Approving...'));
 
         $.ajax({
-            url: ajaxurl,
+            url: olamaPlanList.ajaxUrl || ajaxurl,
             type: 'POST',
             data: {
                 action: 'olama_bulk_approve_plans',
@@ -255,7 +274,8 @@ jQuery(document).ready(function ($) {
                     btn.prop('disabled', false).css('opacity', '1').html(originalText);
                 }
             },
-            error: function () {
+            error: function (xhr, status, error) {
+                console.error('Olama Bulk Approve AJAX Error:', status, error);
                 alert(i18n.communicationError || 'Communication error');
                 btn.prop('disabled', false).css('opacity', '1').html(originalText);
             }

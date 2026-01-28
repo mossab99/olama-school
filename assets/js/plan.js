@@ -249,6 +249,16 @@ jQuery(document).ready(function ($) {
         $('textarea[name="homework_ws"]').val(planData.homework_ws || '');
         $('textarea[name="teacher_notes"]').val(planData.teacher_notes || '');
 
+        // Show supervisor feedback box if there's feedback
+        const $feedbackBox = $('#olama-supervisor-feedback-box');
+        const $feedbackContent = $('#olama-supervisor-feedback-content');
+        if (planData.supervisor_feedback && planData.supervisor_feedback.trim()) {
+            $feedbackContent.text(planData.supervisor_feedback);
+            $feedbackBox.fadeIn();
+        } else {
+            $feedbackBox.hide();
+        }
+
         // Indicate we are in edit mode for cascading logic
         currentEditingPlan = planData;
 
@@ -310,6 +320,7 @@ jQuery(document).ready(function ($) {
         $planIdInput.val('0');
         $('#olama-plan-status').val('draft');
         $('#olama-edit-status-container').hide();
+        $('#olama-supervisor-feedback-box').hide();
 
         // Reset cascading selects
         $subjectSelect.val('');
