@@ -64,7 +64,7 @@ class Olama_School_Stationary
              FROM {$wpdb->prefix}olama_stationary s
              INNER JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id
              WHERE s.academic_year_id = %d
-             ORDER BY g.grade_level ASC",
+             ORDER BY CAST(g.grade_level AS SIGNED) ASC",
             $year_id
         ));
     }
