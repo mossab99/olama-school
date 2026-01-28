@@ -742,14 +742,16 @@ class Olama_School_Shortcodes
             }
 
             .olama-stationary-header {
-                background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
-                color: #fff;
+                background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+                color: #1e293b;
                 padding: 30px;
                 border-radius: 16px 16px 0 0;
                 display: flex;
                 align-items: center;
                 gap: 20px;
                 flex-wrap: wrap;
+                border: 1px solid #fde68a;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             }
 
             .olama-stationary-header .header-icon {
@@ -764,31 +766,35 @@ class Olama_School_Shortcodes
                 margin: 0 0 5px 0;
                 font-size: 1.8rem;
                 font-weight: 800;
+                color: #92400e;
             }
 
             .olama-stationary-header p {
                 margin: 0;
-                opacity: 0.85;
+                color: #78716c;
                 font-size: 1rem;
             }
 
             .header-year {
-                background: rgba(255, 255, 255, 0.15);
+                background: #fff;
                 padding: 12px 20px;
                 border-radius: 12px;
                 text-align: center;
+                border: 1px solid #fde68a;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             }
 
             .header-year .year-label {
                 display: block;
                 font-size: 0.75rem;
-                opacity: 0.8;
+                color: #92400e;
                 margin-bottom: 4px;
             }
 
             .header-year .year-value {
                 font-size: 1.1rem;
                 font-weight: 700;
+                color: #1e293b;
             }
 
             .olama-stationary-accordion {
@@ -954,25 +960,25 @@ class Olama_School_Shortcodes
         </style>
 
         <script>
-                            document.querySelectorAll('.olama-stationary-accordion .accordion-header').forEach(header => {
-                                header.addEventListener('click', () => {
-                                    const item = header.parentElement;
-                                    const content = item.querySelector('.accordion-content');
-                                    const wasActive = item.classList.contains('active');
+                                    document.querySelectorAll('.olama-stationary-accordion .accordion-header').forEach(header => {
+                                        header.addEventListener('click', () => {
+                                            const item = header.parentElement;
+                                            const content = item.querySelector('.accordion-content');
+                                            const wasActive = item.classList.contains('active');
 
-                                    // Close all others
-                                    document.querySelectorAll('.olama-stationary-accordion .accordion-item').forEach(i => {
-                                        i.classList.remove('active');
-                                        i.querySelector('.accordion-content').style.display = 'none';
+                                            // Close all others
+                                            document.querySelectorAll('.olama-stationary-accordion .accordion-item').forEach(i => {
+                                                i.classList.remove('active');
+                                                i.querySelector('.accordion-content').style.display = 'none';
+                                            });
+
+                                            // Toggle current
+                                            if (!wasActive) {
+                                                item.classList.add('active');
+                                                content.style.display = 'block';
+                                            }
+                                        });
                                     });
-
-                                    // Toggle current
-                                    if (!wasActive) {
-                                        item.classList.add('active');
-                                        content.style.display = 'block';
-                                    }
-                                });
-                            });
         </script>
         <?php
         return ob_get_clean();
