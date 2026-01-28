@@ -912,6 +912,10 @@ class Olama_School_Admin
                     'bypassBy' => Olama_School_Helpers::translate('Bypass by %d days'),
                     'loading' => Olama_School_Helpers::translate('Loading...'),
                     'approving' => Olama_School_Helpers::translate('Approving...'),
+                    'approve' => Olama_School_Helpers::translate('Approve'),
+                    'requestEdits' => Olama_School_Helpers::translate('Request Edits'),
+                    'enterFeedback' => Olama_School_Helpers::translate('Please enter some feedback.'),
+                    'sending' => Olama_School_Helpers::translate('Sending...'),
                     'errorOccurred' => Olama_School_Helpers::translate('Error occurred'),
                     'communicationError' => Olama_School_Helpers::translate('Communication error'),
                 )

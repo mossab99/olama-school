@@ -48,6 +48,9 @@ class Olama_School_Ajax_Handlers
         add_action('wp_ajax_olama_get_teacher_summary', array($this, 'get_teacher_summary'));
         add_action('wp_ajax_olama_get_sections_by_grade', array($this, 'get_sections_by_grade'));
         add_action('wp_ajax_olama_toggle_teacher_assignment', array($this, 'toggle_teacher_assignment'));
+
+        // Plan Review AJAX Handler
+        add_action('wp_ajax_olama_handle_plan_approval', array($this, 'handle_plan_approval'));
     }
 
     // ==========================================
@@ -889,5 +892,57 @@ class Olama_School_Ajax_Handlers
         $msg = str_replace(['{year}', '{semester}', '{grade}'], [$year_name, $semester_name, $grade_name], $msg);
 
         wp_send_json_success(array('message' => $msg));
+    }
+
+    /**
+     * AJAX handler for plan approval/rejection
+     */
+    public function handle_plan_approval()
+    {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        if (!current_user_can('olama_manage_plans')) {
+            wp_send_json_error(__('Unauthorized access.', 'olama-school'));
+        }
+
+        global $wpdb;
+        $plan_id = isset($_POST['plan_id']) ? intval($_POST['plan_id']) : 0;
+        $status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
+        $feedback = isset($_POST['feedback']) ? sanitize_textarea_field($_POST['feedback']) : '';
+
+        if (!$plan_id) {
+            wp_send_json_error(__('Invalid plan ID.', 'olama-school'));
+        }
+
+        // Validate status
+        $allowed_statuses = array('draft', 'approved', 'submitted');
+        if (!in_array($status, $allowed_statuses)) {
+            wp_send_json_error(__('Invalid status.', 'olama-school'));
+        }
+
+        $data = array('status' => $status);
+
+        // If feedback is provided, append it to teacher notes
+        if (!empty($feedback)) {
+            $current_plan = $wpdb->get_row($wpdb->prepare("SELECT teacher_notes FROM {$wpdb->prefix}olama_plans WHERE id = %d", $plan_id));
+            $new_notes = ($current_plan ? $current_plan->teacher_notes : '') . "\n\n[" . date('Y-m-d H:i') . "] Supervisor Feedback: " . $feedback;
+            $data['teacher_notes'] = $new_notes;
+        }
+
+        $updated = $wpdb->update(
+            "{$wpdb->prefix}olama_plans",
+            $data,
+            array('id' => $plan_id)
+        );
+
+        if ($updated !== false) {
+            wp_send_json_success(__('Plan status updated successfully.', 'olama-school'));
+        } else {
+            wp_send_json_error(__('Failed to update plan status.', 'olama-school'));
+        }
     }
 }
