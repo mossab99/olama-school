@@ -17,6 +17,7 @@ class Olama_School_Shortcodes
         add_shortcode('olama_weekly_plan', array($this, 'render_weekly_plan_shortcode'));
         add_shortcode('olama_weekly_schedule', array($this, 'render_weekly_schedule_shortcode'));
         add_shortcode('olama_teachers_office_hours', array($this, 'render_teachers_office_hours_shortcode'));
+        add_shortcode('olama_stationary', array($this, 'render_stationary_shortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_shortcode_assets'));
     }
 
@@ -593,6 +594,386 @@ class Olama_School_Shortcodes
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Shortcode: [olama_stationary]
+     * Attributes: year (academic year ID)
+     */
+    public function render_stationary_shortcode($atts)
+    {
+        $atts = shortcode_atts(array(
+            'year' => '',
+        ), $atts, 'olama_stationary');
+
+        // Get academic year
+        $year_id = intval($atts['year']);
+        if (!$year_id) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $year_id = $active_year ? $active_year->id : 0;
+        }
+
+        if (!$year_id) {
+            return '<div class="olama-error" style="padding: 20px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #b91c1c; text-align: center;">' .
+                Olama_School_Helpers::translate('No academic year specified or active.') . '</div>';
+        }
+
+        // Get all stationary for this year
+        $stationary_items = Olama_School_Stationary::get_all_stationary_by_year($year_id);
+
+        // Get academic year name
+        $year = Olama_School_Academic::get_year($year_id);
+        $year_name = $year ? $year->year_name : '';
+
+        if (empty($stationary_items)) {
+            return '<div class="olama-no-data" style="padding: 30px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; color: #92400e; text-align: center; font-weight: 600;">' .
+                Olama_School_Helpers::translate('No stationary defined for this academic year.') . '</div>';
+        }
+
+        // Gradient colors for accordion headers
+        $gradients = array(
+            'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+            'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+            'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+            'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+            'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+            'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+            'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+        );
+
+        ob_start();
+        ?>
+        <div class="olama-stationary-container">
+            <!-- Header -->
+            <div class="olama-stationary-header">
+                <div class="header-icon">📚</div>
+                <div class="header-content">
+                    <h1><?php echo Olama_School_Helpers::translate('القرطاسية المدرسية'); ?></h1>
+                    <p><?php echo Olama_School_Helpers::translate('قائمة المستلزمات المدرسية لكل صف'); ?></p>
+                </div>
+                <div class="header-year">
+                    <span class="year-label"><?php echo Olama_School_Helpers::translate('العام الدراسي'); ?></span>
+                    <span class="year-value"><?php echo esc_html($year_name); ?></span>
+                </div>
+            </div>
+
+            <!-- Accordion -->
+            <div class="olama-stationary-accordion">
+                <?php
+                $index = 0;
+                foreach ($stationary_items as $item):
+                    $gradient = $gradients[$index % count($gradients)];
+                    $is_first = $index === 0;
+                    $index++;
+                    ?>
+                    <div class="accordion-item <?php echo $is_first ? 'active' : ''; ?>">
+                        <div class="accordion-header" style="background: <?php echo $gradient; ?>;">
+                            <div class="header-left">
+                                <span class="grade-icon">🎒</span>
+                                <span class="grade-name"><?php echo esc_html($item->grade_name); ?></span>
+                            </div>
+                            <div class="header-right">
+                                <span class="toggle-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="accordion-content" <?php echo $is_first ? 'style="display: block;"' : ''; ?>>
+                            <?php if (!empty($item->notebooks)): ?>
+                                <div class="content-section">
+                                    <div class="section-title">
+                                        <span class="section-icon">📓</span>
+                                        <?php echo Olama_School_Helpers::translate('الدفاتر المطلوبة'); ?>
+                                    </div>
+                                    <div class="section-content">
+                                        <?php echo nl2br(esc_html($item->notebooks)); ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($item->stationary)): ?>
+                                <div class="content-section">
+                                    <div class="section-title">
+                                        <span class="section-icon">📎</span>
+                                        <?php echo Olama_School_Helpers::translate('القرطاسية المطلوبة'); ?>
+                                    </div>
+                                    <div class="section-content">
+                                        <?php echo nl2br(esc_html($item->stationary)); ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($item->teacher_notes)): ?>
+                                <div class="content-section notes">
+                                    <div class="section-title">
+                                        <span class="section-icon">📝</span>
+                                        <?php echo Olama_School_Helpers::translate('ملاحظات المعلم'); ?>
+                                    </div>
+                                    <div class="section-content">
+                                        <?php echo nl2br(esc_html($item->teacher_notes)); ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if (empty($item->notebooks) && empty($item->stationary) && empty($item->teacher_notes)): ?>
+                                <div class="empty-state">
+                                    <span class="empty-icon">📭</span>
+                                    <p><?php echo Olama_School_Helpers::translate('لم يتم تحديد قرطاسية لهذا الصف بعد.'); ?></p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Footer -->
+            <div class="olama-stationary-footer">
+                <p><?php echo Olama_School_Helpers::translate('يرجى إحضار جميع المستلزمات في اليوم الأول من الدراسة'); ?> 📖</p>
+            </div>
+        </div>
+
+        <style>
+            .olama-stationary-container {
+                font-family: 'Tajawal', 'Almarai', Arial, sans-serif;
+                max-width: 900px;
+                margin: 0 auto;
+                direction: rtl;
+            }
+
+            .olama-stationary-header {
+                background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+                color: #fff;
+                padding: 30px;
+                border-radius: 16px 16px 0 0;
+                display: flex;
+                align-items: center;
+                gap: 20px;
+                flex-wrap: wrap;
+            }
+
+            .olama-stationary-header .header-icon {
+                font-size: 50px;
+            }
+
+            .olama-stationary-header .header-content {
+                flex: 1;
+            }
+
+            .olama-stationary-header h1 {
+                margin: 0 0 5px 0;
+                font-size: 1.8rem;
+                font-weight: 800;
+            }
+
+            .olama-stationary-header p {
+                margin: 0;
+                opacity: 0.85;
+                font-size: 1rem;
+            }
+
+            .header-year {
+                background: rgba(255, 255, 255, 0.15);
+                padding: 12px 20px;
+                border-radius: 12px;
+                text-align: center;
+            }
+
+            .header-year .year-label {
+                display: block;
+                font-size: 0.75rem;
+                opacity: 0.8;
+                margin-bottom: 4px;
+            }
+
+            .header-year .year-value {
+                font-size: 1.1rem;
+                font-weight: 700;
+            }
+
+            .olama-stationary-accordion {
+                background: #f8fafc;
+                padding: 20px;
+                border-radius: 0 0 16px 16px;
+            }
+
+            .accordion-item {
+                margin-bottom: 15px;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            }
+
+            .accordion-header {
+                padding: 18px 24px;
+                cursor: pointer;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                color: #fff;
+                transition: all 0.3s ease;
+            }
+
+            .accordion-header:hover {
+                opacity: 0.95;
+                transform: translateY(-1px);
+            }
+
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .grade-icon {
+                font-size: 24px;
+            }
+
+            .grade-name {
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+
+            .toggle-icon {
+                font-size: 14px;
+                transition: transform 0.3s ease;
+            }
+
+            .accordion-item.active .toggle-icon {
+                transform: rotate(180deg);
+            }
+
+            .accordion-content {
+                display: none;
+                background: #fff;
+                padding: 25px;
+                border-top: 3px solid rgba(0, 0, 0, 0.05);
+            }
+
+            .content-section {
+                margin-bottom: 20px;
+                padding-bottom: 20px;
+                border-bottom: 1px dashed #e2e8f0;
+            }
+
+            .content-section:last-child {
+                margin-bottom: 0;
+                padding-bottom: 0;
+                border-bottom: none;
+            }
+
+            .section-title {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-weight: 700;
+                font-size: 1.1rem;
+                color: #1e293b;
+                margin-bottom: 12px;
+            }
+
+            .section-icon {
+                font-size: 20px;
+            }
+
+            .section-content {
+                background: #f8fafc;
+                padding: 15px 20px;
+                border-radius: 10px;
+                line-height: 1.8;
+                color: #475569;
+                font-size: 0.95rem;
+                border-right: 4px solid #3b82f6;
+            }
+
+            .content-section.notes .section-content {
+                background: #fffbeb;
+                border-right-color: #f59e0b;
+                color: #92400e;
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 30px;
+                color: #94a3b8;
+            }
+
+            .empty-state .empty-icon {
+                font-size: 40px;
+                display: block;
+                margin-bottom: 10px;
+            }
+
+            .olama-stationary-footer {
+                text-align: center;
+                padding: 20px;
+                background: #f1f5f9;
+                border-radius: 12px;
+                margin-top: 20px;
+                color: #64748b;
+                font-size: 0.9rem;
+            }
+
+            /* Mobile Responsive */
+            @media (max-width: 600px) {
+                .olama-stationary-header {
+                    padding: 20px;
+                    flex-direction: column;
+                    text-align: center;
+                }
+
+                .olama-stationary-header h1 {
+                    font-size: 1.4rem;
+                }
+
+                .olama-stationary-header .header-icon {
+                    font-size: 40px;
+                }
+
+                .header-year {
+                    width: 100%;
+                }
+
+                .accordion-header {
+                    padding: 15px 18px;
+                }
+
+                .grade-name {
+                    font-size: 1rem;
+                }
+
+                .accordion-content {
+                    padding: 18px;
+                }
+
+                .section-content {
+                    padding: 12px 15px;
+                    font-size: 0.9rem;
+                }
+            }
+        </style>
+
+        <script>
+                            document.querySelectorAll('.olama-stationary-accordion .accordion-header').forEach(header => {
+                                header.addEventListener('click', () => {
+                                    const item = header.parentElement;
+                                    const content = item.querySelector('.accordion-content');
+                                    const wasActive = item.classList.contains('active');
+
+                                    // Close all others
+                                    document.querySelectorAll('.olama-stationary-accordion .accordion-item').forEach(i => {
+                                        i.classList.remove('active');
+                                        i.querySelector('.accordion-content').style.display = 'none';
+                                    });
+
+                                    // Toggle current
+                                    if (!wasActive) {
+                                        item.classList.add('active');
+                                        content.style.display = 'block';
+                                    }
+                                });
+                            });
+        </script>
         <?php
         return ob_get_clean();
     }

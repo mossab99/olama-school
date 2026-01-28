@@ -52,4 +52,20 @@ class Olama_School_Stationary
             );
         }
     }
+
+    /**
+     * Get all stationary records for a given academic year, joined with grades
+     */
+    public static function get_all_stationary_by_year($year_id)
+    {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT s.*, g.grade_name, g.grade_level 
+             FROM {$wpdb->prefix}olama_stationary s
+             INNER JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id
+             WHERE s.academic_year_id = %d
+             ORDER BY g.grade_level ASC",
+            $year_id
+        ));
+    }
 }

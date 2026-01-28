@@ -46,6 +46,9 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 <option value="teachers_office_hours">
                     <?php _e('Teachers Office Hours', 'olama-school'); ?>
                 </option>
+                <option value="stationary">
+                    <?php _e('Stationary', 'olama-school'); ?>
+                </option>
             </select>
         </div>
         <div>
@@ -132,17 +135,38 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
             var section = $('#gen-section').val();
             var week = $('#gen-week').val();
 
-            if (type === 'weekly_schedule') {
+            // Hide/show fields based on type
+            if (type === 'stationary') {
+                // For stationary, hide all except year (which is in the form above)
+                $('#gen-semester').closest('div').hide();
+                $('#gen-grade').closest('div').hide();
+                $('#gen-section').closest('div').hide();
+                $('#gen-week-wrapper').hide();
+            } else if (type === 'weekly_schedule' || type === 'teachers_office_hours') {
+                $('#gen-semester').closest('div').show();
+                $('#gen-grade').closest('div').show();
+                $('#gen-section').closest('div').show();
                 $('#gen-week-wrapper').hide();
             } else {
+                $('#gen-semester').closest('div').show();
+                $('#gen-grade').closest('div').show();
+                $('#gen-section').closest('div').show();
                 $('#gen-week-wrapper').show();
             }
 
+            // Generate shortcode based on type
             var shortcode = '[olama_' + type;
-            if (semester) shortcode += ' semester="' + semester + '"';
-            if (grade) shortcode += ' grade="' + grade + '"';
-            if (section) shortcode += ' section="' + section + '"';
-            if (type === 'weekly_plan' && week) shortcode += ' week="' + week + '"';
+
+            if (type === 'stationary') {
+                // Stationary only needs year attribute
+                var yearId = $('#academic_year_id').val();
+                if (yearId) shortcode += ' year="' + yearId + '"';
+            } else {
+                if (semester) shortcode += ' semester="' + semester + '"';
+                if (grade) shortcode += ' grade="' + grade + '"';
+                if (section) shortcode += ' section="' + section + '"';
+                if (type === 'weekly_plan' && week) shortcode += ' week="' + week + '"';
+            }
             shortcode += ']';
 
             $('#generated-shortcode').text(shortcode);
