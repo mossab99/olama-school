@@ -316,7 +316,7 @@ if (!defined('ABSPATH')) {
                         style="border-left: 4px solid <?php echo esc_attr($plan->color_code); ?>; padding: 15px; margin-bottom: 15px; background: #fcfcfc; border-radius: 0 8px 8px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative;">
                         <?php if (!empty($plan->supervisor_feedback)): ?>
                             <span class="olama-feedback-warning" title="<?php echo esc_attr($plan->supervisor_feedback); ?>"
-                                style="position: absolute; top: 8px; left: 8px; font-size: 18px; cursor: help; z-index: 5;">
+                                style="position: absolute; top: 8px; right: 8px; font-size: 18px; cursor: help; z-index: 5;">
                                 ⚠️
                             </span>
                         <?php endif; ?>

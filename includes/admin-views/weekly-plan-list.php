@@ -336,9 +336,8 @@ if ($current_semester_id && $selected_grade_id) {
                                 </div>
 
                                 <?php if (!empty($plan->supervisor_feedback)): ?>
-                                    <span class="olama-feedback-warning" 
-                                        title="<?php echo esc_attr($plan->supervisor_feedback); ?>"
-                                        style="position: absolute; top: 8px; left: 8px; font-size: 18px; cursor: help; z-index: 5;">
+                                    <span class="olama-feedback-warning" title="<?php echo esc_attr($plan->supervisor_feedback); ?>"
+                                        style="position: absolute; top: 8px; right: 8px; font-size: 18px; cursor: help; z-index: 5;">
                                         ⚠️
                                     </span>
                                 <?php endif; ?>
