@@ -39,7 +39,8 @@ $settings = get_option('olama_school_settings', array());
 $start_day_name = $settings['start_day'] ?? 'Monday';
 $last_day_name = $settings['last_day'] ?? 'Thursday';
 
-$semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : [];
+$active_semester = $selected_year_id ? Olama_School_Academic::get_active_semester($selected_year_id) : null;
+$semesters = $active_semester ? array($active_semester) : [];
 
 $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
 $selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : ($active_semester ? $active_semester->id : ($semesters[0]->id ?? 0));

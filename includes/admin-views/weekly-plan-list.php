@@ -37,8 +37,7 @@ if (!empty($sections)) {
 $active_year = Olama_School_Academic::get_active_year();
 $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
 
-$current_semesters = Olama_School_Academic::get_semesters($selected_year_id);
-// $selected_semester_id and $all_weeks are already defined in class-admin.php
+// $selected_semester_id, $current_semesters and $all_weeks are already defined in class-admin.php
 $months_weeks = array();
 foreach ($all_weeks as $val => $label) {
     $m_key_start = date('Y-m', strtotime($val));
@@ -95,7 +94,8 @@ foreach ($days as $day_name => $date) {
 // Coverage Analysis Logic
 $current_semester_id = 0;
 if ($selected_year_id) {
-    $semesters = Olama_School_Academic::get_semesters($selected_year_id);
+    $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
+    $semesters = $active_semester ? array($active_semester) : [];
     $week_sunday = strtotime($week_start);
     $week_thursday = $week_sunday + (4 * 86400);
 

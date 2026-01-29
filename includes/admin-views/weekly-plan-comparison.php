@@ -32,6 +32,12 @@ $sec2_id = isset($_GET['sec2']) ? intval($_GET['sec2']) : ($sections[1]->id ?? 0
 
 // Fetch subjects for this grade
 $subjects = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_subjects WHERE grade_id = %d AND is_active = 1", $selected_grade_id));
+
+// Fetch active year and semester for filtering
+$active_year = Olama_School_Academic::get_active_year();
+$active_semester = $active_year ? Olama_School_Academic::get_active_semester($active_year->id) : null;
+$active_year_id = $active_year ? $active_year->id : 0;
+$active_semester_id = $active_semester ? $active_semester->id : 0;
 ?>
 
 <div class="olama-comparison-container">
@@ -97,9 +103,12 @@ $subjects = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olam
                                  LEFT JOIN {$wpdb->prefix}olama_curriculum_units u ON p.unit_id = u.id
                                  LEFT JOIN {$wpdb->prefix}olama_curriculum_lessons l ON p.lesson_id = l.id
                                  WHERE p.section_id = %d AND p.subject_id = %d 
+                                 AND p.academic_year_id = %d AND p.semester_id = %d
                                  ORDER BY p.plan_date DESC LIMIT 1",
                                 $sec1_id,
-                                $sub->id
+                                $sub->id,
+                                $active_year_id,
+                                $active_semester_id
                             ));
                             ?>
                             <tr>
@@ -130,9 +139,12 @@ $subjects = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olam
                                  LEFT JOIN {$wpdb->prefix}olama_curriculum_units u ON p.unit_id = u.id
                                  LEFT JOIN {$wpdb->prefix}olama_curriculum_lessons l ON p.lesson_id = l.id
                                  WHERE p.section_id = %d AND p.subject_id = %d 
+                                 AND p.academic_year_id = %d AND p.semester_id = %d
                                  ORDER BY p.plan_date DESC LIMIT 1",
                                 $sec2_id,
-                                $sub->id
+                                $sub->id,
+                                $active_year_id,
+                                $active_semester_id
                             ));
                             ?>
                             <tr>

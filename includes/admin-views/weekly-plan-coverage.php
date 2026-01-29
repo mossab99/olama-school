@@ -20,9 +20,11 @@ if (!$active_year) {
     return;
 }
 
-$semesters = Olama_School_Academic::get_semesters($active_year->id);
+$active_semester = Olama_School_Academic::get_active_semester($active_year->id);
+$semesters = $active_semester ? array($active_semester) : [];
+
 if (!$semesters) {
-    echo '<div class="error"><p>' . __('Please create semesters for the active year.', 'olama-school') . '</p></div>';
+    echo '<div class="error"><p>' . __('Please create and activate a semester for the active year.', 'olama-school') . '</p></div>';
     return;
 }
 
