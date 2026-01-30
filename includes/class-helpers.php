@@ -48,7 +48,8 @@ class Olama_School_Helpers
      */
     public static function get_active_week_start()
     {
-        $today = time();
+        // Use WordPress current_time to respect site timezone settings
+        $today = current_time('timestamp');
         $day_of_week = (int) date('w', $today); // 0 (Sunday) to 6 (Saturday)
 
         if ($day_of_week === 6) {
