@@ -520,7 +520,16 @@ class Olama_School_Shortcodes
         ), $atts, 'olama_weekly_schedule');
 
         $section_id = intval($atts['section']);
-        $semester_id = intval($atts['semester']);
+        $semester_id = $atts['semester'];
+
+        // Resolve Semester ID
+        if ($semester_id === 'active' || empty($semester_id)) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $active_sem = $active_year ? Olama_School_Academic::get_active_semester($active_year->id) : null;
+            $semester_id = $active_sem ? $active_sem->id : 0;
+        } else {
+            $semester_id = intval($semester_id);
+        }
 
         if (!$section_id || !$semester_id) {
             return '<div class="olama-error">' . __('Please specify valid section and semester IDs in the shortcode.', 'olama-school') . '</div>';
