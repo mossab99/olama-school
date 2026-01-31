@@ -40,6 +40,27 @@ class Olama_School_Helpers
     }
 
     /**
+     * Get the active week start date (Sunday) based on current logic:
+     * - If today is Saturday, return tomorrow's date (beginning of next week)
+     * - Otherwise, return the most recent Sunday
+     * 
+     * @return string Date in Y-m-d format
+     */
+    public static function get_active_week_start()
+    {
+        $today = time();
+        $day_of_week = (int) date('w', $today); // 0 (Sunday) to 6 (Saturday)
+
+        if ($day_of_week === 6) {
+            // It's Saturday, return tomorrow (Sunday)
+            return date('Y-m-d', $today + 86400);
+        }
+
+        // Return the most recent Sunday
+        return date('Y-m-d', $today - ($day_of_week * 86400));
+    }
+
+    /**
      * Get week date range from a given date
      * 
      * @param string $date Any date within the week

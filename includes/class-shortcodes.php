@@ -218,9 +218,8 @@ class Olama_School_Shortcodes
 
         $week_start = $atts['week'];
         if (!$week_start) {
-            // Default to current week start (Sunday)
-            $today = time();
-            $week_start = date('Y-m-d', $today - ((int) date('w', $today) * 86400));
+            // Default to current/upcoming week start based on Saturday-switch logic
+            $week_start = Olama_School_Helpers::get_active_week_start();
         }
 
         $week_end = date('Y-m-d', strtotime($week_start . ' +4 days'));
@@ -960,25 +959,25 @@ class Olama_School_Shortcodes
         </style>
 
         <script>
-                                    document.querySelectorAll('.olama-stationary-accordion .accordion-header').forEach(header => {
-                                        header.addEventListener('click', () => {
-                                            const item = header.parentElement;
-                                            const content = item.querySelector('.accordion-content');
-                                            const wasActive = item.classList.contains('active');
+            document.querySelectorAll('.olama-stationary-accordion .accordion-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const item = header.parentElement;
+                    const content = item.querySelector('.accordion-content');
+                    const wasActive = item.classList.contains('active');
 
-                                            // Close all others
-                                            document.querySelectorAll('.olama-stationary-accordion .accordion-item').forEach(i => {
-                                                i.classList.remove('active');
-                                                i.querySelector('.accordion-content').style.display = 'none';
-                                            });
+                    // Close all others
+                    document.querySelectorAll('.olama-stationary-accordion .accordion-item').forEach(i => {
+                        i.classList.remove('active');
+                        i.querySelector('.accordion-content').style.display = 'none';
+                    });
 
-                                            // Toggle current
-                                            if (!wasActive) {
-                                                item.classList.add('active');
-                                                content.style.display = 'block';
-                                            }
-                                        });
-                                    });
+                    // Toggle current
+                    if (!wasActive) {
+                        item.classList.add('active');
+                        content.style.display = 'block';
+                    }
+                });
+            });
         </script>
         <?php
         return ob_get_clean();
