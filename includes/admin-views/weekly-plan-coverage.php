@@ -150,10 +150,11 @@ if (!$selected_week && !empty($semester_weeks)) {
             <select onchange="window.location.href=add_query_arg('coverage_semester', this.value)"
                 style="border-radius: 4px; border-color: #cbd5e1; font-weight: 600; color: #1e293b;">
                 <option value="active" <?php selected($requested_semester_id, 'active'); ?>>
-                    <?php echo Olama_School_Helpers::translate('Active Semester'); ?></option>
+                    <?php echo Olama_School_Helpers::translate('Active Semester'); ?>
+                </option>
                 <?php foreach ($semesters as $sem): ?>
                     <option value="<?php echo $sem->id; ?>" <?php selected($selected_semester_id, $sem->id); ?>>
-                        <?php echo esc_html($sem->semester_name); ?>
+                        <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -223,7 +224,7 @@ if (!$selected_week && !empty($semester_weeks)) {
                         <div style="font-size: 13px; color: #64748b; font-weight: 500;">
                             <span class="dashicons dashicons-calendar-alt"
                                 style="font-size: 16px; width: 16px; height: 16px; margin-inline-end: 5px;"></span>
-                            <?php echo esc_html($current_semester->semester_name); ?>
+                            <?php echo esc_html(Olama_School_Helpers::translate($current_semester->semester_name)); ?>
                             <?php if ($selected_week && isset($semester_weeks[$selected_week])): ?>
                                 <span style="margin-left:5px; color:#2271b1;">
                                     (<?php echo sprintf(Olama_School_Helpers::translate('Week %d'), $semester_weeks[$selected_week]['number']); ?>)

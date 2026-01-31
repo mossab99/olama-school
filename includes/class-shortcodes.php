@@ -616,7 +616,7 @@ class Olama_School_Shortcodes
                     if ($academic_year) {
                         echo esc_html($academic_year->year_name) . ' - ';
                     }
-                    echo $semester ? esc_html($semester->semester_name) : '';
+                    echo $semester ? esc_html(Olama_School_Helpers::translate($semester->semester_name)) : '';
                     ?></span>
                 </div>
             </div>

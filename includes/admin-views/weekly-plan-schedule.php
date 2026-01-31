@@ -138,7 +138,7 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
             <tbody>
                 <?php foreach ($scheduled_sections as $ss): ?>
                     <tr>
-                        <td><?php echo esc_html(__($ss->semester_name, 'olama-school')); ?></td>
+                        <td><?php echo esc_html(Olama_School_Helpers::translate($ss->semester_name)); ?></td>
                         <td><?php echo esc_html(__($ss->grade_name, 'olama-school')); ?></td>
                         <td><?php echo esc_html(__($ss->section_name, 'olama-school')); ?></td>
                         <td>
@@ -197,7 +197,7 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
                     <option value="active" <?php selected($requested_semester_id, 'active'); ?>><?php _e('Active Semester', 'olama-school'); ?></option>
                     <?php foreach ($semesters as $s): ?>
                         <option value="<?php echo $s->id; ?>" <?php selected($selected_semester_id, $s->id); ?>>
-                            <?php echo esc_html(__($s->semester_name, 'olama-school')); ?>
+                            <?php echo esc_html(Olama_School_Helpers::translate($s->semester_name)); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -301,7 +301,7 @@ function olamaPrintSchedule() {
         <p>
             <?php echo esc_html($grades[array_search($selected_grade_id, array_column($grades, 'id'))]->grade_name ?? ''); ?> - 
             <?php echo esc_html($sections[array_search($selected_section_id, array_column($sections, 'id'))]->section_name ?? ''); ?> - 
-            <?php echo esc_html(__($semesters[array_search($selected_semester_id, array_column($semesters, 'id'))]->semester_name ?? '', 'olama-school')); ?>
+            <?php echo esc_html(Olama_School_Helpers::translate($semesters[array_search($selected_semester_id, array_column($semesters, 'id'))]->semester_name ?? '')); ?>
         </p>
     </div>
 
