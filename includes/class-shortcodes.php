@@ -593,28 +593,18 @@ class Olama_School_Shortcodes
             return array('bg' => '#f1f5f9', 'text' => '#475569');
         };
 
-        // Get academic year for the semester
-        $academic_year = null;
-        if ($semester) {
-            $academic_year = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_academic_years WHERE id = %d", $semester->academic_year_id));
-        }
-
         ob_start();
         ?>
         <div class="olama-schedule-v2">
             <!-- Header -->
             <div class="schedule-header-v2">
+                <div class="header-main">
+                    <h1 class="header-title"><?php echo $grade ? esc_html($grade->grade_name) : ''; ?> -
+                        <?php echo $section ? esc_html($section->section_name) : ''; ?></h1>
+                </div>
                 <div class="header-badge">
                     <span class="badge-icon">📅</span>
                     <span class="badge-text"><?php echo $semester ? esc_html($semester->semester_name) : ''; ?></span>
-                    <?php if ($academic_year): ?>
-                        <span class="badge-year"><?php echo esc_html($academic_year->year_name); ?></span>
-                    <?php endif; ?>
-                </div>
-                <div class="header-main">
-                    <h1 class="header-title"><?php echo $grade ? esc_html($grade->grade_name) : ''; ?> -
-                        <?php echo $section ? esc_html($section->section_name) : ''; ?>
-                    </h1>
                 </div>
             </div>
 
@@ -645,7 +635,7 @@ class Olama_School_Shortcodes
                                     <td class="subject-cell">
                                         <?php if ($item): ?>
                                             <div class="subject-card-v2"
-                                                style="border-right: 4px solid <?php echo esc_attr($colors['text']); ?>; color: <?php echo esc_attr($colors['text']); ?>;">
+                                                style="background: <?php echo esc_attr($colors['bg']); ?>; color: <?php echo esc_attr($colors['text']); ?>;">
                                                 <span class="subject-text"><?php echo esc_html($item->subject_name); ?></span>
                                             </div>
                                         <?php else: ?>
@@ -739,223 +729,213 @@ class Olama_School_Shortcodes
                 font-size: 1.2rem;
             }
 
-            .schedule-header-v2 .badge-year {
-                        background: rgba(255, 255, 255, 0.25);
-                        padding: 4px 10px;
-                        border-radius: 12px;
-                        font-size: 0.85rem;
-                        margin-right: 5px;
-                    }
+            /* Desktop Grid */
+            .schedule-grid-desktop {
+                overflow-x: auto;
+                background: #fff;
+                border: 1px solid #e2e8f0;
+                border-top: none;
+                border-radius: 0 0 16px 16px;
+            }
 
-                    /* Desktop Grid */
-                    .schedule-grid-desktop {
-                        overflow-x: auto;
-                        background: #fff;
-                        border: 1px solid #e2e8f0;
-                        border-top: none;
-                        border-radius: 0 0 16px 16px;
-                    }
+            .schedule-table-v2 {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 700px;
+            }
 
-                    .schedule-table-v2 {
-                        width: 100%;
-                        border-collapse: collapse;
-                        min-width: 700px;
-                    }
+            .schedule-table-v2 thead th {
+                background: #f8fafc;
+                padding: 15px 10px;
+                text-align: center;
+                font-weight: 700;
+                color: #334155;
+                border-bottom: 2px solid #e2e8f0;
+                font-size: 0.85rem;
+            }
 
-                    .schedule-table-v2 thead th {
-                        background: #f8fafc;
-                        padding: 15px 10px;
-                        text-align: center;
-                        font-weight: 700;
-                        color: #334155;
-                        border-bottom: 2px solid #e2e8f0;
-                        font-size: 0.85rem;
-                    }
+            .schedule-table-v2 .day-col-header {
+                width: 100px;
+                background: #f1f5f9;
+            }
 
-                    .schedule-table-v2 .day-col-header {
-                        width: 100px;
-                        background: #f1f5f9;
-                    }
+            .schedule-table-v2 .period-col-header .period-label-text,
+            .schedule-table-v2 .period-col-header .period-ordinal {
+                display: block;
+            }
 
-                    .schedule-table-v2 .period-col-header .period-label-text,
-                    .schedule-table-v2 .period-col-header .period-ordinal {
-                        display: block;
-                    }
+            .schedule-table-v2 .period-label-text {
+                font-size: 0.7rem;
+                color: #64748b;
+                font-weight: 500;
+            }
 
-                    .schedule-table-v2 .period-label-text {
-                        font-size: 0.7rem;
-                        color: #64748b;
-                        font-weight: 500;
-                    }
+            .schedule-table-v2 .period-ordinal {
+                font-size: 0.9rem;
+                color: #1e40af;
+                font-weight: 700;
+            }
 
-                    .schedule-table-v2 .period-ordinal {
-                        font-size: 0.9rem;
-                        color: #1e40af;
-                        font-weight: 700;
-                    }
+            .schedule-table-v2 tbody td {
+                padding: 8px;
+                text-align: center;
+                border-bottom: 1px solid #f1f5f9;
+                vertical-align: middle;
+            }
 
-                    .schedule-table-v2 tbody td {
-                        padding: 8px;
-                        text-align: center;
-                        border-bottom: 1px solid #f1f5f9;
-                        vertical-align: middle;
-                    }
+            .schedule-table-v2 .day-cell {
+                background: #f8fafc;
+                font-weight: 700;
+                color: #1e293b;
+                font-size: 0.95rem;
+            }
 
-                    .schedule-table-v2 .day-cell {
-                        background: #f8fafc;
-                        font-weight: 700;
-                        color: #1e293b;
-                        font-size: 0.95rem;
-                    }
+            .schedule-table-v2 .subject-card-v2 {
+                padding: 10px 8px;
+                border-radius: 10px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                min-height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
 
-                    .schedule-table-v2 .subject-card-v2 {
-                        background: #fff;
-                                padding: 12px 10px;
-                                border-radius: 25px;
-                                font-size: 0.85rem;
-                                font-weight: 600;
-                                min-height: 36px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                transition: transform 0.2s, box-shadow 0.2s;
-                                border: 1px solid #e2e8f0;
-                            }
+            .schedule-table-v2 .subject-card-v2:hover {
+                transform: scale(1.03);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
 
-                            .schedule-table-v2 .subject-card-v2:hover {
-                                transform: scale(1.02);
-                                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-                            }
+            .schedule-table-v2 .empty-cell {
+                color: #cbd5e1;
+                font-size: 1rem;
+            }
 
-                            .schedule-table-v2 .empty-cell {
-                                color: #cbd5e1;
-                                font-size: 1rem;
-                            }
+            /* Mobile Accordion */
+            .schedule-mobile-v2 {
+                display: none;
+                flex-direction: column;
+                gap: 12px;
+                padding: 15px;
+                background: #f8fafc;
+                border-radius: 0 0 16px 16px;
+            }
 
-                            /* Mobile Accordion */
-                            .schedule-mobile-v2 {
-                                display: none;
-                                flex-direction: column;
-                                gap: 12px;
-                                padding: 15px;
-                                background: #f8fafc;
-                                border-radius: 0 0 16px 16px;
-                            }
+            .mobile-day-card {
+                background: #fff;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                border: 1px solid #e2e8f0;
+            }
 
-                            .mobile-day-card {
-                                background: #fff;
-                                border-radius: 12px;
-                                overflow: hidden;
-                                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-                                border: 1px solid #e2e8f0;
-                            }
+            .mobile-day-header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 16px 20px;
+                cursor: pointer;
+                background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+                transition: background 0.2s;
+            }
 
-                            .mobile-day-header {
-                                display: flex;
-                                align-items: center;
-                                gap: 12px;
-                                padding: 16px 20px;
-                                cursor: pointer;
-                                background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-                                transition: background 0.2s;
-                            }
+            .mobile-day-header:hover {
+                background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            }
 
-                            .mobile-day-header:hover {
-                                background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-                            }
+            .mobile-day-header .day-icon {
+                font-size: 1.3rem;
+            }
 
-                            .mobile-day-header .day-icon {
-                                font-size: 1.3rem;
-                            }
+            .mobile-day-header .day-title {
+                flex: 1;
+                font-weight: 700;
+                font-size: 1.1rem;
+                color: #1e40af;
+            }
 
-                            .mobile-day-header .day-title {
-                                flex: 1;
-                                font-weight: 700;
-                                font-size: 1.1rem;
-                                color: #1e40af;
-                            }
+            .mobile-day-header .toggle-arrow {
+                color: #64748b;
+                transition: transform 0.3s;
+            }
 
-                            .mobile-day-header .toggle-arrow {
-                                color: #64748b;
-                                transition: transform 0.3s;
-                            }
+            .mobile-day-card.expanded .toggle-arrow {
+                transform: rotate(180deg);
+            }
 
-                            .mobile-day-card.expanded .toggle-arrow {
-                                transform: rotate(180deg);
-                            }
+            .mobile-day-content {
+                display: none;
+                padding: 15px;
+                flex-direction: column;
+                gap: 10px;
+            }
 
-                            .mobile-day-content {
-                                display: none;
-                                padding: 15px;
-                                flex-direction: column;
-                                gap: 10px;
-                            }
+            .mobile-day-card.expanded .mobile-day-content {
+                display: flex;
+            }
 
-                            .mobile-day-card.expanded .mobile-day-content {
-                                display: flex;
-                            }
+            .mobile-period-item {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 15px;
+                border-radius: 10px;
+            }
 
-                            .mobile-period-item {
-                                display: flex;
-                                align-items: center;
-                                gap: 12px;
-                                padding: 12px 15px;
-                                border-radius: 10px;
-                            }
+            .mobile-period-item .period-badge {
+                color: #fff;
+                padding: 5px 12px;
+                border-radius: 20px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                white-space: nowrap;
+            }
 
-                            .mobile-period-item .period-badge {
-                                color: #fff;
-                                padding: 5px 12px;
-                                border-radius: 20px;
-                                font-size: 0.75rem;
-                                font-weight: 600;
-                                white-space: nowrap;
-                            }
+            .mobile-period-item .subject-name-mobile {
+                font-weight: 700;
+                font-size: 1rem;
+            }
 
-                            .mobile-period-item .subject-name-mobile {
-                                font-weight: 700;
-                                font-size: 1rem;
-                            }
+            .mobile-day-content .no-periods {
+                text-align: center;
+                color: #94a3b8;
+                padding: 20px;
+                font-size: 0.9rem;
+            }
 
-                            .mobile-day-content .no-periods {
-                                text-align: center;
-                                color: #94a3b8;
-                                padding: 20px;
-                                font-size: 0.9rem;
-                            }
+            /* Responsive */
+            @media (max-width: 768px) {
+                .schedule-grid-desktop {
+                    display: none;
+                }
 
-                            /* Responsive */
-                            @media (max-width: 768px) {
-                                .schedule-grid-desktop {
-                                    display: none;
-                                }
+                .schedule-mobile-v2 {
+                    display: flex;
+                }
 
-                                .schedule-mobile-v2 {
-                                    display: flex;
-                                }
+                .schedule-header-v2 {
+                    border-radius: 16px 16px 0 0;
+                    padding: 20px;
+                }
 
-                                .schedule-header-v2 {
-                                    border-radius: 16px 16px 0 0;
-                                    padding: 20px;
-                                }
+                .schedule-header-v2 .header-title {
+                    font-size: 1.3rem;
+                }
+            }
 
-                                .schedule-header-v2 .header-title {
-                                    font-size: 1.3rem;
-                                }
-                            }
+            /* Fix for WordPress themes */
+            .olama-schedule-v2 table {
+                margin: 0 !important;
+            }
 
-                            /* Fix for WordPress themes */
-                            .olama-schedule-v2 table {
-                                margin: 0 !important;
-                            }
-
-                            .olama-schedule-v2 th,
-                            .olama-schedule-v2 td {
-                                border: none !important;
-                            }
-                        </style>
-                        <?php
-                        return ob_get_clean();
+            .olama-schedule-v2 th,
+            .olama-schedule-v2 td {
+                border: none !important;
+            }
+        </style>
+        <?php
+        return ob_get_clean();
     }
 
 
@@ -1007,341 +987,341 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-                        <div class="olama-stationary-container">
-                            <!-- Header -->
-                            <div class="olama-stationary-header">
-                                <div class="header-icon">📚</div>
-                                <div class="header-content">
-                                    <h1><?php echo Olama_School_Helpers::translate('القرطاسية المدرسية'); ?></h1>
-                                    <p><?php echo Olama_School_Helpers::translate('قائمة المستلزمات المدرسية لكل صف'); ?></p>
-                                </div>
-                                <div class="header-year">
-                                    <span class="year-label"><?php echo Olama_School_Helpers::translate('العام الدراسي'); ?></span>
-                                    <span class="year-value"><?php echo esc_html($year_name); ?></span>
-                                </div>
+        <div class="olama-stationary-container">
+            <!-- Header -->
+            <div class="olama-stationary-header">
+                <div class="header-icon">📚</div>
+                <div class="header-content">
+                    <h1><?php echo Olama_School_Helpers::translate('القرطاسية المدرسية'); ?></h1>
+                    <p><?php echo Olama_School_Helpers::translate('قائمة المستلزمات المدرسية لكل صف'); ?></p>
+                </div>
+                <div class="header-year">
+                    <span class="year-label"><?php echo Olama_School_Helpers::translate('العام الدراسي'); ?></span>
+                    <span class="year-value"><?php echo esc_html($year_name); ?></span>
+                </div>
+            </div>
+
+            <!-- Accordion -->
+            <div class="olama-stationary-accordion">
+                <?php
+                $index = 0;
+                foreach ($stationary_items as $item):
+                    $gradient = $gradients[$index % count($gradients)];
+                    $is_first = $index === 0;
+                    $index++;
+                    ?>
+                    <div class="accordion-item <?php echo $is_first ? 'active' : ''; ?>">
+                        <div class="accordion-header" style="background: <?php echo $gradient; ?>;">
+                            <div class="header-left">
+                                <span class="grade-icon">🎒</span>
+                                <span class="grade-name"><?php echo esc_html($item->grade_name); ?></span>
                             </div>
-
-                            <!-- Accordion -->
-                            <div class="olama-stationary-accordion">
-                                <?php
-                                $index = 0;
-                                foreach ($stationary_items as $item):
-                                    $gradient = $gradients[$index % count($gradients)];
-                                    $is_first = $index === 0;
-                                    $index++;
-                                    ?>
-                                            <div class="accordion-item <?php echo $is_first ? 'active' : ''; ?>">
-                                                <div class="accordion-header" style="background: <?php echo $gradient; ?>;">
-                                                    <div class="header-left">
-                                                        <span class="grade-icon">🎒</span>
-                                                        <span class="grade-name"><?php echo esc_html($item->grade_name); ?></span>
-                                                    </div>
-                                                    <div class="header-right">
-                                                        <span class="toggle-icon">▼</span>
-                                                    </div>
-                                                </div>
-                                                <div class="accordion-content" <?php echo $is_first ? 'style="display: block;"' : ''; ?>>
-                                                    <?php if (!empty($item->notebooks)): ?>
-                                                                <div class="content-section">
-                                                                    <div class="section-title">
-                                                                        <span class="section-icon">📓</span>
-                                                                        <?php echo Olama_School_Helpers::translate('الدفاتر المطلوبة'); ?>
-                                                                    </div>
-                                                                    <div class="section-content">
-                                                                        <?php echo nl2br(esc_html($item->notebooks)); ?>
-                                                                    </div>
-                                                                </div>
-                                                    <?php endif; ?>
-
-                                                    <?php if (!empty($item->stationary)): ?>
-                                                                <div class="content-section">
-                                                                    <div class="section-title">
-                                                                        <span class="section-icon">📎</span>
-                                                                        <?php echo Olama_School_Helpers::translate('القرطاسية المطلوبة'); ?>
-                                                                    </div>
-                                                                    <div class="section-content">
-                                                                        <?php echo nl2br(esc_html($item->stationary)); ?>
-                                                                    </div>
-                                                                </div>
-                                                    <?php endif; ?>
-
-                                                    <?php if (!empty($item->teacher_notes)): ?>
-                                                                <div class="content-section notes">
-                                                                    <div class="section-title">
-                                                                        <span class="section-icon">📝</span>
-                                                                        <?php echo Olama_School_Helpers::translate('ملاحظات المعلم'); ?>
-                                                                    </div>
-                                                                    <div class="section-content">
-                                                                        <?php echo nl2br(esc_html($item->teacher_notes)); ?>
-                                                                    </div>
-                                                                </div>
-                                                    <?php endif; ?>
-
-                                                    <?php if (empty($item->notebooks) && empty($item->stationary) && empty($item->teacher_notes)): ?>
-                                                                <div class="empty-state">
-                                                                    <span class="empty-icon">📭</span>
-                                                                    <p><?php echo Olama_School_Helpers::translate('لم يتم تحديد قرطاسية لهذا الصف بعد.'); ?></p>
-                                                                </div>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                <?php endforeach; ?>
-                            </div>
-
-                            <!-- Footer -->
-                            <div class="olama-stationary-footer">
-                                <p><?php echo Olama_School_Helpers::translate('يرجى إحضار جميع المستلزمات في اليوم الأول من الدراسة'); ?> 📖</p>
+                            <div class="header-right">
+                                <span class="toggle-icon">▼</span>
                             </div>
                         </div>
+                        <div class="accordion-content" <?php echo $is_first ? 'style="display: block;"' : ''; ?>>
+                            <?php if (!empty($item->notebooks)): ?>
+                                <div class="content-section">
+                                    <div class="section-title">
+                                        <span class="section-icon">📓</span>
+                                        <?php echo Olama_School_Helpers::translate('الدفاتر المطلوبة'); ?>
+                                    </div>
+                                    <div class="section-content">
+                                        <?php echo nl2br(esc_html($item->notebooks)); ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
 
-                        <style>
-                            .olama-stationary-container {
-                                font-family: 'Tajawal', 'Almarai', Arial, sans-serif;
-                                max-width: 900px;
-                                margin: 0 auto;
-                                direction: rtl;
-                            }
+                            <?php if (!empty($item->stationary)): ?>
+                                <div class="content-section">
+                                    <div class="section-title">
+                                        <span class="section-icon">📎</span>
+                                        <?php echo Olama_School_Helpers::translate('القرطاسية المطلوبة'); ?>
+                                    </div>
+                                    <div class="section-content">
+                                        <?php echo nl2br(esc_html($item->stationary)); ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
 
-                            .olama-stationary-header {
-                                background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
-                                color: #1e293b;
-                                padding: 30px;
-                                border-radius: 16px 16px 0 0;
-                                display: flex;
-                                align-items: center;
-                                gap: 20px;
-                                flex-wrap: wrap;
-                                border: 1px solid #fde68a;
-                                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-                            }
+                            <?php if (!empty($item->teacher_notes)): ?>
+                                <div class="content-section notes">
+                                    <div class="section-title">
+                                        <span class="section-icon">📝</span>
+                                        <?php echo Olama_School_Helpers::translate('ملاحظات المعلم'); ?>
+                                    </div>
+                                    <div class="section-content">
+                                        <?php echo nl2br(esc_html($item->teacher_notes)); ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
 
-                            .olama-stationary-header .header-icon {
-                                font-size: 50px;
-                            }
+                            <?php if (empty($item->notebooks) && empty($item->stationary) && empty($item->teacher_notes)): ?>
+                                <div class="empty-state">
+                                    <span class="empty-icon">📭</span>
+                                    <p><?php echo Olama_School_Helpers::translate('لم يتم تحديد قرطاسية لهذا الصف بعد.'); ?></p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
 
-                            .olama-stationary-header .header-content {
-                                flex: 1;
-                            }
+            <!-- Footer -->
+            <div class="olama-stationary-footer">
+                <p><?php echo Olama_School_Helpers::translate('يرجى إحضار جميع المستلزمات في اليوم الأول من الدراسة'); ?> 📖</p>
+            </div>
+        </div>
 
-                            .olama-stationary-header h1 {
-                                margin: 0 0 5px 0;
-                                font-size: 1.8rem;
-                                font-weight: 800;
-                                color: #92400e;
-                            }
+        <style>
+            .olama-stationary-container {
+                font-family: 'Tajawal', 'Almarai', Arial, sans-serif;
+                max-width: 900px;
+                margin: 0 auto;
+                direction: rtl;
+            }
 
-                            .olama-stationary-header p {
-                                margin: 0;
-                                color: #78716c;
-                                font-size: 1rem;
-                            }
+            .olama-stationary-header {
+                background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+                color: #1e293b;
+                padding: 30px;
+                border-radius: 16px 16px 0 0;
+                display: flex;
+                align-items: center;
+                gap: 20px;
+                flex-wrap: wrap;
+                border: 1px solid #fde68a;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            }
 
-                            .header-year {
-                                background: #fff;
-                                padding: 12px 20px;
-                                border-radius: 12px;
-                                text-align: center;
-                                border: 1px solid #fde68a;
-                                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-                            }
+            .olama-stationary-header .header-icon {
+                font-size: 50px;
+            }
 
-                            .header-year .year-label {
-                                display: block;
-                                font-size: 0.75rem;
-                                color: #92400e;
-                                margin-bottom: 4px;
-                            }
+            .olama-stationary-header .header-content {
+                flex: 1;
+            }
 
-                            .header-year .year-value {
-                                font-size: 1.1rem;
-                                font-weight: 700;
-                                color: #1e293b;
-                            }
+            .olama-stationary-header h1 {
+                margin: 0 0 5px 0;
+                font-size: 1.8rem;
+                font-weight: 800;
+                color: #92400e;
+            }
 
-                            .olama-stationary-accordion {
-                                background: #f8fafc;
-                                padding: 20px;
-                                border-radius: 0 0 16px 16px;
-                            }
+            .olama-stationary-header p {
+                margin: 0;
+                color: #78716c;
+                font-size: 1rem;
+            }
 
-                            .accordion-item {
-                                margin-bottom: 15px;
-                                border-radius: 12px;
-                                overflow: hidden;
-                                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-                            }
+            .header-year {
+                background: #fff;
+                padding: 12px 20px;
+                border-radius: 12px;
+                text-align: center;
+                border: 1px solid #fde68a;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            }
 
-                            .accordion-header {
-                                padding: 18px 24px;
-                                cursor: pointer;
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                                color: #fff;
-                                transition: all 0.3s ease;
-                            }
+            .header-year .year-label {
+                display: block;
+                font-size: 0.75rem;
+                color: #92400e;
+                margin-bottom: 4px;
+            }
 
-                            .accordion-header:hover {
-                                opacity: 0.95;
-                                transform: translateY(-1px);
-                            }
+            .header-year .year-value {
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: #1e293b;
+            }
 
-                            .header-left {
-                                display: flex;
-                                align-items: center;
-                                gap: 12px;
-                            }
+            .olama-stationary-accordion {
+                background: #f8fafc;
+                padding: 20px;
+                border-radius: 0 0 16px 16px;
+            }
 
-                            .grade-icon {
-                                font-size: 24px;
-                            }
+            .accordion-item {
+                margin-bottom: 15px;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            }
 
-                            .grade-name {
-                                font-size: 1.2rem;
-                                font-weight: 700;
-                            }
+            .accordion-header {
+                padding: 18px 24px;
+                cursor: pointer;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                color: #fff;
+                transition: all 0.3s ease;
+            }
 
-                            .toggle-icon {
-                                font-size: 14px;
-                                transition: transform 0.3s ease;
-                            }
+            .accordion-header:hover {
+                opacity: 0.95;
+                transform: translateY(-1px);
+            }
 
-                            .accordion-item.active .toggle-icon {
-                                transform: rotate(180deg);
-                            }
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
 
-                            .accordion-content {
-                                display: none;
-                                background: #fff;
-                                padding: 25px;
-                                border-top: 3px solid rgba(0, 0, 0, 0.05);
-                            }
+            .grade-icon {
+                font-size: 24px;
+            }
 
-                            .content-section {
-                                margin-bottom: 20px;
-                                padding-bottom: 20px;
-                                border-bottom: 1px dashed #e2e8f0;
-                            }
+            .grade-name {
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
 
-                            .content-section:last-child {
-                                margin-bottom: 0;
-                                padding-bottom: 0;
-                                border-bottom: none;
-                            }
+            .toggle-icon {
+                font-size: 14px;
+                transition: transform 0.3s ease;
+            }
 
-                            .section-title {
-                                display: flex;
-                                align-items: center;
-                                gap: 10px;
-                                font-weight: 700;
-                                font-size: 1.1rem;
-                                color: #1e293b;
-                                margin-bottom: 12px;
-                            }
+            .accordion-item.active .toggle-icon {
+                transform: rotate(180deg);
+            }
 
-                            .section-icon {
-                                font-size: 20px;
-                            }
+            .accordion-content {
+                display: none;
+                background: #fff;
+                padding: 25px;
+                border-top: 3px solid rgba(0, 0, 0, 0.05);
+            }
 
-                            .section-content {
-                                background: #f8fafc;
-                                padding: 15px 20px;
-                                border-radius: 10px;
-                                line-height: 1.8;
-                                color: #475569;
-                                font-size: 0.95rem;
-                                border-right: 4px solid #3b82f6;
-                            }
+            .content-section {
+                margin-bottom: 20px;
+                padding-bottom: 20px;
+                border-bottom: 1px dashed #e2e8f0;
+            }
 
-                            .content-section.notes .section-content {
-                                background: #fffbeb;
-                                border-right-color: #f59e0b;
-                                color: #92400e;
-                            }
+            .content-section:last-child {
+                margin-bottom: 0;
+                padding-bottom: 0;
+                border-bottom: none;
+            }
 
-                            .empty-state {
-                                text-align: center;
-                                padding: 30px;
-                                color: #94a3b8;
-                            }
+            .section-title {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-weight: 700;
+                font-size: 1.1rem;
+                color: #1e293b;
+                margin-bottom: 12px;
+            }
 
-                            .empty-state .empty-icon {
-                                font-size: 40px;
-                                display: block;
-                                margin-bottom: 10px;
-                            }
+            .section-icon {
+                font-size: 20px;
+            }
 
-                            .olama-stationary-footer {
-                                text-align: center;
-                                padding: 20px;
-                                background: #f1f5f9;
-                                border-radius: 12px;
-                                margin-top: 20px;
-                                color: #64748b;
-                                font-size: 0.9rem;
-                            }
+            .section-content {
+                background: #f8fafc;
+                padding: 15px 20px;
+                border-radius: 10px;
+                line-height: 1.8;
+                color: #475569;
+                font-size: 0.95rem;
+                border-right: 4px solid #3b82f6;
+            }
 
-                            /* Mobile Responsive */
-                            @media (max-width: 600px) {
-                                .olama-stationary-header {
-                                    padding: 20px;
-                                    flex-direction: column;
-                                    text-align: center;
-                                }
+            .content-section.notes .section-content {
+                background: #fffbeb;
+                border-right-color: #f59e0b;
+                color: #92400e;
+            }
 
-                                .olama-stationary-header h1 {
-                                    font-size: 1.4rem;
-                                }
+            .empty-state {
+                text-align: center;
+                padding: 30px;
+                color: #94a3b8;
+            }
 
-                                .olama-stationary-header .header-icon {
-                                    font-size: 40px;
-                                }
+            .empty-state .empty-icon {
+                font-size: 40px;
+                display: block;
+                margin-bottom: 10px;
+            }
 
-                                .header-year {
-                                    width: 100%;
-                                }
+            .olama-stationary-footer {
+                text-align: center;
+                padding: 20px;
+                background: #f1f5f9;
+                border-radius: 12px;
+                margin-top: 20px;
+                color: #64748b;
+                font-size: 0.9rem;
+            }
 
-                                .accordion-header {
-                                    padding: 15px 18px;
-                                }
+            /* Mobile Responsive */
+            @media (max-width: 600px) {
+                .olama-stationary-header {
+                    padding: 20px;
+                    flex-direction: column;
+                    text-align: center;
+                }
 
-                                .grade-name {
-                                    font-size: 1rem;
-                                }
+                .olama-stationary-header h1 {
+                    font-size: 1.4rem;
+                }
 
-                                .accordion-content {
-                                    padding: 18px;
-                                }
+                .olama-stationary-header .header-icon {
+                    font-size: 40px;
+                }
 
-                                .section-content {
-                                    padding: 12px 15px;
-                                    font-size: 0.9rem;
-                                }
-                            }
-                        </style>
+                .header-year {
+                    width: 100%;
+                }
 
-                        <script>
-                            document.querySelectorAll('.olama-stationary-accordion .accordion-header').forEach(header => {
-                                header.addEventListener('click', () => {
-                                    const item = header.parentElement;
-                                    const content = item.querySelector('.accordion-content');
-                                    const wasActive = item.classList.contains('active');
+                .accordion-header {
+                    padding: 15px 18px;
+                }
 
-                                    // Close all others
-                                    document.querySelectorAll('.olama-stationary-accordion .accordion-item').forEach(i => {
-                                        i.classList.remove('active');
-                                        i.querySelector('.accordion-content').style.display = 'none';
-                                    });
+                .grade-name {
+                    font-size: 1rem;
+                }
 
-                                    // Toggle current
-                                    if (!wasActive) {
-                                        item.classList.add('active');
-                                        content.style.display = 'block';
-                                    }
-                                });
-                            });
-                        </script>
-                        <?php
-                        return ob_get_clean();
+                .accordion-content {
+                    padding: 18px;
+                }
+
+                .section-content {
+                    padding: 12px 15px;
+                    font-size: 0.9rem;
+                }
+            }
+        </style>
+
+        <script>
+            document.querySelectorAll('.olama-stationary-accordion .accordion-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const item = header.parentElement;
+                    const content = item.querySelector('.accordion-content');
+                    const wasActive = item.classList.contains('active');
+
+                    // Close all others
+                    document.querySelectorAll('.olama-stationary-accordion .accordion-item').forEach(i => {
+                        i.classList.remove('active');
+                        i.querySelector('.accordion-content').style.display = 'none';
+                    });
+
+                    // Toggle current
+                    if (!wasActive) {
+                        item.classList.add('active');
+                        content.style.display = 'block';
+                    }
+                });
+            });
+        </script>
+        <?php
+        return ob_get_clean();
     }
 }
