@@ -140,6 +140,7 @@
 .day-item.active {
     box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
     border-color: #bfdbfe;
+    overflow: visible !important;
 }
 
 .day-header {
@@ -226,8 +227,10 @@
 }
 
 .day-item.active .day-content {
-    max-height: none;
-    padding: 0 20px 25px;
+    max-height: 20000px !important;
+    padding: 0 20px 25px !important;
+    overflow: visible !important;
+    height: auto !important;
 }
 
 /* Empty Day Message */
@@ -370,7 +373,7 @@
 
 .detail-value {
     font-weight: 500;
-    text-align: right;
+    text-align: right !important;
 }
 
 /* Homework List with Icons */
@@ -414,7 +417,7 @@
     padding-right: 24px;
     line-height: 1.6;
     color: #1e293b;
-    text-align: right;
+    text-align: right !important;
 }
 
 /* Teacher Notes Section */
@@ -429,7 +432,7 @@
     line-height: 1.6;
     font-style: italic;
     padding: 5px 0;
-    text-align: right;
+    text-align: right !important;
 }
 
 /* Legacy section list (for backwards compatibility) */
