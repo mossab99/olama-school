@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+global $wpdb;
 $grades = Olama_School_Grade::get_grades();
 if (!$grades) {
     echo '<div class="error"><p>' . __('Please create grades first.', 'olama-school') . '</p></div>';
@@ -132,7 +133,7 @@ if ($current_semester_id && $selected_grade_id) {
                 SUM(CASE WHEN plan_type = 'review' THEN 1 ELSE 0 END) as approved_reviews
              FROM {$wpdb->prefix}olama_plans 
              WHERE subject_id = %d AND section_id = %d 
-             AND plan_status = 'approved'
+             AND status = 'approved'
              AND plan_date >= %s AND plan_date <= %s",
             $sub->id,
             $selected_section_id,
@@ -396,167 +397,190 @@ if ($current_semester_id && $selected_grade_id) {
 
                 <div style="overflow-x: auto;">
                     <table class="wp-list-table widefat striped" style="border: none; box-shadow: none;">
-                            <thead>
-                                <tr style="background: #f8fafc;">
-                                    <th style="padding: 15px 20px; font-weight: 700; color: #475569; text-align: left; min-width: 180px;">
-                                        <?php echo Olama_School_Helpers::translate('Subject Name'); ?>
-                                    </th>
-                                    <th style="padding: 15px 10px; font-weight: 700; color: #475569; width: 100px; text-align: center;">
-                                        <?php echo Olama_School_Helpers::translate('Required Plans'); ?>
-                                    </th>
-                                    <th style="padding: 15px 10px; font-weight: 700; color: #475569; width: 100px; text-align: center;">
-                                        <?php echo Olama_School_Helpers::translate('Approved Plans'); ?>
-                                    </th>
-                                    <th style="padding: 15px 10px; font-weight: 700; color: #475569; width: 100px; text-align: center;">
-                                        <?php echo Olama_School_Helpers::translate('Reviews'); ?>
-                                    </th>
-                                    <th style="padding: 15px 10px; font-weight: 700; color: #475569; width: 140px; text-align: center;">
-                                        <?php echo Olama_School_Helpers::translate('Teacher Plan Coverage'); ?>
-                                    </th>
-                                    <th style="padding: 15px 10px; font-weight: 700; color: #475569; width: 140px; text-align: center;">
-                                        <?php echo Olama_School_Helpers::translate('Schedule Coverage'); ?>
-                                    </th>
-                                    <th style="padding: 15px 10px; font-weight: 700; color: #475569; text-align: center; width: 110px;">
-                                        <?php echo Olama_School_Helpers::translate('Status'); ?>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php
-                                $total_req = 0;
-                                $total_app = 0;
-                                $total_rev = 0;
-                                $total_sched = 0;
+                        <thead>
+                            <tr style="background: #f8fafc;">
+                                <th
+                                    style="padding: 15px 20px; font-weight: 700; color: #475569; text-align: left; min-width: 180px;">
+                                    <?php echo Olama_School_Helpers::translate('Subject Name'); ?>
+                                </th>
+                                <th
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 100px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Required Plans'); ?>
+                                </th>
+                                <th
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 100px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Approved Plans'); ?>
+                                </th>
+                                <th
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 100px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Reviews'); ?>
+                                </th>
+                                <th
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 140px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Teacher Plan Coverage'); ?>
+                                </th>
+                                <th
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 140px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Schedule Coverage'); ?>
+                                </th>
+                                <th
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; text-align: center; width: 110px;">
+                                    <?php echo Olama_School_Helpers::translate('Status'); ?>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $total_req = 0;
+                            $total_app = 0;
+                            $total_rev = 0;
+                            $total_sched = 0;
 
-                                foreach ($analysis_data as $row):
-                                    $total_req += $row['required'];
-                                    $total_app += $row['approved'];
-                                    $total_rev += $row['reviews'];
-                                    $total_sched += $row['sched_capacity'];
+                            foreach ($analysis_data as $row):
+                                $total_req += $row['required'];
+                                $total_app += $row['approved'];
+                                $total_rev += $row['reviews'];
+                                $total_sched += $row['sched_capacity'];
 
-                                    // Status logic
-                                    $status_label = Olama_School_Helpers::translate('Optimal');
-                                    $status_color = '#10b981';
-                                    $status_icon = 'dashicons-yes';
-                                    $bg_color = 'rgba(16, 185, 129, 0.1)';
+                                // Status logic
+                                $status_label = Olama_School_Helpers::translate('Optimal');
+                                $status_color = '#10b981';
+                                $status_icon = 'dashicons-yes';
+                                $bg_color = 'rgba(16, 185, 129, 0.1)';
 
-                                    if ($row['schedule_coverage'] >= 95) {
-                                    } elseif ($row['schedule_coverage'] >= 80) {
-                                        $status_label = Olama_School_Helpers::translate('High');
-                                        $status_color = '#f59e0b';
-                                        $status_icon = 'dashicons-arrow-up-alt';
-                                        $bg_color = 'rgba(245, 158, 11, 0.1)';
-                                    } else {
-                                        $status_label = Olama_School_Helpers::translate('Low');
-                                        $status_color = '#ef4444';
-                                        $status_icon = 'dashicons-arrow-down-alt';
-                                        $bg_color = 'rgba(239, 68, 68, 0.1)';
-                                    }
-                                    ?>
-                                        <tr>
-                                            <td style="padding: 15px 20px; text-align: left;">
-                                                <div style="display: flex; align-items: center; gap: 10px;">
-                                                    <span class="dashicons dashicons-book" style="color: <?php echo esc_attr($row['color']); ?>;"></span>
-                                                    <span style="font-weight: 600; color: #1e293b;"><?php echo esc_html($row['name']); ?></span>
-                                                </div>
-                                            </td>
-                                            <td style="padding: 15px 10px; text-align: center; font-weight: 600;">
-                                                <?php echo $row['required']; ?>
-                                            </td>
-                                            <td style="padding: 15px 10px; text-align: center; font-weight: 600;">
-                                                <?php echo $row['approved']; ?>
-                                            </td>
-                                            <td style="padding: 15px 10px; text-align: center; font-weight: 600;">
-                                                <?php echo $row['reviews']; ?>
-                                            </td>
-                                            <td style="padding: 15px 10px; text-align: center;">
-                                                <div style="font-weight: 700; color: #1e293b;"><?php echo $row['teacher_coverage']; ?>%</div>
-                                            </td>
-                                            <td style="padding: 15px 10px; text-align: center;">
-                                                <div style="font-weight: 700; color: #1e293b;"><?php echo $row['schedule_coverage']; ?>%</div>
-                                                <div style="font-size: 11px; color: #64748b;">
-                                                    <?php echo ($row['approved'] + $row['reviews']) . ' / ' . $row['sched_capacity']; ?>
-                                                </div>
-                                            </td>
-                                            <td style="padding: 15px 10px; text-align: center;">
-                                                <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 14px; border-radius: 20px; background: <?php echo $bg_color; ?>; color: <?php echo $status_color; ?>; font-weight: 700; font-size: 0.85rem; border: 1px solid <?php echo $status_color; ?>30; min-width: 90px;">
-                                                    <span class="dashicons <?php echo $status_icon; ?>" style="font-size: 16px; width: 16px; height: 16px;"></span>
-                                                    <?php echo $status_label; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                            <tfoot>
-                                <tr style="background: #f8fafc; border-top: 2px solid #e2e8f0;">
-                                    <td style="padding: 20px; font-weight: 800; color: #1e293b;">
-                                        <?php echo Olama_School_Helpers::translate('Total Weekly Coverage'); ?>
+                                if ($row['schedule_coverage'] >= 95) {
+                                } elseif ($row['schedule_coverage'] >= 80) {
+                                    $status_label = Olama_School_Helpers::translate('High');
+                                    $status_color = '#f59e0b';
+                                    $status_icon = 'dashicons-arrow-up-alt';
+                                    $bg_color = 'rgba(245, 158, 11, 0.1)';
+                                } else {
+                                    $status_label = Olama_School_Helpers::translate('Low');
+                                    $status_color = '#ef4444';
+                                    $status_icon = 'dashicons-arrow-down-alt';
+                                    $bg_color = 'rgba(239, 68, 68, 0.1)';
+                                }
+                                ?>
+                                <tr>
+                                    <td style="padding: 15px 20px; text-align: left;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span class="dashicons dashicons-book"
+                                                style="color: <?php echo esc_attr($row['color']); ?>;"></span>
+                                            <span
+                                                style="font-weight: 600; color: #1e293b;"><?php echo esc_html($row['name']); ?></span>
+                                        </div>
                                     </td>
-                                    <td style="padding: 20px; text-align: center; font-weight: 800;"><?php echo $total_req; ?></td>
-                                    <td style="padding: 20px; text-align: center; font-weight: 800;"><?php echo $total_app; ?></td>
-                                    <td style="padding: 20px; text-align: center; font-weight: 800;"><?php echo $total_rev; ?></td>
-                                    <td style="padding: 20px; text-align: center;">
-                                        <?php $t_teach_pct = $total_req > 0 ? round(($total_app / $total_req) * 100, 1) : 0; ?>
-                                        <div style="font-weight: 800; color: #1e293b;"><?php echo $t_teach_pct; ?>%</div>
+                                    <td style="padding: 15px 10px; text-align: center; font-weight: 600;">
+                                        <?php echo $row['required']; ?>
                                     </td>
-                                    <td style="padding: 20px; text-align: center;">
-                                        <?php $t_sched_pct = $total_sched > 0 ? round((($total_app + $total_rev) / $total_sched) * 100, 1) : 0; ?>
-                                        <div style="font-weight: 800; color: #1e293b;"><?php echo $t_sched_pct; ?>%</div>
-                                        <div style="font-size: 11px; color: #64748b;"><?php echo ($total_app + $total_rev) . ' / ' . $total_sched; ?></div>
+                                    <td style="padding: 15px 10px; text-align: center; font-weight: 600;">
+                                        <?php echo $row['approved']; ?>
                                     </td>
-                                    <td style="padding: 20px; text-align: center;">
-                                        <?php
-                                        $t_status_label = Olama_School_Helpers::translate('Optimal');
-                                        $t_status_color = '#10b981';
-                                        $t_status_icon = 'dashicons-yes';
-                                        $t_bg_color = 'rgba(16, 185, 129, 0.1)';
-
-                                        if ($t_sched_pct >= 95) {
-                                        } elseif ($t_sched_pct >= 80) {
-                                            $t_status_label = Olama_School_Helpers::translate('High');
-                                            $t_status_color = '#f59e0b';
-                                            $t_status_icon = 'dashicons-arrow-up-alt';
-                                            $t_bg_color = 'rgba(245, 158, 11, 0.1)';
-                                        } else {
-                                            $t_status_label = Olama_School_Helpers::translate('Low');
-                                            $t_status_color = '#ef4444';
-                                            $t_status_icon = 'dashicons-arrow-down-alt';
-                                            $t_bg_color = 'rgba(239, 68, 68, 0.1)';
-                                        }
-                                        ?>
-                                        <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 18px; border-radius: 20px; background: <?php echo $t_bg_color; ?>; color: <?php echo $t_status_color; ?>; font-weight: 800; font-size: 0.9rem; border: 1px solid <?php echo $t_status_color; ?>30; min-width: 100px;">
-                                            <span class="dashicons <?php echo $t_status_icon; ?>" style="font-size: 18px; width: 18px; height: 18px;"></span>
-                                            <?php echo $t_status_label; ?>
+                                    <td style="padding: 15px 10px; text-align: center; font-weight: 600;">
+                                        <?php echo $row['reviews']; ?>
+                                    </td>
+                                    <td style="padding: 15px 10px; text-align: center;">
+                                        <div style="font-weight: 700; color: #1e293b;"><?php echo $row['teacher_coverage']; ?>%
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px 10px; text-align: center;">
+                                        <div style="font-weight: 700; color: #1e293b;"><?php echo $row['schedule_coverage']; ?>%
+                                        </div>
+                                        <div style="font-size: 11px; color: #64748b;">
+                                            <?php echo ($row['approved'] + $row['reviews']) . ' / ' . $row['sched_capacity']; ?>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px 10px; text-align: center;">
+                                        <div
+                                            style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 14px; border-radius: 20px; background: <?php echo $bg_color; ?>; color: <?php echo $status_color; ?>; font-weight: 700; font-size: 0.85rem; border: 1px solid <?php echo $status_color; ?>30; min-width: 90px;">
+                                            <span class="dashicons <?php echo $status_icon; ?>"
+                                                style="font-size: 16px; width: 16px; height: 16px;"></span>
+                                            <?php echo $status_label; ?>
                                         </div>
                                     </td>
                                 </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #f8fafc; border-top: 2px solid #e2e8f0;">
+                                <td style="padding: 20px; font-weight: 800; color: #1e293b;">
+                                    <?php echo Olama_School_Helpers::translate('Total Weekly Coverage'); ?>
+                                </td>
+                                <td style="padding: 20px; text-align: center; font-weight: 800;"><?php echo $total_req; ?>
+                                </td>
+                                <td style="padding: 20px; text-align: center; font-weight: 800;"><?php echo $total_app; ?>
+                                </td>
+                                <td style="padding: 20px; text-align: center; font-weight: 800;"><?php echo $total_rev; ?>
+                                </td>
+                                <td style="padding: 20px; text-align: center;">
+                                    <?php $t_teach_pct = $total_req > 0 ? round(($total_app / $total_req) * 100, 1) : 0; ?>
+                                    <div style="font-weight: 800; color: #1e293b;"><?php echo $t_teach_pct; ?>%</div>
+                                </td>
+                                <td style="padding: 20px; text-align: center;">
+                                    <?php $t_sched_pct = $total_sched > 0 ? round((($total_app + $total_rev) / $total_sched) * 100, 1) : 0; ?>
+                                    <div style="font-weight: 800; color: #1e293b;"><?php echo $t_sched_pct; ?>%</div>
+                                    <div style="font-size: 11px; color: #64748b;">
+                                        <?php echo ($total_app + $total_rev) . ' / ' . $total_sched; ?></div>
+                                </td>
+                                <td style="padding: 20px; text-align: center;">
+                                    <?php
+                                    $t_status_label = Olama_School_Helpers::translate('Optimal');
+                                    $t_status_color = '#10b981';
+                                    $t_status_icon = 'dashicons-yes';
+                                    $t_bg_color = 'rgba(16, 185, 129, 0.1)';
 
-                    <!-- Info Block -->
-                    <div style="background: #eff6ff; padding: 25px; border-top: 1px solid #dbeafe; margin-top: 20px; border-radius: 0 0 12px 12px;">
-                        <h4 style="margin: 0 0 15px 0; color: #1e40af; font-size: 15px; display: flex; align-items: center; gap: 8px;">
-                            <span class="dashicons dashicons-info" style="color: #3b82f6;"></span>
-                            <?php echo Olama_School_Helpers::translate('Understanding the columns'); ?>
-                        </h4>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <div>
-                                <p style="margin: 0 0 8px 0; color: #1e40af;"><strong><?php echo Olama_School_Helpers::translate('Teacher Plan Coverage'); ?></strong></p>
-                                <p style="margin: 0; font-size: 13px; color: #4b66b9; line-height: 1.5;">
-                                    <?php echo Olama_School_Helpers::translate('Teacher coverage of the required weekly plans.'); ?>
-                                </p>
-                            </div>
-                            <div>
-                                <p style="margin: 0 0 8px 0; color: #1e40af;"><strong><?php echo Olama_School_Helpers::translate('Schedule Coverage'); ?></strong></p>
-                                <p style="margin: 0; font-size: 13px; color: #4b66b9; line-height: 1.5;">
-                                    <?php echo Olama_School_Helpers::translate('Schedule coverage by plans and reviews compared to master schedule periods.'); ?>
-                                </p>
-                            </div>
+                                    if ($t_sched_pct >= 95) {
+                                    } elseif ($t_sched_pct >= 80) {
+                                        $t_status_label = Olama_School_Helpers::translate('High');
+                                        $t_status_color = '#f59e0b';
+                                        $t_status_icon = 'dashicons-arrow-up-alt';
+                                        $t_bg_color = 'rgba(245, 158, 11, 0.1)';
+                                    } else {
+                                        $t_status_label = Olama_School_Helpers::translate('Low');
+                                        $t_status_color = '#ef4444';
+                                        $t_status_icon = 'dashicons-arrow-down-alt';
+                                        $t_bg_color = 'rgba(239, 68, 68, 0.1)';
+                                    }
+                                    ?>
+                                    <div
+                                        style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 18px; border-radius: 20px; background: <?php echo $t_bg_color; ?>; color: <?php echo $t_status_color; ?>; font-weight: 800; font-size: 0.9rem; border: 1px solid <?php echo $t_status_color; ?>30; min-width: 100px;">
+                                        <span class="dashicons <?php echo $t_status_icon; ?>"
+                                            style="font-size: 18px; width: 18px; height: 18px;"></span>
+                                        <?php echo $t_status_label; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Info Block -->
+                <div
+                    style="background: #eff6ff; padding: 25px; border-top: 1px solid #dbeafe; margin-top: 20px; border-radius: 0 0 12px 12px;">
+                    <h4
+                        style="margin: 0 0 15px 0; color: #1e40af; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                        <span class="dashicons dashicons-info" style="color: #3b82f6;"></span>
+                        <?php echo Olama_School_Helpers::translate('Understanding the columns'); ?>
+                    </h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <p style="margin: 0 0 8px 0; color: #1e40af;">
+                                <strong><?php echo Olama_School_Helpers::translate('Teacher Plan Coverage'); ?></strong></p>
+                            <p style="margin: 0; font-size: 13px; color: #4b66b9; line-height: 1.5;">
+                                <?php echo Olama_School_Helpers::translate('Teacher coverage of the required weekly plans.'); ?>
+                            </p>
+                        </div>
+                        <div>
+                            <p style="margin: 0 0 8px 0; color: #1e40af;">
+                                <strong><?php echo Olama_School_Helpers::translate('Schedule Coverage'); ?></strong></p>
+                            <p style="margin: 0; font-size: 13px; color: #4b66b9; line-height: 1.5;">
+                                <?php echo Olama_School_Helpers::translate('Schedule coverage by plans and reviews compared to master schedule periods.'); ?>
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
     <?php endif; ?>
 
     <!-- Plan Details Section -->

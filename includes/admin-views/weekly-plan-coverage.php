@@ -294,7 +294,7 @@ $num_weeks = 1;
                                             SUM(CASE WHEN plan_type = 'review' THEN 1 ELSE 0 END) as approved_reviews
                                          FROM {$wpdb->prefix}olama_plans 
                                          WHERE subject_id = %d AND section_id = %d 
-                                         AND plan_status = 'approved'
+                                         AND status = 'approved'
                                          AND plan_date >= %s AND plan_date <= %s",
                                         $subject->id,
                                         $selected_section_id,
