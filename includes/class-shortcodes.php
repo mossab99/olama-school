@@ -544,45 +544,100 @@ class Olama_School_Shortcodes
             return '<div class="olama-no-plans">' . __('No master schedule found for the selected section and semester.', 'olama-school') . '</div>';
         }
 
-        $days = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday');
+        // Arabic day names
+        $days_ar = array(
+            'Sunday' => 'الأحد',
+            'Monday' => 'الاثنين',
+            'Tuesday' => 'الثلاثاء',
+            'Wednesday' => 'الأربعاء',
+            'Thursday' => 'الخميس',
+        );
+
+        // Arabic ordinal period names
+        $periods_ar = array(
+            1 => 'الأولى',
+            2 => 'الثانية',
+            3 => 'الثالثة',
+            4 => 'الرابعة',
+            5 => 'الخامسة',
+            6 => 'السادسة',
+            7 => 'السابعة',
+            8 => 'الثامنة',
+            9 => 'التاسعة',
+            10 => 'العاشرة',
+        );
+
         $max_periods = $grade ? intval($grade->periods_count) : 8;
+
+        // Get subject color based on name
+        $get_subject_color = function ($subject_name) {
+            $subject_name = strtolower($subject_name);
+            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'رياضيات') !== false)
+                return array('bg' => '#dbeafe', 'text' => '#1e40af');
+            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'عربي') !== false || strpos($subject_name, 'عربية') !== false)
+                return array('bg' => '#dcfce7', 'text' => '#166534');
+            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'انجليزي') !== false || strpos($subject_name, 'إنجليزية') !== false)
+                return array('bg' => '#e0e7ff', 'text' => '#4338ca');
+            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'علوم') !== false)
+                return array('bg' => '#ccfbf1', 'text' => '#0f766e');
+            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'دين') !== false || strpos($subject_name, 'إسلامية') !== false || strpos($subject_name, 'تربية') !== false)
+                return array('bg' => '#fef3c7', 'text' => '#92400e');
+            if (strpos($subject_name, 'social') !== false || strpos($subject_name, 'اجتماعية') !== false || strpos($subject_name, 'دراسات') !== false)
+                return array('bg' => '#fce7f3', 'text' => '#9d174d');
+            if (strpos($subject_name, 'digital') !== false || strpos($subject_name, 'حاسوب') !== false || strpos($subject_name, 'رقمية') !== false)
+                return array('bg' => '#f3e8ff', 'text' => '#7c3aed');
+            if (strpos($subject_name, 'art') !== false || strpos($subject_name, 'فنية') !== false)
+                return array('bg' => '#fff7ed', 'text' => '#c2410c');
+            if (strpos($subject_name, 'physic') !== false || strpos($subject_name, 'رياضة') !== false || strpos($subject_name, 'بدنية') !== false)
+                return array('bg' => '#fef2f2', 'text' => '#b91c1c');
+            return array('bg' => '#f1f5f9', 'text' => '#475569');
+        };
 
         ob_start();
         ?>
-        <div class="olama-shortcode-schedule-container">
-            <div class="olama-schedule-header">
-                <h2><?php echo $grade ? esc_html($grade->grade_name) : ''; ?> -
-                    <?php echo $section ? esc_html($section->section_name) : ''; ?>
-                </h2>
-                <div class="olama-schedule-meta">
-                    <span class="dashicons dashicons-calendar"></span>
-                    <?php echo $semester ? esc_html($semester->semester_name) : ''; ?>
+        <div class="olama-schedule-v2">
+            <!-- Header -->
+            <div class="schedule-header-v2">
+                <div class="header-main">
+                    <h1 class="header-title"><?php echo $grade ? esc_html($grade->grade_name) : ''; ?> - <?php echo $section ? esc_html($section->section_name) : ''; ?></h1>
+                </div>
+                <div class="header-badge">
+                    <span class="badge-icon">📅</span>
+                    <span class="badge-text"><?php echo $semester ? esc_html($semester->semester_name) : ''; ?></span>
                 </div>
             </div>
 
-            <div class="olama-schedule-desktop">
-                <table class="olama-schedule-table">
+            <!-- Desktop Grid -->
+            <div class="schedule-grid-desktop">
+                <table class="schedule-table-v2">
                     <thead>
                         <tr>
-                            <th><?php _e('Day / Period', 'olama-school'); ?></th>
+                            <th class="day-col-header"><?php echo Olama_School_Helpers::translate('اليوم'); ?></th>
                             <?php for ($i = 1; $i <= $max_periods; $i++): ?>
-                                <th><?php echo $i; ?></th>
+                                <th class="period-col-header">
+                                    <span class="period-label-text"><?php echo Olama_School_Helpers::translate('الحصة'); ?></span>
+                                    <span class="period-ordinal"><?php echo isset($periods_ar[$i]) ? $periods_ar[$i] : $i; ?></span>
+                                </th>
                             <?php endfor; ?>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($days as $day): ?>
+                        <?php foreach ($days_ar as $day_en => $day_ar): ?>
                             <tr>
-                                <td class="day-label"><strong><?php _e($day, 'olama-school'); ?></strong></td>
+                                <td class="day-cell">
+                                    <span class="day-name"><?php echo esc_html($day_ar); ?></span>
+                                </td>
                                 <?php for ($i = 1; $i <= $max_periods; $i++):
-                                    $item = $schedule[$day][$i] ?? null;
+                                    $item = $schedule[$day_en][$i] ?? null;
+                                    $colors = $item ? $get_subject_color($item->subject_name) : array('bg' => '#f8fafc', 'text' => '#94a3b8');
                                     ?>
-                                    <td class="schedule-cell <?php echo $item ? 'has-subject' : ''; ?>"
-                                        style="<?php echo $item ? 'border-left: 4px solid ' . esc_attr($item->color_code) . ';' : ''; ?>">
+                                    <td class="subject-cell">
                                         <?php if ($item): ?>
-                                            <div class="subject-name" style="color: <?php echo esc_attr($item->color_code); ?>">
-                                                <?php echo esc_html($item->subject_name); ?>
+                                            <div class="subject-card-v2" style="background: <?php echo esc_attr($colors['bg']); ?>; color: <?php echo esc_attr($colors['text']); ?>;">
+                                                <span class="subject-text"><?php echo esc_html($item->subject_name); ?></span>
                                             </div>
+                                        <?php else: ?>
+                                            <div class="empty-cell">-</div>
                                         <?php endif; ?>
                                     </td>
                                 <?php endfor; ?>
@@ -592,31 +647,291 @@ class Olama_School_Shortcodes
                 </table>
             </div>
 
-            <div class="olama-schedule-mobile">
-                <?php foreach ($days as $day): ?>
-                    <div class="olama-mobile-day">
-                        <h3><?php _e($day, 'olama-school'); ?></h3>
-                        <div class="olama-mobile-periods">
-                            <?php for ($i = 1; $i <= $max_periods; $i++):
-                                $item = $schedule[$day][$i] ?? null;
-                                if (!$item)
-                                    continue;
+            <!-- Mobile Accordion -->
+            <div class="schedule-mobile-v2">
+                <?php foreach ($days_ar as $day_en => $day_ar): ?>
+                    <div class="mobile-day-card">
+                        <div class="mobile-day-header" onclick="this.parentElement.classList.toggle('expanded')">
+                            <span class="day-icon">📆</span>
+                            <span class="day-title"><?php echo esc_html($day_ar); ?></span>
+                            <span class="toggle-arrow">▼</span>
+                        </div>
+                        <div class="mobile-day-content">
+                            <?php 
+                            $has_periods = false;
+                            for ($i = 1; $i <= $max_periods; $i++):
+                                $item = $schedule[$day_en][$i] ?? null;
+                                if (!$item) continue;
+                                $has_periods = true;
+                                $colors = $get_subject_color($item->subject_name);
                                 ?>
-                                <div class="olama-mobile-period-item"
-                                    style="border-left: 4px solid <?php echo esc_attr($item->color_code); ?>">
-                                    <span class="period-label"><?php printf(__('Period %d', 'olama-school'), $i); ?>:</span>
-                                    <span class="subject-label"
-                                        style="color: <?php echo esc_attr($item->color_code); ?>"><?php echo esc_html($item->subject_name); ?></span>
+                                <div class="mobile-period-item" style="background: <?php echo esc_attr($colors['bg']); ?>;">
+                                    <span class="period-badge" style="background: <?php echo esc_attr($colors['text']); ?>;">
+                                        <?php echo Olama_School_Helpers::translate('الحصة'); ?> <?php echo isset($periods_ar[$i]) ? $periods_ar[$i] : $i; ?>
+                                    </span>
+                                    <span class="subject-name-mobile" style="color: <?php echo esc_attr($colors['text']); ?>;">
+                                        <?php echo esc_html($item->subject_name); ?>
+                                    </span>
                                 </div>
                             <?php endfor; ?>
+                            <?php if (!$has_periods): ?>
+                                <div class="no-periods"><?php echo Olama_School_Helpers::translate('لا توجد حصص'); ?></div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
         </div>
+
+        <style>
+            .olama-schedule-v2 {
+                font-family: 'Tajawal', 'Almarai', Arial, sans-serif;
+                max-width: 100%;
+                margin: 0 auto;
+                direction: rtl;
+            }
+
+            /* Header */
+            .schedule-header-v2 {
+                background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                color: #fff;
+                padding: 25px 30px;
+                border-radius: 16px 16px 0 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .schedule-header-v2 .header-title {
+                margin: 0;
+                font-size: 1.6rem;
+                font-weight: 800;
+            }
+
+            .schedule-header-v2 .header-badge {
+                background: rgba(255,255,255,0.2);
+                padding: 10px 18px;
+                border-radius: 25px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.95rem;
+                font-weight: 600;
+            }
+
+            .schedule-header-v2 .badge-icon {
+                font-size: 1.2rem;
+            }
+
+            /* Desktop Grid */
+            .schedule-grid-desktop {
+                overflow-x: auto;
+                background: #fff;
+                border: 1px solid #e2e8f0;
+                border-top: none;
+                border-radius: 0 0 16px 16px;
+            }
+
+            .schedule-table-v2 {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 700px;
+            }
+
+            .schedule-table-v2 thead th {
+                background: #f8fafc;
+                padding: 15px 10px;
+                text-align: center;
+                font-weight: 700;
+                color: #334155;
+                border-bottom: 2px solid #e2e8f0;
+                font-size: 0.85rem;
+            }
+
+            .schedule-table-v2 .day-col-header {
+                width: 100px;
+                background: #f1f5f9;
+            }
+
+            .schedule-table-v2 .period-col-header {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+            }
+
+            .schedule-table-v2 .period-label-text {
+                font-size: 0.7rem;
+                color: #64748b;
+                font-weight: 500;
+            }
+
+            .schedule-table-v2 .period-ordinal {
+                font-size: 0.9rem;
+                color: #1e40af;
+                font-weight: 700;
+            }
+
+            .schedule-table-v2 tbody td {
+                padding: 8px;
+                text-align: center;
+                border-bottom: 1px solid #f1f5f9;
+                vertical-align: middle;
+            }
+
+            .schedule-table-v2 .day-cell {
+                background: #f8fafc;
+                font-weight: 700;
+                color: #1e293b;
+                font-size: 0.95rem;
+            }
+
+            .schedule-table-v2 .subject-card-v2 {
+                padding: 10px 8px;
+                border-radius: 10px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                min-height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+
+            .schedule-table-v2 .subject-card-v2:hover {
+                transform: scale(1.03);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+
+            .schedule-table-v2 .empty-cell {
+                color: #cbd5e1;
+                font-size: 1rem;
+            }
+
+            /* Mobile Accordion */
+            .schedule-mobile-v2 {
+                display: none;
+                flex-direction: column;
+                gap: 12px;
+                padding: 15px;
+                background: #f8fafc;
+                border-radius: 0 0 16px 16px;
+            }
+
+            .mobile-day-card {
+                background: #fff;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                border: 1px solid #e2e8f0;
+            }
+
+            .mobile-day-header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 16px 20px;
+                cursor: pointer;
+                background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+                transition: background 0.2s;
+            }
+
+            .mobile-day-header:hover {
+                background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            }
+
+            .mobile-day-header .day-icon {
+                font-size: 1.3rem;
+            }
+
+            .mobile-day-header .day-title {
+                flex: 1;
+                font-weight: 700;
+                font-size: 1.1rem;
+                color: #1e40af;
+            }
+
+            .mobile-day-header .toggle-arrow {
+                color: #64748b;
+                transition: transform 0.3s;
+            }
+
+            .mobile-day-card.expanded .toggle-arrow {
+                transform: rotate(180deg);
+            }
+
+            .mobile-day-content {
+                display: none;
+                padding: 15px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .mobile-day-card.expanded .mobile-day-content {
+                display: flex;
+            }
+
+            .mobile-period-item {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 15px;
+                border-radius: 10px;
+            }
+
+            .mobile-period-item .period-badge {
+                color: #fff;
+                padding: 5px 12px;
+                border-radius: 20px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+
+            .mobile-period-item .subject-name-mobile {
+                font-weight: 700;
+                font-size: 1rem;
+            }
+
+            .mobile-day-content .no-periods {
+                text-align: center;
+                color: #94a3b8;
+                padding: 20px;
+                font-size: 0.9rem;
+            }
+
+            /* Responsive */
+            @media (max-width: 768px) {
+                .schedule-grid-desktop {
+                    display: none;
+                }
+                .schedule-mobile-v2 {
+                    display: flex;
+                }
+                .schedule-header-v2 {
+                    border-radius: 16px 16px 0 0;
+                    padding: 20px;
+                }
+                .schedule-header-v2 .header-title {
+                    font-size: 1.3rem;
+                }
+            }
+
+            /* Fix for WordPress themes */
+            .olama-schedule-v2 table {
+                margin: 0 !important;
+            }
+            .olama-schedule-v2 th,
+            .olama-schedule-v2 td {
+                border: none !important;
+            }
+        </style>
         <?php
         return ob_get_clean();
     }
+
 
     /**
      * Shortcode: [olama_stationary]
