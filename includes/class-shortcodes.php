@@ -600,11 +600,24 @@ class Olama_School_Shortcodes
             <div class="schedule-header-v2">
                 <div class="header-main">
                     <h1 class="header-title"><?php echo $grade ? esc_html($grade->grade_name) : ''; ?> -
-                        <?php echo $section ? esc_html($section->section_name) : ''; ?></h1>
+                        <?php echo $section ? esc_html($section->section_name) : ''; ?>
+                    </h1>
                 </div>
                 <div class="header-badge">
                     <span class="badge-icon">📅</span>
-                    <span class="badge-text"><?php echo $semester ? esc_html($semester->semester_name) : ''; ?></span>
+                    <span class="badge-text"><?php
+                    // Get academic year
+                    $academic_year = $wpdb->get_row($wpdb->prepare(
+                        "SELECT ay.* FROM {$wpdb->prefix}olama_academic_years ay 
+                             INNER JOIN {$wpdb->prefix}olama_semesters s ON s.academic_year_id = ay.id 
+                             WHERE s.id = %d",
+                        $semester_id
+                    ));
+                    if ($academic_year) {
+                        echo esc_html($academic_year->year_name) . ' - ';
+                    }
+                    echo $semester ? esc_html($semester->semester_name) : '';
+                    ?></span>
                 </div>
             </div>
 
@@ -716,13 +729,14 @@ class Olama_School_Shortcodes
 
             .schedule-header-v2 .header-badge {
                 background: rgba(255, 255, 255, 0.2);
-                padding: 10px 18px;
+                padding: 12px 22px;
                 border-radius: 25px;
                 display: flex;
                 align-items: center;
-                gap: 8px;
-                font-size: 0.95rem;
-                font-weight: 600;
+                gap: 10px;
+                font-size: 1.15rem;
+                font-weight: 700;
+                color: #fff;
             }
 
             .schedule-header-v2 .badge-icon {
