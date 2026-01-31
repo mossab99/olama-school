@@ -226,7 +226,7 @@
 }
 
 .day-item.active .day-content {
-    max-height: 2000px;
+    max-height: none;
     padding: 0 20px 25px;
 }
 
@@ -370,6 +370,7 @@
 
 .detail-value {
     font-weight: 500;
+    text-align: right;
 }
 
 /* Homework List with Icons */
@@ -413,6 +414,7 @@
     padding-right: 24px;
     line-height: 1.6;
     color: #1e293b;
+    text-align: right;
 }
 
 /* Teacher Notes Section */
@@ -427,6 +429,7 @@
     line-height: 1.6;
     font-style: italic;
     padding: 5px 0;
+    text-align: right;
 }
 
 /* Legacy section list (for backwards compatibility) */
