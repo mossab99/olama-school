@@ -37,7 +37,7 @@ if (!$is_admin) {
     $params[] = $current_user_id;
 }
 
-$query = "SELECT p.*, s.subject_name, s.color_code, sec.section_name, g.grade_name, u.display_name as teacher_name
+$query = "SELECT p.*, s.subject_name, s.color_code, sec.section_name, g.grade_name, g.id as grade_id, u.display_name as teacher_name
           FROM {$wpdb->prefix}olama_plans p
           JOIN {$wpdb->prefix}olama_subjects s ON p.subject_id = s.id
           JOIN {$wpdb->prefix}olama_sections sec ON p.section_id = sec.id
@@ -217,13 +217,31 @@ $completed_plans = array_filter($all_plans, function ($p) {
                                                     style="background: #f59e0b; color: #fff; border: none;">
                                                     <?php echo Olama_School_Helpers::translate('Request Edits'); ?>
                                                 </button>
-                                            <?php else: ?>
-                                                <a href="<?php echo admin_url('admin.php?page=olama-school-plans&tab=creation&active_day=' . strtolower(date('l', strtotime($plan->plan_date)))); ?>"
-                                                    class="button button-small"
+                                                    <?php else:
+                                                $plan_date_ts = strtotime($plan->plan_date);
+                                                $day_index = (int) date('w', $plan_date_ts);
+                                                $week_start = date('Y-m-d', $plan_date_ts - ($day_index * 86400));
+                                                $plan_month = date('Y-m', $plan_date_ts);
+                                                $active_day = date('l', $plan_date_ts);
+
+                                                $edit_url = add_query_arg(array(
+                                                    'page' => 'olama-school-plans',
+                                                    'tab' => 'creation',
+                                                    'academic_year_id' => $plan->academic_year_id,
+                                                    'semester_id' => $plan->semester_id,
+                                                    'grade_id' => $plan->grade_id,
+                                                    'section_id' => $plan->section_id,
+                                                    'plan_id' => $plan->id,
+                                                    'week_start' => $week_start,
+                                                    'plan_month' => $plan_month,
+                                                    'active_day' => $active_day
+                                                ), admin_url('admin.php'));
+                                                ?>
+                                                            <a href="<?php echo esc_url($edit_url); ?>" class="button button-small"
                                                     style="background: #6366f1; color: #fff; border: none; text-decoration: none; padding: 5px 10px;">
                                                     <span class="dashicons dashicons-edit"
                                                         style="font-size: 16px; margin-top: 2px;"></span>
-                                                    <?php echo Olama_School_Helpers::translate('Edit Plan'); ?>
+                                                                <?php echo Olama_School_Helpers::translate('Edit Plan'); ?>
                                                 </a>
                                             <?php endif; ?>
                                         </div>

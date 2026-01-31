@@ -463,3 +463,37 @@ if (!defined('ABSPATH')) {
         </div>
     </div>
 </div>
+
+<script>
+    jQuery(document).ready(function ($) {
+        // Auto-open plan if plan_id is in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const planId = urlParams.get('plan_id');
+
+        if (planId) {
+            // Wait slightly for plan.js and other components to be ready
+            setTimeout(function () {
+                let planOpened = false;
+                $('.olama-plan-item').each(function () {
+                    try {
+                        const planData = $(this).data('plan');
+                        if (planData && parseInt(planData.id) === parseInt(planId)) {
+                            $(this).find('.olama-edit-plan').trigger('click');
+                            planOpened = true;
+
+                            // Scroll to the item for better visibility
+                            $(this)[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            return false; // Break loop
+                        }
+                    } catch (e) {
+                        console.error('Olama Error: Failed to parse plan data for auto-open', e);
+                    }
+                });
+
+                if (!planOpened) {
+                    console.log('Olama: Plan ' + planId + ' not found on this day view.');
+                }
+            }, 800);
+        }
+    });
+</script>
