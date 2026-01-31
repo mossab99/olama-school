@@ -8,6 +8,9 @@ global $wpdb;
 // 1. Academic Scope
 $active_year = Olama_School_Academic::get_active_year();
 $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+
+$is_admin = Olama_School_Permissions::can('olama_approve_plans');
+$current_user_id = get_current_user_id();
 $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
 $selected_semester_id = isset($_GET['semester_id']) ? $_GET['semester_id'] : '';
 if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
@@ -27,6 +30,11 @@ $params = array($selected_year_id, $selected_semester_id);
 if ($selected_grade_id) {
     $where .= " AND s.grade_id = %d";
     $params[] = $selected_grade_id;
+}
+
+if (!$is_admin) {
+    $where .= " AND p.teacher_id = %d";
+    $params[] = $current_user_id;
 }
 
 $query = "SELECT p.*, s.subject_name, s.color_code, sec.section_name, g.grade_name, u.display_name as teacher_name
@@ -107,9 +115,11 @@ $completed_plans = array_filter($all_plans, function ($p) {
                     <table class="wp-list-table widefat fixed striped" style="border: none;">
                         <thead>
                             <tr style="background: #f8fafc;">
-                                <th style="padding: 15px; width: 150px;">
-                                    <?php echo Olama_School_Helpers::translate('Teacher'); ?>
-                                </th>
+                                <?php if ($is_admin): ?>
+                                    <th style="padding: 15px; width: 150px;">
+                                        <?php echo Olama_School_Helpers::translate('Teacher'); ?>
+                                    </th>
+                                <?php endif; ?>
                                 <th style="padding: 15px; width: 120px;">
                                     <?php echo Olama_School_Helpers::translate('Plan Date'); ?>
                                 </th>
@@ -133,14 +143,16 @@ $completed_plans = array_filter($all_plans, function ($p) {
                                 $status_label = $plan->status === 'needs_edit' ? Olama_School_Helpers::translate('Needs Revision') : Olama_School_Helpers::translate('Submitted');
                                 ?>
                                 <tr>
-                                    <td style="padding: 15px; vertical-align: middle;">
-                                        <div style="font-weight: 600; color: #1e293b;">
-                                            <?php echo esc_html($plan->teacher_name); ?>
-                                        </div>
-                                        <div style="font-size: 11px; color: #64748b;">
-                                            <?php echo esc_html($plan->grade_name . ' - ' . $plan->section_name); ?>
-                                        </div>
-                                    </td>
+                                    <?php if ($is_admin): ?>
+                                        <td style="padding: 15px; vertical-align: middle;">
+                                            <div style="font-weight: 600; color: #1e293b;">
+                                                <?php echo esc_html($plan->teacher_name); ?>
+                                            </div>
+                                            <div style="font-size: 11px; color: #64748b;">
+                                                <?php echo esc_html($plan->grade_name . ' - ' . $plan->section_name); ?>
+                                            </div>
+                                        </td>
+                                    <?php endif; ?>
                                     <td style="padding: 15px; vertical-align: middle;">
                                         <div style="font-weight: 500;">
                                             <?php echo Olama_School_Helpers::format_date($plan->plan_date); ?>
@@ -189,21 +201,31 @@ $completed_plans = array_filter($all_plans, function ($p) {
                                     </td>
                                     <td style="padding: 15px; vertical-align: middle; text-align: center;">
                                         <div style="display: flex; flex-direction: column; gap: 5px;">
-                                            <button class="button button-small olama-review-action"
-                                                data-id="<?php echo $plan->id; ?>" data-action="approve"
-                                                style="background: #10b981; color: #fff; border: none;">
-                                                <?php echo Olama_School_Helpers::translate('Final Approve'); ?>
-                                            </button>
-                                            <button class="button button-small olama-review-action"
-                                                data-id="<?php echo $plan->id; ?>" data-action="check"
-                                                style="background: #3b82f6; color: #fff; border: none;">
-                                                <?php echo Olama_School_Helpers::translate('Mark as Checked'); ?>
-                                            </button>
-                                            <button class="button button-small olama-review-action"
-                                                data-id="<?php echo $plan->id; ?>" data-action="feedback"
-                                                style="background: #f59e0b; color: #fff; border: none;">
-                                                <?php echo Olama_School_Helpers::translate('Request Edits'); ?>
-                                            </button>
+                                            <?php if ($is_admin): ?>
+                                                <button class="button button-small olama-review-action"
+                                                    data-id="<?php echo $plan->id; ?>" data-action="approve"
+                                                    style="background: #10b981; color: #fff; border: none;">
+                                                    <?php echo Olama_School_Helpers::translate('Final Approve'); ?>
+                                                </button>
+                                                <button class="button button-small olama-review-action"
+                                                    data-id="<?php echo $plan->id; ?>" data-action="check"
+                                                    style="background: #3b82f6; color: #fff; border: none;">
+                                                    <?php echo Olama_School_Helpers::translate('Mark as Checked'); ?>
+                                                </button>
+                                                <button class="button button-small olama-review-action"
+                                                    data-id="<?php echo $plan->id; ?>" data-action="feedback"
+                                                    style="background: #f59e0b; color: #fff; border: none;">
+                                                    <?php echo Olama_School_Helpers::translate('Request Edits'); ?>
+                                                </button>
+                                            <?php else: ?>
+                                                <a href="<?php echo admin_url('admin.php?page=olama-school-plans&tab=creation&active_day=' . strtolower(date('l', strtotime($plan->plan_date)))); ?>"
+                                                    class="button button-small"
+                                                    style="background: #6366f1; color: #fff; border: none; text-decoration: none; padding: 5px 10px;">
+                                                    <span class="dashicons dashicons-edit"
+                                                        style="font-size: 16px; margin-top: 2px;"></span>
+                                                    <?php echo Olama_School_Helpers::translate('Edit Plan'); ?>
+                                                </a>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -236,9 +258,11 @@ $completed_plans = array_filter($all_plans, function ($p) {
                     <table class="wp-list-table widefat fixed striped" style="border: none;">
                         <thead>
                             <tr style="background: #f8fafc;">
-                                <th style="padding: 15px; width: 150px;">
-                                    <?php echo Olama_School_Helpers::translate('Teacher'); ?>
-                                </th>
+                                <?php if ($is_admin): ?>
+                                    <th style="padding: 15px; width: 150px;">
+                                        <?php echo Olama_School_Helpers::translate('Teacher'); ?>
+                                    </th>
+                                <?php endif; ?>
                                 <th style="padding: 15px; width: 120px;">
                                     <?php echo Olama_School_Helpers::translate('Plan Date'); ?>
                                 </th>
@@ -259,14 +283,16 @@ $completed_plans = array_filter($all_plans, function ($p) {
                                 $status_label = $plan->status === 'approved' ? Olama_School_Helpers::translate('Approved') : Olama_School_Helpers::translate('Edited');
                                 ?>
                                 <tr>
-                                    <td style="padding: 15px; vertical-align: middle;">
-                                        <div style="font-weight: 600; color: #1e293b;">
-                                            <?php echo esc_html($plan->teacher_name); ?>
-                                        </div>
-                                        <div style="font-size: 11px; color: #64748b;">
-                                            <?php echo esc_html($plan->grade_name . ' - ' . $plan->section_name); ?>
-                                        </div>
-                                    </td>
+                                    <?php if ($is_admin): ?>
+                                        <td style="padding: 15px; vertical-align: middle;">
+                                            <div style="font-weight: 600; color: #1e293b;">
+                                                <?php echo esc_html($plan->teacher_name); ?>
+                                            </div>
+                                            <div style="font-size: 11px; color: #64748b;">
+                                                <?php echo esc_html($plan->grade_name . ' - ' . $plan->section_name); ?>
+                                            </div>
+                                        </td>
+                                    <?php endif; ?>
                                     <td style="padding: 15px; vertical-align: middle;">
                                         <div style="font-weight: 500;">
                                             <?php echo Olama_School_Helpers::format_date($plan->plan_date); ?>
