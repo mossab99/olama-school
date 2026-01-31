@@ -448,8 +448,8 @@ if ($current_semester_id && $selected_grade_id) {
                                 $status_icon = 'dashicons-yes';
                                 $bg_color = 'rgba(16, 185, 129, 0.1)';
 
-                                if ($row['schedule_coverage'] >= 95) {
-                                } elseif ($row['schedule_coverage'] >= 80) {
+                                if ($row['teacher_coverage'] >= 95) {
+                                } elseif ($row['teacher_coverage'] >= 80) {
                                     $status_label = Olama_School_Helpers::translate('High');
                                     $status_color = '#f59e0b';
                                     $status_icon = 'dashicons-arrow-up-alt';
@@ -520,7 +520,8 @@ if ($current_semester_id && $selected_grade_id) {
                                     <?php $t_sched_pct = $total_sched > 0 ? round((($total_app + $total_rev) / $total_sched) * 100, 1) : 0; ?>
                                     <div style="font-weight: 800; color: #1e293b;"><?php echo $t_sched_pct; ?>%</div>
                                     <div style="font-size: 11px; color: #64748b;">
-                                        <?php echo ($total_app + $total_rev) . ' / ' . $total_sched; ?></div>
+                                        <?php echo ($total_app + $total_rev) . ' / ' . $total_sched; ?>
+                                    </div>
                                 </td>
                                 <td style="padding: 20px; text-align: center;">
                                     <?php
@@ -529,8 +530,8 @@ if ($current_semester_id && $selected_grade_id) {
                                     $t_status_icon = 'dashicons-yes';
                                     $t_bg_color = 'rgba(16, 185, 129, 0.1)';
 
-                                    if ($t_sched_pct >= 95) {
-                                    } elseif ($t_sched_pct >= 80) {
+                                    if ($t_teach_pct >= 95) {
+                                    } elseif ($t_teach_pct >= 80) {
                                         $t_status_label = Olama_School_Helpers::translate('High');
                                         $t_status_color = '#f59e0b';
                                         $t_status_icon = 'dashicons-arrow-up-alt';
@@ -565,14 +566,16 @@ if ($current_semester_id && $selected_grade_id) {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                         <div>
                             <p style="margin: 0 0 8px 0; color: #1e40af;">
-                                <strong><?php echo Olama_School_Helpers::translate('Teacher Plan Coverage'); ?></strong></p>
+                                <strong><?php echo Olama_School_Helpers::translate('Teacher Plan Coverage'); ?></strong>
+                            </p>
                             <p style="margin: 0; font-size: 13px; color: #4b66b9; line-height: 1.5;">
                                 <?php echo Olama_School_Helpers::translate('Teacher coverage of the required weekly plans.'); ?>
                             </p>
                         </div>
                         <div>
                             <p style="margin: 0 0 8px 0; color: #1e40af;">
-                                <strong><?php echo Olama_School_Helpers::translate('Schedule Coverage'); ?></strong></p>
+                                <strong><?php echo Olama_School_Helpers::translate('Schedule Coverage'); ?></strong>
+                            </p>
                             <p style="margin: 0; font-size: 13px; color: #4b66b9; line-height: 1.5;">
                                 <?php echo Olama_School_Helpers::translate('Schedule coverage by plans and reviews compared to master schedule periods.'); ?>
                             </p>

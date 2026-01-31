@@ -329,9 +329,9 @@ $num_weeks = 1;
                                     $status_icon = 'dashicons-yes';
                                     $bg_color = 'rgba(16, 185, 129, 0.1)';
 
-                                    if ($schedule_cov_pct >= 95) {
+                                    if ($teacher_cov_pct >= 95) {
                                         // Optimal
-                                    } elseif ($schedule_cov_pct >= 80) {
+                                    } elseif ($teacher_cov_pct >= 80) {
                                         $status_label = Olama_School_Helpers::translate('High');
                                         $status_color = '#f59e0b';
                                         $status_icon = 'dashicons-arrow-up-alt';
@@ -413,9 +413,9 @@ $num_weeks = 1;
                                         $status_label = Olama_School_Helpers::translate('Optimal');
                                         $bg_color = 'rgba(16, 185, 129, 0.1)';
 
-                                        if ($total_sched_pct >= 95) {
+                                        if ($total_teach_pct >= 95) {
                                             // Optimal
-                                        } elseif ($total_sched_pct >= 80) {
+                                        } elseif ($total_teach_pct >= 80) {
                                             $status_color = '#f59e0b';
                                             $status_icon = 'dashicons-arrow-up-alt';
                                             $status_label = Olama_School_Helpers::translate('High');
