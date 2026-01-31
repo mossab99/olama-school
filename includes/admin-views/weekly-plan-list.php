@@ -219,7 +219,8 @@ if ($current_semester_id && $selected_grade_id) {
                 <label><?php _e('Semester', 'olama-school'); ?></label>
                 <select name="semester_id" class="olama-select" onchange="this.form.submit()">
                     <option value="active" <?php selected($selected_semester_id, 'active'); ?>>
-                        <?php _e('Active Semester', 'olama-school'); ?></option>
+                        <?php _e('Active Semester', 'olama-school'); ?>
+                    </option>
                     <?php foreach ($current_semesters as $sem): ?>
                         <option value="<?php echo $sem->id; ?>" <?php selected($selected_semester_id, $sem->id); ?>>
                             <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
@@ -265,9 +266,11 @@ if ($current_semester_id && $selected_grade_id) {
                 <label><?php _e('Week Start', 'olama-school'); ?></label>
                 <select name="week_start" onchange="this.form.submit()">
                     <option value="current" <?php selected($week_start, 'current'); ?>>
-                        <?php _e('-- Current Week --', 'olama-school'); ?></option>
+                        <?php _e('-- Current Week --', 'olama-school'); ?>
+                    </option>
                     <option value="previous" <?php selected($week_start, 'previous'); ?>>
-                        <?php _e('-- Previous Week --', 'olama-school'); ?></option>
+                        <?php _e('-- Previous Week --', 'olama-school'); ?>
+                    </option>
                     <?php
                     $w_count = 1;
                     foreach ($current_month_weeks as $w): ?>
@@ -340,6 +343,13 @@ if ($current_semester_id && $selected_grade_id) {
                                     style="display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-bottom: 5px; color: <?php echo $status_badge_color; ?>; background: <?php echo $status_badge_bg; ?>;">
                                     <?php echo esc_html($status_badge_text); ?>
                                 </div>
+
+                                <?php if (isset($plan->plan_type) && $plan->plan_type === 'review'): ?>
+                                    <div class="olama-plan-type-badge"
+                                        style="display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-bottom: 5px; margin-left: 5px; color: #7c3aed; background: #f3e8ff;">
+                                        🔄 <?php echo Olama_School_Helpers::translate('Review'); ?>
+                                    </div>
+                                <?php endif; ?>
 
                                 <?php if (!empty($plan->supervisor_feedback)): ?>
                                     <span class="olama-feedback-warning" title="<?php echo esc_attr($plan->supervisor_feedback); ?>"

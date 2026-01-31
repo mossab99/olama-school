@@ -18,8 +18,69 @@ jQuery(document).ready(function ($) {
 
     let currentEditingPlan = null;
 
+    // Plan Type Toggle and Homework Section Elements
+    const $planTypeInput = $('#olama-plan-type');
+    const $homeworkSection = $('.olama-homework-grid');
+
+    // Handle Plan Type Toggle (using event delegation for dynamic elements)
+    $(document).on('click', '.olama-plan-type-btn', function () {
+        const $btn = $(this);
+        const planType = $btn.data('type');
+        const $allBtns = $('.olama-plan-type-btn');
+
+        console.log('Plan Type Toggle clicked:', planType);
+
+        // Update active state
+        $allBtns.removeClass('active');
+        $btn.addClass('active');
+
+        // Update styles
+        if (planType === 'homework') {
+            $allBtns.filter('[data-type="homework"]').css({
+                'background': '#3b82f6',
+                'color': '#fff',
+                'border-color': '#3b82f6'
+            });
+            $allBtns.filter('[data-type="review"]').css({
+                'background': '#fff',
+                'color': '#8b5cf6',
+                'border-color': '#8b5cf6'
+            });
+        } else {
+            $allBtns.filter('[data-type="review"]').css({
+                'background': '#8b5cf6',
+                'color': '#fff',
+                'border-color': '#8b5cf6'
+            });
+            $allBtns.filter('[data-type="homework"]').css({
+                'background': '#fff',
+                'color': '#3b82f6',
+                'border-color': '#3b82f6'
+            });
+        }
+
+        // Update hidden input
+        $('#olama-plan-type').val(planType);
+
+        // Show/hide homework section based on plan type
+        if (planType === 'review') {
+            $('.olama-homework-grid').slideUp();
+            // Clear homework fields for review plans
+            $homeworkSB.val('');
+            $homeworkEB.val('');
+            $homeworkNB.val('');
+            $homeworkWS.val('');
+        } else {
+            $('.olama-homework-grid').slideDown();
+        }
+
+        // Update subject filtering when plan type changes
+        handleSubjectFiltering();
+    });
+
     function handleSubjectFiltering() {
         const editingSubjectId = currentEditingPlan ? currentEditingPlan.subject_id.toString() : null;
+        const currentPlanType = $planTypeInput.val();
 
         $subjectSelect.find('option').each(function () {
             const $option = $(this);
@@ -27,8 +88,17 @@ jQuery(document).ready(function ($) {
             if (!val) return;
 
             const isFilled = $option.hasClass('olama-filled-subject');
+            const hasReview = $option.data('has-review') === true;
 
-            if (isFilled) {
+            // For homework plans, disable subjects that have review plans on this date
+            if (currentPlanType === 'homework' && hasReview) {
+                // Allow if we're editing this same subject
+                if (editingSubjectId && val === editingSubjectId) {
+                    $option.addClass('is-editing').prop('disabled', false);
+                } else {
+                    $option.prop('disabled', true);
+                }
+            } else if (isFilled) {
                 if (editingSubjectId && val === editingSubjectId) {
                     $option.addClass('is-editing').prop('disabled', false);
                 } else {
@@ -288,6 +358,11 @@ jQuery(document).ready(function ($) {
             $('input[name="period_number"]').val(planData.period_number);
         }
 
+        // Set plan type
+        const editPlanType = planData.plan_type || 'homework';
+        $('#olama-plan-type').val(editPlanType);
+        $('.olama-plan-type-btn').filter(`[data-type="${editPlanType}"]`).trigger('click');
+
         // Start cascading from Subject
         $subjectSelect.val(planData.subject_id);
         handleSubjectFiltering();
@@ -330,6 +405,9 @@ jQuery(document).ready(function ($) {
         // Reset UI
         $saveButton.val(olamaPlan.i18n.saveAsDraft || 'Save as Draft');
         $cancelButton.hide();
+
+        // Reset plan type to homework (default)
+        $('.olama-plan-type-btn').filter('[data-type="homework"]').trigger('click');
         currentEditingPlan = null;
 
         // Scroll back up a bit

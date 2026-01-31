@@ -25,7 +25,8 @@ if (!defined('ABSPATH')) {
                 <label><?php _e('Semester', 'olama-school'); ?></label>
                 <select name="semester_id" class="olama-select" onchange="this.form.submit()">
                     <option value="active" <?php selected($selected_semester_id, 'active'); ?>>
-                        <?php _e('Active Semester', 'olama-school'); ?></option>
+                        <?php _e('Active Semester', 'olama-school'); ?>
+                    </option>
                     <?php foreach ($current_semesters as $sem): ?>
                         <option value="<?php echo $sem->id; ?>" <?php selected($selected_semester_id, $sem->id); ?>>
                             <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
@@ -77,9 +78,11 @@ if (!defined('ABSPATH')) {
                 <label><?php _e('Week', 'olama-school'); ?></label>
                 <select name="week_start" class="olama-select" onchange="this.form.submit()">
                     <option value="current" <?php selected($week_start, 'current'); ?>>
-                        <?php _e('-- Current Week --', 'olama-school'); ?></option>
+                        <?php _e('-- Current Week --', 'olama-school'); ?>
+                    </option>
                     <option value="previous" <?php selected($week_start, 'previous'); ?>>
-                        <?php _e('-- Previous Week --', 'olama-school'); ?></option>
+                        <?php _e('-- Previous Week --', 'olama-school'); ?>
+                    </option>
                     <?php
                     $w_count = 1;
                     foreach ($current_month_weeks as $w): ?>
@@ -128,6 +131,8 @@ if (!defined('ABSPATH')) {
                 <input type="hidden" name="period_number" value="0" />
                 <input type="hidden" name="status" id="olama-plan-status" value="draft" />
 
+                <input type="hidden" name="plan_type" id="olama-plan-type" value="homework" />
+
                 <div id="olama-edit-status-container"
                     style="display: none; margin-bottom: 20px; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -143,6 +148,25 @@ if (!defined('ABSPATH')) {
                             <input type="checkbox" id="olama-revert-draft-check" />
                             <?php _e('Revert to Draft', 'olama-school'); ?>
                         </label>
+                    </div>
+                </div>
+
+                <!-- Plan Type Toggle -->
+                <div class="olama-plan-type-toggle" style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 10px;">
+                        <?php echo Olama_School_Helpers::translate('Plan Type'); ?>
+                    </label>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="olama-plan-type-btn active" data-type="homework"
+                            style="flex: 1; padding: 12px 20px; border: 2px solid #3b82f6; border-radius: 8px; background: #3b82f6; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span style="font-size: 1.2em;">📝</span>
+                            <?php echo Olama_School_Helpers::translate('Homework Plan'); ?>
+                        </button>
+                        <button type="button" class="olama-plan-type-btn" data-type="review"
+                            style="flex: 1; padding: 12px 20px; border: 2px solid #8b5cf6; border-radius: 8px; background: #fff; color: #8b5cf6; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span style="font-size: 1.2em;">🔄</span>
+                            <?php echo Olama_School_Helpers::translate('Review Plan'); ?>
+                        </button>
                     </div>
                 </div>
 
@@ -163,12 +187,18 @@ if (!defined('ABSPATH')) {
                                 return $p->subject_id;
                             }, $today_plans);
 
-
+                            // Get subjects that already have review plans on this date
+                            $review_subject_ids = array_map(function ($p) {
+                                return $p->subject_id;
+                            }, array_filter($today_plans, function ($p) {
+                                return isset($p->plan_type) && $p->plan_type === 'review';
+                            }));
 
                             foreach ($scheduled_subjects as $subj):
                                 $is_filled = in_array($subj->id, $filled_subject_ids);
+                                $has_review = in_array($subj->id, $review_subject_ids);
                                 ?>
-                                <option value="<?php echo $subj->id; ?>" <?php echo $is_filled ? 'data-filled="true" class="olama-filled-subject"' : ''; ?>>
+                                <option value="<?php echo $subj->id; ?>" <?php echo $is_filled ? 'data-filled="true" class="olama-filled-subject"' : ''; ?>     <?php echo $has_review ? 'data-has-review="true"' : ''; ?>>
                                     <?php echo esc_html($subj->subject_name); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -226,45 +256,48 @@ if (!defined('ABSPATH')) {
 
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
 
-                <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px;">
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px;">
-                            <?php _e('Homework (Student Book)', 'olama-school'); ?>
-                        </label>
-                        <textarea name="homework_sb" rows="3" style="width: 100%;"
-                            placeholder="<?php _e('Page numbers or details...', 'olama-school'); ?>"></textarea>
+                <!-- Homework Fields (hidden for review plans) -->
+                <div class="olama-homework-grid">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px;">
+                                <?php _e('Homework (Student Book)', 'olama-school'); ?>
+                            </label>
+                            <textarea name="homework_sb" rows="3" style="width: 100%;"
+                                placeholder="<?php _e('Page numbers or details...', 'olama-school'); ?>"></textarea>
+                        </div>
                     </div>
-                </div>
 
-                <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px;">
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px;">
-                            <?php _e('Homework (Exercise Book)', 'olama-school'); ?>
-                        </label>
-                        <textarea name="homework_eb" rows="3" style="width: 100%;"
-                            placeholder="<?php _e('Page numbers or details...', 'olama-school'); ?>"></textarea>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px;">
+                                <?php _e('Homework (Exercise Book)', 'olama-school'); ?>
+                            </label>
+                            <textarea name="homework_eb" rows="3" style="width: 100%;"
+                                placeholder="<?php _e('Page numbers or details...', 'olama-school'); ?>"></textarea>
+                        </div>
                     </div>
-                </div>
 
-                <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px;">
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px;">
-                            <?php _e('Homework (Notebook)', 'olama-school'); ?>
-                        </label>
-                        <textarea name="homework_nb" rows="3" style="width: 100%;"
-                            placeholder="<?php _e('Notebook instructions...', 'olama-school'); ?>"></textarea>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px;">
+                                <?php _e('Homework (Notebook)', 'olama-school'); ?>
+                            </label>
+                            <textarea name="homework_nb" rows="3" style="width: 100%;"
+                                placeholder="<?php _e('Notebook instructions...', 'olama-school'); ?>"></textarea>
+                        </div>
                     </div>
-                </div>
 
-                <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px;">
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px;">
-                            <?php _e('Homework (Worksheet)', 'olama-school'); ?>
-                        </label>
-                        <textarea name="homework_ws" rows="3" style="width: 100%;"
-                            placeholder="<?php _e('Worksheet details...', 'olama-school'); ?>"></textarea>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px;">
+                                <?php _e('Homework (Worksheet)', 'olama-school'); ?>
+                            </label>
+                            <textarea name="homework_ws" rows="3" style="width: 100%;"
+                                placeholder="<?php _e('Worksheet details...', 'olama-school'); ?>"></textarea>
+                        </div>
                     </div>
-                </div>
+                </div> <!-- End olama-homework-grid -->
 
                 <div class="olama-form-group" style="margin-bottom: 20px;">
                     <label style="display: block; font-weight: 600; margin-bottom: 8px;">
@@ -315,7 +348,8 @@ if (!defined('ABSPATH')) {
                         'supervisor_feedback' => $plan->supervisor_feedback ?? '',
                         'question_ids' => $q_ids,
                         'status' => $plan->status,
-                        'teacher_name' => $plan->teacher_name ?? ''
+                        'teacher_name' => $plan->teacher_name ?? '',
+                        'plan_type' => $plan->plan_type ?? 'homework'
                     ]);
                     ?>
                     <div class="olama-plan-item" data-plan="<?php echo esc_attr($plan_json); ?>"
@@ -343,6 +377,12 @@ if (!defined('ABSPATH')) {
                                     style="font-size: 0.8em; padding: 2px 8px; border-radius: 12px; background: #eee; color: #666;">
                                     <?php echo __(ucfirst($plan->status), 'olama-school'); ?>
                                 </span>
+                                <?php if (isset($plan->plan_type) && $plan->plan_type === 'review'): ?>
+                                    <span class="plan-type-badge review"
+                                        style="font-size: 0.75em; padding: 2px 8px; border-radius: 12px; background: #f3e8ff; color: #7c3aed; font-weight: 600;">
+                                        🔄 <?php echo Olama_School_Helpers::translate('Review'); ?>
+                                    </span>
+                                <?php endif; ?>
                                 <a href="#" class="olama-edit-plan" title="<?php _e('Edit', 'olama-school'); ?>"
                                     style="color: #666; text-decoration: none;"><i class="dashicons dashicons-edit"></i></a>
                                 <a href="#" class="olama-delete-plan" title="<?php _e('Delete', 'olama-school'); ?>"

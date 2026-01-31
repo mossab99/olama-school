@@ -152,6 +152,7 @@ class Olama_School_DB
 				teacher_notes text DEFAULT NULL,
 				supervisor_feedback text DEFAULT NULL,
 				rating tinyint(4) DEFAULT 0 NOT NULL,
+				plan_type varchar(20) DEFAULT 'homework' NOT NULL,
 				status varchar(20) DEFAULT 'draft' NOT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
@@ -409,8 +410,9 @@ class Olama_School_DB
 
 	/**
 	 * Ensure critical schema updates that dbDelta might miss
+	 * Made public so it can be called during plugin init for incremental updates
 	 */
-	private function ensure_schema_updates()
+	public function ensure_schema_updates()
 	{
 		global $wpdb;
 
@@ -516,6 +518,18 @@ class Olama_School_DB
 			$wpdb->query(
 				"ALTER TABLE {$wpdb->prefix}olama_ev_templates 
 				ADD COLUMN score_config longtext DEFAULT NULL AFTER template_name"
+			);
+		}
+
+		// Check if plan_type column exists in olama_plans
+		$plan_type_exists = $wpdb->get_results(
+			"SHOW COLUMNS FROM {$wpdb->prefix}olama_plans LIKE 'plan_type'"
+		);
+
+		if (empty($plan_type_exists)) {
+			$wpdb->query(
+				"ALTER TABLE {$wpdb->prefix}olama_plans 
+				ADD COLUMN plan_type varchar(20) DEFAULT 'homework' NOT NULL AFTER status"
 			);
 		}
 	}

@@ -59,9 +59,10 @@ class Olama_School_Plan
         }
 
         $subject_id = intval($data['subject_id']);
+        $plan_type = isset($data['plan_type']) && $data['plan_type'] === 'review' ? 'review' : 'homework';
 
-        // Limit Validation
-        if (!$plan_id) {
+        // Limit Validation (skip for review plans - they don't count towards limits)
+        if (!$plan_id && $plan_type !== 'review') {
             // Find week range (Sunday to Thursday)
             $ts = strtotime($plan_date);
             $day_of_week = date('w', $ts);
@@ -204,6 +205,7 @@ class Olama_School_Plan
             'teacher_notes' => $data['teacher_notes'] ?? '',
             'rating' => isset($data['rating']) ? intval($data['rating']) : 0,
             'status' => $data['status'] ?? 'draft',
+            'plan_type' => $plan_type,
         );
 
         if ($plan_id > 0) {
