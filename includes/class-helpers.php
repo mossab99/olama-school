@@ -1018,6 +1018,13 @@ class Olama_School_Helpers
         'Grade %s has a maximum of %d homework plans per week.' => 'الصف %s لديه بحد أقصى %d خطط واجبات أسبوعياً.',
         'A maximum of %d homework plans are allowed on %s.' => 'يسمح بحد أقصى بـ %d خطط واجبات في يوم %s.',
         'Subject %s has a maximum of %d homework plans per week.' => 'المادة %s لديها بحد أقصى %d خطط واجبات أسبوعياً.',
+        'Required Plans' => 'الخطط المطلوبة',
+        'Approved Plans' => 'الخطط المعتمدة',
+        'Reviews' => 'المراجعات',
+        'Teacher Plan Coverage' => 'تغطية خطط المعلم',
+        'Schedule Coverage' => 'تغطية الجدول',
+        'Teacher coverage of the required weekly plans.' => 'تغطية المعلم للخطط الأسبوعية المطلوبة.',
+        'Schedule coverage by plans and reviews compared to master schedule periods.' => 'تغطية الجدول بالخطط والمراجعات مقارنة بعدد حصص الجدول.',
         );
 
         return $map[$text] ?? $text;

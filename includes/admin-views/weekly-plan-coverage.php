@@ -70,33 +70,39 @@ $effective_end = $current_semester->end_date;
 // Week Filter Logic
 $selected_week = isset($_GET['coverage_week']) ? sanitize_text_field($_GET['coverage_week']) : '';
 
+// If no week selected, try to find the current academic week
+if (empty($selected_week) && !empty($semester_weeks)) {
+    $today = date('Y-m-d');
+    foreach ($semester_weeks as $start => $data) {
+        // Find if today is within this week's 7-day window (Sunday to Saturday)
+        $week_start_ts = strtotime($start);
+        $week_end_ts = $week_start_ts + (7 * 86400) - 1;
+        if (strtotime($today) >= $week_start_ts && strtotime($today) <= $week_end_ts) {
+            $selected_week = $start;
+            break;
+        }
+    }
+    // If today is not in any week (e.g. before semester), default to first week
+    if (empty($selected_week)) {
+        $week_dates = array_keys($semester_weeks);
+        $selected_week = $week_dates[0];
+    }
+}
+
 if (!empty($semester_weeks)) {
     if ($selected_week && isset($semester_weeks[$selected_week])) {
         // Filter by specific week
         $effective_start = $semester_weeks[$selected_week]['start'];
-        $effective_end = $semester_weeks[$selected_week]['end'];
+        $effective_end = date('Y-m-d', strtotime($semester_weeks[$selected_week]['start'] . ' +6 days'));
     } else {
-        // Default to semester range
-        $week_dates = array_keys($semester_weeks);
-        sort($week_dates);
-        if (!empty($week_dates)) {
-            $effective_start = $week_dates[0];
-            // End date is Thursday of the last week
-            $last_week_start = end($week_dates);
-            $effective_end = date('Y-m-d', strtotime($last_week_start . ' +4 days'));
-        }
+        // Fallback or specific logic
+        $effective_start = $current_semester->start_date;
+        $effective_end = $current_semester->end_date;
     }
 }
 
-// 4. Calculate Number of Weeks for Scaling Limits
+// 4. Analysis is strictly weekly
 $num_weeks = 1;
-if (!$selected_week && !empty($semester_weeks)) {
-    $datetime1 = new DateTime($effective_start);
-    $datetime2 = new DateTime($effective_end);
-    $interval = $datetime1->diff($datetime2);
-    $days = $interval->days + 1;
-    $num_weeks = max(1, ceil($days / 7));
-}
 ?>
 
 <div class="olama-coverage-container"
@@ -163,7 +169,6 @@ if (!$selected_week && !empty($semester_weeks)) {
                 style="font-weight: 600; color: #64748b; margin-left: 10px;"><?php echo Olama_School_Helpers::translate('Week:'); ?></label>
             <select onchange="window.location.href=add_query_arg('coverage_week', this.value)"
                 style="border-radius: 4px; border-color: #cbd5e1; font-weight: 600; color: #1e293b;">
-                <option value=""><?php echo Olama_School_Helpers::translate('All Weeks'); ?></option>
                 <?php foreach ($semester_weeks as $start_date => $week_data):
                     $label = sprintf(Olama_School_Helpers::translate('Week %d (%s)'), $week_data['number'], Olama_School_Helpers::format_date($start_date));
                     ?>
@@ -240,21 +245,30 @@ if (!$selected_week && !empty($semester_weeks)) {
                         style="border: none; box-shadow: none; table-layout: auto;">
                         <thead>
                             <tr style="background: #f8fafc;">
+                            <tr style="background: #f8fafc;">
                                 <th
-                                    style="padding: 15px 20px; font-weight: 700; color: #475569; text-align: left; min-width: 200px;">
+                                    style="padding: 15px 20px; font-weight: 700; color: #475569; text-align: left; min-width: 180px;">
                                     <?php echo Olama_School_Helpers::translate('Subject Name'); ?>
                                 </th>
                                 <th
-                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 120px; text-align: center;">
-                                    <?php echo Olama_School_Helpers::translate('Subject Coverage'); ?>
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 100px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Required Plans'); ?>
                                 </th>
                                 <th
-                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 120px; text-align: center;">
-                                    <?php echo Olama_School_Helpers::translate('Plan Coverage'); ?>
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 100px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Approved Plans'); ?>
                                 </th>
                                 <th
-                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 150px; text-align: center;">
-                                    <?php echo Olama_School_Helpers::translate('Curriculum Coverage'); ?>
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 100px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Reviews'); ?>
+                                </th>
+                                <th
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 140px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Teacher Plan Coverage'); ?>
+                                </th>
+                                <th
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 140px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Schedule Coverage'); ?>
                                 </th>
                                 <th
                                     style="padding: 15px 10px; font-weight: 700; color: #475569; text-align: center; width: 110px;">
@@ -264,90 +278,68 @@ if (!$selected_week && !empty($semester_weeks)) {
                         </thead>
                         <tbody>
                             <?php if ($subjects):
-                                $total_plans_count = 0;
-                                $total_plans_across_subjects = 0;
-                                $total_subject_limits_sum = 0;
+                                $total_req = 0;
+                                $total_app = 0;
+                                $total_rev = 0;
+                                $total_sched = 0;
                                 ?>
                                 <?php foreach ($subjects as $subject):
-                                    // 1. Get ALL lessons for this subject/semester curriculum
-                                    $curriculum_lessons = $wpdb->get_results($wpdb->prepare(
-                                        "SELECT l.id FROM {$wpdb->prefix}olama_curriculum_lessons l 
-                                         JOIN {$wpdb->prefix}olama_curriculum_units u ON l.unit_id = u.id 
-                                         WHERE u.subject_id = %d AND u.grade_id = %d AND u.semester_id = %d",
-                                        $subject->id,
-                                        $selected_grade_id,
-                                        $selected_semester_id
-                                    ));
-                                    $total_lessons = count($curriculum_lessons);
+                                    // 1. Required Plans (from subject limits)
+                                    $required_plans = intval($subject->max_weekly_plans) * $num_weeks;
+                                    $total_req += $required_plans;
 
-                                    // 2. Get ALL plans for this section/subject in the range
-                                    $plans = $wpdb->get_results($wpdb->prepare(
-                                        "SELECT p.plan_date, p.lesson_id FROM {$wpdb->prefix}olama_plans p
-                                         WHERE p.subject_id = %d AND p.section_id = %d 
-                                         AND p.plan_date >= %s AND p.plan_date <= %s",
+                                    // 2. Counts by Type (Approved Only)
+                                    $stats = $wpdb->get_row($wpdb->prepare(
+                                        "SELECT 
+                                            SUM(CASE WHEN plan_type = 'homework' THEN 1 ELSE 0 END) as approved_homework,
+                                            SUM(CASE WHEN plan_type = 'review' THEN 1 ELSE 0 END) as approved_reviews
+                                         FROM {$wpdb->prefix}olama_plans 
+                                         WHERE subject_id = %d AND section_id = %d 
+                                         AND plan_status = 'approved'
+                                         AND plan_date >= %s AND plan_date <= %s",
                                         $subject->id,
                                         $selected_section_id,
                                         $effective_start,
                                         $effective_end
                                     ));
-                                    $plans_count = count($plans);
-                                    $total_plans_count += $plans_count;
 
-                                    // 3. Plan Coverage (vs Grade Max)
-                                    $plan_cov_pct = $grade_max_plans > 0 ? min(100, round(($plans_count / $grade_max_plans) * 100, 1)) : 0;
+                                    $approved_plans = intval($stats->approved_homework);
+                                    $approved_reviews = intval($stats->approved_reviews);
 
-                                    // 4. Subject Coverage (vs Subject Limit)
-                                    $subject_limit = intval($subject->max_weekly_plans) * $num_weeks;
-                                    $subj_cov_pct = $subject_limit > 0 ? min(100, round(($plans_count / $subject_limit) * 100, 1)) : 0;
+                                    $total_app += $approved_plans;
+                                    $total_rev += $approved_reviews;
 
-                                    $total_plans_across_subjects += $plans_count;
-                                    $total_subject_limits_sum += $subject_limit;
+                                    // 3. Scheduled Periods
+                                    $sched_periods = $wpdb->get_var($wpdb->prepare(
+                                        "SELECT COUNT(*) FROM {$wpdb->prefix}olama_schedule 
+                                         WHERE subject_id = %d AND section_id = %d AND semester_id = %d",
+                                        $subject->id,
+                                        $selected_section_id,
+                                        $selected_semester_id
+                                    ));
+                                    $total_sched_capacity = intval($sched_periods) * $num_weeks;
+                                    $total_sched += $total_sched_capacity;
 
-                                    // 5. Curriculum Coverage (Lessons)
-                                    $plans_by_lesson = array_fill_keys(array_column($curriculum_lessons, 'id'), 0);
-                                    foreach ($plans as $p) {
-                                        if (isset($plans_by_lesson[$p->lesson_id]))
-                                            $plans_by_lesson[$p->lesson_id]++;
-                                    }
-                                    $covered_lessons = count(array_filter($plans_by_lesson));
-                                    $curriculum_cov_pct = $total_lessons > 0 ? min(100, round(($covered_lessons / $total_lessons) * 100, 1)) : 0;
+                                    // 4. Coverage Calcs
+                                    $teacher_cov_pct = $required_plans > 0 ? min(100, round(($approved_plans / $required_plans) * 100, 1)) : 0;
+                                    $schedule_cov_pct = $total_sched_capacity > 0 ? min(100, round((($approved_plans + $approved_reviews) / $total_sched_capacity) * 100, 1)) : 0;
 
-                                    // Status logic compares Plan Coverage (actual) with Curriculum Coverage (optimal)
-                                    $plan_cov_fraction = $grade_max_plans > 0 ? ($plans_count / $grade_max_plans) : 0;
-                                    $curr_cov_fraction = $total_lessons > 0 ? ($covered_lessons / $total_lessons) : 0; // This is a bit tricky, user might mean lesson weight in grade
-                        
-                                    // Better Curriculum Optimal Weight: lessons for this sub / total lessons in grade
-                                    // Need to sum all lessons for all subjects in this grade/semester
-                                    static $total_grade_lessons = null;
-                                    if ($total_grade_lessons === null) {
-                                        $total_grade_lessons = $wpdb->get_var($wpdb->prepare(
-                                            "SELECT COUNT(l.id) FROM {$wpdb->prefix}olama_curriculum_lessons l
-                                             JOIN {$wpdb->prefix}olama_curriculum_units u ON l.unit_id = u.id
-                                             WHERE u.grade_id = %d AND u.semester_id = %d",
-                                            $selected_grade_id,
-                                            $selected_semester_id
-                                        ));
-                                    }
-
-                                    $plan_coverage_pct = $plan_cov_pct;
-                                    $curriculum_weight_pct = $total_grade_lessons > 0 ? round(($total_lessons / $total_grade_lessons) * 100, 1) : 0;
-
-                                    $diff = $plan_coverage_pct - $curriculum_weight_pct;
-
+                                    // Status based on Schedule Coverage
                                     $status_label = Olama_School_Helpers::translate('Optimal');
-                                    $status_class = 'status-ontime';
                                     $status_color = '#10b981';
                                     $status_icon = 'dashicons-yes';
                                     $bg_color = 'rgba(16, 185, 129, 0.1)';
 
-                                    if ($diff > 3) {
+                                    if ($schedule_cov_pct >= 95) {
+                                        // Optimal
+                                    } elseif ($schedule_cov_pct >= 80) {
                                         $status_label = Olama_School_Helpers::translate('High');
-                                        $status_color = '#f59e0b'; // Amber
+                                        $status_color = '#f59e0b';
                                         $status_icon = 'dashicons-arrow-up-alt';
                                         $bg_color = 'rgba(245, 158, 11, 0.1)';
-                                    } elseif ($diff < -3) {
+                                    } else {
                                         $status_label = Olama_School_Helpers::translate('Low');
-                                        $status_color = '#ef4444'; // Red
+                                        $status_color = '#ef4444';
                                         $status_icon = 'dashicons-arrow-down-alt';
                                         $bg_color = 'rgba(239, 68, 68, 0.1)';
                                     }
@@ -361,55 +353,25 @@ if (!$selected_week && !empty($semester_weeks)) {
                                                     style="font-weight: 600; color: #1e293b;"><?php echo esc_html($subject->subject_name); ?></span>
                                             </div>
                                         </td>
+                                        <td style="padding: 15px 10px; text-align: center; font-weight: 600;">
+                                            <?php echo $required_plans; ?>
+                                        </td>
+                                        <td style="padding: 15px 10px; text-align: center; font-weight: 600;">
+                                            <?php echo $approved_plans; ?>
+                                        </td>
+                                        <td style="padding: 15px 10px; text-align: center; font-weight: 600;">
+                                            <?php echo $approved_reviews; ?>
+                                        </td>
                                         <td style="padding: 15px 10px; text-align: center;">
-                                            <?php
-                                            $sc_color = '#1e293b'; // Default
-                                            if ($subj_cov_pct >= 80)
-                                                $sc_color = '#10b981'; // Green
-                                            elseif ($subj_cov_pct < 50)
-                                                $sc_color = '#ef4444'; // Red
-                                            ?>
-                                            <div style="font-weight: 700; color: <?php echo $sc_color; ?>;">
-                                                <?php echo $subj_cov_pct; ?>%
-                                            </div>
+                                            <div style="font-weight: 700; color: #1e293b;"><?php echo $teacher_cov_pct; ?>%</div>
+                                        </td>
+                                        <td style="padding: 15px 10px; text-align: center;">
+                                            <div style="font-weight: 700; color: #1e293b;"><?php echo $schedule_cov_pct; ?>%</div>
                                             <div style="font-size: 11px; color: #64748b;">
-                                                <?php echo $plans_count . ' / ' . $subject_limit; ?>
+                                                <?php echo ($approved_plans + $approved_reviews) . ' / ' . $total_sched_capacity; ?>
                                             </div>
                                         </td>
                                         <td style="padding: 15px 10px; text-align: center;">
-                                            <div style="font-weight: 700; color: #1e293b;"><?php echo $plan_cov_pct; ?>%</div>
-                                            <div style="font-size: 11px; color: #64748b;">
-                                                <?php echo $plans_count . ' / ' . $grade_max_plans; ?>
-                                            </div>
-                                        </td>
-                                        <td style="padding: 15px 10px; text-align: center;">
-                                            <div style="font-weight: 700; color: #1e293b;"><?php echo $curriculum_weight_pct; ?>%
-                                            </div>
-                                            <div style="font-size: 11px; color: #64748b;">
-                                                <?php printf(Olama_School_Helpers::translate('%d / %d Lessons'), $total_lessons, $total_grade_lessons); ?>
-                                            </div>
-                                        </td>
-                                        <td style="padding: 15px 10px; text-align: center;">
-                                            <?php
-                                            $status_color = '#10b981'; // Green
-                                            $status_icon = 'dashicons-yes';
-                                            $status_label = Olama_School_Helpers::translate('Optimal');
-                                            $bg_color = 'rgba(16, 185, 129, 0.1)';
-
-                                            if ($subj_cov_pct >= 100) {
-                                                // Optimal
-                                            } elseif ($subj_cov_pct >= 80) {
-                                                $status_color = '#f59e0b'; // Amber
-                                                $status_icon = 'dashicons-arrow-up-alt';
-                                                $status_label = Olama_School_Helpers::translate('High');
-                                                $bg_color = 'rgba(245, 158, 11, 0.1)';
-                                            } else {
-                                                $status_color = '#ef4444'; // Red
-                                                $status_icon = 'dashicons-arrow-down-alt';
-                                                $status_label = Olama_School_Helpers::translate('Low');
-                                                $bg_color = 'rgba(239, 68, 68, 0.1)';
-                                            }
-                                            ?>
                                             <div
                                                 style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 14px; border-radius: 20px; background: <?php echo $bg_color; ?>; color: <?php echo $status_color; ?>; font-weight: 700; font-size: 0.85rem; border: 1px solid <?php echo $status_color; ?>30; min-width: 90px;">
                                                 <span class="dashicons <?php echo $status_icon; ?>"
@@ -425,47 +387,42 @@ if (!$selected_week && !empty($semester_weeks)) {
                                     <td style="padding: 20px; font-weight: 800; color: #1e293b;">
                                         <?php echo Olama_School_Helpers::translate('Total Grade Coverage'); ?>
                                     </td>
+                                    <td style="padding: 20px; text-align: center; font-weight: 800;">
+                                        <?php echo $total_req; ?>
+                                    </td>
+                                    <td style="padding: 20px; text-align: center; font-weight: 800;">
+                                        <?php echo $total_app; ?>
+                                    </td>
+                                    <td style="padding: 20px; text-align: center; font-weight: 800;">
+                                        <?php echo $total_rev; ?>
+                                    </td>
                                     <td style="padding: 20px; text-align: center;">
-                                        <?php
-                                        $total_sc_pct = $total_subject_limits_sum > 0 ? round(($total_plans_across_subjects / $total_subject_limits_sum) * 100, 1) : 0;
-                                        ?>
-                                        <div style="font-weight: 800; color: #1e293b;"><?php echo $total_sc_pct; ?>%</div>
+                                        <?php $total_teach_pct = $total_req > 0 ? round(($total_app / $total_req) * 100, 1) : 0; ?>
+                                        <div style="font-weight: 800; color: #1e293b;"><?php echo $total_teach_pct; ?>%</div>
+                                    </td>
+                                    <td style="padding: 20px; text-align: center;">
+                                        <?php $total_sched_pct = $total_sched > 0 ? round((($total_app + $total_rev) / $total_sched) * 100, 1) : 0; ?>
+                                        <div style="font-weight: 800; color: #1e293b;"><?php echo $total_sched_pct; ?>%</div>
                                         <div style="font-size: 11px; color: #64748b;">
-                                            <?php echo $total_plans_across_subjects . ' / ' . $total_subject_limits_sum; ?>
+                                            <?php echo ($total_app + $total_rev) . ' / ' . $total_sched; ?>
                                         </div>
                                     </td>
                                     <td style="padding: 20px; text-align: center;">
-                                        <div style="font-weight: 800; color: #1e293b;">
-                                            <?php
-                                            $total_pt_pct = $grade_max_plans > 0 ? round(($total_plans_count / $grade_max_plans) * 100, 1) : 0;
-                                            echo $total_pt_pct;
-                                            ?>%
-                                        </div>
-                                        <div style="font-size: 11px; color: #64748b;">
-                                            <?php echo $total_plans_count . ' / ' . $grade_max_plans; ?>
-                                        </div>
-                                    </td>
-                                    <td></td>
-                                    <td style="padding: 20px; text-align: center;">
                                         <?php
-                                        // Global status for footer usually reflects the overall plan completeness vs target
-                                        // Comparing total plans vs grade max
-                                        $total_pct_val = $grade_max_plans > 0 ? ($total_plans_count / $grade_max_plans) * 100 : 0;
-
-                                        $status_color = '#10b981'; // Green
+                                        $status_color = '#10b981';
                                         $status_icon = 'dashicons-yes';
                                         $status_label = Olama_School_Helpers::translate('Optimal');
                                         $bg_color = 'rgba(16, 185, 129, 0.1)';
 
-                                        if ($total_pct_val >= 95) {
+                                        if ($total_sched_pct >= 95) {
                                             // Optimal
-                                        } elseif ($total_pct_val >= 80) {
-                                            $status_color = '#f59e0b'; // Amber
+                                        } elseif ($total_sched_pct >= 80) {
+                                            $status_color = '#f59e0b';
                                             $status_icon = 'dashicons-arrow-up-alt';
                                             $status_label = Olama_School_Helpers::translate('High');
                                             $bg_color = 'rgba(245, 158, 11, 0.1)';
                                         } else {
-                                            $status_color = '#ef4444'; // Red
+                                            $status_color = '#ef4444';
                                             $status_icon = 'dashicons-arrow-down-alt';
                                             $status_label = Olama_School_Helpers::translate('Low');
                                             $bg_color = 'rgba(239, 68, 68, 0.1)';
@@ -481,7 +438,7 @@ if (!$selected_week && !empty($semester_weeks)) {
                                 </tr>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="5" style="padding: 40px; text-align: center; color: #94a3b8;">
+                                    <td colspan="7" style="padding: 40px; text-align: center; color: #94a3b8;">
                                         <span class="dashicons dashicons-warning"
                                             style="font-size: 30px; width: 30px; height: 30px; margin-bottom: 10px;"></span>
                                         <p><?php echo Olama_School_Helpers::translate('No subjects found for this grade.'); ?>
@@ -502,18 +459,18 @@ if (!$selected_week && !empty($semester_weeks)) {
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                             <div>
                                 <p style="margin: 0 0 8px 0; color: #1e40af;">
-                                    <strong><?php echo Olama_School_Helpers::translate('Plan Coverage'); ?></strong>
+                                    <strong><?php echo Olama_School_Helpers::translate('Teacher Plan Coverage'); ?></strong>
                                 </p>
                                 <p style="margin: 0; font-size: 13px; color: #4b66b9; line-height: 1.5;">
-                                    <?php echo Olama_School_Helpers::translate('Shows the percentage of coverage of the required total number of plans (how many did you cover out of the required number per week compared to all subjects).'); ?>
+                                    <?php echo Olama_School_Helpers::translate('Teacher coverage of the required weekly plans.'); ?>
                                 </p>
                             </div>
                             <div>
                                 <p style="margin: 0 0 8px 0; color: #1e40af;">
-                                    <strong><?php echo Olama_School_Helpers::translate('Subject Coverage'); ?></strong>
+                                    <strong><?php echo Olama_School_Helpers::translate('Schedule Coverage'); ?></strong>
                                 </p>
                                 <p style="margin: 0; font-size: 13px; color: #4b66b9; line-height: 1.5;">
-                                    <?php echo Olama_School_Helpers::translate('Shows the percentage of coverage of the required subject total number of plans (how many did you cover out of the required number per subject during the week).'); ?>
+                                    <?php echo Olama_School_Helpers::translate('Schedule coverage by plans and reviews compared to master schedule periods.'); ?>
                                 </p>
                             </div>
                         </div>
