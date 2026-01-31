@@ -39,11 +39,15 @@ $settings = get_option('olama_school_settings', array());
 $start_day_name = $settings['start_day'] ?? 'Monday';
 $last_day_name = $settings['last_day'] ?? 'Thursday';
 
-$active_semester = $selected_year_id ? Olama_School_Academic::get_active_semester($selected_year_id) : null;
-$semesters = $active_semester ? array($active_semester) : [];
+$semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
 
 $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
-$selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : ($active_semester ? $active_semester->id : ($semesters[0]->id ?? 0));
+$requested_semester_id = isset($_GET['semester_id']) ? $_GET['semester_id'] : 'active';
+if ($requested_semester_id === 'active' || empty($requested_semester_id)) {
+    $selected_semester_id = $active_semester ? $active_semester->id : ($semesters[0]->id ?? 0);
+} else {
+    $selected_semester_id = intval($requested_semester_id);
+}
 
 $periods_to_show = 8;
 if ($selected_grade_id) {
@@ -190,6 +194,7 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
             <div class="olama-filter-item">
                 <label><?php _e('Semester', 'olama-school'); ?></label>
                 <select name="semester_id" onchange="this.form.submit()">
+                    <option value="active" <?php selected($requested_semester_id, 'active'); ?>><?php _e('Active Semester', 'olama-school'); ?></option>
                     <?php foreach ($semesters as $s): ?>
                         <option value="<?php echo $s->id; ?>" <?php selected($selected_semester_id, $s->id); ?>>
                             <?php echo esc_html(__($s->semester_name, 'olama-school')); ?>

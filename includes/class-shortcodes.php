@@ -216,10 +216,22 @@ class Olama_School_Shortcodes
             return '<div class="olama-error">' . __('Please specify a valid section ID in the shortcode.', 'olama-school') . '</div>';
         }
 
+        // Resolve Semester ID for header/filtering
+        $semester_id = $atts['semester'];
+        if ($semester_id === 'active' || empty($semester_id)) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $active_sem = $active_year ? Olama_School_Academic::get_active_semester($active_year->id) : null;
+            $semester_id = $active_sem ? $active_sem->id : 0;
+        } else {
+            $semester_id = intval($semester_id);
+        }
+
         $week_start = $atts['week'];
         if (!$week_start) {
             // Default to current/upcoming week start based on Saturday-switch logic
             $week_start = Olama_School_Helpers::get_active_week_start();
+        } elseif ($week_start === 'previous') {
+            $week_start = Olama_School_Helpers::get_previous_week_start();
         }
 
         $week_end = date('Y-m-d', strtotime($week_start . ' +4 days'));
@@ -258,9 +270,9 @@ class Olama_School_Shortcodes
         $grade = $section ? Olama_School_Grade::get_grade($section->grade_id) : null;
 
         $semester_name = '';
-        if ($atts['semester']) {
+        if ($semester_id > 0) {
             global $wpdb;
-            $semester_name = $wpdb->get_var($wpdb->prepare("SELECT semester_name FROM {$wpdb->prefix}olama_semesters WHERE id = %d", intval($atts['semester'])));
+            $semester_name = $wpdb->get_var($wpdb->prepare("SELECT semester_name FROM {$wpdb->prefix}olama_semesters WHERE id = %d", $semester_id));
         }
 
         // Helper to get subject icons

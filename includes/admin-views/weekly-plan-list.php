@@ -218,6 +218,8 @@ if ($current_semester_id && $selected_grade_id) {
             <div class="olama-filter-item">
                 <label><?php _e('Semester', 'olama-school'); ?></label>
                 <select name="semester_id" class="olama-select" onchange="this.form.submit()">
+                    <option value="active" <?php selected($selected_semester_id, 'active'); ?>>
+                        <?php _e('Active Semester', 'olama-school'); ?></option>
                     <?php foreach ($current_semesters as $sem): ?>
                         <option value="<?php echo $sem->id; ?>" <?php selected($selected_semester_id, $sem->id); ?>>
                             <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
@@ -262,6 +264,10 @@ if ($current_semester_id && $selected_grade_id) {
             <div class="olama-filter-item">
                 <label><?php _e('Week Start', 'olama-school'); ?></label>
                 <select name="week_start" onchange="this.form.submit()">
+                    <option value="current" <?php selected($week_start, 'current'); ?>>
+                        <?php _e('-- Current Week --', 'olama-school'); ?></option>
+                    <option value="previous" <?php selected($week_start, 'previous'); ?>>
+                        <?php _e('-- Previous Week --', 'olama-school'); ?></option>
                     <?php
                     $w_count = 1;
                     foreach ($current_month_weeks as $w): ?>

@@ -61,6 +61,17 @@ class Olama_School_Helpers
     }
 
     /**
+     * Get the previous week start date (Sunday)
+     * 
+     * @return string Date in Y-m-d format
+     */
+    public static function get_previous_week_start()
+    {
+        $active_start = self::get_active_week_start();
+        return date('Y-m-d', strtotime($active_start . ' -7 days'));
+    }
+
+    /**
      * Get week date range from a given date
      * 
      * @param string $date Any date within the week

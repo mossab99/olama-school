@@ -20,8 +20,8 @@ if (!$active_year) {
     return;
 }
 
+$semesters = Olama_School_Academic::get_semesters($active_year->id);
 $active_semester = Olama_School_Academic::get_active_semester($active_year->id);
-$semesters = $active_semester ? array($active_semester) : [];
 
 if (!$semesters) {
     echo '<div class="error"><p>' . __('Please create and activate a semester for the active year.', 'olama-school') . '</p></div>';
@@ -32,7 +32,12 @@ if (!$semesters) {
 $active_semester = Olama_School_Academic::get_active_semester($active_year->id);
 $default_semester_id = $active_semester ? intval($active_semester->id) : (isset($semesters[0]->id) ? intval($semesters[0]->id) : 0);
 
-$selected_semester_id = isset($_GET['coverage_semester']) ? intval($_GET['coverage_semester']) : $default_semester_id;
+$requested_semester_id = isset($_GET['coverage_semester']) ? $_GET['coverage_semester'] : 'active';
+if ($requested_semester_id === 'active' || empty($requested_semester_id)) {
+    $selected_semester_id = $default_semester_id;
+} else {
+    $selected_semester_id = intval($requested_semester_id);
+}
 $selected_grade_id = isset($_GET['coverage_grade']) ? intval($_GET['coverage_grade']) : 0;
 
 $sections = $selected_grade_id ? Olama_School_Section::get_by_grade($selected_grade_id, $active_year->id) : [];
@@ -144,6 +149,8 @@ if (!$selected_week && !empty($semester_weeks)) {
                 style="font-weight: 600; color: #64748b;"><?php echo Olama_School_Helpers::translate('Semester:'); ?></label>
             <select onchange="window.location.href=add_query_arg('coverage_semester', this.value)"
                 style="border-radius: 4px; border-color: #cbd5e1; font-weight: 600; color: #1e293b;">
+                <option value="active" <?php selected($requested_semester_id, 'active'); ?>>
+                    <?php echo Olama_School_Helpers::translate('Active Semester'); ?></option>
                 <?php foreach ($semesters as $sem): ?>
                     <option value="<?php echo $sem->id; ?>" <?php selected($selected_semester_id, $sem->id); ?>>
                         <?php echo esc_html($sem->semester_name); ?>

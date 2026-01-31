@@ -35,9 +35,16 @@ $subjects = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olam
 
 // Fetch active year and semester for filtering
 $active_year = Olama_School_Academic::get_active_year();
-$active_semester = $active_year ? Olama_School_Academic::get_active_semester($active_year->id) : null;
 $active_year_id = $active_year ? $active_year->id : 0;
-$active_semester_id = $active_semester ? $active_semester->id : 0;
+$semesters = $active_year_id ? Olama_School_Academic::get_semesters($active_year_id) : [];
+
+$selected_semester_id = isset($_GET['semester_id']) ? $_GET['semester_id'] : 'active';
+if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
+    $active_sem = $active_year_id ? Olama_School_Academic::get_active_semester($active_year_id) : null;
+    $active_semester_id = $active_sem ? $active_sem->id : 0;
+} else {
+    $active_semester_id = intval($selected_semester_id);
+}
 ?>
 
 <div class="olama-comparison-container">
@@ -53,6 +60,18 @@ $active_semester_id = $active_semester ? $active_semester->id : 0;
                     <?php foreach ($grades as $g): ?>
                         <option value="<?php echo $g->id; ?>" <?php selected($selected_grade_id, $g->id); ?>>
                             <?php echo esc_html($g->grade_name); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="olama-filter-item">
+                <label><?php _e('Semester', 'olama-school'); ?></label>
+                <select name="semester_id" class="olama-select" onchange="this.form.submit()">
+                    <option value="active" <?php selected($selected_semester_id, 'active'); ?>>
+                        <?php _e('Active Semester', 'olama-school'); ?></option>
+                    <?php foreach ($semesters as $sem): ?>
+                        <option value="<?php echo $sem->id; ?>" <?php selected($active_semester_id, $sem->id); ?>>
+                            <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>

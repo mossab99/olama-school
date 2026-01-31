@@ -57,6 +57,7 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
             </label>
             <select id="gen-semester"
                 style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                <option value="active"><?php _e('Active Semester', 'olama-school'); ?></option>
                 <?php foreach ($semesters as $sem): ?>
                     <option value="<?php echo $sem->id; ?>">
                         <?php echo esc_html($sem->semester_name); ?>
@@ -97,6 +98,9 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
             <select id="gen-week" style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
                 <option value="">
                     <?php _e('-- Current Week --', 'olama-school'); ?>
+                </option>
+                <option value="previous">
+                    <?php _e('-- Previous Week --', 'olama-school'); ?>
                 </option>
                 <?php foreach ($weeks as $val => $label): ?>
                     <option value="<?php echo esc_attr($val); ?>">
