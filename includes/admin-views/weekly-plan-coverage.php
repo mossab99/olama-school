@@ -245,7 +245,6 @@ $num_weeks = 1;
                         style="border: none; box-shadow: none; table-layout: auto;">
                         <thead>
                             <tr style="background: #f8fafc;">
-                            <tr style="background: #f8fafc;">
                                 <th
                                     style="padding: 15px 20px; font-weight: 700; color: #475569; text-align: left; min-width: 180px;">
                                     <?php echo Olama_School_Helpers::translate('Subject Name'); ?>

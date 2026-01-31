@@ -1025,6 +1025,8 @@ class Olama_School_Helpers
         'Schedule Coverage' => 'تغطية الجدول',
         'Teacher coverage of the required weekly plans.' => 'تغطية المعلم للخطط الأسبوعية المطلوبة.',
         'Schedule coverage by plans and reviews compared to master schedule periods.' => 'تغطية الجدول بالخطط والمراجعات مقارنة بعدد حصص الجدول.',
+        'Total Grade Coverage' => 'إجمالي تغطية الصف',
+        'Total Weekly Coverage' => 'إجمالي التغطية الأسبوعية',
         );
 
         return $map[$text] ?? $text;
