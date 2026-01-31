@@ -725,6 +725,7 @@ class Olama_School_Shortcodes
                 margin: 0;
                 font-size: 1.6rem;
                 font-weight: 800;
+                color: #fff;
             }
 
             .schedule-header-v2 .header-badge {
