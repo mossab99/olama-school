@@ -765,6 +765,9 @@ class Olama_School_Admin
                     'bypassBy' => Olama_School_Helpers::translate('Bypass by %d days'),
                     'approve' => Olama_School_Helpers::translate('Approve'),
                     'requestEdits' => Olama_School_Helpers::translate('Request Edits'),
+                    'submitRevision' => Olama_School_Helpers::translate('Submit Revision'),
+                    'needsRevision' => Olama_School_Helpers::translate('Needs Revision'),
+                    'edited' => Olama_School_Helpers::translate('Edited'),
                     'sending' => Olama_School_Helpers::translate('Sending...'),
                     'approving' => Olama_School_Helpers::translate('Approving...'),
                     'enterFeedback' => Olama_School_Helpers::translate('Please enter some feedback.'),
@@ -2153,6 +2156,7 @@ class Olama_School_Admin
             'data' => array('label' => __('Data Management', 'olama-school'), 'cap' => 'olama_manage_plans_data'),
             'load' => array('label' => __('Plan Load', 'olama-school'), 'cap' => 'olama_manage_plans_load'),
             'coverage' => array('label' => __('Curriculum Coverage', 'olama-school'), 'cap' => 'olama_manage_plans_coverage'),
+            'review' => array('label' => Olama_School_Helpers::translate('Review Queue'), 'cap' => 'olama_approve_plans'),
         );
 
         $allowed_tabs = array();
@@ -2220,6 +2224,9 @@ class Olama_School_Admin
                         break;
                     case 'coverage':
                         $this->render_curriculum_coverage_page_content();
+                        break;
+                    case 'review':
+                        $this->render_review_queue_page_content();
                         break;
                 }
                 ?>
@@ -2306,6 +2313,7 @@ class Olama_School_Admin
             $data['homework_nb'] = sanitize_textarea_field($data['homework_nb'] ?? '');
             $data['homework_ws'] = sanitize_textarea_field($data['homework_ws'] ?? '');
             $data['teacher_notes'] = sanitize_textarea_field($data['teacher_notes'] ?? '');
+            $data['teacher_response'] = sanitize_textarea_field($data['teacher_response'] ?? '');
 
             $result = Olama_School_Plan::save_plan($data);
             if (is_wp_error($result)) {
@@ -2873,6 +2881,14 @@ class Olama_School_Admin
     public function render_curriculum_coverage_page_content()
     {
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/weekly-plan-coverage.php';
+    }
+
+    /**
+     * Render Review Queue Tab Content
+     */
+    public function render_review_queue_page_content()
+    {
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/weekly-plan-review.php';
     }
     /**
      * Render Teacher Assignments Tab Content

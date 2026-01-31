@@ -214,6 +214,11 @@ class Olama_School_Plan
             $semester_id = $semester ? $semester->id : 0;
         }
 
+        $status = $data['status'] ?? 'draft';
+
+        // Log teacher response if provided
+        $teacher_response = $data['teacher_response'] ?? '';
+
         $plan_data = array(
             'academic_year_id' => $academic_year_id,
             'semester_id' => $semester_id,
@@ -231,12 +236,23 @@ class Olama_School_Plan
             'homework_nb' => $data['homework_nb'] ?? '',
             'homework_ws' => $data['homework_ws'] ?? '',
             'teacher_notes' => $data['teacher_notes'] ?? '',
+            'teacher_response' => $teacher_response,
             'rating' => isset($data['rating']) ? intval($data['rating']) : 0,
-            'status' => $data['status'] ?? 'draft',
+            'status' => $status,
             'plan_type' => $plan_type,
         );
 
         if ($plan_id > 0) {
+            // Get current plan to check status
+            $current_plan = $wpdb->get_row($wpdb->prepare("SELECT status FROM $table WHERE id = %d", $plan_id));
+            if ($current_plan && $current_plan->status === 'needs_edit' && $status === 'draft') {
+                // If teacher saves as draft while it needs edit, keep it as needs_edit to maintain the warning
+                $plan_data['status'] = 'needs_edit';
+            } elseif ($current_plan && $current_plan->status === 'needs_edit' && $status === 'submitted') {
+                // If teacher submits while it needs edit, it's now ready for admin re-check
+                $plan_data['status'] = 'submitted';
+            }
+
             $result = $wpdb->update($table, $plan_data, array('id' => $plan_id));
             if ($result === false) {
                 return new WP_Error('db_update_error', __('Database error updating plan: ', 'olama-school') . $wpdb->last_error);

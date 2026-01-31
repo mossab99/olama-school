@@ -314,14 +314,23 @@ jQuery(document).ready(function ($) {
         $('textarea[name="homework_ws"]').val(planData.homework_ws || '');
         $('textarea[name="teacher_notes"]').val(planData.teacher_notes || '');
 
-        // Show supervisor feedback box if there's feedback
-        const $feedbackBox = $('#olama-supervisor-feedback-box');
-        const $feedbackContent = $('#olama-supervisor-feedback-content');
+        // Show revision loop if there's feedback
+        const $revisionWrapper = $('#olama-revision-wrapper');
+        const $feedbackDisplay = $('#olama-supervisor-feedback-display .content');
+        const $teacherResponse = $('#olama-teacher-response');
+
         if (planData.supervisor_feedback && planData.supervisor_feedback.trim()) {
-            $feedbackContent.text(planData.supervisor_feedback);
-            $feedbackBox.fadeIn();
+            $feedbackDisplay.text(planData.supervisor_feedback);
+            $teacherResponse.val(planData.teacher_response || '');
+            $revisionWrapper.fadeIn();
+
+            if (planData.status === 'needs_edit') {
+                $submitButton.text(olamaPlan.i18n.submitRevision || 'Submit Revision');
+            }
         } else {
-            $feedbackBox.hide();
+            $revisionWrapper.hide();
+            $teacherResponse.val('');
+            $submitButton.text(olamaPlan.i18n.submitForReview || 'Submit for Review');
         }
 
         // Indicate we are in edit mode for cascading logic
@@ -389,8 +398,9 @@ jQuery(document).ready(function ($) {
         $('#olama-weekly-plan-form')[0].reset();
         $planIdInput.val('0');
         $('#olama-plan-status').val('draft');
-        $('#olama-edit-status-container').hide();
-        $('#olama-supervisor-feedback-box').hide();
+        $('#olama-revision-wrapper').hide();
+        $('#olama-teacher-response').val('');
+        $submitButton.text(olamaPlan.i18n.submitForReview || 'Submit for Review');
 
         // Reset cascading selects
         $subjectSelect.val('');

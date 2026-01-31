@@ -114,6 +114,24 @@ if (!defined('ABSPATH')) {
         </ul>
     </div>
 
+    <?php
+    $needs_edit_count = count(array_filter($today_plans, function ($p) {
+        return $p->status === 'needs_edit';
+    }));
+    if ($needs_edit_count > 0): ?>
+        <div
+            style="background: #fef2f2; border: 1px solid #fee2e2; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px; border-right: 5px solid #ef4444;">
+            <span class="dashicons dashicons-warning"
+                style="color: #ef4444; font-size: 24px; width: 24px; height: 24px;"></span>
+            <div>
+                <strong
+                    style="color: #991b1b; display: block; font-size: 1.1em;"><?php echo Olama_School_Helpers::translate('Action Required'); ?></strong>
+                <span
+                    style="color: #b91c1c;"><?php printf(Olama_School_Helpers::translate('You have %d plans that need urgent revision from the supervisor.'), $needs_edit_count); ?></span>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <div class="olama-two-column" style="display: grid; grid-template-columns: 1fr 350px; gap: 20px;">
         <!-- Left Column: Form -->
         <div class="olama-form-col"
@@ -233,16 +251,29 @@ if (!defined('ABSPATH')) {
                     </div>
                 </div>
 
-                <!-- Supervisor Feedback Display Box (shown when editing a plan with feedback) -->
-                <div id="olama-supervisor-feedback-box"
-                    style="display: none; margin-bottom: 20px; padding: 20px; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 2px solid #ef4444; border-radius: 12px;">
+                <!-- Supervisor Feedback & Teacher Response Loop -->
+                <div id="olama-revision-wrapper"
+                    style="display: none; margin-bottom: 20px; padding: 20px; background: #fffaf0; border: 2px solid #f59e0b; border-radius: 12px;">
                     <div
-                        style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: #b91c1c; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; border-bottom: 1px solid #fca5a5; padding-bottom: 12px;">
-                        <span style="font-size: 20px;">⚠️</span>
-                        <?php echo Olama_School_Helpers::translate('Supervisor Feedback'); ?>
+                        style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: #975a16; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; border-bottom: 1px solid #fbd38d; padding-bottom: 12px;">
+                        <span style="font-size: 20px;">💬</span>
+                        <?php echo Olama_School_Helpers::translate('Feedback History'); ?>
                     </div>
-                    <div id="olama-supervisor-feedback-content"
-                        style="background: #fff; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444; color: #7f1d1d; font-size: 0.9rem; line-height: 1.6; white-space: pre-line;">
+
+                    <div id="olama-supervisor-feedback-display"
+                        style="background: #fff; padding: 15px; border-radius: 8px; border-right: 4px solid #ef4444; color: #7f1d1d; font-size: 0.9rem; line-height: 1.6; margin-bottom: 15px;">
+                        <strong><?php echo Olama_School_Helpers::translate('Supervisor Feedback'); ?>:</strong>
+                        <div class="content" style="white-space: pre-line; margin-top: 5px;"></div>
+                    </div>
+
+                    <div>
+                        <label
+                            style="display: block; font-weight: 700; color: #2d3748; margin-bottom: 8px; font-size: 0.85rem;">
+                            <?php echo Olama_School_Helpers::translate('Your Response'); ?>
+                        </label>
+                        <textarea name="teacher_response" id="olama-teacher-response"
+                            placeholder="<?php echo Olama_School_Helpers::translate('Explain the changes you made...'); ?>"
+                            style="width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; min-height: 80px;"></textarea>
                     </div>
                 </div>
 
@@ -338,6 +369,7 @@ if (!defined('ABSPATH')) {
                         'homework_ws' => $plan->homework_ws,
                         'teacher_notes' => $plan->teacher_notes,
                         'supervisor_feedback' => $plan->supervisor_feedback ?? '',
+                        'teacher_response' => $plan->teacher_response ?? '',
                         'question_ids' => $q_ids,
                         'status' => $plan->status,
                         'teacher_name' => $plan->teacher_name ?? '',
@@ -346,7 +378,7 @@ if (!defined('ABSPATH')) {
                     ?>
                     <div class="olama-plan-item" data-plan="<?php echo esc_attr($plan_json); ?>"
                         style="border-left: 4px solid <?php echo esc_attr($plan->color_code); ?>; padding: 15px; margin-bottom: 15px; background: #fcfcfc; border-radius: 0 8px 8px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative;">
-                        <?php if (!empty($plan->supervisor_feedback)): ?>
+                        <?php if ($plan->status === 'needs_edit'): ?>
                             <span class="olama-feedback-warning" title="<?php echo esc_attr($plan->supervisor_feedback); ?>"
                                 style="position: absolute; top: 8px; right: 8px; font-size: 18px; cursor: help; z-index: 5;">
                                 ⚠️
@@ -365,9 +397,31 @@ if (!defined('ABSPATH')) {
                                         <?php echo esc_html($plan->teacher_name); ?>
                                     </span>
                                 <?php endif; ?>
-                                <span class="status-badge <?php echo esc_attr($plan->status); ?>"
-                                    style="font-size: 0.8em; padding: 2px 8px; border-radius: 12px; background: #eee; color: #666;">
-                                    <?php echo __(ucfirst($plan->status), 'olama-school'); ?>
+                                <?php
+                                $status_color = '#64748b';
+                                $status_bg = '#f1f5f9';
+                                $status_label = ucfirst($plan->status);
+
+                                if ($plan->status === 'submitted') {
+                                    $status_color = '#d97706';
+                                    $status_bg = '#fef3c7';
+                                } elseif ($plan->status === 'approved' || $plan->status === 'published') {
+                                    $status_color = '#10b981';
+                                    $status_bg = '#dcfce7';
+                                    $status_label = Olama_School_Helpers::translate('Approved');
+                                } elseif ($plan->status === 'needs_edit') {
+                                    $status_color = '#ef4444';
+                                    $status_bg = '#fef2f2';
+                                    $status_label = Olama_School_Helpers::translate('Needs Revision');
+                                } elseif ($plan->status === 'edited') {
+                                    $status_color = '#6366f1';
+                                    $status_bg = '#eef2ff';
+                                    $status_label = Olama_School_Helpers::translate('Edited');
+                                }
+                                ?>
+                                <span class="status-badge"
+                                    style="font-size: 0.8em; padding: 2px 8px; border-radius: 12px; background: <?php echo $status_bg; ?>; color: <?php echo $status_color; ?>; font-weight: 700;">
+                                    <?php echo $status_label; ?>
                                 </span>
                                 <?php if (isset($plan->plan_type) && $plan->plan_type === 'review'): ?>
                                     <span class="plan-type-badge review"

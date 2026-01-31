@@ -328,6 +328,14 @@ if ($current_semester_id && $selected_grade_id) {
                                     $status_badge_text = Olama_School_Helpers::translate('Submitted');
                                     $status_badge_color = '#d97706';
                                     $status_badge_bg = '#fef3c7';
+                                } elseif ($status === 'needs_edit') {
+                                    $status_badge_text = Olama_School_Helpers::translate('Needs Revision');
+                                    $status_badge_color = '#ef4444';
+                                    $status_badge_bg = '#fef2f2';
+                                } elseif ($status === 'edited') {
+                                    $status_badge_text = Olama_School_Helpers::translate('Edited');
+                                    $status_badge_color = '#6366f1';
+                                    $status_badge_bg = '#eef2ff';
                                 }
                                 ?>
                                 <div class="olama-status-badge"
@@ -342,7 +350,7 @@ if ($current_semester_id && $selected_grade_id) {
                                     </div>
                                 <?php endif; ?>
 
-                                <?php if (!empty($plan->supervisor_feedback)): ?>
+                                <?php if ($plan->status === 'needs_edit'): ?>
                                     <span class="olama-feedback-warning" title="<?php echo esc_attr($plan->supervisor_feedback); ?>"
                                         style="position: absolute; top: 8px; right: 8px; font-size: 18px; cursor: help; z-index: 5;">
                                         ⚠️

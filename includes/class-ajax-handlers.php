@@ -921,7 +921,7 @@ class Olama_School_Ajax_Handlers
                 wp_send_json_error(__('Invalid plan ID.', 'olama-school'));
             }
 
-            $allowed_statuses = array('draft', 'approved', 'submitted');
+            $allowed_statuses = array('draft', 'approved', 'submitted', 'needs_edit', 'edited');
             if (!in_array($status, $allowed_statuses)) {
                 wp_send_json_error(__('Invalid status.', 'olama-school'));
             }

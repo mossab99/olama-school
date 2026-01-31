@@ -1027,6 +1027,19 @@ class Olama_School_Helpers
         'Schedule coverage by plans and reviews compared to master schedule periods.' => 'تغطية الجدول بالخطط والمراجعات مقارنة بعدد حصص الجدول.',
         'Total Grade Coverage' => 'إجمالي تغطية الصف',
         'Total Weekly Coverage' => 'إجمالي التغطية الأسبوعية',
+        'Review Queue' => 'قائمة المراجعة',
+        'Needs Revision' => 'بحاجة لتعديل',
+        'Edited' => 'تم التعديل',
+        'Teacher Response' => 'رد المعلم',
+        'Admin Feedback' => 'ملاحظات المشرف',
+        'Pending Edits' => 'طلبات معلقة',
+        'Approved History' => 'سجل الاعتمادات',
+        'Mark as Checked' => 'تم التحقق',
+        'Mark as Needs Revision' => 'طلب تعديل',
+        'Final Approve' => 'اعتماد نهائي',
+        'Feedback History' => 'سجل الملاحظات',
+        'Request Edits' => 'طلب تعديلات',
+        'Submit Revision' => 'إرسال التعديلات',
         );
 
         return $map[$text] ?? $text;
