@@ -1011,6 +1011,9 @@ class Olama_School_Helpers
         'SECURITY AUTHORIZATION REQUIRED: Please enter the Admin Deletion Password:' => 'مطلوب تفويض أمني: يرجى إدخال كلمة مرور الحذف الإداري:',
         'SECURITY ERROR: Admin Deletion Password not found.\nPlease navigate to Settings > General and set a deletion password before attempting this action.' => "خطأ أمني: كلمة مرور الحذف الإداري غير موجودة.\nيرجى الانتقال إلى الإعدادات > عام وتعيين كلمة مرور الحذف قبل محاولة هذا الإجراء.",
         'CRITICAL WARNING: This will delete ALL curriculum data (Units, Lessons, Questions) for the selected year: {year}. This action is IRREVERSIBLE!\n\nAre you absolutely sure?' => "تحذير حرج: سيؤدي هذا إلى حذف جميع بيانات المناهج (الوحدات، الدروس، الأسئلة) للسنة المختارة: {year}.\n\nهذا الإجراء لا يمكن التراجع عنه!\n\nهل أنت متأكد تماماً؟",
+        'Please select a subject.' => 'يرجى اختيار المادة.',
+        'Please select a unit.' => 'يرجى اختيار الوحدة.',
+        'Please select a lesson.' => 'يرجى اختيار الدرس.',
         );
 
         return $map[$text] ?? $text;

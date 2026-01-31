@@ -416,6 +416,36 @@ jQuery(document).ready(function ($) {
         }, 500);
     });
 
+    // Form Validation and Submission
+    $('#olama-weekly-plan-form').on('submit', function (e) {
+        const subjectId = $subjectSelect.val();
+        const unitId = $unitSelect.val();
+        const lessonId = $lessonSelect.val();
+
+        if (!subjectId) {
+            alert(olamaPlan.i18n.selectSubject || 'Please select a subject.');
+            $subjectSelect.focus();
+            e.preventDefault();
+            return false;
+        }
+
+        if (!unitId) {
+            alert(olamaPlan.i18n.selectUnit || 'Please select a unit.');
+            $unitSelect.focus();
+            e.preventDefault();
+            return false;
+        }
+
+        if (!lessonId) {
+            alert(olamaPlan.i18n.selectLesson || 'Please select a lesson.');
+            $lessonSelect.focus();
+            e.preventDefault();
+            return false;
+        }
+
+        return true;
+    });
+
     // Handle Submit button
     $submitButton.on('click', function (e) {
         e.preventDefault();

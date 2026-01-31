@@ -58,7 +58,20 @@ class Olama_School_Plan
             $period_number = $max_period ? intval($max_period) + 1 : 1;
         }
 
-        $subject_id = intval($data['subject_id']);
+        $subject_id = intval($data['subject_id'] ?? 0);
+        $unit_id = intval($data['unit_id'] ?? 0);
+        $lesson_id = intval($data['lesson_id'] ?? 0);
+
+        if (!$subject_id) {
+            return new WP_Error('missing_subject', Olama_School_Helpers::translate('Please select a subject.'));
+        }
+        if (!$unit_id) {
+            return new WP_Error('missing_unit', Olama_School_Helpers::translate('Please select a unit.'));
+        }
+        if (!$lesson_id) {
+            return new WP_Error('missing_lesson', Olama_School_Helpers::translate('Please select a lesson.'));
+        }
+
         $plan_type = isset($data['plan_type']) && $data['plan_type'] === 'review' ? 'review' : 'homework';
 
         // Limit Validation (skip for review plans - they don't count towards limits)
@@ -147,8 +160,7 @@ class Olama_School_Plan
             }
         }
 
-        $unit_id = !empty($data['unit_id']) ? intval($data['unit_id']) : null;
-        $lesson_id = !empty($data['lesson_id']) ? intval($data['lesson_id']) : null;
+
 
         // If lesson_id is provided but unit_id is missing, find the unit_id
         if ($lesson_id && !$unit_id) {

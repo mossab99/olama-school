@@ -738,7 +738,9 @@ class Olama_School_Admin
                 'savePlanNonce' => wp_create_nonce('olama_save_plan'),
                 'semesterId' => $semester_id,
                 'i18n' => array(
-                    'selectUnit' => Olama_School_Helpers::translate('Select Unit'),
+                    'selectSubject' => Olama_School_Helpers::translate('Please select a subject.'),
+                    'selectUnit' => Olama_School_Helpers::translate('Please select a unit.'),
+                    'selectLesson' => Olama_School_Helpers::translate('Please select a lesson.'),
                     'noUnits' => Olama_School_Helpers::translate('No units found.'),
                     'selectLesson' => Olama_School_Helpers::translate('Select Lesson'),
                     'noLessons' => Olama_School_Helpers::translate('No lessons found.'),
