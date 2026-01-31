@@ -187,18 +187,10 @@ if (!defined('ABSPATH')) {
                                 return $p->subject_id;
                             }, $today_plans);
 
-                            // Get subjects that already have review plans on this date
-                            $review_subject_ids = array_map(function ($p) {
-                                return $p->subject_id;
-                            }, array_filter($today_plans, function ($p) {
-                                return isset($p->plan_type) && $p->plan_type === 'review';
-                            }));
-
                             foreach ($scheduled_subjects as $subj):
                                 $is_filled = in_array($subj->id, $filled_subject_ids);
-                                $has_review = in_array($subj->id, $review_subject_ids);
                                 ?>
-                                <option value="<?php echo $subj->id; ?>" <?php echo $is_filled ? 'data-filled="true" class="olama-filled-subject"' : ''; ?>     <?php echo $has_review ? 'data-has-review="true"' : ''; ?>>
+                                <option value="<?php echo $subj->id; ?>" <?php echo $is_filled ? 'data-filled="true" class="olama-filled-subject"' : ''; ?>>
                                     <?php echo esc_html($subj->subject_name); ?>
                                 </option>
                             <?php endforeach; ?>

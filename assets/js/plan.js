@@ -80,7 +80,6 @@ jQuery(document).ready(function ($) {
 
     function handleSubjectFiltering() {
         const editingSubjectId = currentEditingPlan ? currentEditingPlan.subject_id.toString() : null;
-        const currentPlanType = $planTypeInput.val();
 
         $subjectSelect.find('option').each(function () {
             const $option = $(this);
@@ -88,17 +87,8 @@ jQuery(document).ready(function ($) {
             if (!val) return;
 
             const isFilled = $option.hasClass('olama-filled-subject');
-            const hasReview = $option.data('has-review') === true;
 
-            // For homework plans, disable subjects that have review plans on this date
-            if (currentPlanType === 'homework' && hasReview) {
-                // Allow if we're editing this same subject
-                if (editingSubjectId && val === editingSubjectId) {
-                    $option.addClass('is-editing').prop('disabled', false);
-                } else {
-                    $option.prop('disabled', true);
-                }
-            } else if (isFilled) {
+            if (isFilled) {
                 if (editingSubjectId && val === editingSubjectId) {
                     $option.addClass('is-editing').prop('disabled', false);
                 } else {
@@ -108,6 +98,11 @@ jQuery(document).ready(function ($) {
                 $option.prop('disabled', false);
             }
         });
+
+        // If current selected subject is now disabled, reset selection
+        if ($subjectSelect.find('option:selected').is(':disabled')) {
+            $subjectSelect.val('').trigger('change');
+        }
     }
 
     // Trigger on load

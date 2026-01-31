@@ -1014,6 +1014,10 @@ class Olama_School_Helpers
         'Please select a subject.' => 'يرجى اختيار المادة.',
         'Please select a unit.' => 'يرجى اختيار الوحدة.',
         'Please select a lesson.' => 'يرجى اختيار الدرس.',
+        'Subject %s already has a plan for today.' => 'المادة %s لديها خطة مسبقة لهذا اليوم.',
+        'Grade %s has a maximum of %d homework plans per week.' => 'الصف %s لديه بحد أقصى %d خطط واجبات أسبوعياً.',
+        'A maximum of %d homework plans are allowed on %s.' => 'يسمح بحد أقصى بـ %d خطط واجبات في يوم %s.',
+        'Subject %s has a maximum of %d homework plans per week.' => 'المادة %s لديها بحد أقصى %d خطط واجبات أسبوعياً.',
         );
 
         return $map[$text] ?? $text;

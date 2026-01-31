@@ -74,8 +74,23 @@ class Olama_School_Plan
 
         $plan_type = isset($data['plan_type']) && $data['plan_type'] === 'review' ? 'review' : 'homework';
 
-        // Limit Validation (skip for review plans - they don't count towards limits)
-        if (!$plan_id && $plan_type !== 'review') {
+        // 1. Subject Uniqueness Check (New) - One subject per day regardless of type
+        if (!$plan_id) {
+            $subject_exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM $table WHERE section_id = %d AND plan_date = %s AND subject_id = %d",
+                $section_id,
+                $plan_date,
+                $subject_id
+            ));
+            if ($subject_exists) {
+                $subject_obj = Olama_School_Subject::get_subject($subject_id);
+                $subject_name = $subject_obj ? $subject_obj->subject_name : '';
+                return new WP_Error('duplicate_subject', sprintf(Olama_School_Helpers::translate('Subject %s already has a plan for today.'), $subject_name));
+            }
+        }
+
+        // Limit Validation (only for homework plans)
+        if (!$plan_id && $plan_type === 'homework') {
             // Find week range (Sunday to Thursday)
             $ts = strtotime($plan_date);
             $day_of_week = date('w', $ts);
@@ -88,19 +103,19 @@ class Olama_School_Plan
             $grade_limit = $grade ? intval($grade->max_weekly_plans) : 0;
 
             if ($grade_limit > 0) {
-                // Check Weekly Limit
+                // Check Weekly Limit (Only count homework plans)
                 $total_plans = $wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(*) FROM $table WHERE section_id = %d AND plan_date BETWEEN %s AND %s",
+                    "SELECT COUNT(*) FROM $table WHERE section_id = %d AND plan_type = 'homework' AND plan_date BETWEEN %s AND %s",
                     $section_id,
                     $week_start,
                     $week_end
                 ));
                 if ($total_plans >= $grade_limit) {
                     $grade_name = $grade ? $grade->grade_name : '';
-                    return new WP_Error('limit_reached', sprintf(__('Grade %s has a maximum of %d plans.', 'olama-school'), $grade_name, $grade_limit));
+                    return new WP_Error('limit_reached', sprintf(Olama_School_Helpers::translate('Grade %s has a maximum of %d homework plans per week.'), $grade_name, $grade_limit));
                 }
 
-                // Check Daily Limit
+                // Check Daily Limit (Only count homework plans)
                 $day_map = [0 => 'sun', 1 => 'mon', 2 => 'tue', 3 => 'wed', 4 => 'thu'];
                 $day_key = intval(date('w', strtotime($plan_date)));
 
@@ -110,13 +125,13 @@ class Olama_School_Plan
 
                     if ($daily_limit > 0) {
                         $daily_plans = $wpdb->get_var($wpdb->prepare(
-                            "SELECT COUNT(*) FROM $table WHERE section_id = %d AND plan_date = %s",
+                            "SELECT COUNT(*) FROM $table WHERE section_id = %d AND plan_type = 'homework' AND plan_date = %s",
                             $section_id,
                             $plan_date
                         ));
                         if ($daily_plans >= $daily_limit) {
                             $day_name = Olama_School_Helpers::translate(date('l', strtotime($plan_date)));
-                            return new WP_Error('limit_reached', sprintf(__('A maximum of %d plans are allowed on %s.', 'olama-school'), $daily_limit, $day_name));
+                            return new WP_Error('limit_reached', sprintf(Olama_School_Helpers::translate('A maximum of %d homework plans are allowed on %s.'), $daily_limit, $day_name));
                         }
                     }
                 }
@@ -127,8 +142,9 @@ class Olama_School_Plan
             $subject_limit = $subject ? intval($subject->max_weekly_plans) : 0;
 
             if ($subject_limit > 0) {
+                // Check Subject Weekly Limit (Only count homework plans)
                 $subject_plans = $wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(*) FROM $table WHERE section_id = %d AND subject_id = %d AND plan_date BETWEEN %s AND %s",
+                    "SELECT COUNT(*) FROM $table WHERE section_id = %d AND subject_id = %d AND plan_type = 'homework' AND plan_date BETWEEN %s AND %s",
                     $section_id,
                     $subject_id,
                     $week_start,
@@ -136,7 +152,7 @@ class Olama_School_Plan
                 ));
                 if ($subject_plans >= $subject_limit) {
                     $subject_name = $subject ? $subject->subject_name : '';
-                    return new WP_Error('limit_reached', sprintf(__('Subject %s has a maximum of %d plans.', 'olama-school'), $subject_name, $subject_limit));
+                    return new WP_Error('limit_reached', sprintf(Olama_School_Helpers::translate('Subject %s has a maximum of %d homework plans per week.'), $subject_name, $subject_limit));
                 }
             }
         }
