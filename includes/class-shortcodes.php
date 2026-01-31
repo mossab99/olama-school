@@ -755,11 +755,9 @@ class Olama_School_Shortcodes
                 background: #f1f5f9;
             }
 
-            .schedule-table-v2 .period-col-header {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 2px;
+            .schedule-table-v2 .period-col-header .period-label-text,
+            .schedule-table-v2 .period-col-header .period-ordinal {
+                display: block;
             }
 
             .schedule-table-v2 .period-label-text {
