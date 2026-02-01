@@ -104,27 +104,35 @@ $completed_plans = array_filter($all_plans, function ($p) {
             <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; align-items: end;">
                 <!-- Academic Year -->
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
+                    <label
+                        style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
                         <?php echo Olama_School_Helpers::translate('Academic Year'); ?>
                     </label>
-                    <select name="academic_year_id" class="olama-select" style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
+                    <select name="academic_year_id" class="olama-select"
+                        style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
                         <?php
                         $years = Olama_School_Academic::get_academic_years();
-                        foreach ($years as $year): ?>
+                        foreach ($years as $year):
+                            $year_label = esc_html($year->year_name);
+                            if ($active_year && $active_year->id == $year->id) {
+                                $year_label .= ' (' . Olama_School_Helpers::translate('Active') . ')';
+                            }
+                            ?>
                             <option value="<?php echo $year->id; ?>" <?php selected($selected_year_id, $year->id); ?>>
-                                <?php echo esc_html($year->year_name);
-                                if ($active_year && $active_year->id == $year->id) echo ' (' . Olama_School_Helpers::translate('Active') . ')'; ?>
-                            </option>
+                                    <?php echo $year_label; ?>
+                                </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
 
                 <!-- Grade -->
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
+                    <label
+                        style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
                         <?php echo Olama_School_Helpers::translate('Grade'); ?>
                     </label>
-                    <select name="grade_id" id="review-grade-select" class="olama-select" style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
+                    <select name="grade_id" id="review-grade-select" class="olama-select"
+                        style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
                         <option value="0"><?php echo Olama_School_Helpers::translate('All Grades'); ?></option>
                         <?php foreach ($grades as $g): ?>
                             <option value="<?php echo $g->id; ?>" <?php selected($selected_grade_id, $g->id); ?>>
@@ -136,10 +144,12 @@ $completed_plans = array_filter($all_plans, function ($p) {
 
                 <!-- Section (Dynamic) -->
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
+                    <label
+                        style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
                         <?php echo Olama_School_Helpers::translate('Section'); ?>
                     </label>
-                    <select name="section_id" id="review-section-select" class="olama-select" style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
+                    <select name="section_id" id="review-section-select" class="olama-select"
+                        style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
                         <option value="0"><?php echo Olama_School_Helpers::translate('All Sections'); ?></option>
                         <?php foreach ($sections as $sec): ?>
                             <option value="<?php echo $sec->id; ?>" <?php selected($selected_section_id, $sec->id); ?>>
@@ -151,10 +161,12 @@ $completed_plans = array_filter($all_plans, function ($p) {
 
                 <!-- Week -->
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
+                    <label
+                        style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
                         <?php echo Olama_School_Helpers::translate('Week'); ?>
                     </label>
-                    <select name="week_start" class="olama-select" style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
+                    <select name="week_start" class="olama-select"
+                        style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
                         <option value=""><?php echo Olama_School_Helpers::translate('All Weeks'); ?></option>
                         <?php foreach ($all_weeks as $ws => $week_info):
                             $is_current = ($ws === $current_week_start);
@@ -172,7 +184,8 @@ $completed_plans = array_filter($all_plans, function ($p) {
 
                 <!-- Filter Button -->
                 <div>
-                    <button type="submit" class="button button-primary" style="width: 100%; height: 42px; border-radius: 8px; font-weight: 600;">
+                    <button type="submit" class="button button-primary"
+                        style="width: 100%; height: 42px; border-radius: 8px; font-weight: 600;">
                         <?php echo Olama_School_Helpers::translate('Filter'); ?>
                     </button>
                 </div>
@@ -180,40 +193,40 @@ $completed_plans = array_filter($all_plans, function ($p) {
         </form>
 
         <script>
-        jQuery(document).ready(function($) {
-            $('#review-grade-select').on('change', function() {
-                var gradeId = $(this).val();
-                var yearId = $('select[name="academic_year_id"]').val();
-                var $sectionSelect = $('#review-section-select');
-                
-                $sectionSelect.html('<option value="0"><?php echo Olama_School_Helpers::translate('Loading...'); ?></option>');
-                
-                if (gradeId == '0') {
-                    $sectionSelect.html('<option value="0"><?php echo Olama_School_Helpers::translate('All Sections'); ?></option>');
-                    return;
-                }
-                
-                $.ajax({
-                    url: ajaxurl,
-                    type: 'POST',
-                    data: {
-                        action: 'olama_get_sections_by_grade',
-                        grade_id: gradeId,
-                        academic_year_id: yearId,
-                        nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
-                    },
-                    success: function(response) {
-                        var html = '<option value="0"><?php echo Olama_School_Helpers::translate('All Sections'); ?></option>';
-                        if (response.success && response.data) {
-                            response.data.forEach(function(sec) {
-                                html += '<option value="' + sec.id + '">' + sec.section_name + '</option>';
-                            });
-                        }
-                        $sectionSelect.html(html);
+            jQuery(document).ready(function ($) {
+                $('#review-grade-select').on('change', function () {
+                    var gradeId = $(this).val();
+                    var yearId = $('select[name="academic_year_id"]').val();
+                    var $sectionSelect = $('#review-section-select');
+
+                    $sectionSelect.html('<option value="0"><?php echo Olama_School_Helpers::translate('Loading...'); ?></option>');
+
+                    if (gradeId == '0') {
+                        $sectionSelect.html('<option value="0"><?php echo Olama_School_Helpers::translate('All Sections'); ?></option>');
+                        return;
                     }
+
+                    $.ajax({
+                        url: ajaxurl,
+                        type: 'POST',
+                        data: {
+                            action: 'olama_get_sections_by_grade',
+                            grade_id: gradeId,
+                            academic_year_id: yearId,
+                            nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
+                        },
+                        success: function (response) {
+                            var html = '<option value="0"><?php echo Olama_School_Helpers::translate('All Sections'); ?></option>';
+                            if (response.success && response.data) {
+                                response.data.forEach(function (sec) {
+                                    html += '<option value="' + sec.id + '">' + sec.section_name + '</option>';
+                                });
+                            }
+                            $sectionSelect.html(html);
+                        }
+                    });
                 });
             });
-        });
         </script>
     </div>
 
@@ -320,8 +333,7 @@ $completed_plans = array_filter($all_plans, function ($p) {
                                     <td style="padding: 15px; vertical-align: middle; text-align: center;">
                                         <div style="display: flex; flex-direction: column; gap: 5px;">
                                             <?php if ($is_admin): ?>
-                                                <button class="button button-small"
-                                                    onclick="openViewPlanModal(this)"
+                                                <button class="button button-small" onclick="openViewPlanModal(this)"
                                                     data-plan="<?php echo base64_encode(json_encode($plan_data)); ?>"
                                                     style="background: #6366f1; color: #fff; border: none;">
                                                     <span class="dashicons dashicons-visibility"
@@ -570,7 +582,8 @@ $completed_plans = array_filter($all_plans, function ($p) {
             <table style="width:100%; border-collapse:collapse;">
                 <tr>
                     <td style="padding:8px 0; font-weight:600; width:120px;">
-                        <?php echo Olama_School_Helpers::translate('Subject'); ?>:</td>
+                        <?php echo Olama_School_Helpers::translate('Subject'); ?>:
+                    </td>
                     <td id="vpSubject" style="padding:8px 0;"></td>
                 </tr>
                 <tr>
@@ -580,17 +593,20 @@ $completed_plans = array_filter($all_plans, function ($p) {
                 </tr>
                 <tr>
                     <td style="padding:8px 0; font-weight:600;">
-                        <?php echo Olama_School_Helpers::translate('Lesson'); ?>:</td>
+                        <?php echo Olama_School_Helpers::translate('Lesson'); ?>:
+                    </td>
                     <td id="vpLesson" style="padding:8px 0;"></td>
                 </tr>
                 <tr>
                     <td style="padding:8px 0; font-weight:600;">
-                        <?php echo Olama_School_Helpers::translate('Custom Topic'); ?>:</td>
+                        <?php echo Olama_School_Helpers::translate('Custom Topic'); ?>:
+                    </td>
                     <td id="vpTopic" style="padding:8px 0;"></td>
                 </tr>
                 <tr>
                     <td colspan="2" style="padding:12px 0 8px 0; font-weight:600; border-top:1px solid #eee;">
-                        <?php echo Olama_School_Helpers::translate('Homework'); ?></td>
+                        <?php echo Olama_School_Helpers::translate('Homework'); ?>
+                    </td>
                 </tr>
                 <tr>
                     <td style="padding:4px 0;">SB:</td>
@@ -610,7 +626,8 @@ $completed_plans = array_filter($all_plans, function ($p) {
                 </tr>
                 <tr>
                     <td style="padding:12px 0 4px 0; font-weight:600; border-top:1px solid #eee;">
-                        <?php echo Olama_School_Helpers::translate('Teacher Notes'); ?>:</td>
+                        <?php echo Olama_School_Helpers::translate('Teacher Notes'); ?>:
+                    </td>
                     <td></td>
                 </tr>
                 <tr>
