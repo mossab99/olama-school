@@ -69,12 +69,15 @@ if (!$is_admin) {
     $params[] = $current_user_id;
 }
 
-$query = "SELECT p.*, s.subject_name, s.color_code, sec.section_name, g.grade_name, g.id as grade_id, u.display_name as teacher_name
+$query = "SELECT p.*, s.subject_name, s.color_code, sec.section_name, g.grade_name, g.id as grade_id, u.display_name as teacher_name,
+               un.unit_name, l.lesson_title
           FROM {$wpdb->prefix}olama_plans p
           JOIN {$wpdb->prefix}olama_subjects s ON p.subject_id = s.id
           JOIN {$wpdb->prefix}olama_sections sec ON p.section_id = sec.id
           JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id
           JOIN {$wpdb->users} u ON p.teacher_id = u.ID
+          LEFT JOIN {$wpdb->prefix}olama_curriculum_units un ON p.unit_id = un.id
+          LEFT JOIN {$wpdb->prefix}olama_curriculum_lessons l ON p.lesson_id = l.id
           WHERE $where
           ORDER BY p.plan_date DESC, p.created_at DESC";
 
@@ -497,13 +500,13 @@ $completed_plans = array_filter($all_plans, function ($p) {
                 <button id="confirm-review-btn" class="button button-primary">
                     <?php echo Olama_School_Helpers::translate('Confirm'); ?>
                 </button>
+            </div>
         </div>
     </div>
-</div>
 
 <!-- View Plan Modal -->
 <div id="olama-view-plan-modal"
-    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999; justify-content: center; align-items: center;">
+    style="display: none; position: fixed; inset: 0 !important; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999 !important; justify-content: center; align-items: center;">
         <div
             style="background: #fff; border-radius: 16px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
             <div
@@ -614,27 +617,36 @@ $completed_plans = array_filter($all_plans, function ($p) {
             </div>
         </div>
     </div>
-</div>
 
-<script>
+    <script>
         jQuery(document).ready(function ($) {
-            // View Plan button handler
-            $('.olama-view-plan-btn').on('click', function () {
+            // Use delegated events for better reliability
+            $(document).on('click', '.olama-view-plan-btn', function (e) {
+                e.preventDefault();
                 const planData = $(this).data('plan');
                 const modal = $('#olama-view-plan-modal');
 
-                // Populate the modal fields
-                $('#view-plan-subject').val(planData.subject_name || '-');
-                $('#view-plan-unit').val(planData.unit_name || '-');
-                $('#view-plan-lesson').val(planData.lesson_title || '-');
-                $('#view-plan-topic').val(planData.custom_topic || '-');
-                $('#view-plan-sb').val(planData.homework_sb || '-');
-                $('#view-plan-eb').val(planData.homework_eb || '-');
-                $('#view-plan-nb').val(planData.homework_nb || '-');
-                $('#view-plan-ws').val(planData.homework_ws || '-');
-                $('#view-plan-notes').val(planData.teacher_notes || '-');
+            if (!planData) {
+                alert('Error: No plan data found on this button.');
+                console.error('No plan data found on button');
+                return;
+            }
 
-                modal.css('display', 'flex');
+            // Debug alert to confirm click
+            console.log('Opening modal for:', planData.subject_name);
+
+            // Populate the modal fields
+            $('#view-plan-subject').val(planData.subject_name || '-');
+            $('#view-plan-unit').val(planData.unit_name || '-');
+            $('#view-plan-lesson').val(planData.lesson_title || '-');
+            $('#view-plan-topic').val(planData.custom_topic || '-');
+            $('#view-plan-sb').val(planData.homework_sb || '-');
+            $('#view-plan-eb').val(planData.homework_eb || '-');
+            $('#view-plan-nb').val(planData.homework_nb || '-');
+            $('#view-plan-ws').val(planData.homework_ws || '-');
+            $('#view-plan-notes').val(planData.teacher_notes || '-');
+
+            modal.css('display', 'flex').show(); // Force show just in case
             });
 
             // Review action handlers
