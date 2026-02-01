@@ -268,62 +268,54 @@ $completed_plans = array_filter($all_plans, function ($p) {
                                             <?php echo $status_label; ?>
                                         </span>
                                     </td>
-                                    <div style="display: flex; flex-direction: column; gap: 5px;">
-                                        <?php if ($is_admin): ?>
-                                            <button class="button button-small olama-view-plan-btn"
-                                                data-plan-id="<?php echo $plan->id; ?>"
-                                                data-subject="<?php echo esc_attr($plan->subject_name); ?>"
-                                                data-unit="<?php echo esc_attr($plan->unit_name ?? ''); ?>"
-                                                data-lesson="<?php echo esc_attr($plan->lesson_title ?? ''); ?>"
-                                                data-topic="<?php echo esc_attr($plan->custom_topic); ?>"
-                                                data-sb="<?php echo esc_attr($plan->homework_sb ?? ''); ?>"
-                                                data-eb="<?php echo esc_attr($plan->homework_eb ?? ''); ?>"
-                                                data-nb="<?php echo esc_attr($plan->homework_nb ?? ''); ?>"
-                                                data-ws="<?php echo esc_attr($plan->homework_ws ?? ''); ?>"
-                                                data-notes="<?php echo esc_attr($plan->teacher_notes ?? ''); ?>"
-                                                style="background: #6366f1; color: #fff; border: none;">
-                                                <span class="dashicons dashicons-visibility"
-                                                    style="font-size: 14px; vertical-align: middle;"></span>
-                                                <?php echo Olama_School_Helpers::translate('View Plan'); ?>
-                                            </button>
-                                            <button class="button button-small olama-review-action"
-                                                data-id="<?php echo $plan->id; ?>" data-action="approve"
-                                                style="background: #10b981; color: #fff; border: none;">
-                                                <?php echo Olama_School_Helpers::translate('Final Approve'); ?>
-                                            </button>
-                                            <button class="button button-small olama-review-action"
-                                                data-id="<?php echo $plan->id; ?>" data-action="feedback"
-                                                style="background: #f59e0b; color: #fff; border: none;">
-                                                <?php echo Olama_School_Helpers::translate('Request Edits'); ?>
-                                            </button>
-                                        <?php else:
-                                            $plan_date_ts = strtotime($plan->plan_date);
-                                            $day_index = (int) date('w', $plan_date_ts);
-                                            $week_start = date('Y-m-d', $plan_date_ts - ($day_index * 86400));
-                                            $plan_month = date('Y-m', $plan_date_ts);
-                                            $active_day = date('l', $plan_date_ts);
+                                    <td style="padding: 15px; vertical-align: middle; text-align: center;">
+                                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                                            <?php if ($is_admin): ?>
+                                                <button class="button button-small olama-view-plan-btn"
+                                                    data-plan="<?php echo htmlspecialchars(json_encode($plan_data), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    style="background: #6366f1; color: #fff; border: none;">
+                                                    <span class="dashicons dashicons-visibility"
+                                                        style="font-size: 14px; vertical-align: middle;"></span>
+                                                    <?php echo Olama_School_Helpers::translate('View Plan'); ?>
+                                                </button>
+                                                <button class="button button-small olama-review-action"
+                                                    data-id="<?php echo $plan->id; ?>" data-action="approve"
+                                                    style="background: #10b981; color: #fff; border: none;">
+                                                    <?php echo Olama_School_Helpers::translate('Final Approve'); ?>
+                                                </button>
+                                                <button class="button button-small olama-review-action"
+                                                    data-id="<?php echo $plan->id; ?>" data-action="feedback"
+                                                    style="background: #f59e0b; color: #fff; border: none;">
+                                                    <?php echo Olama_School_Helpers::translate('Request Edits'); ?>
+                                                </button>
+                                            <?php else:
+                                                $plan_date_ts = strtotime($plan->plan_date);
+                                                $day_index = (int) date('w', $plan_date_ts);
+                                                $week_start = date('Y-m-d', $plan_date_ts - ($day_index * 86400));
+                                                $plan_month = date('Y-m', $plan_date_ts);
+                                                $active_day = date('l', $plan_date_ts);
 
-                                            $edit_url = add_query_arg(array(
-                                                'page' => 'olama-school-plans',
-                                                'tab' => 'creation',
-                                                'academic_year_id' => $plan->academic_year_id,
-                                                'semester_id' => $plan->semester_id,
-                                                'grade_id' => $plan->grade_id,
-                                                'section_id' => $plan->section_id,
-                                                'plan_id' => $plan->id,
-                                                'week_start' => $week_start,
-                                                'plan_month' => $plan_month,
-                                                'active_day' => $active_day
-                                            ), admin_url('admin.php'));
-                                            ?>
-                                            <a href="<?php echo esc_url($edit_url); ?>" class="button button-small"
-                                                style="background: #6366f1; color: #fff; border: none; text-decoration: none; padding: 5px 10px;">
-                                                <span class="dashicons dashicons-edit"
-                                                    style="font-size: 16px; margin-top: 2px;"></span>
-                                                <?php echo Olama_School_Helpers::translate('Edit Plan'); ?>
-                                            </a>
-                                        <?php endif; ?>
-                                    </div>
+                                                $edit_url = add_query_arg(array(
+                                                    'page' => 'olama-school-plans',
+                                                    'tab' => 'creation',
+                                                    'academic_year_id' => $plan->academic_year_id,
+                                                    'semester_id' => $plan->semester_id,
+                                                    'grade_id' => $plan->grade_id,
+                                                    'section_id' => $plan->section_id,
+                                                    'plan_id' => $plan->id,
+                                                    'week_start' => $week_start,
+                                                    'plan_month' => $plan_month,
+                                                    'active_day' => $active_day
+                                                ), admin_url('admin.php'));
+                                                ?>
+                                                <a href="<?php echo esc_url($edit_url); ?>" class="button button-small"
+                                                    style="background: #6366f1; color: #fff; border: none; text-decoration: none; padding: 5px 10px;">
+                                                    <span class="dashicons dashicons-edit"
+                                                        style="font-size: 16px; margin-top: 2px;"></span>
+                                                    <?php echo Olama_School_Helpers::translate('Edit Plan'); ?>
+                                                </a>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                 </tr>
                                 <!-- Feedback Row (expandable) -->
@@ -512,9 +504,9 @@ $completed_plans = array_filter($all_plans, function ($p) {
         </div>
     </div>
 
-    <!-- View Plan Modal -->
-    <div id="olama-view-plan-modal"
-        style="display: none; position: fixed; inset: 0 !important; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999 !important; justify-content: center; align-items: center;">
+<!-- View Plan Modal -->
+<div id="olama-view-plan-modal"
+    style="display: none; position: fixed; inset: 0 !important; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999 !important; justify-content: center; align-items: center;">
         <div
             style="background: #fff; border-radius: 16px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
             <div
@@ -631,36 +623,30 @@ $completed_plans = array_filter($all_plans, function ($p) {
             // Use delegated events for better reliability
             $(document).on('click', '.olama-view-plan-btn', function (e) {
                 e.preventDefault();
-                const $btn = $(this);
+                const planData = $(this).data('plan');
                 const modal = $('#olama-view-plan-modal');
 
-                // Read individual data attributes
-                const subject = $btn.data('subject') || '-';
-                const unit = $btn.data('unit') || '-';
-                const lesson = $btn.data('lesson') || '-';
-                const topic = $btn.data('topic') || '-';
-                const sb = $btn.data('sb') || '-';
-                const eb = $btn.data('eb') || '-';
-                const nb = $btn.data('nb') || '-';
-                const ws = $btn.data('ws') || '-';
-                const notes = $btn.data('notes') || '-';
+            if (!planData) {
+                alert('Error: No plan data found on this button.');
+                console.error('No plan data found on button');
+                return;
+            }
 
-                // Debug log
-                console.log('View Plan clicked - Subject:', subject);
+            // Debug alert to confirm click
+            console.log('Opening modal for:', planData.subject_name);
 
-                // Populate the modal fields
-                $('#view-plan-subject').val(subject);
-                $('#view-plan-unit').val(unit);
-                $('#view-plan-lesson').val(lesson);
-                $('#view-plan-topic').val(topic);
-                $('#view-plan-sb').val(sb);
-                $('#view-plan-eb').val(eb);
-                $('#view-plan-nb').val(nb);
-                $('#view-plan-ws').val(ws);
-                $('#view-plan-notes').val(notes);
+            // Populate the modal fields
+            $('#view-plan-subject').val(planData.subject_name || '-');
+            $('#view-plan-unit').val(planData.unit_name || '-');
+            $('#view-plan-lesson').val(planData.lesson_title || '-');
+            $('#view-plan-topic').val(planData.custom_topic || '-');
+            $('#view-plan-sb').val(planData.homework_sb || '-');
+            $('#view-plan-eb').val(planData.homework_eb || '-');
+            $('#view-plan-nb').val(planData.homework_nb || '-');
+            $('#view-plan-ws').val(planData.homework_ws || '-');
+            $('#view-plan-notes').val(planData.teacher_notes || '-');
 
-                // Show the modal
-                modal.css('display', 'flex').show();
+            modal.css('display', 'flex').show(); // Force show just in case
             });
 
             // Review action handlers
