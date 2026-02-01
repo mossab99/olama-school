@@ -97,75 +97,124 @@ $completed_plans = array_filter($all_plans, function ($p) {
 <div class="olama-admin-card" style="margin-top: 20px;">
     <!-- Header with Filters -->
     <div style="padding: 25px; border-bottom: 1px solid #e2e8f0; background: #fff; border-radius: 12px 12px 0 0;">
-        <form method="get" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
+        <form method="get" id="review-filter-form">
             <input type="hidden" name="page" value="olama-school-plans">
             <input type="hidden" name="tab" value="review">
 
-            <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; align-items: end;">
+                <!-- Academic Year -->
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
+                        <?php echo Olama_School_Helpers::translate('Academic Year'); ?>
+                    </label>
+                    <select name="academic_year_id" class="olama-select" style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <?php
+                        $years = Olama_School_Academic::get_academic_years();
+                        foreach ($years as $year): ?>
+                            <option value="<?php echo $year->id; ?>" <?php selected($selected_year_id, $year->id); ?>>
+                                <?php echo esc_html($year->year_name);
+                                if ($active_year && $active_year->id == $year->id) echo ' (' . Olama_School_Helpers::translate('Active') . ')'; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-            <div style="flex: 1; min-width: 150px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                    <?php echo Olama_School_Helpers::translate('Grade'); ?>
-                </label>
-                <select name="grade_id" class="olama-select" onchange="this.form.submit()">
-                    <option value="0">
-                        <?php echo Olama_School_Helpers::translate('All Grades'); ?>
-                    </option>
-                    <?php foreach ($grades as $g): ?>
-                        <option value="<?php echo $g->id; ?>" <?php selected($selected_grade_id, $g->id); ?>>
-                            <?php echo esc_html($g->grade_name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+                <!-- Grade -->
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
+                        <?php echo Olama_School_Helpers::translate('Grade'); ?>
+                    </label>
+                    <select name="grade_id" id="review-grade-select" class="olama-select" style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <option value="0"><?php echo Olama_School_Helpers::translate('All Grades'); ?></option>
+                        <?php foreach ($grades as $g): ?>
+                            <option value="<?php echo $g->id; ?>" <?php selected($selected_grade_id, $g->id); ?>>
+                                <?php echo esc_html($g->grade_name); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-            <!-- Section Dropdown -->
-            <div style="flex: 1; min-width: 150px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                    <?php echo Olama_School_Helpers::translate('Section'); ?>
-                </label>
-                <select name="section_id" class="olama-select" onchange="this.form.submit()">
-                    <option value="0">
-                        <?php echo Olama_School_Helpers::translate('All Sections'); ?>
-                    </option>
-                    <?php foreach ($sections as $sec): ?>
-                        <option value="<?php echo $sec->id; ?>" <?php selected($selected_section_id, $sec->id); ?>>
-                            <?php echo esc_html($sec->section_name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+                <!-- Section (Dynamic) -->
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
+                        <?php echo Olama_School_Helpers::translate('Section'); ?>
+                    </label>
+                    <select name="section_id" id="review-section-select" class="olama-select" style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <option value="0"><?php echo Olama_School_Helpers::translate('All Sections'); ?></option>
+                        <?php foreach ($sections as $sec): ?>
+                            <option value="<?php echo $sec->id; ?>" <?php selected($selected_section_id, $sec->id); ?>>
+                                <?php echo esc_html($sec->section_name); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-            <!-- Week Dropdown -->
-            <div style="flex: 1; min-width: 200px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                    <?php echo Olama_School_Helpers::translate('Week'); ?>
-                </label>
-                <select name="week_start" class="olama-select" onchange="this.form.submit()">
-                    <option value="">
-                        <?php echo Olama_School_Helpers::translate('All Weeks'); ?>
-                    </option>
-                    <?php foreach ($all_weeks as $ws => $week_info):
-                        $is_current = ($ws === $current_week_start);
-                        $week_label = Olama_School_Helpers::translate('Week') . ' ' . $week_info['number'] . ' ' . $week_info['label'];
-                        if ($is_current) {
-                            $week_label .= ' (' . Olama_School_Helpers::translate('Current') . ')';
-                        }
-                        ?>
-                        <option value="<?php echo esc_attr($ws); ?>" <?php selected($selected_week, $ws); ?>>
-                            <?php echo esc_html($week_label); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+                <!-- Week -->
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
+                        <?php echo Olama_School_Helpers::translate('Week'); ?>
+                    </label>
+                    <select name="week_start" class="olama-select" style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <option value=""><?php echo Olama_School_Helpers::translate('All Weeks'); ?></option>
+                        <?php foreach ($all_weeks as $ws => $week_info):
+                            $is_current = ($ws === $current_week_start);
+                            $week_label = Olama_School_Helpers::translate('Week') . ' ' . $week_info['number'] . ' ' . $week_info['label'];
+                            if ($is_current) {
+                                $week_label .= ' (' . Olama_School_Helpers::translate('Current') . ')';
+                            }
+                            ?>
+                            <option value="<?php echo esc_attr($ws); ?>" <?php selected($selected_week, $ws); ?>>
+                                <?php echo esc_html($week_label); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-            <div style="margin-right: auto; display: flex; gap: 10px;">
-                <button type="submit" class="button button-primary"
-                    style="height: 42px; padding: 0 25px; border-radius: 8px;">
-                    <?php echo Olama_School_Helpers::translate('Filter'); ?>
-                </button>
+                <!-- Filter Button -->
+                <div>
+                    <button type="submit" class="button button-primary" style="width: 100%; height: 42px; border-radius: 8px; font-weight: 600;">
+                        <?php echo Olama_School_Helpers::translate('Filter'); ?>
+                    </button>
+                </div>
             </div>
         </form>
+
+        <script>
+        jQuery(document).ready(function($) {
+            $('#review-grade-select').on('change', function() {
+                var gradeId = $(this).val();
+                var yearId = $('select[name="academic_year_id"]').val();
+                var $sectionSelect = $('#review-section-select');
+                
+                $sectionSelect.html('<option value="0"><?php echo Olama_School_Helpers::translate('Loading...'); ?></option>');
+                
+                if (gradeId == '0') {
+                    $sectionSelect.html('<option value="0"><?php echo Olama_School_Helpers::translate('All Sections'); ?></option>');
+                    return;
+                }
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'olama_get_sections_by_grade',
+                        grade_id: gradeId,
+                        academic_year_id: yearId,
+                        nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
+                    },
+                    success: function(response) {
+                        var html = '<option value="0"><?php echo Olama_School_Helpers::translate('All Sections'); ?></option>';
+                        if (response.success && response.data) {
+                            response.data.forEach(function(sec) {
+                                html += '<option value="' + sec.id + '">' + sec.section_name + '</option>';
+                            });
+                        }
+                        $sectionSelect.html(html);
+                    }
+                });
+            });
+        });
+        </script>
     </div>
 
     <div style="padding: 25px;">
