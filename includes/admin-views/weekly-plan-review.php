@@ -272,7 +272,7 @@ $completed_plans = array_filter($all_plans, function ($p) {
                                         <div style="display: flex; flex-direction: column; gap: 5px;">
                                             <?php if ($is_admin): ?>
                                                 <button class="button button-small olama-view-plan-btn"
-                                                    data-plan="<?php echo htmlspecialchars(json_encode($plan_data), ENT_QUOTES, 'UTF-8'); ?>"
+                                                    data-plan="<?php echo base64_encode(json_encode($plan_data)); ?>"
                                                     style="background: #6366f1; color: #fff; border: none;">
                                                     <span class="dashicons dashicons-visibility"
                                                         style="font-size: 14px; vertical-align: middle;"></span>
@@ -504,9 +504,9 @@ $completed_plans = array_filter($all_plans, function ($p) {
         </div>
     </div>
 
-<!-- View Plan Modal -->
-<div id="olama-view-plan-modal"
-    style="display: none; position: fixed; inset: 0 !important; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999 !important; justify-content: center; align-items: center;">
+    <!-- View Plan Modal -->
+    <div id="olama-view-plan-modal"
+        style="display: none; position: fixed; inset: 0 !important; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999 !important; justify-content: center; align-items: center;">
         <div
             style="background: #fff; border-radius: 16px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
             <div
@@ -515,7 +515,7 @@ $completed_plans = array_filter($all_plans, function ($p) {
                     <?php echo Olama_School_Helpers::translate('Plan Details'); ?>
                 </h3>
                 <button onclick="document.getElementById('olama-view-plan-modal').style.display='none'"
-                    style="background: rgba(255,255,255,0.2); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #fff; font-size: 18px;">
+                    style="background: rgba(255,255,255,0.2); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #fff; font-size: 18px; line-height: 1;">
                     ✕
                 </button>
             </div>
@@ -623,30 +623,40 @@ $completed_plans = array_filter($all_plans, function ($p) {
             // Use delegated events for better reliability
             $(document).on('click', '.olama-view-plan-btn', function (e) {
                 e.preventDefault();
-                const planData = $(this).data('plan');
+                const rawData = $(this).data('plan');
                 const modal = $('#olama-view-plan-modal');
 
-            if (!planData) {
-                alert('Error: No plan data found on this button.');
-                console.error('No plan data found on button');
-                return;
-            }
+                if (!rawData) {
+                    alert('Error: No plan data found on this button.');
+                    console.error('No plan data found on button');
+                    return;
+                }
 
-            // Debug alert to confirm click
-            console.log('Opening modal for:', planData.subject_name);
+                let planData;
+                try {
+                    // Decode Base64 and parse JSON
+                    planData = JSON.parse(atob(rawData));
+                } catch (err) {
+                    console.error('Failed to parse plan data', err);
+                    alert('Error parsing plan data.');
+                    return;
+                }
 
-            // Populate the modal fields
-            $('#view-plan-subject').val(planData.subject_name || '-');
-            $('#view-plan-unit').val(planData.unit_name || '-');
-            $('#view-plan-lesson').val(planData.lesson_title || '-');
-            $('#view-plan-topic').val(planData.custom_topic || '-');
-            $('#view-plan-sb').val(planData.homework_sb || '-');
-            $('#view-plan-eb').val(planData.homework_eb || '-');
-            $('#view-plan-nb').val(planData.homework_nb || '-');
-            $('#view-plan-ws').val(planData.homework_ws || '-');
-            $('#view-plan-notes').val(planData.teacher_notes || '-');
+                // Debug alert to confirm click
+                console.log('Opening modal for:', planData.subject_name);
 
-            modal.css('display', 'flex').show(); // Force show just in case
+                // Populate the modal fields
+                $('#view-plan-subject').val(planData.subject_name || '-');
+                $('#view-plan-unit').val(planData.unit_name || '-');
+                $('#view-plan-lesson').val(planData.lesson_title || '-');
+                $('#view-plan-topic').val(planData.custom_topic || '-');
+                $('#view-plan-sb').val(planData.homework_sb || '-');
+                $('#view-plan-eb').val(planData.homework_eb || '-');
+                $('#view-plan-nb').val(planData.homework_nb || '-');
+                $('#view-plan-ws').val(planData.homework_ws || '-');
+                $('#view-plan-notes').val(planData.teacher_notes || '-');
+
+                modal.css('display', 'flex').show(); // Force show just in case
             });
 
             // Review action handlers
