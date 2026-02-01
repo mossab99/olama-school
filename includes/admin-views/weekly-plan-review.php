@@ -23,6 +23,26 @@ if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
 $grades = Olama_School_Grade::get_grades();
 $selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : 0;
 
+// Section filter (dependent on grade)
+$sections = array();
+if ($selected_grade_id) {
+    $sections = Olama_School_Section::get_sections($selected_grade_id, $selected_year_id);
+}
+$selected_section_id = isset($_GET['section_id']) ? intval($_GET['section_id']) : 0;
+
+// Week filter with current week as default
+$all_weeks = Olama_School_Academic::get_academic_weeks($selected_year_id, $selected_semester_id, true);
+$today = date('Y-m-d');
+$current_week_start = null;
+foreach ($all_weeks as $week_start => $week_info) {
+    $week_end = date('Y-m-d', strtotime($week_start) + (6 * 86400));
+    if ($today >= $week_start && $today <= $week_end) {
+        $current_week_start = $week_start;
+        break;
+    }
+}
+$selected_week = isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : $current_week_start;
+
 // 3. Fetch Data
 $where = "p.academic_year_id = %d AND p.semester_id = %d";
 $params = array($selected_year_id, $selected_semester_id);
@@ -30,6 +50,18 @@ $params = array($selected_year_id, $selected_semester_id);
 if ($selected_grade_id) {
     $where .= " AND s.grade_id = %d";
     $params[] = $selected_grade_id;
+}
+
+if ($selected_section_id) {
+    $where .= " AND p.section_id = %d";
+    $params[] = $selected_section_id;
+}
+
+if ($selected_week) {
+    $week_end = date('Y-m-d', strtotime($selected_week) + (4 * 86400)); // Thursday
+    $where .= " AND p.plan_date >= %s AND p.plan_date <= %s";
+    $params[] = $selected_week;
+    $params[] = $week_end;
 }
 
 if (!$is_admin) {
@@ -56,6 +88,7 @@ $completed_plans = array_filter($all_plans, function ($p) {
     return in_array($p->status, array('approved', 'edited'));
 });
 
+
 ?>
 
 <div class="olama-admin-card" style="margin-top: 20px;">
@@ -78,6 +111,46 @@ $completed_plans = array_filter($all_plans, function ($p) {
                     <?php foreach ($grades as $g): ?>
                         <option value="<?php echo $g->id; ?>" <?php selected($selected_grade_id, $g->id); ?>>
                             <?php echo esc_html($g->grade_name); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <!-- Section Dropdown -->
+            <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                    <?php echo Olama_School_Helpers::translate('Section'); ?>
+                </label>
+                <select name="section_id" class="olama-select" onchange="this.form.submit()">
+                    <option value="0">
+                        <?php echo Olama_School_Helpers::translate('All Sections'); ?>
+                    </option>
+                    <?php foreach ($sections as $sec): ?>
+                        <option value="<?php echo $sec->id; ?>" <?php selected($selected_section_id, $sec->id); ?>>
+                            <?php echo esc_html($sec->section_name); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <!-- Week Dropdown -->
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                    <?php echo Olama_School_Helpers::translate('Week'); ?>
+                </label>
+                <select name="week_start" class="olama-select" onchange="this.form.submit()">
+                    <option value="">
+                        <?php echo Olama_School_Helpers::translate('All Weeks'); ?>
+                    </option>
+                    <?php foreach ($all_weeks as $ws => $week_info):
+                        $is_current = ($ws === $current_week_start);
+                        $week_label = Olama_School_Helpers::translate('Week') . ' ' . $week_info['number'] . ' ' . $week_info['label'];
+                        if ($is_current) {
+                            $week_label .= ' (' . Olama_School_Helpers::translate('Current') . ')';
+                        }
+                        ?>
+                        <option value="<?php echo esc_attr($ws); ?>" <?php selected($selected_week, $ws); ?>>
+                            <?php echo esc_html($week_label); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -217,7 +290,7 @@ $completed_plans = array_filter($all_plans, function ($p) {
                                                     style="background: #f59e0b; color: #fff; border: none;">
                                                     <?php echo Olama_School_Helpers::translate('Request Edits'); ?>
                                                 </button>
-                                                    <?php else:
+                                            <?php else:
                                                 $plan_date_ts = strtotime($plan->plan_date);
                                                 $day_index = (int) date('w', $plan_date_ts);
                                                 $week_start = date('Y-m-d', $plan_date_ts - ($day_index * 86400));
@@ -237,11 +310,11 @@ $completed_plans = array_filter($all_plans, function ($p) {
                                                     'active_day' => $active_day
                                                 ), admin_url('admin.php'));
                                                 ?>
-                                                            <a href="<?php echo esc_url($edit_url); ?>" class="button button-small"
+                                                <a href="<?php echo esc_url($edit_url); ?>" class="button button-small"
                                                     style="background: #6366f1; color: #fff; border: none; text-decoration: none; padding: 5px 10px;">
                                                     <span class="dashicons dashicons-edit"
                                                         style="font-size: 16px; margin-top: 2px;"></span>
-                                                                <?php echo Olama_School_Helpers::translate('Edit Plan'); ?>
+                                                    <?php echo Olama_School_Helpers::translate('Edit Plan'); ?>
                                                 </a>
                                             <?php endif; ?>
                                         </div>
