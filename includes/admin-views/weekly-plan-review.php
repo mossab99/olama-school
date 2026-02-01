@@ -88,7 +88,7 @@ $pending_plans = array_filter($all_plans, function ($p) {
 });
 
 $completed_plans = array_filter($all_plans, function ($p) {
-    return in_array($p->status, array('approved', 'edited'));
+    return in_array($p->status, array('approved', 'edited')) && !empty($p->supervisor_feedback);
 });
 
 
