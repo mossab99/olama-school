@@ -55,9 +55,9 @@ jQuery(document).ready(function ($) {
             </div>`;
         }
 
-        html += `<div class="olama-details-single-column">`;
+        html += `<div class="olama-details-two-column">`;
 
-        // Section 1: General Info
+        // Left Column: General Info
         html += `<div class="olama-detail-group">
             <div class="olama-detail-group-title">
                 <span class="dashicons dashicons-info"></span>
@@ -100,9 +100,9 @@ jQuery(document).ready(function ($) {
             </div>
         </div>`;
 
-        html += `</div>`; // End General Info
+        html += `</div>`; // End General Info (Left Column)
 
-        // Section 2: Homework
+        // Right Column: Homework
         html += `<div class="olama-detail-group">
             <div class="olama-detail-group-title">
                 <span class="dashicons dashicons-edit"></span>
@@ -125,10 +125,10 @@ jQuery(document).ready(function ($) {
                 <span class="olama-detail-label">${i18n.homeworkWS}</span>
                 <div class="olama-detail-value">${plan.homework_ws || '-'}</div>
             </div>
-        </div>`; // End Homework
+        </div>`; // End Homework (Right Column)
 
-        // Section 3: Notes
-        html += `<div class="olama-detail-group">
+        // Full Width: Notes
+        html += `<div class="olama-detail-group olama-detail-full-width">
             <div class="olama-detail-group-title">
                 <span class="dashicons dashicons-admin-comments"></span>
                 ${i18n.teacherNotes}
@@ -136,9 +136,9 @@ jQuery(document).ready(function ($) {
             <div class="olama-detail-section">
                 <div class="olama-detail-value">${plan.teacher_notes || '-'}</div>
             </div>
-        </div>`; // End Notes
+        </div>`; // End Notes (Full Width)
 
-        html += `</div>`; // End Single Column
+        html += `</div>`; // End Two Column
 
         // Section 4: Actions (Phase 3)
         if (olamaPlanList.isSupervisor) {

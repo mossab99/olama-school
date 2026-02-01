@@ -117,6 +117,23 @@
 	gap: 25px;
 }
 
+/* Two-column layout for plan details */
+.olama-details-two-column {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 20px;
+}
+
+.olama-details-two-column .olama-detail-full-width {
+	grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+	.olama-details-two-column {
+		grid-template-columns: 1fr;
+	}
+}
+
 .olama-detail-group {
 	background: #f8fafc;
 	padding: 24px;
