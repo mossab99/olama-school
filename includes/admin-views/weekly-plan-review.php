@@ -111,7 +111,7 @@ $completed_plans = array_filter($all_plans, function ($p) {
                     <select name="academic_year_id" class="olama-select"
                         style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
                         <?php
-                        $years = Olama_School_Academic::get_academic_years();
+                        $years = Olama_School_Academic::get_years();
                         foreach ($years as $year):
                             $year_label = esc_html($year->year_name);
                             if ($active_year && $active_year->id == $year->id) {
@@ -119,8 +119,8 @@ $completed_plans = array_filter($all_plans, function ($p) {
                             }
                             ?>
                             <option value="<?php echo $year->id; ?>" <?php selected($selected_year_id, $year->id); ?>>
-                                    <?php echo $year_label; ?>
-                                </option>
+                                <?php echo $year_label; ?>
+                            </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
