@@ -497,13 +497,13 @@ $completed_plans = array_filter($all_plans, function ($p) {
                 <button id="confirm-review-btn" class="button button-primary">
                     <?php echo Olama_School_Helpers::translate('Confirm'); ?>
                 </button>
-            </div>
         </div>
     </div>
+</div>
 
-    <!-- View Plan Modal -->
-    <div id="olama-view-plan-modal"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+<!-- View Plan Modal -->
+<div id="olama-view-plan-modal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999; justify-content: center; align-items: center;">
         <div
             style="background: #fff; border-radius: 16px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
             <div
@@ -614,8 +614,9 @@ $completed_plans = array_filter($all_plans, function ($p) {
             </div>
         </div>
     </div>
+</div>
 
-    <script>
+<script>
         jQuery(document).ready(function ($) {
             // View Plan button handler
             $('.olama-view-plan-btn').on('click', function () {
