@@ -533,6 +533,23 @@ class Olama_School_DB
 				ADD COLUMN plan_type varchar(20) DEFAULT 'homework' NOT NULL AFTER status"
 			);
 		}
+
+		// Ensure other missing columns in olama_plans
+		$plan_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_plans");
+		$plan_col_names = wp_list_pluck($plan_cols, 'Field');
+
+		if (!in_array('curriculum_id', $plan_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_plans ADD COLUMN curriculum_id mediumint(9) DEFAULT NULL AFTER lesson_id");
+		}
+		if (!in_array('supervisor_feedback', $plan_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_plans ADD COLUMN supervisor_feedback text DEFAULT NULL AFTER teacher_notes");
+		}
+		if (!in_array('teacher_response', $plan_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_plans ADD COLUMN teacher_response text DEFAULT NULL AFTER supervisor_feedback");
+		}
+		if (!in_array('rating', $plan_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_plans ADD COLUMN rating tinyint(4) DEFAULT 0 NOT NULL AFTER teacher_response");
+		}
 	}
 
 	public function drop_tables()
