@@ -213,7 +213,7 @@ $completed_plans = array_filter($all_plans, function ($p) {
                             action: 'olama_get_sections_by_grade',
                             grade_id: gradeId,
                             academic_year_id: yearId,
-                            nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
+                            nonce: '<?php echo wp_create_nonce('olama_curriculum_nonce'); ?>'
                         },
                         success: function (response) {
                             var html = '<option value="0"><?php echo Olama_School_Helpers::translate('All Sections'); ?></option>';

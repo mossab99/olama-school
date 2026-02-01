@@ -501,11 +501,18 @@ class Olama_School_Ajax_Handlers
     {
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
         $grade_id = intval($_POST['grade_id']);
+        $academic_year_id = isset($_POST['academic_year_id']) ? intval($_POST['academic_year_id']) : 0;
+
         if (!$grade_id) {
             wp_send_json_error(__('Invalid Grade ID', 'olama-school'));
         }
-        $active_year = Olama_School_Academic::get_active_year();
-        $sections = Olama_School_Section::get_by_grade($grade_id, $active_year ? $active_year->id : 0);
+
+        if (!$academic_year_id) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $academic_year_id = $active_year ? $active_year->id : 0;
+        }
+
+        $sections = Olama_School_Section::get_by_grade($grade_id, $academic_year_id);
         wp_send_json_success($sections);
     }
 
