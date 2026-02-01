@@ -269,7 +269,7 @@ $completed_plans = array_filter($all_plans, function ($p) {
                                         <div style="display: flex; flex-direction: column; gap: 5px;">
                                             <?php if ($is_admin): ?>
                                                 <button class="button button-small olama-view-plan-btn"
-                                                    data-plan='<?php echo esc_attr(json_encode($plan_data)); ?>'
+                                                    data-plan="<?php echo htmlspecialchars(json_encode($plan_data), ENT_QUOTES, 'UTF-8'); ?>"
                                                     style="background: #6366f1; color: #fff; border: none;">
                                                     <span class="dashicons dashicons-visibility"
                                                         style="font-size: 14px; vertical-align: middle;"></span>
@@ -323,45 +323,45 @@ $completed_plans = array_filter($all_plans, function ($p) {
                                                 <?php if (!empty($plan->supervisor_feedback)):
                                                     $feedback_lines = explode("\n", $plan->supervisor_feedback);
                                                     ?>
-                                                                    <div style="flex: 1; min-width: 300px;">
-                                                                        <div
-                                                                            style="font-weight: 700; font-size: 12px; color: #991b1b; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
-                                                                            <span class="dashicons dashicons-warning"
-                                                                                style="color: #ef4444; font-size: 16px;"></span>
-                                                                            <?php echo Olama_School_Helpers::translate('Admin Feedback'); ?>
-                                                                        </div>
-                                                                        <ul
-                                                                            style="margin: 0; padding-left: 20px; font-size: 12px; color: #7f1d1d; background: #fef2f2; border-radius: 8px; padding: 10px 10px 10px 25px; list-style: disc;">
-                                                                            <?php foreach ($feedback_lines as $line):
-                                                                                if (trim($line)):
-                                                                                    ?>
-                                                                                            <li style="margin-bottom: 4px;"><?php echo esc_html(trim($line)); ?></li>
-                                                                                    <?php endif; endforeach; ?>
-                                                                        </ul>
-                                                                    </div>
-                                                            <?php endif; ?>
-                                                            <?php if (!empty($plan->teacher_response)): ?>
-                                                                    <div style="flex: 1; min-width: 300px;">
-                                                                        <div
-                                                                            style="font-weight: 700; font-size: 12px; color: #1e40af; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
-                                                                            <span class="dashicons dashicons-admin-comments"
-                                                                                style="color: #3b82f6; font-size: 16px;"></span>
-                                                                            <?php echo Olama_School_Helpers::translate('Teacher Response'); ?>
-                                                                        </div>
-                                                                        <div
-                                                                            style="font-size: 12px; color: #1e3a5f; background: #eff6ff; border-radius: 8px; padding: 10px;">
-                                                                            <?php echo nl2br(esc_html($plan->teacher_response)); ?>
-                                                                        </div>
-                                                                    </div>
-                                                            <?php endif; ?>
+                                                    <div style="flex: 1; min-width: 300px;">
+                                                        <div
+                                                            style="font-weight: 700; font-size: 12px; color: #991b1b; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
+                                                            <span class="dashicons dashicons-warning"
+                                                                style="color: #ef4444; font-size: 16px;"></span>
+                                                            <?php echo Olama_School_Helpers::translate('Admin Feedback'); ?>
                                                         </div>
-                                                    </td>
-                                                </tr>
-                                        <?php endif; ?>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                                                        <ul
+                                                            style="margin: 0; padding-left: 20px; font-size: 12px; color: #7f1d1d; background: #fef2f2; border-radius: 8px; padding: 10px 10px 10px 25px; list-style: disc;">
+                                                            <?php foreach ($feedback_lines as $line):
+                                                                if (trim($line)):
+                                                                    ?>
+                                                                    <li style="margin-bottom: 4px;"><?php echo esc_html(trim($line)); ?></li>
+                                                                <?php endif; endforeach; ?>
+                                                        </ul>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <?php if (!empty($plan->teacher_response)): ?>
+                                                    <div style="flex: 1; min-width: 300px;">
+                                                        <div
+                                                            style="font-weight: 700; font-size: 12px; color: #1e40af; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
+                                                            <span class="dashicons dashicons-admin-comments"
+                                                                style="color: #3b82f6; font-size: 16px;"></span>
+                                                            <?php echo Olama_School_Helpers::translate('Teacher Response'); ?>
+                                                        </div>
+                                                        <div
+                                                            style="font-size: 12px; color: #1e3a5f; background: #eff6ff; border-radius: 8px; padding: 10px;">
+                                                            <?php echo nl2br(esc_html($plan->teacher_response)); ?>
+                                                        </div>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
         </div>
 
@@ -378,89 +378,89 @@ $completed_plans = array_filter($all_plans, function ($p) {
             </h3>
 
             <?php if (empty($completed_plans)): ?>
-                    <div
-                        style="padding: 40px; text-align: center; background: #f8fafc; border: 1px dashed #e2e8f0; border-radius: 12px; color: #64748b;">
-                        <?php echo Olama_School_Helpers::translate('No completed reviews found.'); ?>
-                    </div>
+                <div
+                    style="padding: 40px; text-align: center; background: #f8fafc; border: 1px dashed #e2e8f0; border-radius: 12px; color: #64748b;">
+                    <?php echo Olama_School_Helpers::translate('No completed reviews found.'); ?>
+                </div>
             <?php else: ?>
-                    <div class="olama-table-wrapper" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-                        <table class="wp-list-table widefat fixed striped" style="border: none;">
-                            <thead>
-                                <tr style="background: #f8fafc;">
+                <div class="olama-table-wrapper" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                    <table class="wp-list-table widefat fixed striped" style="border: none;">
+                        <thead>
+                            <tr style="background: #f8fafc;">
+                                <?php if ($is_admin): ?>
+                                    <th style="padding: 15px; width: 150px;">
+                                        <?php echo Olama_School_Helpers::translate('Teacher'); ?>
+                                    </th>
+                                <?php endif; ?>
+                                <th style="padding: 15px; width: 120px;">
+                                    <?php echo Olama_School_Helpers::translate('Plan Date'); ?>
+                                </th>
+                                <th style="padding: 15px;">
+                                    <?php echo Olama_School_Helpers::translate('Subject & Topic'); ?>
+                                </th>
+                                <th style="padding: 15px; width: 120px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Status'); ?>
+                                </th>
+                                <th style="padding: 15px;">
+                                    <?php echo Olama_School_Helpers::translate('Review Content'); ?>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($completed_plans as $plan):
+                                $status_color = $plan->status === 'approved' ? '#10b981' : '#6366f1';
+                                $status_label = $plan->status === 'approved' ? Olama_School_Helpers::translate('Approved') : Olama_School_Helpers::translate('Edited');
+                                ?>
+                                <tr>
                                     <?php if ($is_admin): ?>
-                                            <th style="padding: 15px; width: 150px;">
-                                                <?php echo Olama_School_Helpers::translate('Teacher'); ?>
-                                            </th>
+                                        <td style="padding: 15px; vertical-align: middle;">
+                                            <div style="font-weight: 600; color: #1e293b;">
+                                                <?php echo esc_html($plan->teacher_name); ?>
+                                            </div>
+                                            <div style="font-size: 11px; color: #64748b;">
+                                                <?php echo esc_html($plan->grade_name . ' - ' . $plan->section_name); ?>
+                                            </div>
+                                        </td>
                                     <?php endif; ?>
-                                    <th style="padding: 15px; width: 120px;">
-                                        <?php echo Olama_School_Helpers::translate('Plan Date'); ?>
-                                    </th>
-                                    <th style="padding: 15px;">
-                                        <?php echo Olama_School_Helpers::translate('Subject & Topic'); ?>
-                                    </th>
-                                    <th style="padding: 15px; width: 120px; text-align: center;">
-                                        <?php echo Olama_School_Helpers::translate('Status'); ?>
-                                    </th>
-                                    <th style="padding: 15px;">
-                                        <?php echo Olama_School_Helpers::translate('Review Content'); ?>
-                                    </th>
+                                    <td style="padding: 15px; vertical-align: middle;">
+                                        <div style="font-weight: 500;">
+                                            <?php echo Olama_School_Helpers::format_date($plan->plan_date); ?>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px; vertical-align: middle;">
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                            <span class="dashicons dashicons-book"
+                                                style="color: <?php echo esc_attr($plan->color_code); ?>;"></span>
+                                            <span style="font-weight: 600;">
+                                                <?php echo esc_html($plan->subject_name); ?>
+                                            </span>
+                                        </div>
+                                        <div style="font-size: 12px; color: #64748b;">
+                                            <?php echo esc_html($plan->custom_topic); ?>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px; vertical-align: middle; text-align: center;">
+                                        <span
+                                            style="display: inline-block; padding: 4px 10px; border-radius: 6px; background: <?php echo $status_color; ?>15; color: <?php echo $status_color; ?>; font-weight: 700; font-size: 11px; border: 1px solid <?php echo $status_color; ?>40;">
+                                            <?php echo $status_label; ?>
+                                        </span>
+                                    </td>
+                                    <td style="padding: 15px; vertical-align: middle;">
+                                        <?php if (!empty($plan->supervisor_feedback)): ?>
+                                            <div
+                                                style="background: #f8fafc; border-right: 2px solid #cbd5e1; padding: 8px 12px; border-radius: 4px; font-size: 11px; color: #64748b;">
+                                                <strong>
+                                                    <?php echo Olama_School_Helpers::translate('Feedback History'); ?>:
+                                                </strong><br>
+                                                <?php echo nl2br(esc_html($plan->supervisor_feedback)); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($completed_plans as $plan):
-                                    $status_color = $plan->status === 'approved' ? '#10b981' : '#6366f1';
-                                    $status_label = $plan->status === 'approved' ? Olama_School_Helpers::translate('Approved') : Olama_School_Helpers::translate('Edited');
-                                    ?>
-                                        <tr>
-                                            <?php if ($is_admin): ?>
-                                                    <td style="padding: 15px; vertical-align: middle;">
-                                                        <div style="font-weight: 600; color: #1e293b;">
-                                                            <?php echo esc_html($plan->teacher_name); ?>
-                                                        </div>
-                                                        <div style="font-size: 11px; color: #64748b;">
-                                                            <?php echo esc_html($plan->grade_name . ' - ' . $plan->section_name); ?>
-                                                        </div>
-                                                    </td>
-                                            <?php endif; ?>
-                                            <td style="padding: 15px; vertical-align: middle;">
-                                                <div style="font-weight: 500;">
-                                                    <?php echo Olama_School_Helpers::format_date($plan->plan_date); ?>
-                                                </div>
-                                            </td>
-                                            <td style="padding: 15px; vertical-align: middle;">
-                                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-                                                    <span class="dashicons dashicons-book"
-                                                        style="color: <?php echo esc_attr($plan->color_code); ?>;"></span>
-                                                    <span style="font-weight: 600;">
-                                                        <?php echo esc_html($plan->subject_name); ?>
-                                                    </span>
-                                                </div>
-                                                <div style="font-size: 12px; color: #64748b;">
-                                                    <?php echo esc_html($plan->custom_topic); ?>
-                                                </div>
-                                            </td>
-                                            <td style="padding: 15px; vertical-align: middle; text-align: center;">
-                                                <span
-                                                    style="display: inline-block; padding: 4px 10px; border-radius: 6px; background: <?php echo $status_color; ?>15; color: <?php echo $status_color; ?>; font-weight: 700; font-size: 11px; border: 1px solid <?php echo $status_color; ?>40;">
-                                                    <?php echo $status_label; ?>
-                                                </span>
-                                            </td>
-                                            <td style="padding: 15px; vertical-align: middle;">
-                                                <?php if (!empty($plan->supervisor_feedback)): ?>
-                                                        <div
-                                                            style="background: #f8fafc; border-right: 2px solid #cbd5e1; padding: 8px 12px; border-radius: 4px; font-size: 11px; color: #64748b;">
-                                                            <strong>
-                                                                <?php echo Olama_School_Helpers::translate('Feedback History'); ?>:
-                                                            </strong><br>
-                                                            <?php echo nl2br(esc_html($plan->supervisor_feedback)); ?>
-                                                        </div>
-                                                <?php endif; ?>
-                                            </td>
-                                        </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
         </div>
     </div>
@@ -497,185 +497,197 @@ $completed_plans = array_filter($all_plans, function ($p) {
                 <button id="confirm-review-btn" class="button button-primary">
                     <?php echo Olama_School_Helpers::translate('Confirm'); ?>
                 </button>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- View Plan Modal -->
-<div id="olama-view-plan-modal"
-    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
-    <div style="background: #fff; border-radius: 16px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+    <!-- View Plan Modal -->
+    <div id="olama-view-plan-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
         <div
-            style="padding: 20px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 16px 16px 0 0;">
-            <h3 id="view-plan-modal-title" style="margin: 0; color: #fff; font-size: 1.25rem;">
-                <?php echo Olama_School_Helpers::translate('Plan Details'); ?>
-            </h3>
-            <button onclick="document.getElementById('olama-view-plan-modal').style.display='none'"
-                style="background: rgba(255,255,255,0.2); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #fff; font-size: 18px;">
-                ✕
-            </button>
-        </div>
-        <div style="padding: 25px;">
-            <!-- Plan Details Form -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <!-- Subject -->
-                <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">
-                        <?php echo Olama_School_Helpers::translate('Subject'); ?>
-                    </label>
-                    <input type="text" id="view-plan-subject" readonly
-                        style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
-                </div>
-                <!-- Unit -->
-                <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">
-                        <?php echo Olama_School_Helpers::translate('Unit'); ?>
-                    </label>
-                    <input type="text" id="view-plan-unit" readonly
-                        style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
-                </div>
-                <!-- Lesson -->
-                <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">
-                        <?php echo Olama_School_Helpers::translate('Lesson'); ?>
-                    </label>
-                    <input type="text" id="view-plan-lesson" readonly
-                        style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
-                </div>
-                <!-- Custom Topic -->
-                <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">
-                        <?php echo Olama_School_Helpers::translate('Custom Topic'); ?>
-                    </label>
-                    <input type="text" id="view-plan-topic" readonly
-                        style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
-                </div>
-            </div>
-
-            <!-- Homework Section -->
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-                <h4 style="margin: 0 0 15px 0; color: #6366f1; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-                    <span class="dashicons dashicons-welcome-write-blog" style="font-size: 18px;"></span>
-                    <?php echo Olama_School_Helpers::translate('Homework'); ?>
-                </h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">SB</label>
-                        <input type="text" id="view-plan-sb" readonly
-                            style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">EB</label>
-                        <input type="text" id="view-plan-eb" readonly
-                            style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">NB</label>
-                        <input type="text" id="view-plan-nb" readonly
-                            style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">WS</label>
-                        <input type="text" id="view-plan-ws" readonly
-                            style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Teacher Notes -->
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
-                    <span class="dashicons dashicons-format-aside" style="font-size: 16px; vertical-align: middle;"></span>
-                    <?php echo Olama_School_Helpers::translate('Teacher Notes'); ?>
-                </label>
-                <textarea id="view-plan-notes" readonly
-                    style="width: 100%; height: 80px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937; resize: none;"></textarea>
-            </div>
-
-            <!-- Close Button -->
-            <div style="margin-top: 25px; text-align: center;">
-                <button onclick="document.getElementById('olama-view-plan-modal').style.display='none'" 
-                    class="button button-primary" style="padding: 10px 40px; border-radius: 8px;">
-                    <?php echo Olama_School_Helpers::translate('Close'); ?>
+            style="background: #fff; border-radius: 16px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 20px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 16px 16px 0 0;">
+                <h3 id="view-plan-modal-title" style="margin: 0; color: #fff; font-size: 1.25rem;">
+                    <?php echo Olama_School_Helpers::translate('Plan Details'); ?>
+                </h3>
+                <button onclick="document.getElementById('olama-view-plan-modal').style.display='none'"
+                    style="background: rgba(255,255,255,0.2); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #fff; font-size: 18px;">
+                    ✕
                 </button>
             </div>
+            <div style="padding: 25px;">
+                <!-- Plan Details Form -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <!-- Subject -->
+                    <div>
+                        <label
+                            style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">
+                            <?php echo Olama_School_Helpers::translate('Subject'); ?>
+                        </label>
+                        <input type="text" id="view-plan-subject" readonly
+                            style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
+                    </div>
+                    <!-- Unit -->
+                    <div>
+                        <label
+                            style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">
+                            <?php echo Olama_School_Helpers::translate('Unit'); ?>
+                        </label>
+                        <input type="text" id="view-plan-unit" readonly
+                            style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
+                    </div>
+                    <!-- Lesson -->
+                    <div>
+                        <label
+                            style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">
+                            <?php echo Olama_School_Helpers::translate('Lesson'); ?>
+                        </label>
+                        <input type="text" id="view-plan-lesson" readonly
+                            style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
+                    </div>
+                    <!-- Custom Topic -->
+                    <div>
+                        <label
+                            style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">
+                            <?php echo Olama_School_Helpers::translate('Custom Topic'); ?>
+                        </label>
+                        <input type="text" id="view-plan-topic" readonly
+                            style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
+                    </div>
+                </div>
+
+                <!-- Homework Section -->
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                    <h4
+                        style="margin: 0 0 15px 0; color: #6366f1; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                        <span class="dashicons dashicons-welcome-write-blog" style="font-size: 18px;"></span>
+                        <?php echo Olama_School_Helpers::translate('Homework'); ?>
+                    </h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label
+                                style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">SB</label>
+                            <input type="text" id="view-plan-sb" readonly
+                                style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
+                        </div>
+                        <div>
+                            <label
+                                style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">EB</label>
+                            <input type="text" id="view-plan-eb" readonly
+                                style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
+                        </div>
+                        <div>
+                            <label
+                                style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">NB</label>
+                            <input type="text" id="view-plan-nb" readonly
+                                style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
+                        </div>
+                        <div>
+                            <label
+                                style="display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 13px;">WS</label>
+                            <input type="text" id="view-plan-ws" readonly
+                                style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teacher Notes -->
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                    <label
+                        style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
+                        <span class="dashicons dashicons-format-aside"
+                            style="font-size: 16px; vertical-align: middle;"></span>
+                        <?php echo Olama_School_Helpers::translate('Teacher Notes'); ?>
+                    </label>
+                    <textarea id="view-plan-notes" readonly
+                        style="width: 100%; height: 80px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #1f2937; resize: none;"></textarea>
+                </div>
+
+                <!-- Close Button -->
+                <div style="margin-top: 25px; text-align: center;">
+                    <button onclick="document.getElementById('olama-view-plan-modal').style.display='none'"
+                        class="button button-primary" style="padding: 10px 40px; border-radius: 8px;">
+                        <?php echo Olama_School_Helpers::translate('Close'); ?>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    jQuery(document).ready(function ($) {
-        // View Plan button handler
-        $('.olama-view-plan-btn').on('click', function () {
-            const planData = $(this).data('plan');
-            const modal = $('#olama-view-plan-modal');
+    <script>
+        jQuery(document).ready(function ($) {
+            // View Plan button handler
+            $('.olama-view-plan-btn').on('click', function () {
+                const planData = $(this).data('plan');
+                const modal = $('#olama-view-plan-modal');
 
-            // Populate the modal fields
-            $('#view-plan-subject').val(planData.subject_name || '-');
-            $('#view-plan-unit').val(planData.unit_name || '-');
-            $('#view-plan-lesson').val(planData.lesson_title || '-');
-            $('#view-plan-topic').val(planData.custom_topic || '-');
-            $('#view-plan-sb').val(planData.homework_sb || '-');
-            $('#view-plan-eb').val(planData.homework_eb || '-');
-            $('#view-plan-nb').val(planData.homework_nb || '-');
-            $('#view-plan-ws').val(planData.homework_ws || '-');
-            $('#view-plan-notes').val(planData.teacher_notes || '-');
+                // Populate the modal fields
+                $('#view-plan-subject').val(planData.subject_name || '-');
+                $('#view-plan-unit').val(planData.unit_name || '-');
+                $('#view-plan-lesson').val(planData.lesson_title || '-');
+                $('#view-plan-topic').val(planData.custom_topic || '-');
+                $('#view-plan-sb').val(planData.homework_sb || '-');
+                $('#view-plan-eb').val(planData.homework_eb || '-');
+                $('#view-plan-nb').val(planData.homework_nb || '-');
+                $('#view-plan-ws').val(planData.homework_ws || '-');
+                $('#view-plan-notes').val(planData.teacher_notes || '-');
 
-            modal.css('display', 'flex');
-        });
+                modal.css('display', 'flex');
+            });
 
-        // Review action handlers
-        $('.olama-review-action').on('click', function () {
-            const id = $(this).data('id');
-            const action = $(this).data('action');
-            const modal = $('#olama-review-modal');
+            // Review action handlers
+            $('.olama-review-action').on('click', function () {
+                const id = $(this).data('id');
+                const action = $(this).data('action');
+                const modal = $('#olama-review-modal');
 
-            $('#review-plan-id').val(id);
-            $('#review-action-type').val(action);
-            $('#feedback-field').hide();
-            $('#review-confirm-text').text('');
+                $('#review-plan-id').val(id);
+                $('#review-action-type').val(action);
+                $('#feedback-field').hide();
+                $('#review-confirm-text').text('');
 
-            if (action === 'approve') {
-                $('#review-modal-title').text('<?php echo Olama_School_Helpers::translate('Final Approve'); ?>');
-                $('#review-confirm-text').text('<?php echo Olama_School_Helpers::translate('Are you sure you want to approve this plan for parents and students?'); ?>');
-            } else if (action === 'feedback') {
-                $('#review-modal-title').text('<?php echo Olama_School_Helpers::translate('Request Edits'); ?>');
-                $('#feedback-field').show();
-            }
-
-            modal.css('display', 'flex');
-        });
-
-        $('#confirm-review-btn').on('click', function () {
-            const btn = $(this);
-            const planId = $('#review-plan-id').val();
-            const action = $('#review-action-type').val();
-            const feedback = $('#review-feedback').val();
-
-            let status = 'approved';
-            if (action === 'feedback') status = 'needs_edit';
-
-            btn.prop('disabled', true).text('<?php echo Olama_School_Helpers::translate('Processing...'); ?>');
-
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: {
-                    action: 'olama_handle_plan_approval',
-                    nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>',
-                    plan_id: planId,
-                    status: status,
-                    feedback: feedback
-                },
-                success: function (response) {
-                    if (response.success) {
-                        location.reload();
-                    } else {
-                        alert(response.data || 'Error');
-                        btn.prop('disabled', false).text('<?php echo Olama_School_Helpers::translate('Confirm'); ?>');
-                    }
+                if (action === 'approve') {
+                    $('#review-modal-title').text('<?php echo Olama_School_Helpers::translate('Final Approve'); ?>');
+                    $('#review-confirm-text').text('<?php echo Olama_School_Helpers::translate('Are you sure you want to approve this plan for parents and students?'); ?>');
+                } else if (action === 'feedback') {
+                    $('#review-modal-title').text('<?php echo Olama_School_Helpers::translate('Request Edits'); ?>');
+                    $('#feedback-field').show();
                 }
+
+                modal.css('display', 'flex');
+            });
+
+            $('#confirm-review-btn').on('click', function () {
+                const btn = $(this);
+                const planId = $('#review-plan-id').val();
+                const action = $('#review-action-type').val();
+                const feedback = $('#review-feedback').val();
+
+                let status = 'approved';
+                if (action === 'feedback') status = 'needs_edit';
+
+                btn.prop('disabled', true).text('<?php echo Olama_School_Helpers::translate('Processing...'); ?>');
+
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'olama_handle_plan_approval',
+                        nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>',
+                        plan_id: planId,
+                        status: status,
+                        feedback: feedback
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert(response.data || 'Error');
+                            btn.prop('disabled', false).text('<?php echo Olama_School_Helpers::translate('Confirm'); ?>');
+                        }
+                    }
+                });
             });
         });
-    });
-</script>
+    </script>
