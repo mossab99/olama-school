@@ -26,7 +26,7 @@ $selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : 0;
 // Section filter (dependent on grade)
 $sections = array();
 if ($selected_grade_id) {
-    $sections = Olama_School_Section::get_sections($selected_grade_id, $selected_year_id);
+    $sections = Olama_School_Section::get_by_grade($selected_grade_id, $selected_year_id);
 }
 $selected_section_id = isset($_GET['section_id']) ? intval($_GET['section_id']) : 0;
 
