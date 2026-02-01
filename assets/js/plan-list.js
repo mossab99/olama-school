@@ -218,7 +218,7 @@ jQuery(document).ready(function ($) {
             data: {
                 action: 'olama_handle_plan_approval',
                 plan_id: currentPlanId,
-                status: 'draft',
+                status: 'needs_edit',
                 feedback: feedback,
                 nonce: olamaPlanList.nonce
             },
