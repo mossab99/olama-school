@@ -504,53 +504,61 @@ if ($selected_semester_exam_id) {
         });
 
         // Inline Date Edit Toggling
-        $('.edit-exam-date-inline').on('click', function() {
+        $(document).on('click', '.edit-exam-date-inline', function() {
             var row = $(this).closest('tr');
             row.find('.date-display').hide();
-            row.find('.date-edit').fadeIn(200);
+            row.find('.date-edit').show();
             
-            // Re-initialize datepicker for the inline field
-            row.find('.olama-datepicker').datepicker({
-                dateFormat: '<?php echo (Olama_School_Helpers::get_active_year()) ? "dd-mm-yy" : "yy-mm-dd"; ?>', // Match PHP format
-                changeMonth: true,
-                changeYear: true
-            });
+            // Initialize datepicker if not already initialized
+            var input = row.find('.inline-date-input');
+            if (!input.hasClass('hasDatepicker')) {
+                input.datepicker({
+                    dateFormat: 'dd-mm-yy',
+                    changeMonth: true,
+                    changeYear: true
+                });
+            }
         });
 
-        $('.cancel-inline-date').on('click', function() {
+        $(document).on('click', '.cancel-inline-date', function() {
             var row = $(this).closest('tr');
             row.find('.date-edit').hide();
-            row.find('.date-display').fadeIn(200);
+            row.find('.date-display').show();
         });
 
-        $('.save-inline-date').on('click', function() {
+        $(document).on('click', '.save-inline-date', function() {
             var btn = $(this);
             var row = btn.closest('tr');
             var input = row.find('.inline-date-input');
             var newDate = input.val();
             var examId = input.data('exam-id');
 
+            console.log('Saving exam date:', examId, newDate);
+
             if (!validateDate(newDate)) return;
 
             btn.prop('disabled', true).text('...');
 
-            var data = {
+            $.post(ajaxurl, {
                 action: 'olama_save_exam',
                 nonce: $('#olama_exam_nonce_field').val(),
                 id: examId,
                 exam_date: newDate
-            };
-
-            $.post(ajaxurl, data, function(response) {
+            }, function(response) {
+                console.log('Response:', response);
                 if (response.success) {
                     row.find('.date-display').text(newDate);
                     row.find('.date-edit').hide();
-                    row.find('.date-display').fadeIn(200);
+                    row.find('.date-display').show();
                     btn.prop('disabled', false).text('<?php _e('Save', 'olama-school'); ?>');
                 } else {
-                    alert('Error: ' + response.data);
+                    alert('Error: ' + (response.data || 'Unknown error'));
                     btn.prop('disabled', false).text('<?php _e('Save', 'olama-school'); ?>');
                 }
+            }).fail(function(xhr, status, error) {
+                console.error('AJAX Error:', error);
+                alert('Connection error');
+                btn.prop('disabled', false).text('<?php _e('Save', 'olama-school'); ?>');
             });
         });
 
