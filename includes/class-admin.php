@@ -2026,6 +2026,7 @@ class Olama_School_Admin
      */
     public function ajax_bulk_add_exam_subjects()
     {
+        global $wpdb;
         check_ajax_referer('olama_exam_nonce_field', 'nonce');
 
         if (!Olama_School_Permissions::can('olama_manage_exams_schedule')) {
@@ -2063,6 +2064,7 @@ class Olama_School_Admin
                     'grade_id' => $grade_id,
                     'subject_id' => $subject->id,
                     'evaluation_type' => $exam_name,
+                    'exam_date' => $exam_meta ? $exam_meta->start_date : date('Y-m-d'),
                     'status' => 'draft'
                 ));
                 $added++;
@@ -3088,7 +3090,7 @@ class Olama_School_Admin
             wp_send_json_error(__('Security check failed.', 'olama-school'));
         }
 
-        if (!current_user_can('manage_options') && !current_user_can('olama_manage_academic')) {
+        if (!Olama_School_Permissions::can('olama_manage_exams_schedule') && !Olama_School_Permissions::can('olama_fill_exam_details')) {
             wp_send_json_error(__('Permission denied.', 'olama-school'));
         }
 

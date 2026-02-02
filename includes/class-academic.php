@@ -654,6 +654,8 @@ class Olama_School_Academic
         ));
     }
 
+    }
+
     /**
      * Add semester exam
      */
