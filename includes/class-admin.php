@@ -2027,7 +2027,7 @@ class Olama_School_Admin
     public function ajax_bulk_add_exam_subjects()
     {
         global $wpdb;
-        check_ajax_referer('olama_exam_nonce_field', 'nonce');
+        check_ajax_referer('olama_save_exam', 'nonce');
 
         if (!Olama_School_Permissions::can('olama_manage_exams_schedule')) {
             wp_send_json_error(__('Unauthorized', 'olama-school'));

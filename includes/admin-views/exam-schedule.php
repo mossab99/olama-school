@@ -99,7 +99,7 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
         <table class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
-                    <th style="font-weight: 600; width: 15%;"><?php echo Olama_School_Helpers::translate('Evaluation'); ?></th>
+                    <th style="font-weight: 600; width: 15%;"><?php echo Olama_School_Helpers::translate('Subject'); ?></th>
                     <th style="font-weight: 600; width: 20%;"><?php echo Olama_School_Helpers::translate('Material'); ?></th>
                     <th style="font-weight: 600; width: 15%;"><?php echo Olama_School_Helpers::translate('Date'); ?></th>
                     <th style="font-weight: 600; width: 10%;"><?php echo Olama_School_Helpers::translate('Room'); ?></th>
@@ -121,14 +121,14 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
                         $status_color = ($exam->status === 'completed') ? '#10b981' : '#f59e0b';
                         ?>
                         <tr>
-                            <td><strong><?php 
+                            <td><strong><?php
+                                $sb_info = Olama_School_Subject::get_subject($exam->subject_id);
+                                echo $sb_info ? esc_html($sb_info->subject_name) : __('Unknown', 'olama-school');
+                            ?></strong></td>
+                            <td><?php 
                                 $se_info = array_filter($semester_exams, function($e) use ($exam) { return $e->id == $exam->semester_exam_id; });
                                 $se_info = reset($se_info);
                                 echo $se_info ? esc_html($se_info->exam_name) : esc_html($exam->evaluation_type); 
-                            ?></strong></td>
-                            <td><?php
-                                $sb_info = Olama_School_Subject::get_subject($exam->subject_id);
-                                echo $sb_info ? esc_html($sb_info->subject_name) : __('Unknown', 'olama-school');
                             ?></td>
                             <td><?php echo $exam->formatted_date; ?></td>
                             <td><?php echo esc_html($exam->room_number); ?></td>
