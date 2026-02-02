@@ -9,15 +9,76 @@ if (!defined('ABSPATH')) {
 // Redundant definitions removed as they are handled in class-admin.php
 ?>
 
-<div class="olama-admin-header" style="margin-bottom: 20px;">
-    <form method="get" id="olama-calendar-year-filter">
-        <input type="hidden" name="page" value="olama-school-academic" />
-        <input type="hidden" name="tab" value="calendar" />
-        <div style="display: flex; align-items: flex-end; gap: 10px;">
-            <div style="flex: 0 0 250px;">
+<style>
+    .olama-modal {
+        display: none;
+        position: fixed;
+        z-index: 99999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .olama-modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 25px;
+        border: 1px solid #ccd0d4;
+        width: 100%;
+        max-width: 500px;
+        border-radius: 8px;
+        position: relative;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .olama-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .olama-modal-header h2 {
+        margin: 0;
+    }
+
+    .olama-close-modal {
+        font-size: 28px;
+        font-weight: bold;
+        color: #aaa;
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .olama-close-modal:hover {
+        color: #000;
+    }
+
+    .olama-admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #fff;
+        padding: 15px 20px;
+        border: 1px solid #ccd0d4;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="olama-admin-header">
+    <div style="display: flex; align-items: center; gap: 20px;">
+        <form method="get" id="olama-calendar-year-filter" style="margin: 0;">
+            <input type="hidden" name="page" value="olama-school-academic" />
+            <input type="hidden" name="tab" value="calendar" />
+            <div style="display: flex; align-items: center; gap: 10px;">
                 <label
-                    style="display: block; font-weight: 600; margin-bottom: 5px;"><?php _e('Manage Academic Year', 'olama-school'); ?></label>
-                <select name="manage_year" class="olama-select" onchange="this.form.submit()" style="width: 100%;">
+                    style="font-weight: 600; white-space: nowrap;"><?php _e('Manage Academic Year', 'olama-school'); ?></label>
+                <select name="manage_year" class="olama-select" onchange="this.form.submit()" style="min-width: 200px;">
                     <option value="0"><?php _e('-- Select Year to Manage --', 'olama-school'); ?></option>
                     <?php foreach ($years as $year): ?>
                         <option value="<?php echo $year->id; ?>" <?php selected($selected_year_id, $year->id); ?>>
@@ -27,11 +88,14 @@ if (!defined('ABSPATH')) {
                     <?php endforeach; ?>
                 </select>
             </div>
-        </div>
-    </form>
+        </form>
+    </div>
+    <button type="button" class="button button-primary" onclick="olamaOpenModal('add-year-modal')">
+        <?php _e('Add New Academic Year', 'olama-school'); ?>
+    </button>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 350px; gap: 20px;">
+<div class="olama-one-col-layout">
     <div class="olama-main-col">
         <div class="olama-card"
             style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; margin-bottom: 20px;">
@@ -677,53 +741,15 @@ if (!defined('ABSPATH')) {
         <?php }
         } ?>
 </div>
+</div>
 
-<div class="olama-side-col">
-    <div id="edit-year-form"
-        style="display: none; background: #fffbeb; padding: 20px; border: 1px dashed #d97706; margin-bottom: 20px;">
-        <h2 style="margin-top: 0;">
-            <?php _e('Edit Academic Year', 'olama-school'); ?>
-        </h2>
-        <form method="post" action="">
-            <?php wp_nonce_field('olama_update_year'); ?>
-            <input type="hidden" name="edit_year_id" id="edit_year_id" />
-            <p>
-                <label style="display: block; margin-bottom: 5px; font-weight: 600;">
-                    <?php _e('Year Name', 'olama-school'); ?>
-                </label>
-                <input type="text" name="edit_year_name" id="edit_year_name" required class="widefat" />
-            </p>
-            <p>
-                <label style="display: block; margin-bottom: 5px; font-weight: 600;">
-                    <?php _e('Start Date', 'olama-school'); ?>
-                </label>
-                <input type="text" name="edit_start_date" id="edit_start_date" required class="widefat olama-datepicker"
-                    autocomplete="off" />
-            </p>
-            <p>
-                <label style="display: block; margin-bottom: 5px; font-weight: 600;">
-                    <?php _e('End Date', 'olama-school'); ?>
-                </label>
-                <input type="text" name="edit_end_date" id="edit_end_date" required class="widefat olama-datepicker"
-                    autocomplete="off" />
-            </p>
-            <p>
-                <label><input type="checkbox" name="edit_is_active" id="edit_is_active" value="1" />
-                    <?php _e('Set as Active', 'olama-school'); ?>
-                </label>
-            </p>
-            <?php submit_button(__('Update Year', 'olama-school'), 'primary', 'update_year', false); ?>
-            <button type="button" class="button"
-                onclick="document.getElementById('edit-year-form').style.display='none'">
-                <?php _e('Cancel', 'olama-school'); ?>
-            </button>
-        </form>
-    </div>
-
-    <div class="olama-card" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4;">
-        <h2 style="margin-top: 0;">
-            <?php _e('Add Academic Year', 'olama-school'); ?>
-        </h2>
+<!-- Add Year Modal -->
+<div id="add-year-modal" class="olama-modal">
+    <div class="olama-modal-content">
+        <div class="olama-modal-header">
+            <h2><?php _e('Add Academic Year', 'olama-school'); ?></h2>
+            <span class="olama-close-modal" onclick="olamaCloseModal('add-year-modal')">&times;</span>
+        </div>
         <form method="post" action="">
             <?php wp_nonce_field('olama_add_year'); ?>
             <p>
@@ -753,21 +779,70 @@ if (!defined('ABSPATH')) {
         </form>
     </div>
 </div>
+
+<!-- Edit Year Modal -->
+<div id="edit-year-modal" class="olama-modal">
+    <div class="olama-modal-content">
+        <div class="olama-modal-header">
+            <h2><?php _e('Edit Academic Year', 'olama-school'); ?></h2>
+            <span class="olama-close-modal" onclick="olamaCloseModal('edit-year-modal')">&times;</span>
+        </div>
+        <form method="post" action="">
+            <?php wp_nonce_field('olama_update_year'); ?>
+            <input type="hidden" name="edit_year_id" id="edit_year_id" />
+            <p>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                    <?php _e('Year Name', 'olama-school'); ?>
+                </label>
+                <input type="text" name="edit_year_name" id="edit_year_name" required class="widefat" />
+            </p>
+            <p>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                    <?php _e('Start Date', 'olama-school'); ?>
+                </label>
+                <input type="text" name="edit_start_date" id="edit_start_date" required class="widefat olama-datepicker"
+                    autocomplete="off" />
+            </p>
+            <p>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                    <?php _e('End Date', 'olama-school'); ?>
+                </label>
+                <input type="text" name="edit_end_date" id="edit_end_date" required class="widefat olama-datepicker"
+                    autocomplete="off" />
+            </p>
+            <p>
+                <label><input type="checkbox" name="edit_is_active" id="edit_is_active" value="1" />
+                    <?php _e('Set as Active', 'olama-school'); ?>
+                </label>
+            </p>
+            <?php submit_button(__('Update Year', 'olama-school'), 'primary', 'update_year', true, array('style' => 'width: 100%;')); ?>
+        </form>
+    </div>
 </div>
 
 <script>
+    function olamaOpenModal(modalId) {
+        document.getElementById(modalId).style.display = 'block';
+    }
+
+    function olamaCloseModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function (event) {
+        if (event.target.classList.contains('olama-modal')) {
+            event.target.style.display = 'none';
+        }
+    }
     function olamaEditYear(btn) {
-        document.getElementById('edit-year-id').value = ''; // Reset optional fields if any
-        const editForm = document.getElementById('edit-year-form');
-        editForm.style.display = 'block';
+        olamaOpenModal('edit-year-modal');
 
         document.getElementById('edit_year_id').value = btn.getAttribute('data-id');
         document.getElementById('edit_year_name').value = btn.getAttribute('data-name');
         document.getElementById('edit_start_date').value = btn.getAttribute('data-start');
         document.getElementById('edit_end_date').value = btn.getAttribute('data-end');
         document.getElementById('edit_is_active').checked = btn.getAttribute('data-active') === '1';
-
-        editForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function olamaEditEvent(btn) {
