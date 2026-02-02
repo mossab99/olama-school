@@ -689,7 +689,7 @@ if ($selected_semester_exam_id) {
             var lessonSelect = row.find('.lesson-select');
             lessonSelect.empty().append('<option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option>');
             lessons.forEach(function (lesson) {
-                lessonSelect.append('<option value="' + lesson.id + '">' + lesson.lesson_name + '</option>');
+                lessonSelect.append('<option value="' + lesson.id + '">' + lesson.lesson_title + '</option>');
             });
             if (selectedLessonId) lessonSelect.val(selectedLessonId);
         }
