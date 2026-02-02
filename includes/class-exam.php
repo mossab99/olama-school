@@ -15,20 +15,23 @@ class Olama_School_Exam
     public static function get_exams($year_id, $semester_id, $grade_id, $subject_id = 0, $semester_exam_id = 0)
     {
         global $wpdb;
-        $query = "SELECT * FROM {$wpdb->prefix}olama_exams WHERE academic_year_id = %d AND semester_id = %d AND grade_id = %d";
+        $query = "SELECT e.*, se.room_number as master_room 
+                  FROM {$wpdb->prefix}olama_exams e
+                  LEFT JOIN {$wpdb->prefix}olama_semester_exams se ON e.semester_exam_id = se.id
+                  WHERE e.academic_year_id = %d AND e.semester_id = %d AND e.grade_id = %d";
         $params = array($year_id, $semester_id, $grade_id);
 
         if ($subject_id > 0) {
-            $query .= " AND subject_id = %d";
+            $query .= " AND e.subject_id = %d";
             $params[] = $subject_id;
         }
 
         if ($semester_exam_id > 0) {
-            $query .= " AND semester_exam_id = %d";
+            $query .= " AND e.semester_exam_id = %d";
             $params[] = $semester_exam_id;
         }
 
-        $query .= " ORDER BY exam_date ASC";
+        $query .= " ORDER BY e.exam_date ASC";
 
         return $wpdb->get_results($wpdb->prepare($query, $params));
     }
@@ -40,29 +43,46 @@ class Olama_School_Exam
     {
         global $wpdb;
 
-        $fields = array(
-            'academic_year_id' => intval($data['academic_year_id']),
-            'semester_id' => intval($data['semester_id']),
-            'semester_exam_id' => intval($data['semester_exam_id'] ?? 0),
-            'grade_id' => intval($data['grade_id']),
-            'subject_id' => intval($data['subject_id']),
-            'evaluation_type' => sanitize_text_field($data['evaluation_type'] ?? ''),
-            'exam_date' => sanitize_text_field($data['exam_date'] ?? ''),
-            'room_number' => sanitize_text_field($data['room_number'] ?? ''),
-            'description' => sanitize_textarea_field($data['description'] ?? ''),
-            'student_book_material' => sanitize_textarea_field($data['student_book_material'] ?? ''),
-            'workbook_material' => sanitize_textarea_field($data['workbook_material'] ?? ''),
-            'exercise_book_material' => sanitize_textarea_field($data['exercise_book_material'] ?? ''),
-            'notebook_material' => sanitize_textarea_field($data['notebook_material'] ?? ''),
-            'teacher_notes' => sanitize_textarea_field($data['teacher_notes'] ?? ''),
-            'status' => sanitize_text_field($data['status'] ?? 'draft'),
+        $exam_id = !empty($data['id']) ? intval($data['id']) : 0;
+        $existing = null;
+        if ($exam_id) {
+            $existing = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_exams WHERE id = %d", $exam_id), ARRAY_A);
+        }
+
+        $fields = array();
+        $keys = array(
+            'academic_year_id' => 'intval',
+            'semester_id' => 'intval',
+            'semester_exam_id' => 'intval',
+            'grade_id' => 'intval',
+            'subject_id' => 'intval',
+            'evaluation_type' => 'sanitize_text_field',
+            'exam_date' => 'sanitize_text_field',
+            'room_number' => 'sanitize_text_field',
+            'description' => 'sanitize_textarea_field',
+            'student_book_material' => 'sanitize_textarea_field',
+            'workbook_material' => 'sanitize_textarea_field',
+            'exercise_book_material' => 'sanitize_textarea_field',
+            'notebook_material' => 'sanitize_textarea_field',
+            'teacher_notes' => 'sanitize_textarea_field',
+            'status' => 'sanitize_text_field'
         );
 
-        if (!empty($data['id'])) {
+        foreach ($keys as $key => $sanitizer) {
+            if (isset($data[$key]) && $data[$key] !== '') {
+                $fields[$key] = $sanitizer === 'intval' ? intval($data[$key]) : $sanitizer($data[$key]);
+            } elseif ($existing && isset($existing[$key])) {
+                $fields[$key] = $existing[$key];
+            } elseif ($key === 'status') {
+                $fields[$key] = 'draft';
+            }
+        }
+
+        if ($exam_id) {
             return $wpdb->update(
                 "{$wpdb->prefix}olama_exams",
                 $fields,
-                array('id' => intval($data['id']))
+                array('id' => $exam_id)
             );
         } else {
             return $wpdb->insert(

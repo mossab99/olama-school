@@ -6,8 +6,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Get semester exams for the dropdown
-$semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_id);
+// Get semester exams for the dropdown - filtered by grade if selected
+$semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_id, $selected_grade_id);
 $active_exam = Olama_School_Academic::get_active_exam($selected_semester_id);
 $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, $selected_grade_id, $selected_subject_id, $selected_semester_exam_id);
 
@@ -141,7 +141,9 @@ if ($selected_semester_exam_id) {
                     </th>
                     <th style="font-weight: 600; width: 15%;"><?php echo Olama_School_Helpers::translate('Date'); ?>
                     </th>
-                    <th style="font-weight: 600; width: 15%;"><?php echo Olama_School_Helpers::translate('Status'); ?>
+                    <th style="font-weight: 600; width: 15%;"><?php echo Olama_School_Helpers::translate('Room'); ?>
+                    </th>
+                    <th style="font-weight: 600; width: 10%;"><?php echo Olama_School_Helpers::translate('Status'); ?>
                     </th>
                     <th style="width: 140px; text-align: center; font-weight: 600;">
                         <?php echo Olama_School_Helpers::translate('Actions'); ?>
@@ -151,7 +153,7 @@ if ($selected_semester_exam_id) {
             <tbody>
                 <?php if (empty($exams)): ?>
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 40px; color: #666;">
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
                             <?php echo Olama_School_Helpers::translate('No exams found for the selected criteria.'); ?>
                         </td>
                     </tr>
@@ -174,6 +176,7 @@ if ($selected_semester_exam_id) {
                             echo $se_info ? esc_html($se_info->exam_name) : esc_html($exam->evaluation_type);
                             ?></td>
                             <td><?php echo $exam->formatted_date; ?></td>
+                            <td><?php echo esc_html($exam->master_room ?: $exam->room_number); ?></td>
                             <td>
                                 <span
                                     style="display:inline-block; padding: 2px 8px; border-radius: 12px; background: <?php echo $status_color; ?>22; color: <?php echo $status_color; ?>; font-size: 11px; font-weight: 600;">
@@ -291,7 +294,8 @@ if ($selected_semester_exam_id) {
                         <label><?php echo Olama_School_Helpers::translate('Status'); ?></label>
                         <select name="status">
                             <option value="draft">
-                                <?php echo Olama_School_Helpers::translate('Draft / Not Completed'); ?></option>
+                                <?php echo Olama_School_Helpers::translate('Draft / Not Completed'); ?>
+                            </option>
                             <option value="completed"><?php echo Olama_School_Helpers::translate('Completed'); ?>
                             </option>
                         </select>
