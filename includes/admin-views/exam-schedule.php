@@ -776,7 +776,20 @@ if ($selected_semester_exam_id) {
 
         // Note: JSON serialization for material-form is handled in the combined subm it handler below
 
-        $('#bulk-add-subjects').on('click', function () {
+        $(document).on('click', '#bulk-add-subjects', function () {
+            // Validate required selections
+            var semesterExamId = '<?php echo $selected_semester_exam_id; ?>';
+            var gradeId = '<?php echo $selected_grade_id; ?>';
+            
+            if (!semesterExamId || semesterExamId == '0') {
+                alert('<?php echo Olama_School_Helpers::translate('Please select an exam first.'); ?>');
+                return;
+            }
+            if (!gradeId || gradeId == '0') {
+                alert('<?php echo Olama_School_Helpers::translate('Please select a grade first.'); ?>');
+                return;
+            }
+            
             if (!confirm('<?php echo Olama_School_Helpers::translate('This will initialize all subjects for this grade in the selected exam. Continue?'); ?>')) return;
 
             var data = {
@@ -799,6 +812,10 @@ if ($selected_semester_exam_id) {
                     alert('Error: ' + response.data);
                     btn.prop('disabled', false).text('<?php echo Olama_School_Helpers::translate('Init All Subjects'); ?>');
                 }
+            }).fail(function (xhr, status, error) {
+                console.error('AJAX Error:', error);
+                alert('Connection error: ' + error);
+                btn.prop('disabled', false).text('<?php echo Olama_School_Helpers::translate('Init All Subjects'); ?>');
             });
         });
 
