@@ -645,13 +645,20 @@ class Olama_School_Academic
     /**
      * Get exams for a semester
      */
-    public static function get_semester_exams($semester_id)
+    public static function get_semester_exams($semester_id, $grade_id = 0)
     {
         global $wpdb;
-        return $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_semester_exams WHERE semester_id = %d ORDER BY start_date ASC",
-            $semester_id
-        ));
+        $query = "SELECT * FROM {$wpdb->prefix}olama_semester_exams WHERE semester_id = %d";
+        $params = array($semester_id);
+
+        if ($grade_id) {
+            $query .= " AND (grade_id = %d OR grade_id IS NULL)";
+            $params[] = $grade_id;
+        }
+
+        $query .= " ORDER BY start_date ASC";
+
+        return $wpdb->get_results($wpdb->prepare($query, $params));
     }
 
     /**
@@ -670,7 +677,9 @@ class Olama_School_Academic
             "{$wpdb->prefix}olama_semester_exams",
             array(
                 'semester_id' => $data['semester_id'],
+                'grade_id' => !empty($data['grade_id']) ? intval($data['grade_id']) : null,
                 'exam_name' => $data['exam_name'],
+                'room_number' => $data['room_number'] ?? null,
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
                 'is_active' => $is_active,
@@ -696,7 +705,9 @@ class Olama_School_Academic
         return $wpdb->update(
             "{$wpdb->prefix}olama_semester_exams",
             array(
+                'grade_id' => !empty($data['grade_id']) ? intval($data['grade_id']) : null,
                 'exam_name' => $data['exam_name'],
+                'room_number' => $data['room_number'] ?? null,
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
                 'is_active' => $is_active,

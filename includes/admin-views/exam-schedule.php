@@ -9,9 +9,18 @@ if (!defined('ABSPATH')) {
 // Get semester exams for the dropdown
 $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_id);
 $active_exam = Olama_School_Academic::get_active_exam($selected_semester_id);
-$selected_semester_exam_id = isset($_GET['semester_exam_id']) ? intval($_GET['semester_exam_id']) : ($active_exam ? $active_exam->id : (!empty($semester_exams) ? $semester_exams[0]->id : 0));
-
 $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, $selected_grade_id, $selected_subject_id, $selected_semester_exam_id);
+
+// Get current master exam details if selected
+$current_master_exam = null;
+if ($selected_semester_exam_id) {
+    foreach ($semester_exams as $se) {
+        if ($se->id == $selected_semester_exam_id) {
+            $current_master_exam = $se;
+            break;
+        }
+    }
+}
 ?>
 
 <div class="wrap olama-exam-wrap">
@@ -19,8 +28,7 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h1 style="margin: 0;"><?php echo Olama_School_Helpers::translate('Exam Schedule'); ?></h1>
         <div style="display: flex; gap: 10px;">
-            <button type="button" id="bulk-add-subjects" class="button button-secondary" 
-                <?php echo (!$selected_semester_exam_id || !$selected_grade_id) ? 'disabled' : ''; ?>>
+            <button type="button" id="bulk-add-subjects" class="button button-secondary" <?php echo (!$selected_semester_exam_id || !$selected_grade_id) ? 'disabled' : ''; ?>>
                 <span class="dashicons dashicons-database-add" style="margin-top: 4px;"></span>
                 <?php echo Olama_School_Helpers::translate('Init All Subjects'); ?>
             </button>
@@ -44,9 +52,10 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
         <form method="get" action="" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
             <input type="hidden" name="page" value="olama-school-exams">
             <input type="hidden" name="tab" value="exam_schedule">
-            
+
             <div class="filter-group">
-                <label style="display:block; font-size:11px; color:#666;"><?php echo Olama_School_Helpers::translate('Active Year'); ?></label>
+                <label
+                    style="display:block; font-size:11px; color:#666;"><?php echo Olama_School_Helpers::translate('Active Year'); ?></label>
                 <select name="academic_year_id" onchange="this.form.submit();">
                     <?php foreach ($years as $y): ?>
                         <option value="<?php echo $y->id; ?>" <?php selected($selected_year_id, $y->id); ?>>
@@ -57,7 +66,8 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
             </div>
 
             <div class="filter-group">
-                <label style="display:block; font-size:11px; color:#666;"><?php echo Olama_School_Helpers::translate('Active Semester'); ?></label>
+                <label
+                    style="display:block; font-size:11px; color:#666;"><?php echo Olama_School_Helpers::translate('Active Semester'); ?></label>
                 <select name="semester_id" onchange="this.form.submit();">
                     <?php foreach ($semesters as $s): ?>
                         <option value="<?php echo $s->id; ?>" <?php selected($selected_semester_id, $s->id); ?>>
@@ -68,7 +78,8 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
             </div>
 
             <div class="filter-group">
-                <label style="display:block; font-size:11px; color:#666;"><?php echo Olama_School_Helpers::translate('Active Exam'); ?></label>
+                <label
+                    style="display:block; font-size:11px; color:#666;"><?php echo Olama_School_Helpers::translate('Active Exam'); ?></label>
                 <select name="semester_exam_id" onchange="this.form.submit();">
                     <option value="0"><?php echo Olama_School_Helpers::translate('Choose Exam'); ?></option>
                     <?php foreach ($semester_exams as $se): ?>
@@ -80,7 +91,8 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
             </div>
 
             <div class="filter-group">
-                <label style="display:block; font-size:11px; color:#666;"><?php echo Olama_School_Helpers::translate('Grade'); ?></label>
+                <label
+                    style="display:block; font-size:11px; color:#666;"><?php echo Olama_School_Helpers::translate('Grade'); ?></label>
                 <select name="grade_id" onchange="this.form.submit();">
                     <?php foreach ($grades as $g): ?>
                         <option value="<?php echo $g->id; ?>" <?php selected($selected_grade_id, $g->id); ?>>
@@ -90,27 +102,55 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
                 </select>
             </div>
 
-            <button type="submit" class="button button-secondary" style="margin-top: 15px;"><?php echo Olama_School_Helpers::translate('Search'); ?></button>
+            <button type="submit" class="button button-secondary"
+                style="margin-top: 15px;"><?php echo Olama_School_Helpers::translate('Search'); ?></button>
         </form>
     </div>
+
+    <?php if ($current_master_exam): ?>
+        <div class="olama-exam-context"
+            style="background: #fdf2f2; border: 1px solid #fecaca; padding: 12px 20px; border-radius: 6px; margin-bottom: 20px; display: flex; gap: 40px; align-items: center;">
+            <div>
+                <span style="color: #ef4444; font-weight: 700; margin-left: 8px;"><span
+                        class="dashicons dashicons-location-alt" style="font-size: 18px; margin-top:2px;"></span>
+                    <?php echo Olama_School_Helpers::translate('Room'); ?>:</span>
+                <span
+                    style="font-weight: 800; color: #1e293b; font-size: 15px;"><?php echo esc_html($current_master_exam->room_number ?: __('Not Assigned', 'olama-school')); ?></span>
+            </div>
+            <div>
+                <span style="color: #ef4444; font-weight: 700; margin-left: 8px;"><span
+                        class="dashicons dashicons-calendar-alt" style="font-size: 18px; margin-top:2px;"></span>
+                    <?php echo Olama_School_Helpers::translate('Allowed Period'); ?>:</span>
+                <span style="font-weight: 800; color: #1e293b; font-size: 15px;">
+                    <?php echo Olama_School_Helpers::format_date($current_master_exam->start_date); ?>
+                    <span style="margin: 0 5px;">-</span>
+                    <?php echo Olama_School_Helpers::format_date($current_master_exam->end_date); ?>
+                </span>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- Full Width Table -->
     <div class="olama-table-container">
         <table class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
-                    <th style="font-weight: 600; width: 15%;"><?php echo Olama_School_Helpers::translate('Subject'); ?></th>
-                    <th style="font-weight: 600; width: 20%;"><?php echo Olama_School_Helpers::translate('Material'); ?></th>
-                    <th style="font-weight: 600; width: 15%;"><?php echo Olama_School_Helpers::translate('Date'); ?></th>
-                    <th style="font-weight: 600; width: 10%;"><?php echo Olama_School_Helpers::translate('Room'); ?></th>
-                    <th style="font-weight: 600; width: 15%;"><?php echo Olama_School_Helpers::translate('Status'); ?></th>
-                    <th style="width: 120px; text-align: center; font-weight: 600;"><?php echo Olama_School_Helpers::translate('Actions'); ?></th>
+                    <th style="font-weight: 600; width: 15%;"><?php echo Olama_School_Helpers::translate('Subject'); ?>
+                    </th>
+                    <th style="font-weight: 600; width: 20%;"><?php echo Olama_School_Helpers::translate('Exam'); ?>
+                    </th>
+                    <th style="font-weight: 600; width: 15%;"><?php echo Olama_School_Helpers::translate('Date'); ?>
+                    </th>
+                    <th style="font-weight: 600; width: 15%;"><?php echo Olama_School_Helpers::translate('Status'); ?>
+                    </th>
+                    <th style="width: 140px; text-align: center; font-weight: 600;">
+                        <?php echo Olama_School_Helpers::translate('Actions'); ?></th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($exams)): ?>
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
+                        <td colspan="5" style="text-align: center; padding: 40px; color: #666;">
                             <?php echo Olama_School_Helpers::translate('No exams found for the selected criteria.'); ?>
                         </td>
                     </tr>
@@ -122,25 +162,32 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
                         ?>
                         <tr>
                             <td><strong><?php
-                                $sb_info = Olama_School_Subject::get_subject($exam->subject_id);
-                                echo $sb_info ? esc_html($sb_info->subject_name) : __('Unknown', 'olama-school');
+                            $sb_info = Olama_School_Subject::get_subject($exam->subject_id);
+                            echo $sb_info ? esc_html($sb_info->subject_name) : __('Unknown', 'olama-school');
                             ?></strong></td>
-                            <td><?php 
-                                $se_info = array_filter($semester_exams, function($e) use ($exam) { return $e->id == $exam->semester_exam_id; });
-                                $se_info = reset($se_info);
-                                echo $se_info ? esc_html($se_info->exam_name) : esc_html($exam->evaluation_type); 
+                            <td><?php
+                            $se_info = array_filter($semester_exams, function ($e) use ($exam) {
+                                return $e->id == $exam->semester_exam_id; });
+                            $se_info = reset($se_info);
+                            echo $se_info ? esc_html($se_info->exam_name) : esc_html($exam->evaluation_type);
                             ?></td>
                             <td><?php echo $exam->formatted_date; ?></td>
-                            <td><?php echo esc_html($exam->room_number); ?></td>
                             <td>
-                                <span style="display:inline-block; padding: 2px 8px; border-radius: 12px; background: <?php echo $status_color; ?>22; color: <?php echo $status_color; ?>; font-size: 11px; font-weight: 600;">
+                                <span
+                                    style="display:inline-block; padding: 2px 8px; border-radius: 12px; background: <?php echo $status_color; ?>22; color: <?php echo $status_color; ?>; font-size: 11px; font-weight: 600;">
                                     <?php echo $status_label; ?>
                                 </span>
                             </td>
                             <td style="text-align: center;">
-                                <button type="button" class="button button-small edit-exam"
-                                    data-exam='<?php echo json_encode($exam); ?>' title="<?php echo Olama_School_Helpers::translate('Edit'); ?>">
-                                    <span class="dashicons dashicons-edit"></span>
+                                <button type="button" class="button button-small edit-exam-date"
+                                    data-exam='<?php echo json_encode($exam); ?>'
+                                    title="<?php echo Olama_School_Helpers::translate('Edit Date'); ?>">
+                                    <span class="dashicons dashicons-calendar-alt"></span>
+                                </button>
+                                <button type="button" class="button button-small edit-exam-material"
+                                    data-exam='<?php echo json_encode($exam); ?>'
+                                    title="<?php echo Olama_School_Helpers::translate('Exam Material'); ?>">
+                                    <span class="dashicons dashicons-media-text"></span>
                                 </button>
                                 <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-exams&tab=exam_schedule&action=delete_exam&exam_id=' . $exam->id), 'olama_delete_exam_' . $exam->id); ?>"
                                     class="button button-small"
@@ -156,12 +203,97 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
         </table>
     </div>
 
-    <!-- Modal Form -->
+    <!-- Date Edit Modal -->
+    <div id="date-modal" class="olama-modal" style="display: none;">
+        <div class="olama-modal-content" style="max-width: 400px;">
+            <div class="olama-modal-header">
+                <h2><?php echo Olama_School_Helpers::translate('Edit Exam Date'); ?></h2>
+                <span class="olama-modal-close" onclick="closeModal('date-modal')">&times;</span>
+            </div>
+            <form id="date-form" method="post">
+                <?php wp_nonce_field('olama_save_exam', 'olama_date_nonce_field'); ?>
+                <input type="hidden" name="id" id="date_exam_id">
+                <input type="hidden" name="action" value="olama_save_exam">
+                <div style="padding: 20px;">
+                    <div class="form-field">
+                        <label><?php echo Olama_School_Helpers::translate('Exam Date'); ?> *</label>
+                        <input type="text" name="exam_date" id="date_exam_date" required class="olama-datepicker" autocomplete="off">
+                        <?php if ($current_master_exam): ?>
+                                <p class="description" style="margin-top: 5px; font-size: 11px; color: #64748b;">
+                                    <?php printf(__('Must be between %s and %s', 'olama-school'), Olama_School_Helpers::format_date($current_master_exam->start_date), Olama_School_Helpers::format_date($current_master_exam->end_date)); ?>
+                                </p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="olama-modal-footer">
+                    <button type="submit" class="button button-primary"><?php echo Olama_School_Helpers::translate('Save Date'); ?></button>
+                    <button type="button" class="button" onclick="closeModal('date-modal')"><?php echo Olama_School_Helpers::translate('Cancel'); ?></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Material Edit Modal -->
+    <div id="material-modal" class="olama-modal" style="display: none;">
+        <div class="olama-modal-content">
+            <div class="olama-modal-header">
+                <h2><?php echo Olama_School_Helpers::translate('Exam Material & Details'); ?></h2>
+                <span class="olama-modal-close" onclick="closeModal('material-modal')">&times;</span>
+            </div>
+            <form id="material-form" method="post">
+                <?php wp_nonce_field('olama_save_exam', 'olama_material_nonce_field'); ?>
+                <input type="hidden" name="id" id="material_exam_id">
+                <input type="hidden" name="action" value="olama_save_exam">
+                
+                <div class="olama-form-grid">
+                    <div class="form-field full-width">
+                        <label><?php echo Olama_School_Helpers::translate('Student Book Material'); ?></label>
+                        <textarea name="student_book_material" rows="2" placeholder="<?php echo Olama_School_Helpers::translate('e.g. Pages 10-25, Units 1-2'); ?>"></textarea>
+                    </div>
+
+                    <div class="form-field">
+                        <label><?php echo Olama_School_Helpers::translate('Workbook Material'); ?></label>
+                        <textarea name="workbook_material" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-field">
+                        <label><?php echo Olama_School_Helpers::translate('Notebook Material'); ?></label>
+                        <textarea name="notebook_material" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-field full-width">
+                        <label><?php echo Olama_School_Helpers::translate('Detailed Description'); ?></label>
+                        <textarea name="description" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-field full-width">
+                        <label><?php echo Olama_School_Helpers::translate('Teacher Notes'); ?></label>
+                        <textarea name="teacher_notes" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-field">
+                        <label><?php echo Olama_School_Helpers::translate('Status'); ?></label>
+                        <select name="status">
+                            <option value="draft"><?php echo Olama_School_Helpers::translate('Draft / Not Completed'); ?></option>
+                            <option value="completed"><?php echo Olama_School_Helpers::translate('Completed'); ?></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="olama-modal-footer">
+                    <button type="submit" class="button button-primary"><?php echo Olama_School_Helpers::translate('Save Material'); ?></button>
+                    <button type="button" class="button" onclick="closeModal('material-modal')"><?php echo Olama_School_Helpers::translate('Cancel'); ?></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Subject Modal (Legacy compatibility or new subject) -->
     <div id="exam-modal" class="olama-modal" style="display: none;">
         <div class="olama-modal-content">
             <div class="olama-modal-header">
                 <h2 id="form-title"><?php echo Olama_School_Helpers::translate('Add Exam Subject'); ?></h2>
-                <span class="olama-modal-close">&times;</span>
+                <span class="olama-modal-close" onclick="closeModal('exam-modal')">&times;</span>
             </div>
 
             <form id="exam-form" method="post">
@@ -175,37 +307,27 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
                 <div class="olama-form-grid">
                     <div class="form-field">
                         <label><?php echo Olama_School_Helpers::translate('Active Exam'); ?> *</label>
-                        <select name="semester_exam_id" required>
+                        <select name="semester_exam_id" id="add_semester_exam_id" required>
                             <option value=""><?php echo Olama_School_Helpers::translate('Choose'); ?></option>
                             <?php foreach ($semester_exams as $se): ?>
-                                <option value="<?php echo $se->id; ?>"><?php echo esc_html($se->exam_name); ?></option>
+                                    <option value="<?php echo $se->id; ?>"><?php echo esc_html($se->exam_name); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="form-field">
-                        <label><?php echo Olama_School_Helpers::translate('Material'); ?> *</label>
+                        <label><?php echo Olama_School_Helpers::translate('Subject'); ?> *</label>
                         <select name="subject_id" required>
                             <option value=""><?php echo Olama_School_Helpers::translate('Choose'); ?></option>
                             <?php foreach ($subjects as $sb): ?>
-                                <option value="<?php echo $sb->id; ?>"><?php echo esc_html($sb->subject_name); ?></option>
+                                    <option value="<?php echo $sb->id; ?>"><?php echo esc_html($sb->subject_name); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="form-field">
                         <label><?php echo Olama_School_Helpers::translate('Exam Date'); ?> *</label>
-                        <input type="text" name="exam_date" required class="olama-datepicker" autocomplete="off">
-                    </div>
-
-                    <div class="form-field">
-                        <label><?php echo Olama_School_Helpers::translate('Room'); ?></label>
-                        <input type="text" name="room_number" placeholder="<?php echo Olama_School_Helpers::translate('Room Name'); ?>">
-                    </div>
-
-                    <div class="form-field full-width">
-                        <label><?php echo Olama_School_Helpers::translate('Exam Description'); ?></label>
-                        <textarea name="description" rows="3" placeholder="<?php echo Olama_School_Helpers::translate('Detailed exam description...'); ?>"></textarea>
+                        <input type="text" name="exam_date" id="add_exam_date" required class="olama-datepicker" autocomplete="off">
                     </div>
                     
                     <input type="hidden" name="status" value="draft">
@@ -214,8 +336,7 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
                 <div class="olama-modal-footer">
                     <button type="submit" id="submit-exam-btn"
                         class="button button-primary button-large"><?php echo Olama_School_Helpers::translate('Add Exam'); ?></button>
-                    <button type="button" id="cancel-modal-btn"
-                        class="button"><?php echo Olama_School_Helpers::translate('Cancel'); ?></button>
+                    <button type="button" class="button" onclick="closeModal('exam-modal')"><?php echo Olama_School_Helpers::translate('Cancel'); ?></button>
                 </div>
             </form>
         </div>
@@ -237,22 +358,65 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
     .form-field select, .form-field input, .form-field textarea { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; }
     .olama-modal-footer { padding: 20px 25px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
     <?php if (Olama_School_Helpers::is_arabic()): ?>
-        .olama-exam-wrap { direction: rtl; }
-        .olama-modal-footer { justify-content: flex-start; }
+            .olama-exam-wrap { direction: rtl; }
+            .olama-modal-footer { justify-content: flex-start; }
     <?php endif; ?>
 </style>
 
 <script>
+    window.closeModal = function(id) {
+        jQuery('#' + id).fadeOut(200);
+    }
+
     jQuery(document).ready(function ($) {
-        var modal = $('#exam-modal');
-        var form = $('#exam-form');
+        var master_start = <?php echo $current_master_exam ? '"' . $current_master_exam->start_date . '"' : 'null'; ?>;
+        var master_end = <?php echo $current_master_exam ? '"' . $current_master_exam->end_date . '"' : 'null'; ?>;
+
+        function validateDate(dateStr) {
+            if (!master_start || !master_end) return true;
+            
+            // Expected format depends on datepicker, but usually it's Y-m-d or handled by the helper
+            // We'll compare timestamp
+            var date = new Date(dateStr);
+            var start = new Date(master_start);
+            var end = new Date(master_end);
+            
+            // Normalize to midnight for comparison
+            date.setHours(0,0,0,0);
+            start.setHours(0,0,0,0);
+            end.setHours(0,0,0,0);
+            
+            if (date < start || date > end) {
+                alert('<?php echo esc_js(__('Exam date must be within the allowed period: ', 'olama-school')); ?>' + '<?php echo $current_master_exam ? Olama_School_Helpers::format_date($current_master_exam->start_date) : ''; ?>' + ' - ' + '<?php echo $current_master_exam ? Olama_School_Helpers::format_date($current_master_exam->end_date) : ''; ?>');
+                return false;
+            }
+            return true;
+        }
 
         $('#open-add-exam-modal').on('click', function () {
-            form[0].reset();
+            $('#exam-form')[0].reset();
             $('#exam_id').val('');
-            $('#form-title').text('<?php echo Olama_School_Helpers::translate('Add Exam Subject'); ?>');
-            $('#submit-exam-btn').text('<?php echo Olama_School_Helpers::translate('Add Exam'); ?>');
-            modal.fadeIn(200);
+            $('#exam-modal').fadeIn(200);
+        });
+
+        $('.edit-exam-date').on('click', function () {
+            var data = $(this).data('exam');
+            $('#date_exam_id').val(data.id);
+            $('#date_exam_date').val(data.formatted_date);
+            $('#date-modal').fadeIn(200);
+        });
+
+        $('.edit-exam-material').on('click', function () {
+            var data = $(this).data('exam');
+            $('#material_exam_id').val(data.id);
+            var form = $('#material-form');
+            form.find('[name="student_book_material"]').val(data.student_book_material);
+            form.find('[name="workbook_material"]').val(data.workbook_material);
+            form.find('[name="notebook_material"]').val(data.notebook_material);
+            form.find('[name="description"]').val(data.description);
+            form.find('[name="teacher_notes"]').val(data.teacher_notes);
+            form.find('[name="status"]').val(data.status);
+            $('#material-modal').fadeIn(200);
         });
 
         $('#bulk-add-subjects').on('click', function() {
@@ -275,39 +439,27 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
                     alert(response.data.message);
                     window.location.reload();
                 } else {
-                    var errorMsg = (typeof response.data === 'string') ? response.data : JSON.stringify(response.data);
-                    alert('Error: ' + errorMsg);
+                    alert('Error: ' + response.data);
                     btn.prop('disabled', false).text('<?php echo Olama_School_Helpers::translate('Init All Subjects'); ?>');
                 }
-            }).fail(function(xhr, status, error) {
-                var responseText = xhr.responseText ? '\nResponse: ' + xhr.responseText.substring(0, 200) : '';
-                alert('Request failed. Status: ' + xhr.status + ', Error: ' + error + responseText);
-                btn.prop('disabled', false).text('<?php echo Olama_School_Helpers::translate('Init All Subjects'); ?>');
             });
         });
 
-        $('.olama-modal-close, #cancel-modal-btn').on('click', function () {
-            modal.fadeOut(200);
+        $('.olama-modal-close').on('click', function () {
+            $(this).closest('.olama-modal').fadeOut(200);
         });
 
-        $('.edit-exam').on('click', function () {
-            var data = $(this).data('exam');
-            $('#exam_id').val(data.id);
-            form.find('[name="semester_exam_id"]').val(data.semester_exam_id);
-            form.find('[name="subject_id"]').val(data.subject_id);
-            form.find('[name="exam_date"]').val(data.formatted_date);
-            form.find('[name="room_number"]').val(data.room_number);
-            form.find('[name="description"]').val(data.description);
-            form.find('[name="status"]').val(data.status);
-
-            $('#form-title').text('<?php echo Olama_School_Helpers::translate('Update'); ?>');
-            $('#submit-exam-btn').text('<?php echo Olama_School_Helpers::translate('Update Exam'); ?>');
-            modal.fadeIn(200);
-        });
-
-        form.on('submit', function (e) {
+        $('#date-form, #material-form, #exam-form').on('submit', function (e) {
             e.preventDefault();
-            var formData = $(this).serialize() + '&action=olama_save_exam&nonce=' + $('#olama_exam_nonce_field').val();
+            var form = $(this);
+            
+            // Date validation for forms that have exam_date
+            var dateVal = form.find('[name="exam_date"]').val();
+            if (dateVal && !validateDate(dateVal)) {
+                return;
+            }
+
+            var formData = form.serialize() + '&action=olama_save_exam&nonce=' + $('#olama_exam_nonce_field').val();
             
             $.post(ajaxurl, formData, function(response) {
                 if (response.success) {

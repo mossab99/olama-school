@@ -442,12 +442,29 @@ if (!defined('ABSPATH')) {
                                 <?php wp_nonce_field('olama_add_semester_exam'); ?>
                                 <input type="hidden" name="exam_semester_id" value="<?php echo $managed_semester_id; ?>" />
                                 <div
-                                    style="display: grid; grid-template-columns: 1fr 150px 150px 100px 100px; gap: 10px; align-items: flex-end;">
+                                    style="display: grid; grid-template-columns: 1fr 150px 150px 150px 150px 100px 100px; gap: 10px; align-items: flex-end;">
                                     <div>
                                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                                             <?php _e('Exam Name', 'olama-school'); ?>
                                         </label>
                                         <input type="text" name="exam_name" required style="width: 100%;" />
+                                    </div>
+                                    <div>
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                                            <?php _e('Grade', 'olama-school'); ?>
+                                        </label>
+                                        <select name="exam_grade_id" style="width: 100%;">
+                                            <option value=""><?php _e('All Grades', 'olama-school'); ?></option>
+                                            <?php foreach ($all_grades as $g): ?>
+                                                <option value="<?php echo $g->id; ?>"><?php echo esc_html($g->grade_name); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                                            <?php _e('Room', 'olama-school'); ?>
+                                        </label>
+                                        <input type="text" name="exam_room_number" style="width: 100%;" />
                                     </div>
                                     <div>
                                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">
@@ -485,12 +502,29 @@ if (!defined('ABSPATH')) {
                                 <input type="hidden" name="edit_exam_id" id="edit_exam_id" />
                                 <input type="hidden" name="manage_semester" value="<?php echo $managed_semester_id; ?>" />
                                 <div
-                                    style="display: grid; grid-template-columns: 1fr 150px 150px 100px 100px; gap: 10px; align-items: flex-end;">
+                                    style="display: grid; grid-template-columns: 1fr 150px 150px 150px 150px 100px 100px; gap: 10px; align-items: flex-end;">
                                     <div>
                                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">
                                             <?php _e('Exam Name', 'olama-school'); ?>
                                         </label>
                                         <input type="text" name="edit_exam_name" id="edit_exam_name" required style="width: 100%;" />
+                                    </div>
+                                    <div>
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                                            <?php _e('Grade', 'olama-school'); ?>
+                                        </label>
+                                        <select name="edit_grade_id" id="edit_exam_grade_id" style="width: 100%;">
+                                            <option value=""><?php _e('All Grades', 'olama-school'); ?></option>
+                                            <?php foreach ($all_grades as $g): ?>
+                                                <option value="<?php echo $g->id; ?>"><?php echo esc_html($g->grade_name); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                                            <?php _e('Room', 'olama-school'); ?>
+                                        </label>
+                                        <input type="text" name="edit_room_number" id="edit_exam_room_number" style="width: 100%;" />
                                     </div>
                                     <div>
                                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">
@@ -525,6 +559,8 @@ if (!defined('ABSPATH')) {
                             <thead>
                                 <tr>
                                     <th><?php _e('Exam Name', 'olama-school'); ?></th>
+                                    <th><?php _e('Grade', 'olama-school'); ?></th>
+                                    <th><?php _e('Room', 'olama-school'); ?></th>
                                     <th><?php _e('Start Date', 'olama-school'); ?></th>
                                     <th><?php _e('End Date', 'olama-school'); ?></th>
                                     <th><?php _e('Status', 'olama-school'); ?></th>
@@ -536,6 +572,15 @@ if (!defined('ABSPATH')) {
                                     <?php foreach ($semester_exams as $exam): ?>
                                         <tr>
                                             <td><strong><?php echo esc_html($exam->exam_name); ?></strong></td>
+                                            <td><?php
+                                            if ($exam->grade_id) {
+                                                $g_info = Olama_School_Grade::get_grade($exam->grade_id);
+                                                echo $g_info ? esc_html($g_info->grade_name) : __('Unknown', 'olama-school');
+                                            } else {
+                                                _e('All Grades', 'olama-school');
+                                            }
+                                            ?></td>
+                                            <td><?php echo esc_html($exam->room_number); ?></td>
                                             <td><?php echo Olama_School_Helpers::format_date($exam->start_date); ?></td>
                                             <td><?php echo Olama_School_Helpers::format_date($exam->end_date); ?></td>
                                             <td>
@@ -554,6 +599,8 @@ if (!defined('ABSPATH')) {
                                             <td>
                                                 <button type="button" class="button button-small" data-id="<?php echo esc_attr($exam->id); ?>"
                                                     data-name="<?php echo esc_attr($exam->exam_name); ?>"
+                                                    data-grade="<?php echo esc_attr($exam->grade_id); ?>"
+                                                    data-room="<?php echo esc_attr($exam->room_number); ?>"
                                                     data-start="<?php echo esc_attr(Olama_School_Helpers::format_date($exam->start_date)); ?>"
                                                     data-end="<?php echo esc_attr(Olama_School_Helpers::format_date($exam->end_date)); ?>"
                                                     data-active="<?php echo !empty($exam->is_active) ? '1' : '0'; ?>"
@@ -578,7 +625,7 @@ if (!defined('ABSPATH')) {
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="5"><?php _e('No exams defined for this semester.', 'olama-school'); ?></td>
+                                        <td colspan="7"><?php _e('No exams defined for this semester.', 'olama-school'); ?></td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -879,6 +926,8 @@ if (!defined('ABSPATH')) {
 
         document.getElementById('edit_exam_id').value = btn.getAttribute('data-id');
         document.getElementById('edit_exam_name').value = btn.getAttribute('data-name');
+        document.getElementById('edit_exam_grade_id').value = btn.getAttribute('data-grade');
+        document.getElementById('edit_exam_room_number').value = btn.getAttribute('data-room');
         document.getElementById('edit_exam_start_date').value = btn.getAttribute('data-start');
         document.getElementById('edit_exam_end_date').value = btn.getAttribute('data-end');
         document.getElementById('edit_exam_is_active').checked = btn.getAttribute('data-active') === '1';

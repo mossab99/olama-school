@@ -389,12 +389,15 @@ class Olama_School_DB
 			'olama_semester_exams' => "CREATE TABLE {$wpdb->prefix}olama_semester_exams (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				semester_id mediumint(9) NOT NULL,
+				grade_id mediumint(9) DEFAULT NULL,
 				exam_name varchar(100) NOT NULL,
+				room_number varchar(50) DEFAULT NULL,
 				start_date date NOT NULL,
 				end_date date NOT NULL,
 				is_active tinyint(1) DEFAULT 0 NOT NULL,
 				PRIMARY KEY  (id),
-				KEY  semester_id (semester_id)
+				KEY  semester_id (semester_id),
+				KEY  grade_id (grade_id)
 			) $charset_collate;",
 
 			'olama_stationary' => "CREATE TABLE {$wpdb->prefix}olama_stationary (
@@ -583,6 +586,22 @@ class Olama_School_DB
 		$exam_indices = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}olama_exams WHERE Key_name = 'semester_exam_id'");
 		if (empty($exam_indices)) {
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD KEY semester_exam_id (semester_exam_id)");
+		}
+
+		// Ensure olama_semester_exams schema updates
+		$sem_exam_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_semester_exams");
+		$sem_exam_col_names = wp_list_pluck($sem_exam_cols, 'Field');
+
+		if (!in_array('grade_id', $sem_exam_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_semester_exams ADD COLUMN grade_id mediumint(9) DEFAULT NULL AFTER semester_id");
+		}
+		if (!in_array('room_number', $sem_exam_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_semester_exams ADD COLUMN room_number varchar(50) DEFAULT NULL AFTER exam_name");
+		}
+
+		$grade_index = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}olama_semester_exams WHERE Key_name = 'grade_id'");
+		if (empty($grade_index)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_semester_exams ADD KEY grade_id (grade_id)");
 		}
 
 		// Ensure olama_semester_exams exists (dbDelta usually handles this but let's be safe)
