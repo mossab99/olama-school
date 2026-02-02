@@ -513,6 +513,8 @@ class Olama_School_Helpers
         'No plans saved for today yet.' => 'لم يتم حفظ خطط لهذا اليوم بعد.',
         'Please enter at least one homework (Workbook, Notebook, or Booklet/Worksheet).' => 'يرجى إدخال واجب واحد على الأقل (كتاب التمارين، أو الدفتر، أو الدوسية).',
         'واجبات مدرسية' => 'واجبات مدرسية',
+        'واجبات' => 'واجبات',
+        'متابعات' => 'متابعات',
         'لا واجبات' => 'لا واجبات',
         // Plan Type Translations
         'Plan Type' => 'نوع الخطة',

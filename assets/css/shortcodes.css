@@ -18,9 +18,9 @@
    ===================================================== */
 .plan-header-v2 {
     background: linear-gradient(145deg, #f8b4b4 0%, #f9a8a8 25%, #fca5a5 50%, #fdba74 75%, #fde68a 100%);
-    border-radius: 0 0 40px 40px;
+    border-radius: 30px;
     padding: 50px 30px 30px;
-    margin: -20px -20px 0 -20px;
+    margin: 0;
     position: relative;
     overflow: hidden;
 }
@@ -513,8 +513,9 @@
     }
 
     .plan-header-v2 {
-        padding: 35px 20px 25px;
-        margin: -15px -15px 0 -15px;
+        padding: 30px 20px 20px;
+        margin: 0;
+        border-radius: 20px;
     }
 
     .header-title {
@@ -522,7 +523,7 @@
     }
 
     .semester-bar {
-        margin: 0 -20px -15px -20px;
+        margin: 0;
         padding: 12px 15px;
         border-radius: 15px;
     }

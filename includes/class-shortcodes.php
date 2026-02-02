@@ -316,71 +316,130 @@ class Olama_School_Shortcodes
         ob_start();
         ?>
         <div class="olama-weekly-plan-v2">
+            <?php
+            // Get active academic year and calculate week number
+            $active_year = Olama_School_Academic::get_active_year();
+            $academic_year_display = '';
+            $week_number = 1;
+
+            if ($active_year) {
+                $academic_year_display = $active_year->year_name ?? ($active_year->start_year . '-' . $active_year->end_year);
+
+                // Get weeks for the active year to find the current week number
+                $all_weeks = Olama_School_Academic::get_academic_weeks($active_year->id, $semester_id, true);
+                if (!empty($all_weeks) && isset($all_weeks[$week_start])) {
+                    $week_number = $all_weeks[$week_start]['number'];
+                } else {
+                    // Fallback: calculate week number from semester start
+                    if ($semester_id) {
+                        global $wpdb;
+                        $semester_data = $wpdb->get_row($wpdb->prepare("SELECT start_date FROM {$wpdb->prefix}olama_semesters WHERE id = %d", $semester_id));
+                        if ($semester_data) {
+                            $semester_start = strtotime($semester_data->start_date);
+                            $week_start_ts = strtotime($week_start);
+                            $week_number = max(1, floor(($week_start_ts - $semester_start) / (7 * 86400)) + 1);
+                        }
+                    }
+                }
+            } else {
+                // Fallback if no active year
+                $start_year = date('Y', strtotime($week_start));
+                $end_year = $start_year + 1;
+                $academic_year_display = $start_year . '-' . $end_year;
+            }
+
+            // Arabic ordinal week names
+            $week_ordinals = array(
+                1 => 'الأول',
+                2 => 'الثاني',
+                3 => 'الثالث',
+                4 => 'الرابع',
+                5 => 'الخامس',
+                6 => 'السادس',
+                7 => 'السابع',
+                8 => 'الثامن',
+                9 => 'التاسع',
+                10 => 'العاشر',
+                11 => 'الحادي عشر',
+                12 => 'الثاني عشر',
+                13 => 'الثالث عشر',
+                14 => 'الرابع عشر',
+                15 => 'الخامس عشر',
+                16 => 'السادس عشر',
+                17 => 'السابع عشر',
+                18 => 'الثامن عشر',
+                19 => 'التاسع عشر',
+                20 => 'العشرون'
+            );
+            $week_ordinal = isset($week_ordinals[$week_number]) ? $week_ordinals[$week_number] : $week_number;
+            ?>
             <!-- Illustrated Header -->
             <div class="plan-header-v2">
                 <div class="header-content">
                     <h1 class="header-title">الخطة الأسبوعية</h1>
                     <div class="header-subtitle">
                         <?php echo $grade ? esc_html($grade->grade_name) : ''; ?> -
-                                <?php echo $section ? esc_html($section->section_name) : ''; ?>
-                            </div>
-                        </div>
-                        <!-- Academic Year & Week Info Bar (Integrated) -->
-                        <div class="semester-bar">
-                            <div class="semester-left">
-                                <span class="week-label"><?php echo Olama_School_Helpers::translate('الأسبوع الدراسي الأول'); ?></span>
-                                <span
-                                    class="week-dates">(<?php echo date_i18n('j', strtotime($week_start)); ?>-<?php echo date_i18n('j F', strtotime($week_end)); ?>)</span>
-                            </div>
-                            <div class="semester-right">
-                                <span class="academic-year-label"><?php echo Olama_School_Helpers::translate('العام الدراسي'); ?></span>
-                                <span class="academic-year"><?php
-                                $start_year = date('Y', strtotime($week_start));
-                                $end_year = $start_year + 1;
-                                echo $start_year . '-' . $end_year;
-                                ?></span>
-                            </div>
-                        </div>
+                        <?php echo $section ? esc_html($section->section_name) : ''; ?>
                     </div>
+                </div>
+                <!-- Academic Year & Week Info Bar (Integrated) -->
+                <div class="semester-bar">
+                    <div class="semester-left">
+                        <span
+                            class="week-label"><?php echo Olama_School_Helpers::translate('الأسبوع الدراسي') . ' ' . $week_ordinal; ?></span>
+                        <span
+                            class="week-dates">(<?php echo date_i18n('j', strtotime($week_start)); ?>-<?php echo date_i18n('j F', strtotime($week_end)); ?>)</span>
+                    </div>
+                    <div class="semester-right">
+                        <span class="academic-year-label"><?php echo Olama_School_Helpers::translate('العام الدراسي'); ?></span>
+                        <span class="academic-year"><?php echo esc_html($academic_year_display); ?></span>
+                    </div>
+                </div>
+            </div>
 
-                    <!-- Days Accordion -->
-                    <div class="days-accordion">
-                        <?php
-                        $days_of_week = array('Sunday' => 'الأحد', 'Monday' => 'الاثنين', 'Tuesday' => 'الثلاثاء', 'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس');
-                        $day_index = 0;
-                        foreach ($days_of_week as $day_en => $day_ar):
-                            $current_date = date('Y-m-d', strtotime($week_start . ' +' . $day_index . ' days'));
-                            $day_plans = $grouped_plans[$current_date] ?? array();
-                            $is_active = $current_date == date('Y-m-d') ? 'active' : '';
-                            if (empty($is_active) && empty($grouped_plans[date('Y-m-d')]) && $day_index === 0)
-                                $is_active = 'active';
-                            $day_index++;
-                            ?>
-                                <div class="day-item <?php echo $is_active; ?> <?php echo empty($day_plans) ? 'empty' : ''; ?>">
-                                    <div class="day-header">
-                                        <div class="day-left">
-                                            <span class="toggle-chevron dashicons dashicons-arrow-down-alt2"></span>
-                                            <div class="day-text">
-                                                <span class="day-name-ar"><?php echo esc_html($day_ar); ?></span>
-                                                <?php
-                                                // Count homeworks vs reviews separately
-                                                $homework_count = 0;
-                                                $review_count = 0;
-                                                foreach ($day_plans as $p) {
-                                                    if (isset($p->plan_type) && $p->plan_type === 'review') {
-                                                        $review_count++;
-                                                    } else {
-                                                        $homework_count++;
-                                                    }
-                                                }
-                                                ?>
-                                                <span class="day-count">
-                                                    <?php if ($homework_count > 0 || $review_count > 0): ?>
-                                                            <span class="dashicons dashicons-calendar"></span>
-                                                            <?php
-                                                            $total_count = $homework_count + $review_count;
-                                                            echo $total_count . ' ' . Olama_School_Helpers::translate('واجبات مدرسية');
-                                                            ?>
+            <!-- Days Accordion -->
+            <div class="days-accordion">
+                <?php
+                $days_of_week = array('Sunday' => 'الأحد', 'Monday' => 'الاثنين', 'Tuesday' => 'الثلاثاء', 'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس');
+                $day_index = 0;
+                foreach ($days_of_week as $day_en => $day_ar):
+                    $current_date = date('Y-m-d', strtotime($week_start . ' +' . $day_index . ' days'));
+                    $day_plans = $grouped_plans[$current_date] ?? array();
+                    $is_active = $current_date == date('Y-m-d') ? 'active' : '';
+                    if (empty($is_active) && empty($grouped_plans[date('Y-m-d')]) && $day_index === 0)
+                        $is_active = 'active';
+                    $day_index++;
+                    ?>
+                    <div class="day-item <?php echo $is_active; ?> <?php echo empty($day_plans) ? 'empty' : ''; ?>">
+                        <div class="day-header">
+                            <div class="day-left">
+                                <span class="toggle-chevron dashicons dashicons-arrow-down-alt2"></span>
+                                <div class="day-text">
+                                    <span class="day-name-ar"><?php echo esc_html($day_ar); ?></span>
+                                    <?php
+                                    // Count homeworks vs reviews separately
+                                    $homework_count = 0;
+                                    $review_count = 0;
+                                    foreach ($day_plans as $p) {
+                                        if (isset($p->plan_type) && $p->plan_type === 'review') {
+                                            $review_count++;
+                                        } else {
+                                            $homework_count++;
+                                        }
+                                    }
+                                    ?>
+                                    <span class="day-count">
+                                        <?php if ($homework_count > 0 || $review_count > 0): ?>
+                                            <?php
+                                            $parts = array();
+                                            if ($homework_count > 0) {
+                                                $parts[] = $homework_count . ' ' . Olama_School_Helpers::translate('واجبات');
+                                            }
+                                            if ($review_count > 0) {
+                                                $parts[] = $review_count . ' ' . Olama_School_Helpers::translate('متابعات');
+                                            }
+                                            echo implode(' - ', $parts);
+                                            ?>
                                                     <?php else: ?>
                                                             <?php echo Olama_School_Helpers::translate('لا واجبات'); ?>
                                                     <?php endif; ?>

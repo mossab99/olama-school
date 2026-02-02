@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define Constants
-define('OLAMA_SCHOOL_VERSION', '1.8.3');
+define('OLAMA_SCHOOL_VERSION', '1.8.4');
 define('OLAMA_SCHOOL_PATH', plugin_dir_path(__FILE__));
 define('OLAMA_SCHOOL_URL', plugin_dir_url(__FILE__));
 
