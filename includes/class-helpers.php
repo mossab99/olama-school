@@ -1019,6 +1019,7 @@ class Olama_School_Helpers
         'Grade %s has a maximum of %d homework plans per week.' => 'الصف %s لديه بحد أقصى %d خطط واجبات أسبوعياً.',
         'A maximum of %d homework plans are allowed on %s.' => 'يسمح بحد أقصى بـ %d خطط واجبات في يوم %s.',
         'Subject %s has a maximum of %d homework plans per week.' => 'المادة %s لديها بحد أقصى %d خطط واجبات أسبوعياً.',
+        'Homeworks' => 'الواجبات',
         'Required Plans' => 'الخطط المطلوبة',
         'Approved Plans' => 'الخطط المعتمدة',
         'Reviews' => 'المتابعات',

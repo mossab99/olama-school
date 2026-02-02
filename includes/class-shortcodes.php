@@ -380,11 +380,11 @@ class Olama_School_Shortcodes
                                     ?>
                                     <span class="day-count">
                                         <?php if ($homework_count > 0): ?>
-                                            <?php echo Olama_School_Helpers::translate('الواجبات'); ?>                 <?php echo $homework_count; ?>
+                                            <?php echo Olama_School_Helpers::translate('Homeworks'); ?>                 <?php echo $homework_count; ?>
                                         <?php endif; ?>
                                         <?php if ($review_count > 0): ?>
                                             <?php if ($homework_count > 0): ?> , <?php endif; ?>
-                                            <?php echo Olama_School_Helpers::translate('المراجعات'); ?>                 <?php echo $review_count; ?>
+                                            <?php echo Olama_School_Helpers::translate('Reviews'); ?>                 <?php echo $review_count; ?>
                                         <?php endif; ?>
                                         <?php if ($homework_count === 0 && $review_count === 0): ?>
                                             0
