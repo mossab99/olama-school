@@ -5,7 +5,9 @@ global $wpdb;
 $tables = [
     $wpdb->prefix . 'olama_curriculum_units',
     $wpdb->prefix . 'olama_curriculum_lessons',
-    $wpdb->prefix . 'olama_plans'
+    $wpdb->prefix . 'olama_plans',
+    $wpdb->prefix . 'olama_semester_exams',
+    $wpdb->prefix . 'olama_exams'
 ];
 
 foreach ($tables as $table) {

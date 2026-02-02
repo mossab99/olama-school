@@ -576,6 +576,15 @@ class Olama_School_DB
 		if (!in_array('semester_exam_id', $exam_col_names)) {
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD COLUMN semester_exam_id mediumint(9) DEFAULT NULL AFTER semester_id");
 		}
+		if (!in_array('grade_id', $exam_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD COLUMN grade_id mediumint(9) NOT NULL AFTER semester_exam_id");
+
+			// Backfill grade_id from semester_exams if possible
+			$wpdb->query("UPDATE {$wpdb->prefix}olama_exams e 
+						 JOIN {$wpdb->prefix}olama_semester_exams se ON e.semester_exam_id = se.id 
+						 SET e.grade_id = se.grade_id 
+						 WHERE e.grade_id = 0 AND se.grade_id IS NOT NULL AND se.grade_id > 0");
+		}
 		if (!in_array('room_number', $exam_col_names)) {
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD COLUMN room_number varchar(50) DEFAULT NULL AFTER exam_date");
 		}
