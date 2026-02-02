@@ -179,7 +179,13 @@ if ($selected_semester_exam_id) {
                                 <div class="date-display"><?php echo $exam->formatted_date; ?></div>
                                 <div class="date-edit" style="display: none;">
                                     <input type="text" class="olama-datepicker inline-date-input"
-                                        data-exam-id="<?php echo $exam->id; ?>" value="<?php echo $exam->formatted_date; ?>"
+                                        data-exam-id="<?php echo $exam->id; ?>"
+                                        data-year-id="<?php echo $exam->academic_year_id; ?>"
+                                        data-semester-id="<?php echo $exam->semester_id; ?>"
+                                        data-grade-id="<?php echo $exam->grade_id; ?>"
+                                        data-subject-id="<?php echo $exam->subject_id; ?>"
+                                        data-semester-exam-id="<?php echo $exam->semester_exam_id; ?>"
+                                        value="<?php echo $exam->formatted_date; ?>"
                                         style="width: 100px; padding: 4px; font-size: 12px;">
                                     <div class="inline-actions" style="margin-top: 5px;">
                                         <button type="button"
@@ -504,11 +510,11 @@ if ($selected_semester_exam_id) {
         });
 
         // Inline Date Edit Toggling
-        $(document).on('click', '.edit-exam-date-inline', function() {
+        $(document).on('click', '.edit-exam-date-inline', function () {
             var row = $(this).closest('tr');
             row.find('.date-display').hide();
             row.find('.date-edit').show();
-            
+
             // Initialize datepicker if not already initialized
             var input = row.find('.inline-date-input');
             if (!input.hasClass('hasDatepicker')) {
@@ -520,20 +526,25 @@ if ($selected_semester_exam_id) {
             }
         });
 
-        $(document).on('click', '.cancel-inline-date', function() {
+        $(document).on('click', '.cancel-inline-date', function () {
             var row = $(this).closest('tr');
             row.find('.date-edit').hide();
             row.find('.date-display').show();
         });
 
-        $(document).on('click', '.save-inline-date', function() {
+        $(document).on('click', '.save-inline-date', function () {
             var btn = $(this);
             var row = btn.closest('tr');
             var input = row.find('.inline-date-input');
             var newDate = input.val();
             var examId = input.data('exam-id');
+            var yearId = input.data('year-id');
+            var semesterId = input.data('semester-id');
+            var gradeId = input.data('grade-id');
+            var subjectId = input.data('subject-id');
+            var semesterExamId = input.data('semester-exam-id');
 
-            console.log('Saving exam date:', examId, newDate);
+            console.log('Saving exam date:', examId, newDate, yearId, semesterId, gradeId, subjectId);
 
             if (!validateDate(newDate)) return;
 
@@ -543,8 +554,13 @@ if ($selected_semester_exam_id) {
                 action: 'olama_save_exam',
                 nonce: $('#olama_exam_nonce_field').val(),
                 id: examId,
+                academic_year_id: yearId,
+                semester_id: semesterId,
+                grade_id: gradeId,
+                subject_id: subjectId,
+                semester_exam_id: semesterExamId,
                 exam_date: newDate
-            }, function(response) {
+            }, function (response) {
                 console.log('Response:', response);
                 if (response.success) {
                     row.find('.date-display').text(newDate);
@@ -555,7 +571,7 @@ if ($selected_semester_exam_id) {
                     alert('Error: ' + (response.data || 'Unknown error'));
                     btn.prop('disabled', false).text('<?php _e('Save', 'olama-school'); ?>');
                 }
-            }).fail(function(xhr, status, error) {
+            }).fail(function (xhr, status, error) {
                 console.error('AJAX Error:', error);
                 alert('Connection error');
                 btn.prop('disabled', false).text('<?php _e('Save', 'olama-school'); ?>');
