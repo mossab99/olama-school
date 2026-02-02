@@ -41,6 +41,8 @@ class Olama_School_Admin
         add_action('wp_ajax_olama_mark_notification_read', array($this, 'ajax_mark_notification_read'));
         add_action('wp_ajax_olama_get_notifications', array($this, 'ajax_get_notifications'));
         add_action('wp_ajax_olama_get_family_students', array($this, 'ajax_get_family_students'));
+        add_action('wp_ajax_olama_get_units', array($this, 'ajax_get_units'));
+        add_action('wp_ajax_olama_get_lessons', array($this, 'ajax_get_lessons'));
         add_action('admin_init', array($this, 'restrict_teacher_access'));
         add_action('admin_bar_menu', array($this, 'clean_teacher_admin_bar'), 999);
 
@@ -2076,6 +2078,29 @@ class Olama_School_Admin
         }
 
         wp_send_json_success(array('message' => sprintf(__('%d subjects added to exam.', 'olama-school'), $added)));
+    }
+
+    /**
+     * AJAX: Get Units for Exam Material selection
+     */
+    public function ajax_get_units()
+    {
+        $subject_id = intval($_REQUEST['subject_id']);
+        $grade_id = intval($_REQUEST['grade_id']);
+        $semester_id = intval($_REQUEST['semester_id']);
+
+        $units = Olama_School_Unit::get_units($subject_id, $grade_id, $semester_id);
+        wp_send_json_success($units);
+    }
+
+    /**
+     * AJAX: Get Lessons for Exam Material selection
+     */
+    public function ajax_get_lessons()
+    {
+        $unit_id = intval($_REQUEST['unit_id']);
+        $lessons = Olama_School_Lesson::get_lessons($unit_id);
+        wp_send_json_success($lessons);
     }
 
     /**

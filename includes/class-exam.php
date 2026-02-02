@@ -65,12 +65,21 @@ class Olama_School_Exam
             'exercise_book_material' => 'sanitize_textarea_field',
             'notebook_material' => 'sanitize_textarea_field',
             'teacher_notes' => 'sanitize_textarea_field',
+            'exam_material_json' => 'wp_unslash', // JSON data, needs special handling
             'status' => 'sanitize_text_field'
         );
 
         foreach ($keys as $key => $sanitizer) {
             if (isset($data[$key]) && $data[$key] !== '') {
-                $fields[$key] = $sanitizer === 'intval' ? intval($data[$key]) : $sanitizer($data[$key]);
+                if ($key === 'exam_material_json') {
+                    // Validate and sanitize JSON data
+                    $json_data = is_string($data[$key]) ? $data[$key] : json_encode($data[$key]);
+                    $fields[$key] = $json_data;
+                } elseif ($sanitizer === 'intval') {
+                    $fields[$key] = intval($data[$key]);
+                } else {
+                    $fields[$key] = $sanitizer($data[$key]);
+                }
             } elseif ($existing && isset($existing[$key])) {
                 $fields[$key] = $existing[$key];
             } elseif ($key === 'status') {

@@ -228,7 +228,7 @@ if ($selected_semester_exam_id) {
 
     <!-- Material Edit Modal -->
     <div id="material-modal" class="olama-modal" style="display: none;">
-        <div class="olama-modal-content">
+        <div class="olama-modal-content" style="max-width: 800px;">
             <div class="olama-modal-header">
                 <h2><?php echo Olama_School_Helpers::translate('Exam Material & Details'); ?></h2>
                 <span class="olama-modal-close" onclick="closeModal('material-modal')">&times;</span>
@@ -241,41 +241,64 @@ if ($selected_semester_exam_id) {
                 <input type="hidden" name="grade_id" id="material_grade_id">
                 <input type="hidden" name="subject_id" id="material_subject_id">
                 <input type="hidden" name="semester_exam_id" id="material_semester_exam_id">
+                <input type="hidden" name="exam_material_json" id="exam_material_json">
                 <input type="hidden" name="action" value="olama_save_exam">
 
-                <div class="olama-form-grid">
-                    <div class="form-field full-width">
-                        <label><?php echo Olama_School_Helpers::translate('Student Book Material'); ?></label>
-                        <textarea name="student_book_material" rows="2"
-                            placeholder="<?php echo Olama_School_Helpers::translate('e.g. Pages 10-25, Units 1-2'); ?>"></textarea>
+                <div style="padding: 20px; max-height: 70vh; overflow-y: auto;">
+                    <!-- Curriculum Material Section -->
+                    <div class="material-section">
+                        <h3
+                            style="margin: 0 0 15px; font-size: 14px; color: #475569; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                            <?php echo Olama_School_Helpers::translate('Curriculum Material'); ?>
+                        </h3>
+                        <table id="curriculum-material-table" class="widefat" style="margin-bottom: 10px;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30%;"><?php echo Olama_School_Helpers::translate('Unit'); ?></th>
+                                    <th style="width: 30%;"><?php echo Olama_School_Helpers::translate('Lesson'); ?>
+                                    </th>
+                                    <th style="width: 35%;">
+                                        <?php echo Olama_School_Helpers::translate('Required Material'); ?></th>
+                                    <th style="width: 5%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="curriculum-rows">
+                                <!-- Dynamic rows will be added here -->
+                            </tbody>
+                        </table>
+                        <button type="button" id="add-curriculum-row" class="button button-secondary">
+                            <span class="dashicons dashicons-plus-alt2" style="vertical-align: middle;"></span>
+                            <?php echo Olama_School_Helpers::translate('Add Row'); ?>
+                        </button>
                     </div>
 
-                    <div class="form-field">
-                        <label><?php echo Olama_School_Helpers::translate('Workbook Material'); ?></label>
-                        <textarea name="workbook_material" rows="2"></textarea>
+                    <!-- Booklets & Notebooks Section -->
+                    <div class="material-section" style="margin-top: 20px;">
+                        <h3
+                            style="margin: 0 0 10px; font-size: 14px; color: #475569; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                            <?php echo Olama_School_Helpers::translate('Booklets & Notebooks'); ?>
+                        </h3>
+                        <textarea id="booklets_notebooks" rows="3" style="width: 100%;"
+                            placeholder="<?php echo Olama_School_Helpers::translate('e.g., Worksheet #3, Notebook entries from week 2'); ?>"></textarea>
                     </div>
 
-                    <div class="form-field">
-                        <label><?php echo Olama_School_Helpers::translate('Notebook Material'); ?></label>
-                        <textarea name="notebook_material" rows="2"></textarea>
+                    <!-- Teacher Notes Section -->
+                    <div class="material-section" style="margin-top: 20px;">
+                        <h3
+                            style="margin: 0 0 10px; font-size: 14px; color: #475569; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                            <?php echo Olama_School_Helpers::translate('Teacher Notes'); ?>
+                        </h3>
+                        <textarea name="teacher_notes" id="material_teacher_notes" rows="2"
+                            style="width: 100%;"></textarea>
                     </div>
 
-                    <div class="form-field full-width">
-                        <label><?php echo Olama_School_Helpers::translate('Detailed Description'); ?></label>
-                        <textarea name="description" rows="3"></textarea>
-                    </div>
-
-                    <div class="form-field full-width">
-                        <label><?php echo Olama_School_Helpers::translate('Teacher Notes'); ?></label>
-                        <textarea name="teacher_notes" rows="2"></textarea>
-                    </div>
-
-                    <div class="form-field">
-                        <label><?php echo Olama_School_Helpers::translate('Status'); ?></label>
-                        <select name="status">
+                    <!-- Status -->
+                    <div class="form-field" style="margin-top: 20px;">
+                        <label
+                            style="font-weight: 600; font-size: 13px; color: #475569;"><?php echo Olama_School_Helpers::translate('Status'); ?></label>
+                        <select name="status" style="margin-top: 5px;">
                             <option value="draft">
-                                <?php echo Olama_School_Helpers::translate('Draft / Not Completed'); ?>
-                            </option>
+                                <?php echo Olama_School_Helpers::translate('Draft / Not Completed'); ?></option>
                             <option value="completed"><?php echo Olama_School_Helpers::translate('Completed'); ?>
                             </option>
                         </select>
@@ -314,7 +337,7 @@ if ($selected_semester_exam_id) {
                         <select name="semester_exam_id" id="add_semester_exam_id" required>
                             <option value=""><?php echo Olama_School_Helpers::translate('Choose'); ?></option>
                             <?php foreach ($semester_exams as $se): ?>
-                                <option value="<?php echo $se->id; ?>"><?php echo esc_html($se->exam_name); ?></option>
+                                    <option value="<?php echo $se->id; ?>"><?php echo esc_html($se->exam_name); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -324,7 +347,7 @@ if ($selected_semester_exam_id) {
                         <select name="subject_id" required>
                             <option value=""><?php echo Olama_School_Helpers::translate('Choose'); ?></option>
                             <?php foreach ($subjects as $sb): ?>
-                                <option value="<?php echo $sb->id; ?>"><?php echo esc_html($sb->subject_name); ?></option>
+                                    <option value="<?php echo $sb->id; ?>"><?php echo esc_html($sb->subject_name); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -450,13 +473,13 @@ if ($selected_semester_exam_id) {
     }
 
     <?php if (Olama_School_Helpers::is_arabic()): ?>
-        .olama-exam-wrap {
-            direction: rtl;
-        }
+            .olama-exam-wrap {
+                direction: rtl;
+            }
 
-        .olama-modal-footer {
-            justify-content: flex-start;
-        }
+            .olama-modal-footer {
+                justify-content: flex-start;
+            }
 
     <?php endif; ?>
 </style>
@@ -578,6 +601,130 @@ if ($selected_semester_exam_id) {
             });
         });
 
+        // Material Modal - Curriculum Table Handling
+        var currentUnits = [];
+        var unitLessonsCache = {};
+
+        function createCurriculumRow(unitId, lessonId, material) {
+            var gradeId = $('#material_grade_id').val();
+            var subjectId = $('#material_subject_id').val();
+            var semesterId = $('#material_semester_id').val();
+
+            var row = $('<tr class="curriculum-row">' +
+                '<td><select class="unit-select" style="width: 100%;"><option value="">-- <?php echo Olama_School_Helpers::translate('Select Unit'); ?> --</option></select></td>' +
+                '<td><select class="lesson-select" style="width: 100%;"><option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option></select></td>' +
+                '<td><input type="text" class="material-input" style="width: 100%;" placeholder="<?php echo Olama_School_Helpers::translate('e.g., Pages 10-15'); ?>"></td>' +
+                '<td><button type="button" class="button button-small remove-row" style="color: #dc2626;"><span class="dashicons dashicons-no"></span></button></td>' +
+                '</tr>');
+
+            // Populate units if we have cached data
+            if (currentUnits.length > 0) {
+                var unitSelect = row.find('.unit-select');
+                currentUnits.forEach(function(unit) {
+                    unitSelect.append('<option value="' + unit.id + '">' + unit.unit_name + '</option>');
+                });
+                if (unitId) {
+                    unitSelect.val(unitId);
+                    loadLessonsForRow(row, unitId, lessonId);
+                }
+            } else {
+                loadUnits(gradeId, subjectId, semesterId, function(units) {
+                    currentUnits = units;
+                    var unitSelect = row.find('.unit-select');
+                    units.forEach(function(unit) {
+                        unitSelect.append('<option value="' + unit.id + '">' + unit.unit_name + '</option>');
+                    });
+                    if (unitId) {
+                        unitSelect.val(unitId);
+                        loadLessonsForRow(row, unitId, lessonId);
+                    }
+                });
+            }
+
+            if (material) row.find('.material-input').val(material);
+
+            return row;
+        }
+
+        function loadUnits(gradeId, subjectId, semesterId, callback) {
+            $.post(ajaxurl, {
+                action: 'olama_get_units',
+                grade_id: gradeId,
+                subject_id: subjectId,
+                semester_id: semesterId
+            }, function(response) {
+                if (response.success) {
+                    callback(response.data);
+                } else {
+                    callback([]);
+                }
+            });
+        }
+
+        function loadLessonsForRow(row, unitId, selectedLessonId) {
+            if (unitLessonsCache[unitId]) {
+                populateLessons(row, unitLessonsCache[unitId], selectedLessonId);
+            } else {
+                $.post(ajaxurl, {
+                    action: 'olama_get_lessons',
+                    unit_id: unitId
+                }, function(response) {
+                    if (response.success) {
+                        unitLessonsCache[unitId] = response.data;
+                        populateLessons(row, response.data, selectedLessonId);
+                    }
+                });
+            }
+        }
+
+        function populateLessons(row, lessons, selectedLessonId) {
+            var lessonSelect = row.find('.lesson-select');
+            lessonSelect.empty().append('<option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option>');
+            lessons.forEach(function(lesson) {
+                lessonSelect.append('<option value="' + lesson.id + '">' + lesson.lesson_name + '</option>');
+            });
+            if (selectedLessonId) lessonSelect.val(selectedLessonId);
+        }
+
+        function serializeCurriculumData() {
+            var items = [];
+            $('#curriculum-rows tr.curriculum-row').each(function() {
+                var unitId = $(this).find('.unit-select').val();
+                var lessonId = $(this).find('.lesson-select').val();
+                var material = $(this).find('.material-input').val();
+                if (unitId || lessonId || material) {
+                    items.push({
+                        unit_id: unitId ? parseInt(unitId) : null,
+                        lesson_id: lessonId ? parseInt(lessonId) : null,
+                        material: material
+                    });
+                }
+            });
+            return {
+                curriculum_items: items,
+                booklets_notebooks: $('#booklets_notebooks').val(),
+                teacher_notes: $('#material_teacher_notes').val()
+            };
+        }
+
+        $('#add-curriculum-row').on('click', function() {
+            $('#curriculum-rows').append(createCurriculumRow());
+        });
+
+        $(document).on('change', '.unit-select', function() {
+            var row = $(this).closest('tr');
+            var unitId = $(this).val();
+            if (unitId) {
+                loadLessonsForRow(row, unitId);
+            } else {
+                row.find('.lesson-select').empty().append('<option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option>');
+            }
+        });
+
+        $(document).on('click', '.remove-row', function() {
+            $(this).closest('tr').remove();
+        });
+
         $('.edit-exam-material').on('click', function () {
             var data = $(this).data('exam');
             $('#material_exam_id').val(data.id);
@@ -587,14 +734,42 @@ if ($selected_semester_exam_id) {
             $('#material_subject_id').val(data.subject_id);
             $('#material_semester_exam_id').val(data.semester_exam_id);
 
-            var form = $('#material-form');
-            form.find('[name="student_book_material"]').val(data.student_book_material);
-            form.find('[name="workbook_material"]').val(data.workbook_material);
-            form.find('[name="notebook_material"]').val(data.notebook_material);
-            form.find('[name="description"]').val(data.description);
-            form.find('[name="teacher_notes"]').val(data.teacher_notes);
-            form.find('[name="status"]').val(data.status);
+            // Clear previous data
+            $('#curriculum-rows').empty();
+            currentUnits = [];
+            unitLessonsCache = {};
+
+            // Parse existing JSON data if available
+            var materialJson = null;
+            if (data.exam_material_json) {
+                try {
+                    materialJson = JSON.parse(data.exam_material_json);
+                } catch (e) {
+                    console.error('Invalid JSON:', e);
+                }
+            }
+
+            if (materialJson && materialJson.curriculum_items && materialJson.curriculum_items.length > 0) {
+                materialJson.curriculum_items.forEach(function(item) {
+                    $('#curriculum-rows').append(createCurriculumRow(item.unit_id, item.lesson_id, item.material));
+                });
+                $('#booklets_notebooks').val(materialJson.booklets_notebooks || '');
+                $('#material_teacher_notes').val(materialJson.teacher_notes || '');
+            } else {
+                // Add one empty row for new entries
+                $('#curriculum-rows').append(createCurriculumRow());
+                $('#booklets_notebooks').val(data.notebook_material || '');
+                $('#material_teacher_notes').val(data.teacher_notes || '');
+            }
+
+            $('#material-form [name="status"]').val(data.status || 'draft');
             $('#material-modal').fadeIn(200);
+        });
+
+        // Serialize JSON before form submission
+        $('#material-form').on('submit', function(e) {
+            var jsonData = serializeCurriculumData();
+            $('#exam_material_json').val(JSON.stringify(jsonData));
         });
 
         $('#bulk-add-subjects').on('click', function () {

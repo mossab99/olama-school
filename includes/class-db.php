@@ -291,6 +291,7 @@ class Olama_School_DB
 				exercise_book_material text DEFAULT NULL,
 				notebook_material text DEFAULT NULL,
 				teacher_notes text DEFAULT NULL,
+				exam_material_json longtext DEFAULT NULL,
 				status varchar(20) DEFAULT 'draft' NOT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
@@ -590,6 +591,9 @@ class Olama_School_DB
 		}
 		if (!in_array('status', $exam_col_names)) {
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD COLUMN status varchar(20) DEFAULT 'draft' NOT NULL AFTER teacher_notes");
+		}
+		if (!in_array('exam_material_json', $exam_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD COLUMN exam_material_json longtext DEFAULT NULL AFTER teacher_notes");
 		}
 
 		$exam_indices = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}olama_exams WHERE Key_name = 'semester_exam_id'");
