@@ -8,11 +8,23 @@ if (!defined('ABSPATH')) {
 
 $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, $selected_grade_id, $selected_subject_id);
 
-$evaluation_types = array(
-    'ط§ظ„طھظ‚ظˆظٹظ… ط§ظ„ط§ظˆظ„' => Olama_School_Helpers::translate('First Exam'),
-    'ط§ظ„طھظ‚ظˆظٹظ… ط§ظ„ط«ط§ظ†ظٹ' => Olama_School_Helpers::translate('Second Exam'),
-    'ط§ظ„ط§ظ…طھط­ط§ظ† ط§ظ„ظ†ظ‡ط§ط¦ظٹ' => Olama_School_Helpers::translate('Final Exam'),
-);
+// Load dynamic semester exams
+$semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_id);
+$evaluation_types = array();
+if ($semester_exams) {
+    foreach ($semester_exams as $sem_exam) {
+        $evaluation_types[$sem_exam->exam_name] = $sem_exam->exam_name;
+    }
+}
+
+// Fallback to defaults if no exams defined yet
+if (empty($evaluation_types)) {
+    $evaluation_types = array(
+        'First Exam' => Olama_School_Helpers::translate('First Exam'),
+        'Second Exam' => Olama_School_Helpers::translate('Second Exam'),
+        'Final Exam' => Olama_School_Helpers::translate('Final Exam'),
+    );
+}
 ?>
 
 <div class="wrap olama-exam-wrap">

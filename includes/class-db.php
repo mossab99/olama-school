@@ -382,6 +382,17 @@ class Olama_School_DB
 				KEY indicator_id (indicator_id)
 			) $charset_collate;",
 
+			'olama_semester_exams' => "CREATE TABLE {$wpdb->prefix}olama_semester_exams (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				semester_id mediumint(9) NOT NULL,
+				exam_name varchar(100) NOT NULL,
+				start_date date NOT NULL,
+				end_date date NOT NULL,
+				is_active tinyint(1) DEFAULT 0 NOT NULL,
+				PRIMARY KEY  (id),
+				KEY  semester_id (semester_id)
+			) $charset_collate;",
+
 			'olama_stationary' => "CREATE TABLE {$wpdb->prefix}olama_stationary (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				academic_year_id mediumint(9) NOT NULL,

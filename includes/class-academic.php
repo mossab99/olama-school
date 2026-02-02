@@ -630,4 +630,89 @@ class Olama_School_Academic
         }
         return false;
     }
+    /**
+     * Get exams for a semester
+     */
+    public static function get_semester_exams($semester_id)
+    {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}olama_semester_exams WHERE semester_id = %d ORDER BY start_date ASC",
+            $semester_id
+        ));
+    }
+
+    /**
+     * Add semester exam
+     */
+    public static function add_semester_exam($data)
+    {
+        global $wpdb;
+
+        $is_active = $data['is_active'] ?? 0;
+        if ($is_active) {
+            $wpdb->update("{$wpdb->prefix}olama_semester_exams", array('is_active' => 0), array('semester_id' => $data['semester_id']));
+        }
+
+        return $wpdb->insert(
+            "{$wpdb->prefix}olama_semester_exams",
+            array(
+                'semester_id' => $data['semester_id'],
+                'exam_name' => $data['exam_name'],
+                'start_date' => $data['start_date'],
+                'end_date' => $data['end_date'],
+                'is_active' => $is_active,
+            )
+        );
+    }
+
+    /**
+     * Update semester exam
+     */
+    public static function update_semester_exam($exam_id, $data)
+    {
+        global $wpdb;
+
+        $is_active = $data['is_active'] ?? 0;
+        if ($is_active) {
+            $exam = $wpdb->get_row($wpdb->prepare("SELECT semester_id FROM {$wpdb->prefix}olama_semester_exams WHERE id = %d", $exam_id));
+            if ($exam) {
+                $wpdb->update("{$wpdb->prefix}olama_semester_exams", array('is_active' => 0), array('semester_id' => $exam->semester_id));
+            }
+        }
+
+        return $wpdb->update(
+            "{$wpdb->prefix}olama_semester_exams",
+            array(
+                'exam_name' => $data['exam_name'],
+                'start_date' => $data['start_date'],
+                'end_date' => $data['end_date'],
+                'is_active' => $is_active,
+            ),
+            array('id' => $exam_id)
+        );
+    }
+
+    /**
+     * Delete semester exam
+     */
+    public static function delete_semester_exam($exam_id)
+    {
+        global $wpdb;
+        return $wpdb->delete("{$wpdb->prefix}olama_semester_exams", array('id' => $exam_id));
+    }
+
+    /**
+     * Activate a semester exam
+     */
+    public static function activate_semester_exam($exam_id)
+    {
+        global $wpdb;
+        $exam = $wpdb->get_row($wpdb->prepare("SELECT semester_id FROM {$wpdb->prefix}olama_semester_exams WHERE id = %d", $exam_id));
+        if ($exam) {
+            $wpdb->update("{$wpdb->prefix}olama_semester_exams", array('is_active' => 0), array('semester_id' => $exam->semester_id));
+            return $wpdb->update("{$wpdb->prefix}olama_semester_exams", array('is_active' => 1), array('id' => $exam_id));
+        }
+        return false;
+    }
 }

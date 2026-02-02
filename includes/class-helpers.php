@@ -1046,6 +1046,15 @@ class Olama_School_Helpers
         'Feedback History' => 'سجل الملاحظات',
         'Request Edits' => 'طلب تعديلات',
         'Submit Revision' => 'إرسال التعديلات',
+        'Semester exam added successfully.' => 'تم إضافة امتحان الفصل بنجاح.',
+        'Semester exam updated successfully.' => 'تم تحديث امتحان الفصل بنجاح.',
+        'Semester exam deleted.' => 'تم حذف امتحان الفصل.',
+        'Semester exam activated.' => 'تم تفعيل امتحان الفصل.',
+        'Manage Exams' => 'إدارة الامتحانات',
+        'Exams for %s' => 'امتحانات %s',
+        'Add Exam' => 'إضافة امتحان',
+        'Exam Name' => 'اسم الامتحان',
+        'Delete this exam?' => 'حذف هذا الامتحان؟',
         );
 
         return $map[$text] ?? $text;

@@ -1199,6 +1199,61 @@ class Olama_School_Admin
                 exit;
             }
         }
+        // Handle Add Semester Exam
+        if (isset($_POST['add_semester_exam']) && check_admin_referer('olama_add_semester_exam')) {
+            $result = Olama_School_Academic::add_semester_exam(array(
+                'semester_id' => intval($_POST['exam_semester_id']),
+                'exam_name' => sanitize_text_field($_POST['exam_name']),
+                'start_date' => Olama_School_Helpers::sanitize_date($_POST['exam_start_date']),
+                'end_date' => Olama_School_Helpers::sanitize_date($_POST['exam_end_date']),
+                'is_active' => isset($_POST['is_active']) ? 1 : 0,
+            ));
+
+            if ($result) {
+                wp_redirect(add_query_arg(array('olama_msg' => 'semester_exam_added', 'manage_semester' => intval($_POST['exam_semester_id'])), $base_url));
+            } else {
+                wp_redirect(add_query_arg(array('olama_msg' => 'error', 'olama_err' => urlencode(__('Failed to add semester exam.', 'olama-school'))), $base_url));
+            }
+            exit;
+        }
+
+        // Handle Update Semester Exam
+        if (isset($_POST['update_semester_exam']) && check_admin_referer('olama_update_semester_exam')) {
+            $exam_id = intval($_POST['edit_exam_id']);
+            $result = Olama_School_Academic::update_semester_exam($exam_id, array(
+                'exam_name' => sanitize_text_field($_POST['edit_exam_name']),
+                'start_date' => Olama_School_Helpers::sanitize_date($_POST['edit_exam_start_date']),
+                'end_date' => Olama_School_Helpers::sanitize_date($_POST['edit_exam_end_date']),
+                'is_active' => isset($_POST['edit_is_active']) ? 1 : 0,
+            ));
+
+            if ($result !== false) {
+                wp_redirect(add_query_arg(array('olama_msg' => 'semester_exam_updated', 'manage_semester' => intval($_POST['manage_semester'])), $base_url));
+            } else {
+                wp_redirect(add_query_arg(array('olama_msg' => 'error', 'olama_err' => urlencode(__('Failed to update semester exam.', 'olama-school'))), $base_url));
+            }
+            exit;
+        }
+
+        // Handle Delete Semester Exam
+        if (isset($_GET['action']) && $_GET['action'] === 'delete_semester_exam' && isset($_GET['exam_id'])) {
+            $exam_id = intval($_GET['exam_id']);
+            if (check_admin_referer('olama_delete_semester_exam_' . $exam_id)) {
+                Olama_School_Academic::delete_semester_exam($exam_id);
+                wp_redirect(add_query_arg(array('olama_msg' => 'semester_exam_deleted', 'manage_semester' => intval($_GET['manage_semester'])), $base_url));
+                exit;
+            }
+        }
+
+        // Handle Activate Semester Exam
+        if (isset($_GET['action']) && $_GET['action'] === 'activate_semester_exam' && isset($_GET['exam_id'])) {
+            $exam_id = intval($_GET['exam_id']);
+            if (check_admin_referer('olama_activate_semester_exam_' . $exam_id)) {
+                Olama_School_Academic::activate_semester_exam($exam_id);
+                wp_redirect(add_query_arg(array('olama_msg' => 'semester_exam_activated', 'manage_semester' => intval($_GET['manage_semester'])), $base_url));
+                exit;
+            }
+        }
     }
 
     /**
@@ -1241,6 +1296,18 @@ class Olama_School_Admin
                     break;
                 case 'event_deleted':
                     $message = __('Event deleted.', 'olama-school');
+                    break;
+                case 'semester_exam_added':
+                    $message = __('Semester exam added successfully.', 'olama-school');
+                    break;
+                case 'semester_exam_updated':
+                    $message = __('Semester exam updated successfully.', 'olama-school');
+                    break;
+                case 'semester_exam_deleted':
+                    $message = __('Semester exam deleted.', 'olama-school');
+                    break;
+                case 'semester_exam_activated':
+                    $message = __('Semester exam activated.', 'olama-school');
                     break;
                 case 'error':
                     $msg_type = 'error';
