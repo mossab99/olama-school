@@ -74,6 +74,17 @@ class Olama_School_Plan
 
         $plan_type = isset($data['plan_type']) && $data['plan_type'] === 'review' ? 'review' : 'homework';
 
+        // Homework validation
+        if ($plan_type === 'homework') {
+            $hw_eb = trim($data['homework_eb'] ?? '');
+            $hw_nb = trim($data['homework_nb'] ?? '');
+            $hw_ws = trim($data['homework_ws'] ?? '');
+
+            if (empty($hw_eb) && empty($hw_nb) && empty($hw_ws)) {
+                return new WP_Error('missing_homework', Olama_School_Helpers::translate('Please enter at least one homework (Workbook, Notebook, or Booklet/Worksheet).'));
+            }
+        }
+
         // 1. Subject Uniqueness Check (New) - One subject per day regardless of type
         if (!$plan_id) {
             $subject_exists = $wpdb->get_var($wpdb->prepare(

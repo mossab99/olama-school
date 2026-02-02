@@ -448,6 +448,20 @@ jQuery(document).ready(function ($) {
             return false;
         }
 
+        // Homework validation
+        const planType = $('#olama-plan-type').val();
+        if (planType === 'homework') {
+            const hwEB = $('textarea[name="homework_eb"]').val().trim();
+            const hwNB = $('textarea[name="homework_nb"]').val().trim();
+            const hwWS = $('textarea[name="homework_ws"]').val().trim();
+
+            if (!hwEB && !hwNB && !hwWS) {
+                alert(olamaPlan.i18n.atLeastOneHomework || 'Please enter at least one homework (Workbook, Notebook, or Booklet/Worksheet).');
+                e.preventDefault();
+                return false;
+            }
+        }
+
         return true;
     });
 
