@@ -2028,6 +2028,7 @@ class Olama_School_Admin
     {
         global $wpdb;
         check_ajax_referer('olama_save_exam', 'nonce');
+        die('TEST_TEST_TEST');
 
         if (!Olama_School_Permissions::can('olama_manage_exams_schedule')) {
             wp_send_json_error(__('Unauthorized', 'olama-school'));

@@ -17,7 +17,7 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
 <div class="wrap olama-exam-wrap">
     <div class="olama-header-section"
         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h1 style="margin: 0;"><?php echo Olama_School_Helpers::translate('Exam Schedule'); ?></h1>
+        <h1 style="margin: 0;"><?php echo Olama_School_Helpers::translate('Exam Schedule'); ?> DEBUG_IDENTIFIER_123</h1>
         <div style="display: flex; gap: 10px;">
             <button type="button" id="bulk-add-subjects" class="button button-secondary" 
                 <?php echo (!$selected_semester_exam_id || !$selected_grade_id) ? 'disabled' : ''; ?>>
@@ -278,6 +278,9 @@ $exams = Olama_School_Exam::get_exams($selected_year_id, $selected_semester_id, 
                     alert('Error: ' + response.data);
                     btn.prop('disabled', false).text('<?php echo Olama_School_Helpers::translate('Init All Subjects'); ?>');
                 }
+            }).fail(function(xhr, status, error) {
+                alert('Request failed. Status: ' + xhr.status + ', Error: ' + error + '\nResponse: ' + xhr.responseText);
+                btn.prop('disabled', false).text('<?php echo Olama_School_Helpers::translate('Init All Subjects'); ?>');
             });
         });
 
