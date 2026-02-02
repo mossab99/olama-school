@@ -184,23 +184,23 @@ class Olama_School_Helpers
         $ago = new DateTime($datetime);
         $diff = $now->diff($ago);
 
-        $diff->w = floor($diff->d / 7);
-        $diff->d -= $diff->w * 7;
+        $weeks = floor($diff->d / 7);
+        $days = $diff->d - ($weeks * 7);
 
-        $string = array(
-            'y' => 'year',
-            'm' => 'month',
-            'w' => 'week',
-            'd' => 'day',
-            'h' => 'hour',
-            'i' => 'minute',
-            's' => 'second',
+        $units = array(
+            'y' => array('value' => $diff->y, 'label' => 'year'),
+            'm' => array('value' => $diff->m, 'label' => 'month'),
+            'w' => array('value' => $weeks, 'label' => 'week'),
+            'd' => array('value' => $days, 'label' => 'day'),
+            'h' => array('value' => $diff->h, 'label' => 'hour'),
+            'i' => array('value' => $diff->i, 'label' => 'minute'),
+            's' => array('value' => $diff->s, 'label' => 'second'),
         );
-        foreach ($string as $k => &$v) {
-            if ($diff->$k) {
-                $v = $diff->$k . ' ' . __($v . ($diff->$k > 1 ? 's' : ''), 'olama-school');
-            } else {
-                unset($string[$k]);
+
+        $string = array();
+        foreach ($units as $k => $unit) {
+            if ($unit['value']) {
+                $string[$k] = $unit['value'] . ' ' . __($unit['label'] . ($unit['value'] > 1 ? 's' : ''), 'olama-school');
             }
         }
 
