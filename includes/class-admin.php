@@ -1624,6 +1624,7 @@ class Olama_School_Admin
 
         $subjects = $selected_grade_id ? Olama_School_Subject::get_subjects_by_grade($selected_grade_id) : array();
         $selected_subject_id = isset($_GET['subject_id']) ? intval($_GET['subject_id']) : 0;
+        $selected_semester_exam_id = isset($_GET['semester_exam_id']) ? intval($_GET['semester_exam_id']) : 0;
 
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/exam-schedule.php';
     }
