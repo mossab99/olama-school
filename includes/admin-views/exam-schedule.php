@@ -175,7 +175,20 @@ if ($selected_semester_exam_id) {
                             $se_info = reset($se_info);
                             echo $se_info ? esc_html($se_info->exam_name) : esc_html($exam->evaluation_type);
                             ?></td>
-                            <td><?php echo $exam->formatted_date; ?></td>
+                            <td class="date-column">
+                                <div class="date-display"><?php echo $exam->formatted_date; ?></div>
+                                <div class="date-edit" style="display: none;">
+                                    <input type="text" class="olama-datepicker inline-date-input"
+                                        data-exam-id="<?php echo $exam->id; ?>" value="<?php echo $exam->formatted_date; ?>"
+                                        style="width: 100px; padding: 4px; font-size: 12px;">
+                                    <div class="inline-actions" style="margin-top: 5px;">
+                                        <button type="button"
+                                            class="button button-primary button-small save-inline-date"><?php _e('Save', 'olama-school'); ?></button>
+                                        <button type="button"
+                                            class="button button-small cancel-inline-date"><?php _e('Cancel', 'olama-school'); ?></button>
+                                    </div>
+                                </div>
+                            </td>
                             <td><?php echo esc_html($exam->master_room ?: $exam->room_number); ?></td>
                             <td>
                                 <span
@@ -184,8 +197,7 @@ if ($selected_semester_exam_id) {
                                 </span>
                             </td>
                             <td style="text-align: center;">
-                                <button type="button" class="button button-small edit-exam-date"
-                                    data-exam='<?php echo json_encode($exam); ?>'
+                                <button type="button" class="button button-small edit-exam-date-inline"
                                     title="<?php echo Olama_School_Helpers::translate('Edit Date'); ?>">
                                     <span class="dashicons dashicons-calendar-alt"></span>
                                 </button>
@@ -206,44 +218,6 @@ if ($selected_semester_exam_id) {
                 <?php endif; ?>
             </tbody>
         </table>
-    </div>
-
-    <!-- Date Edit Modal -->
-    <div id="date-modal" class="olama-modal" style="display: none;">
-        <div class="olama-modal-content" style="max-width: 400px;">
-            <div class="olama-modal-header">
-                <h2><?php echo Olama_School_Helpers::translate('Edit Exam Date'); ?></h2>
-                <span class="olama-modal-close" onclick="closeModal('date-modal')">&times;</span>
-            </div>
-            <form id="date-form" method="post">
-                <?php wp_nonce_field('olama_save_exam', 'olama_date_nonce_field'); ?>
-                <input type="hidden" name="id" id="date_exam_id">
-                <input type="hidden" name="academic_year_id" id="date_academic_year_id">
-                <input type="hidden" name="semester_id" id="date_semester_id">
-                <input type="hidden" name="grade_id" id="date_grade_id">
-                <input type="hidden" name="subject_id" id="date_subject_id">
-                <input type="hidden" name="semester_exam_id" id="date_semester_exam_id">
-                <input type="hidden" name="action" value="olama_save_exam">
-                <div style="padding: 20px;">
-                    <div class="form-field">
-                        <label><?php echo Olama_School_Helpers::translate('Exam Date'); ?> *</label>
-                        <input type="text" name="exam_date" id="date_exam_date" required class="olama-datepicker"
-                            autocomplete="off">
-                        <?php if ($current_master_exam): ?>
-                            <p class="description" style="margin-top: 5px; font-size: 11px; color: #64748b;">
-                                <?php printf(__('Must be between %s and %s', 'olama-school'), Olama_School_Helpers::format_date($current_master_exam->start_date), Olama_School_Helpers::format_date($current_master_exam->end_date)); ?>
-                            </p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <div class="olama-modal-footer">
-                    <button type="submit"
-                        class="button button-primary"><?php echo Olama_School_Helpers::translate('Save Date'); ?></button>
-                    <button type="button" class="button"
-                        onclick="closeModal('date-modal')"><?php echo Olama_School_Helpers::translate('Cancel'); ?></button>
-                </div>
-            </form>
-        </div>
     </div>
 
     <!-- Material Edit Modal -->
@@ -529,16 +503,55 @@ if ($selected_semester_exam_id) {
             $('#exam-modal').fadeIn(200);
         });
 
-        $('.edit-exam-date').on('click', function () {
-            var data = $(this).data('exam');
-            $('#date_exam_id').val(data.id);
-            $('#date_academic_year_id').val(data.academic_year_id);
-            $('#date_semester_id').val(data.semester_id);
-            $('#date_grade_id').val(data.grade_id);
-            $('#date_subject_id').val(data.subject_id);
-            $('#date_semester_exam_id').val(data.semester_exam_id);
-            $('#date_exam_date').val(data.formatted_date);
-            $('#date-modal').fadeIn(200);
+        // Inline Date Edit Toggling
+        $('.edit-exam-date-inline').on('click', function() {
+            var row = $(this).closest('tr');
+            row.find('.date-display').hide();
+            row.find('.date-edit').fadeIn(200);
+            
+            // Re-initialize datepicker for the inline field
+            row.find('.olama-datepicker').datepicker({
+                dateFormat: '<?php echo (Olama_School_Helpers::get_active_year()) ? "dd-mm-yy" : "yy-mm-dd"; ?>', // Match PHP format
+                changeMonth: true,
+                changeYear: true
+            });
+        });
+
+        $('.cancel-inline-date').on('click', function() {
+            var row = $(this).closest('tr');
+            row.find('.date-edit').hide();
+            row.find('.date-display').fadeIn(200);
+        });
+
+        $('.save-inline-date').on('click', function() {
+            var btn = $(this);
+            var row = btn.closest('tr');
+            var input = row.find('.inline-date-input');
+            var newDate = input.val();
+            var examId = input.data('exam-id');
+
+            if (!validateDate(newDate)) return;
+
+            btn.prop('disabled', true).text('...');
+
+            var data = {
+                action: 'olama_save_exam',
+                nonce: $('#olama_exam_nonce_field').val(),
+                id: examId,
+                exam_date: newDate
+            };
+
+            $.post(ajaxurl, data, function(response) {
+                if (response.success) {
+                    row.find('.date-display').text(newDate);
+                    row.find('.date-edit').hide();
+                    row.find('.date-display').fadeIn(200);
+                    btn.prop('disabled', false).text('<?php _e('Save', 'olama-school'); ?>');
+                } else {
+                    alert('Error: ' + response.data);
+                    btn.prop('disabled', false).text('<?php _e('Save', 'olama-school'); ?>');
+                }
+            });
         });
 
         $('.edit-exam-material').on('click', function () {
