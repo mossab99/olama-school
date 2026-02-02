@@ -208,7 +208,7 @@ if ($selected_semester_exam_id) {
                                     <span class="dashicons dashicons-calendar-alt"></span>
                                 </button>
                                 <button type="button" class="button button-small edit-exam-material"
-                                    data-exam='<?php echo json_encode($exam); ?>'
+                                    data-exam='<?php echo esc_attr(json_encode($exam)); ?>'
                                     title="<?php echo Olama_School_Helpers::translate('Exam Material'); ?>">
                                     <span class="dashicons dashicons-media-text"></span>
                                 </button>
@@ -630,13 +630,13 @@ if ($selected_semester_exam_id) {
                     loadLessonsForRow(row, unitId, lessonId);
                 }
             } else {
-                loadUnits(gradeId, subjectId, semesterId, functio n(units) {
+                loadUnits(gradeId, subjectId, semesterId, function (units) {
                     currentUnits = units;
                     var unitSelect = row.find('.unit-select');
-                    units.forEach(functi on(unit) {
+                    units.forEach(function (unit) {
                         unitSelect.append('<option value="' + unit.id + '">' + unit.unit_name + '</option>');
                     });
-                    if(unitId) {
+                    if (unitId) {
                         unitSelect.val(unitId);
                         loadLessonsForRow(row, unitId, lessonId);
                     }
@@ -655,182 +655,182 @@ if ($selected_semester_exam_id) {
                 grade_id: gradeId,
                 subject_id: subjectId,
                 semester_id: semesterId
-            }, funct ion(response) {
+            }, function (response) {
                 console.log('Units response:', response);
-                if(response.success) {
-                callback(response.data);
-            } else {
-                console.error('Failed to load units:', response);
+                if (response.success) {
+                    callback(response.data);
+                } else {
+                    console.error('Failed to load units:', response);
+                    callback([]);
+                }
+            }).fail(function (xhr, status, error) {
+                console.error('AJAX Error loading units:', error);
                 callback([]);
-            }
-        }).fail(func tion(xhr, status, error) {
-            console.error('AJAX Error loading units:', error);
-            callback([]);
-        });
+            });
         }
 
-    function loadLessonsForRow(row, unitId, selectedLessonId) {
-        if (unitLessonsCache[unitId]) {
-            populateLessons(row, unitLessonsCache[unitId], selectedLessonId);
-        } else {
-            $.post(ajaxurl, {
-                action: 'olama_get_lessons',
-                unit_id: unitId
-            }, fun ction(response) {
-                if(response.success) {
-                unitLessonsCache[unitId] = response.data;
-                populateLessons(row, response.data, selectedLessonId);
-            }
-        });
-    }
-        }
-
-    function populateLessons(row, lessons, selectedLessonId) {
-        var lessonSelect = row.find('.lesson-select');
-        lessonSelect.empty().append('<option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option>');
-        lessons.forEach(fu nction(lesson) {
-            lessonSelect.append('<option value="' + lesson.id + '">' + lesson.lesson_title + '</option>');
-        });
-        if (selectedLessonId) lessonSelect.val(selectedLessonId);
-    }
-
-    function serializeCurriculumData() {
-        var items = [];
-        $('#curriculum-rows tr.curriculum-row').each(function () {
-            var unitId = $(this).find('.unit-select').val();
-            var lessonId = $(this).find('.lesson-select').val();
-            var material = $(this).find('.material-input').val();
-            if (unitId || lessonId || material) {
-                items.push({
-                    unit_id: unitId ? parseInt(unitId) : null,
-                    lesson_id: lessonId ? parseInt(lessonId) : null,
-                    material: material
+        function loadLessonsForRow(row, unitId, selectedLessonId) {
+            if (unitLessonsCache[unitId]) {
+                populateLessons(row, unitLessonsCache[unitId], selectedLessonId);
+            } else {
+                $.post(ajaxurl, {
+                    action: 'olama_get_lessons',
+                    unit_id: unitId
+                }, function (response) {
+                    if (response.success) {
+                        unitLessonsCache[unitId] = response.data;
+                        populateLessons(row, response.data, selectedLessonId);
+                    }
                 });
             }
-        });
-        return {
-            curriculum_items: items,
-            booklets_notebooks: $('#booklets_notebooks').val(),
-            teacher_notes: $('#material_teacher_notes').val()
-        };
-    }
-
-    $('#add-curriculum-row').on('click', function () {
-        $('#curriculum-rows').append(createCurriculumRow());
-    });
-
-    $(document).on('change', '.unit-select', function () {
-        var row = $(this).closest('tr');
-        var unitId = $(this).val();
-        if (unitId) {
-            loadLessonsForRow(row, unitId);
-        } else {
-            row.find('.lesson-select').empty().append('<option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option>');
-        }
-    });
-
-    $(document).on('click', '.remove-row ', function () {
-        $(this).closest('tr').remove();
-    });
-
-    $(document).on('click', '.edit-exam-material', function () {
-        var data = $(this).data('exam');
-        $('#material_exam_id').val(data.id);
-        $('#material_academic_year_id').val(data.academic_year_id);
-        $('#material_semester_id').val(data.semester_id);
-        $('#material_grade_id').val(data.grade_id);
-        $('#material_subject_id').val(data.subject_id);
-        $('#material_semester_exam_id').val(data.semester_exam_id);
-
-        // Clear previous data
-        $('#curriculum-rows').empty();
-        currentUnits = [];
-        unitLessonsCache = {};
-
-        // Parse existing JSON data if available
-        var materialJson = null;
-        if (data.exam_material_json) {
-            try {
-                materialJson = JSON.parse(data.exam_material_json);
-            } catch (e) {
-                console.error('Invalid JSON:', e);
-            }
         }
 
-        if (materialJson && materialJson.curriculum_items && materialJson.curriculum_items.length > 0) {
-            materialJson.curriculum_items.forE ach(function (item) {
-                $('#curriculum-rows').append(createCurriculumRow(item.unit_id, item.lesson_id, item.material));
+        function populateLessons(row, lessons, selectedLessonId) {
+            var lessonSelect = row.find('.lesson-select');
+            lessonSelect.empty().append('<option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option>');
+            lessons.forEach(function (lesson) {
+                lessonSelect.append('<option value="' + lesson.id + '">' + lesson.lesson_title + '</option>');
             });
-            $('#booklets_notebooks').val(materialJson.booklets_notebooks || '');
-            $('#material_teacher_notes').val(materialJson.teacher_notes || '');
-        } else {
-            // Add one empty row for new entries
+            if (selectedLessonId) lessonSelect.val(selectedLessonId);
+        }
+
+        function serializeCurriculumData() {
+            var items = [];
+            $('#curriculum-rows tr.curriculum-row').each(function () {
+                var unitId = $(this).find('.unit-select').val();
+                var lessonId = $(this).find('.lesson-select').val();
+                var material = $(this).find('.material-input').val();
+                if (unitId || lessonId || material) {
+                    items.push({
+                        unit_id: unitId ? parseInt(unitId) : null,
+                        lesson_id: lessonId ? parseInt(lessonId) : null,
+                        material: material
+                    });
+                }
+            });
+            return {
+                curriculum_items: items,
+                booklets_notebooks: $('#booklets_notebooks').val(),
+                teacher_notes: $('#material_teacher_notes').val()
+            };
+        }
+
+        $('#add-curriculum-row').on('click', function () {
             $('#curriculum-rows').append(createCurriculumRow());
-            $('#booklets_notebooks').val(data.notebook_material || '');
-            $('#material_teacher_notes').val(data.teacher_notes || '');
-        }
+        });
 
-        $('#material-form [name="status"]').val(data.status || 'draft');
-        $('#material-modal').fadeIn(200);
-    });
-
-    // Note: JSON serialization for material-form is handled in the combined subm it handler below
-
-    $('#bulk-add-subjects').on('click', function () {
-        if (!confirm('<?php echo Olama_School_Helpers::translate('This will initialize all subjects for this grade in the selected exam. Continue?'); ?>')) return;
-
-        var data = {
-            action: 'olama_bulk_add_exam_subjects',
-            nonce: $('#olama_exam_nonce_field').val(),
-            academic_year_id: '<?php echo $selected_year_id; ?>',
-            semester_id: '<?php echo $selected_semester_id; ?>',
-            semester_exam_id: '<?php echo $selected_semester_exam_id; ?>',
-            grade_id: '<?php echo $selected_grade_id; ?>'
-        };
-
-        var btn = $(this);
-        btn.prop('disabled', true).text('<?php _e('Processing...', 'olama-school'); ?>');
-
-        $.post(ajaxurl, data, function (response) {
-            if (response.success) {
-                alert(response.data.message);
-                window.location.reload();
+        $(document).on('change', '.unit-select', function () {
+            var row = $(this).closest('tr');
+            var unitId = $(this).val();
+            if (unitId) {
+                loadLessonsForRow(row, unitId);
             } else {
-                alert('Error: ' + response.data);
-                btn.prop('disabled', false).text('<?php echo Olama_School_Helpers::translate('Init All Subjects'); ?>');
+                row.find('.lesson-select').empty().append('<option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option>');
             }
         });
-    });
 
-    $('.olama-modal-close').on('click', function () {
-        $(this).closest('.olama-modal').fadeOut(200);
-    });
-
-    $('#date-form, #material-form, #exam-form').on('submit', function (e) {
-        e.preventDefault();
-        var form = $(this);
-
-        // Serialize JSON data for Material form BEFORE form.serialize()
-        if (form.attr('id') === 'material-form') {
-            var jsonData = serializeCurriculumData();
-            $('#exam_material_json').val(JSON.stringify(jsonData));
-        }
-
-        // Date validation for forms that have exam_date
-        var dateVal = form.find('[name="exam_date"]').val();
-        if (dateVal && !validateDate(dateVal)) {
-            return;
-        }
-
-        var formData = form.serialize() + '&action=olama_save_exam&nonce=' + $('#olama_exam_nonce_field').val();
-
-        $.post(ajaxurl, formData, function (response) {
-            if (response.success) {
-                window.location.reload();
-            } else {
-                alert('Error: ' + response.data);
-            }
+        $(document).on('click', '.remove-row ', function () {
+            $(this).closest('tr').remove();
         });
-    });
+
+        $(document).on('click', '.edit-exam-material', function () {
+            var data = $(this).data('exam');
+            $('#material_exam_id').val(data.id);
+            $('#material_academic_year_id').val(data.academic_year_id);
+            $('#material_semester_id').val(data.semester_id);
+            $('#material_grade_id').val(data.grade_id);
+            $('#material_subject_id').val(data.subject_id);
+            $('#material_semester_exam_id').val(data.semester_exam_id);
+
+            // Clear previous data
+            $('#curriculum-rows').empty();
+            currentUnits = [];
+            unitLessonsCache = {};
+
+            // Parse existing JSON data if available
+            var materialJson = null;
+            if (data.exam_material_json) {
+                try {
+                    materialJson = JSON.parse(data.exam_material_json);
+                } catch (e) {
+                    console.error('Invalid JSON:', e);
+                }
+            }
+
+            if (materialJson && materialJson.curriculum_items && materialJson.curriculum_items.length > 0) {
+                materialJson.curriculum_items.forEach(function (item) {
+                    $('#curriculum-rows').append(createCurriculumRow(item.unit_id, item.lesson_id, item.material));
+                });
+                $('#booklets_notebooks').val(materialJson.booklets_notebooks || '');
+                $('#material_teacher_notes').val(materialJson.teacher_notes || '');
+            } else {
+                // Add one empty row for new entries
+                $('#curriculum-rows').append(createCurriculumRow());
+                $('#booklets_notebooks').val(data.notebook_material || '');
+                $('#material_teacher_notes').val(data.teacher_notes || '');
+            }
+
+            $('#material-form [name="status"]').val(data.status || 'draft');
+            $('#material-modal').fadeIn(200);
+        });
+
+        // Note: JSON serialization for material-form is handled in the combined subm it handler below
+
+        $('#bulk-add-subjects').on('click', function () {
+            if (!confirm('<?php echo Olama_School_Helpers::translate('This will initialize all subjects for this grade in the selected exam. Continue?'); ?>')) return;
+
+            var data = {
+                action: 'olama_bulk_add_exam_subjects',
+                nonce: $('#olama_exam_nonce_field').val(),
+                academic_year_id: '<?php echo $selected_year_id; ?>',
+                semester_id: '<?php echo $selected_semester_id; ?>',
+                semester_exam_id: '<?php echo $selected_semester_exam_id; ?>',
+                grade_id: '<?php echo $selected_grade_id; ?>'
+            };
+
+            var btn = $(this);
+            btn.prop('disabled', true).text('<?php _e('Processing...', 'olama-school'); ?>');
+
+            $.post(ajaxurl, data, function (response) {
+                if (response.success) {
+                    alert(response.data.message);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + response.data);
+                    btn.prop('disabled', false).text('<?php echo Olama_School_Helpers::translate('Init All Subjects'); ?>');
+                }
+            });
+        });
+
+        $('.olama-modal-close').on('click', function () {
+            $(this).closest('.olama-modal').fadeOut(200);
+        });
+
+        $('#date-form, #material-form, #exam-form').on('submit', function (e) {
+            e.preventDefault();
+            var form = $(this);
+
+            // Serialize JSON data for Material form BEFORE form.serialize()
+            if (form.attr('id') === 'material-form') {
+                var jsonData = serializeCurriculumData();
+                $('#exam_material_json').val(JSON.stringify(jsonData));
+            }
+
+            // Date validation for forms that have exam_date
+            var dateVal = form.find('[name="exam_date"]').val();
+            if (dateVal && !validateDate(dateVal)) {
+                return;
+            }
+
+            var formData = form.serialize() + '&action=olama_save_exam&nonce=' + $('#olama_exam_nonce_field').val();
+
+            $.post(ajaxurl, formData, function (response) {
+                if (response.success) {
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + response.data);
+                }
+            });
+        });
     });
 </script>
