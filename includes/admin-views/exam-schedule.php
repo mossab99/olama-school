@@ -622,7 +622,7 @@ if ($selected_semester_exam_id) {
             // Populate units if we have cached data
             if (currentUnits.length > 0) {
                 var unitSelect = row.find('.unit-select');
-                currentUnits.forEach(function (unit) {
+                currentUnits.forEach(function  (unit) {
                     unitSelect.append('<option value="' + unit.id + '">' + unit.unit_name + '</option>');
                 });
                 if (unitId) {
@@ -630,10 +630,10 @@ if ($selected_semester_exam_id) {
                     loadLessonsForRow(row, unitId, lessonId);
                 }
             } else {
-                loadUnits(gradeId, subjectId, semesterId, function (units) {
+                loadUnits(gradeId, subjectId, semesterId, functio n (units) {
                     currentUnits = units;
                     var unitSelect = row.find('.unit-select');
-                    units.forEach(function (unit) {
+                    units.forEach(functi on (unit) {
                         unitSelect.append('<option value="' + unit.id + '">' + unit.unit_name + '</option>');
                     });
                     if (unitId) {
@@ -655,7 +655,7 @@ if ($selected_semester_exam_id) {
                 grade_id: gradeId,
                 subject_id: subjectId,
                 semester_id: semesterId
-            }, function (response) {
+            }, funct ion (response) {
                 console.log('Units response:', response);
                 if (response.success) {
                     callback(response.data);
@@ -663,7 +663,7 @@ if ($selected_semester_exam_id) {
                     console.error('Failed to load units:', response);
                     callback([]);
                 }
-            }).fail(function (xhr, status, error) {
+            }).fail(func tion (xhr, status, error) {
                 console.error('AJAX Error loading units:', error);
                 callback([]);
             });
@@ -676,7 +676,7 @@ if ($selected_semester_exam_id) {
                 $.post(ajaxurl, {
                     action: 'olama_get_lessons',
                     unit_id: unitId
-                }, function (response) {
+                }, fun ction (response) {
                     if (response.success) {
                         unitLessonsCache[unitId] = response.data;
                         populateLessons(row, response.data, selectedLessonId);
@@ -688,7 +688,7 @@ if ($selected_semester_exam_id) {
         function populateLessons(row, lessons, selectedLessonId) {
             var lessonSelect = row.find('.lesson-select');
             lessonSelect.empty().append('<option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option>');
-            lessons.forEach(function (lesson) {
+            lessons.forEach(fu nction (lesson) {
                 lessonSelect.append('<option value="' + lesson.id + '">' + lesson.lesson_title + '</option>');
             });
             if (selectedLessonId) lessonSelect.val(selectedLessonId);
@@ -696,7 +696,7 @@ if ($selected_semester_exam_id) {
 
         function serializeCurriculumData() {
             var items = [];
-            $('#curriculum-rows tr.curriculum-row').each(function () {
+            $('#curriculum-rows tr.curriculum-row').each( function () {
                 var unitId = $(this).find('.unit-select').val();
                 var lessonId = $(this).find('.lesson-select').val();
                 var material = $(this).find('.material-input').val();
@@ -715,11 +715,11 @@ if ($selected_semester_exam_id) {
             };
         }
 
-        $('#add-curriculum-row').on('click', function () {
+        $('#add-curriculum-row').on('click',  function () {
             $('#curriculum-rows').append(createCurriculumRow());
         });
 
-        $(document).on('change', '.unit-select', function () {
+        $(document).on('change', '.unit-select' , function () {
             var row = $(this).closest('tr');
             var unitId = $(this).val();
             if (unitId) {
@@ -729,7 +729,7 @@ if ($selected_semester_exam_id) {
             }
         });
 
-        $(document).on('click', '.remove-row', function () {
+        $(document).on('click', '.remove-row ', function () {
             $(this).closest('tr').remove();
         });
 
@@ -758,7 +758,7 @@ if ($selected_semester_exam_id) {
             }
 
             if (materialJson && materialJson.curriculum_items && materialJson.curriculum_items.length > 0) {
-                materialJson.curriculum_items.forEach(function (item) {
+                materialJson.curriculum_items.forE ach(function (item) {
                     $('#curriculum-rows').append(createCurriculumRow(item.unit_id, item.lesson_id, item.material));
                 });
                 $('#booklets_notebooks').val(materialJson.booklets_notebooks || '');
@@ -774,11 +774,7 @@ if ($selected_semester_exam_id) {
             $('#material-modal').fadeIn(200);
         });
 
-        // Serialize JSON before form submission
-        $('#material-form').on('submit', function (e) {
-            var jsonData = serializeCurriculumData();
-            $('#exam_material_json').val(JSON.stringify(jsonData));
-        });
+        // Note: JSON serialization for material-form is handled in the combined subm it handler below
 
         $('#bulk-add-subjects').on('click', function () {
             if (!confirm('<?php echo Olama_School_Helpers::translate('This will initialize all subjects for this grade in the selected exam. Continue?'); ?>')) return;
@@ -813,6 +809,12 @@ if ($selected_semester_exam_id) {
         $('#date-form, #material-form, #exam-form').on('submit', function (e) {
             e.preventDefault();
             var form = $(this);
+
+            // Serialize JSON data for Material form BEFORE form.serialize()
+            if (form.attr('id') === 'material-form') {
+                var jsonData = serializeCurriculumData();
+                $('#exam_material_json').val(JSON.stringify(jsonData));
+            }
 
             // Date validation for forms that have exam_date
             var dateVal = form.find('[name="exam_date"]').val();
