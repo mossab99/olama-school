@@ -70,17 +70,22 @@ class Olama_School_Exam
         );
 
         foreach ($keys as $key => $sanitizer) {
-            if (isset($data[$key]) && $data[$key] !== '') {
+            if (isset($data[$key])) {
+                $value = $data[$key];
                 if ($key === 'exam_material_json') {
-                    // Validate and sanitize JSON data
-                    $json_data = is_string($data[$key]) ? $data[$key] : json_encode($data[$key]);
-                    $fields[$key] = $json_data;
+                    // Handle JSON data with unslashing
+                    if (is_string($value)) {
+                        $value = wp_unslash($value);
+                    }
+                    $fields[$key] = is_string($value) ? $value : json_encode($value);
                 } elseif ($sanitizer === 'intval') {
-                    $fields[$key] = intval($data[$key]);
+                    $fields[$key] = intval($value);
+                } elseif (is_callable($sanitizer)) {
+                    $fields[$key] = $sanitizer($value);
                 } else {
-                    $fields[$key] = $sanitizer($data[$key]);
+                    $fields[$key] = $value;
                 }
-            } elseif ($existing && isset($existing[$key])) {
+            } elseif ($existing && array_key_exists($key, $existing)) {
                 $fields[$key] = $existing[$key];
             } elseif ($key === 'status') {
                 $fields[$key] = 'draft';
