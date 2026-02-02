@@ -88,16 +88,27 @@ class Olama_School_Exam
         }
 
         if ($exam_id) {
-            return $wpdb->update(
+            $result = $wpdb->update(
                 "{$wpdb->prefix}olama_exams",
                 $fields,
                 array('id' => $exam_id)
             );
+            // Return true for 0 rows (no changes), check for actual errors
+            if ($result === false) {
+                error_log('Olama save_exam error: ' . $wpdb->last_error);
+                return new WP_Error('db_error', $wpdb->last_error ?: 'Unknown database error');
+            }
+            return $result !== false ? true : $result;
         } else {
-            return $wpdb->insert(
+            $result = $wpdb->insert(
                 "{$wpdb->prefix}olama_exams",
                 $fields
             );
+            if ($result === false) {
+                error_log('Olama save_exam insert error: ' . $wpdb->last_error);
+                return new WP_Error('db_error', $wpdb->last_error ?: 'Unknown database error');
+            }
+            return $result;
         }
     }
 
