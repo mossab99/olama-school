@@ -413,9 +413,10 @@ class Olama_School_Shortcodes
                     <div class="day-item <?php echo $is_active; ?> <?php echo empty($day_plans) ? 'empty' : ''; ?>">
                         <div class="day-header">
                             <div class="day-left">
-                                <span class="toggle-chevron dashicons dashicons-arrow-down-alt2"></span>
                                 <div class="day-text">
-                                    <span class="day-name-ar"><?php echo esc_html($day_ar); ?></span>
+                                    <span class="day-name-ar">
+                                        <?php echo esc_html($day_ar); ?>
+                                    </span>
                                     <?php
                                     // Count homeworks vs reviews separately
                                     $homework_count = 0;
@@ -428,192 +429,193 @@ class Olama_School_Shortcodes
                                         }
                                     }
                                     ?>
-                                    <span class="day-count">
-                                        <?php if ($homework_count > 0 || $review_count > 0): ?>
-                                            <?php
-                                            $parts = array();
-                                            if ($homework_count > 0) {
-                                                $parts[] = $homework_count . ' ' . Olama_School_Helpers::translate('واجبات');
-                                            }
-                                            if ($review_count > 0) {
-                                                $parts[] = $review_count . ' ' . Olama_School_Helpers::translate('متابعات');
-                                            }
-                                            echo implode(' - ', $parts);
-                                            ?>
-                                        <?php else: ?>
-                                            <?php echo Olama_School_Helpers::translate('لا واجبات'); ?>
-                                        <?php endif; ?>
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="day-date-badge">
-                                <span
-                                    class="date-month"><?php echo strtoupper(Olama_School_Helpers::format_date($current_date, false, 'M')); ?></span>
-                                <span
-                                    class="date-day"><?php echo Olama_School_Helpers::format_date($current_date, false, 'd'); ?></span>
-                            </div>
-                        </div>
-                        <div class="day-content">
-                            <?php if (empty($day_plans)): ?>
-                                <div class="empty-day">
-                                    <span class="dashicons dashicons-calendar-alt"></span>
-                                    <p><?php echo Olama_School_Helpers::translate('لا توجد حصص مخططة لهذا اليوم'); ?></p>
-                                </div>
-                            <?php else: ?>
-                                <?php foreach ($day_plans as $plan):
-                                    $icon = $get_icon($plan->subject_name);
-                                    $bg_color = $get_subject_bg($plan->subject_name);
-                                    ?>
-                                    <div class="subject-card" style="background: <?php echo esc_attr($bg_color); ?>;">
-                                        <div class="subject-header">
-                                            <span class="dashicons <?php echo $icon; ?> subject-icon"></span>
-                                            <span class="subject-name"><?php echo esc_html($plan->subject_name); ?></span>
-                                            <?php if (isset($plan->plan_type) && $plan->plan_type === 'review'): ?>
-                                                <span class="review-badge"
-                                                    style="background: #f3e8ff; color: #7c3aed; padding: 2px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 700; margin-right: 8px;">
-                                                    🔄 <?php echo Olama_School_Helpers::translate('Review'); ?>
+                                                <span class="day-count">
+                                                    <?php if ($homework_count > 0 || $review_count > 0): ?>
+                                        <?php
+                                        $parts = array();
+                                        if ($homework_count > 0) {
+                                            $parts[] = $homework_count . ' ' . Olama_School_Helpers::translate('واجبات');
+                                        }
+                                        if ($review_count > 0) {
+                                            $parts[] = $review_count . ' ' . Olama_School_Helpers::translate('متابعات');
+                                        }
+                                        echo implode(' - ', $parts);
+                                        ?>
+                                                    <?php else: ?>
+                                                            <?php echo Olama_School_Helpers::translate('لا واجبات'); ?>
+                                                    <?php endif; ?>
                                                 </span>
-                                            <?php endif; ?>
+                                            </div>
+                                            <span class="toggle-chevron dashicons dashicons-arrow-down-alt2"></span>
                                         </div>
-
-                                        <!-- Classwork Section -->
-                                        <div class="section-block classwork">
-                                            <div class="section-label">
-                                                <span class="dashicons dashicons-clipboard"></span>
-                                                <?php
-                                                // Show appropriate label based on plan type
-                                                if (isset($plan->plan_type) && $plan->plan_type === 'review') {
-                                                    echo Olama_School_Helpers::translate('Review the following lesson');
-                                                } else {
-                                                    echo Olama_School_Helpers::translate('حصة اليوم');
-                                                }
-                                                ?>
-                                                <?php if (!isset($plan->plan_type) || $plan->plan_type !== 'review'): ?>
-                                                    <span class="label-en">(Classwork)</span>
-                                                <?php endif; ?>
-                                            </div>
-                                            <div class="detail-list">
-                                                <?php if ($plan->unit_name): ?>
-                                                    <div class="detail-item">
-                                                        <span class="dashicons dashicons-category detail-icon"></span>
-                                                        <span
-                                                            class="detail-label"><?php echo Olama_School_Helpers::translate('الوحدة'); ?>:</span>
-                                                        <span class="detail-value"
-                                                            style="text-align: right;"><?php echo esc_html($plan->unit_name); ?></span>
-                                                    </div>
-                                                <?php endif; ?>
-                                                <div class="detail-item">
-                                                    <span class="dashicons dashicons-book-alt detail-icon"></span>
-                                                    <span
-                                                        class="detail-label"><?php echo Olama_School_Helpers::translate('الدرس'); ?>:</span>
-                                                    <span class="detail-value"
-                                                        style="text-align: right;"><?php echo esc_html($plan->lesson_title); ?></span>
-                                                </div>
-                                            </div>
+                                        <div class="day-date-badge">
+                                            <span
+                                                class="date-month"><?php echo strtoupper(Olama_School_Helpers::format_date($current_date, false, 'M')); ?></span>
+                                            <span
+                                                class="date-day"><?php echo Olama_School_Helpers::format_date($current_date, false, 'd'); ?></span>
                                         </div>
+                                    </div>
+                                    <div class="day-content">
+                                        <?php if (empty($day_plans)): ?>
+                                                <div class="empty-day">
+                                                    <span class="dashicons dashicons-calendar-alt"></span>
+                                                    <p><?php echo Olama_School_Helpers::translate('لا توجد حصص مخططة لهذا اليوم'); ?></p>
+                                                </div>
+                                        <?php else: ?>
+                                                <?php foreach ($day_plans as $plan):
+                                                    $icon = $get_icon($plan->subject_name);
+                                                    $bg_color = $get_subject_bg($plan->subject_name);
+                                                    ?>
+                                                        <div class="subject-card" style="background: <?php echo esc_attr($bg_color); ?>;">
+                                                            <div class="subject-header">
+                                                                <span class="dashicons <?php echo $icon; ?> subject-icon"></span>
+                                                                <span class="subject-name"><?php echo esc_html($plan->subject_name); ?></span>
+                                                                <?php if (isset($plan->plan_type) && $plan->plan_type === 'review'): ?>
+                                                                        <span class="review-badge"
+                                                                            style="background: #f3e8ff; color: #7c3aed; padding: 2px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 700; margin-right: 8px;">
+                                                                            🔄 <?php echo Olama_School_Helpers::translate('Review'); ?>
+                                                                        </span>
+                                                                <?php endif; ?>
+                                                            </div>
 
-                                        <!-- Homework Section (only for homework plans) -->
-                                        <?php if ((!isset($plan->plan_type) || $plan->plan_type === 'homework') && ($plan->homework_sb || $plan->homework_eb || $plan->homework_nb || $plan->homework_ws)): ?>
-                                            <div class="section-block homework">
-                                                <div class="section-label">
-                                                    <span class="dashicons dashicons-admin-home"></span>
-                                                    <?php echo Olama_School_Helpers::translate('الواجب البيتي'); ?>
-                                                </div>
-                                                <div class="homework-list">
-                                                    <?php if ($plan->homework_sb): ?>
-                                                        <div class="homework-item">
-                                                            <div class="homework-item-header">
-                                                                <span class="dashicons dashicons-book hw-icon"></span>
-                                                                <span
-                                                                    class="hw-label"><?php echo Olama_School_Helpers::translate('كتاب الطالب'); ?>:</span>
+                                                            <!-- Classwork Section -->
+                                                            <div class="section-block classwork">
+                                                                <div class="section-label">
+                                                                    <span class="dashicons dashicons-clipboard"></span>
+                                                                    <?php
+                                                                    // Show appropriate label based on plan type
+                                                                    if (isset($plan->plan_type) && $plan->plan_type === 'review') {
+                                                                        echo Olama_School_Helpers::translate('Review the following lesson');
+                                                                    } else {
+                                                                        echo Olama_School_Helpers::translate('حصة اليوم');
+                                                                    }
+                                                                    ?>
+                                                                    <?php if (!isset($plan->plan_type) || $plan->plan_type !== 'review'): ?>
+                                                                            <span class="label-en">(Classwork)</span>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                                <div class="detail-list">
+                                                                    <?php if ($plan->unit_name): ?>
+                                                                            <div class="detail-item">
+                                                                                <span class="dashicons dashicons-category detail-icon"></span>
+                                                                                <span
+                                                                                    class="detail-label"><?php echo Olama_School_Helpers::translate('الوحدة'); ?>:</span>
+                                                                                <span class="detail-value"
+                                                                                    style="text-align: right;"><?php echo esc_html($plan->unit_name); ?></span>
+                                                                            </div>
+                                                                    <?php endif; ?>
+                                                                    <div class="detail-item">
+                                                                        <span class="dashicons dashicons-book-alt detail-icon"></span>
+                                                                        <span
+                                                                            class="detail-label"><?php echo Olama_School_Helpers::translate('الدرس'); ?>:</span>
+                                                                        <span class="detail-value"
+                                                                            style="text-align: right;"><?php echo esc_html($plan->lesson_title); ?></span>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <span class="hw-value"
-                                                                style="text-align: right; display: block;"><?php echo esc_html($plan->homework_sb); ?></span>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <?php if ($plan->homework_eb): ?>
-                                                        <div class="homework-item">
-                                                            <div class="homework-item-header">
-                                                                <span class="dashicons dashicons-edit hw-icon"></span>
-                                                                <span
-                                                                    class="hw-label"><?php echo Olama_School_Helpers::translate('كتاب التمارين'); ?>:</span>
-                                                            </div>
-                                                            <span class="hw-value"
-                                                                style="text-align: right; display: block;"><?php echo esc_html($plan->homework_eb); ?></span>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <?php if ($plan->homework_nb): ?>
-                                                        <div class="homework-item">
-                                                            <div class="homework-item-header">
-                                                                <span class="dashicons dashicons-media-text hw-icon"></span>
-                                                                <span
-                                                                    class="hw-label"><?php echo Olama_School_Helpers::translate('الدفتر'); ?>:</span>
-                                                            </div>
-                                                            <span class="hw-value"
-                                                                style="text-align: right; display: block;"><?php echo esc_html($plan->homework_nb); ?></span>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <?php if ($plan->homework_ws): ?>
-                                                        <div class="homework-item">
-                                                            <div class="homework-item-header">
-                                                                <span class="dashicons dashicons-media-document hw-icon"></span>
-                                                                <span
-                                                                    class="hw-label"><?php echo Olama_School_Helpers::translate('الدوسية'); ?>:</span>
-                                                            </div>
-                                                            <span class="hw-value"
-                                                                style="text-align: right; display: block;"><?php echo esc_html($plan->homework_ws); ?></span>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                        <?php endif; ?>
 
-                                        <!-- Teacher Notes -->
-                                        <?php if (!empty($plan->teacher_notes)): ?>
-                                            <div class="section-block teacher-notes">
-                                                <div class="section-label">
-                                                    <span class="dashicons dashicons-admin-comments"></span>
-                                                    <?php echo Olama_School_Helpers::translate('ملاحظات المعلم'); ?>
-                                                </div>
-                                                <div class="notes-content" style="text-align: right;">
-                                                    <?php echo nl2br(esc_html($plan->teacher_notes)); ?>
-                                                </div>
-                                            </div>
+                                                            <!-- Homework Section (only for homework plans) -->
+                                                            <?php if ((!isset($plan->plan_type) || $plan->plan_type === 'homework') && ($plan->homework_sb || $plan->homework_eb || $plan->homework_nb || $plan->homework_ws)): ?>
+                                                                    <div class="section-block homework">
+                                                                        <div class="section-label">
+                                                                            <span class="dashicons dashicons-admin-home"></span>
+                                                                            <?php echo Olama_School_Helpers::translate('الواجب البيتي'); ?>
+                                                                        </div>
+                                                                        <div class="homework-list">
+                                                                            <?php if ($plan->homework_sb): ?>
+                                                                                    <div class="homework-item">
+                                                                                        <div class="homework-item-header">
+                                                                                            <span class="dashicons dashicons-book hw-icon"></span>
+                                                                                            <span
+                                                                                                class="hw-label"><?php echo Olama_School_Helpers::translate('كتاب الطالب'); ?>:</span>
+                                                                                        </div>
+                                                                                        <span class="hw-value"
+                                                                                            style="text-align: right; display: block;"><?php echo esc_html($plan->homework_sb); ?></span>
+                                                                                    </div>
+                                                                            <?php endif; ?>
+                                                                            <?php if ($plan->homework_eb): ?>
+                                                                                    <div class="homework-item">
+                                                                                        <div class="homework-item-header">
+                                                                                            <span class="dashicons dashicons-edit hw-icon"></span>
+                                                                                            <span
+                                                                                                class="hw-label"><?php echo Olama_School_Helpers::translate('كتاب التمارين'); ?>:</span>
+                                                                                        </div>
+                                                                                        <span class="hw-value"
+                                                                                            style="text-align: right; display: block;"><?php echo esc_html($plan->homework_eb); ?></span>
+                                                                                    </div>
+                                                                            <?php endif; ?>
+                                                                            <?php if ($plan->homework_nb): ?>
+                                                                                    <div class="homework-item">
+                                                                                        <div class="homework-item-header">
+                                                                                            <span class="dashicons dashicons-media-text hw-icon"></span>
+                                                                                            <span
+                                                                                                class="hw-label"><?php echo Olama_School_Helpers::translate('الدفتر'); ?>:</span>
+                                                                                        </div>
+                                                                                        <span class="hw-value"
+                                                                                            style="text-align: right; display: block;"><?php echo esc_html($plan->homework_nb); ?></span>
+                                                                                    </div>
+                                                                            <?php endif; ?>
+                                                                            <?php if ($plan->homework_ws): ?>
+                                                                                    <div class="homework-item">
+                                                                                        <div class="homework-item-header">
+                                                                                            <span class="dashicons dashicons-media-document hw-icon"></span>
+                                                                                            <span
+                                                                                                class="hw-label"><?php echo Olama_School_Helpers::translate('الدوسية'); ?>:</span>
+                                                                                        </div>
+                                                                                        <span class="hw-value"
+                                                                                            style="text-align: right; display: block;"><?php echo esc_html($plan->homework_ws); ?></span>
+                                                                                    </div>
+                                                                            <?php endif; ?>
+                                                                        </div>
+                                                                    </div>
+                                                            <?php endif; ?>
+
+                                                            <!-- Teacher Notes -->
+                                                            <?php if (!empty($plan->teacher_notes)): ?>
+                                                                    <div class="section-block teacher-notes">
+                                                                        <div class="section-label">
+                                                                            <span class="dashicons dashicons-admin-comments"></span>
+                                                                            <?php echo Olama_School_Helpers::translate('ملاحظات المعلم'); ?>
+                                                                        </div>
+                                                                        <div class="notes-content" style="text-align: right;">
+                                                                            <?php echo nl2br(esc_html($plan->teacher_notes)); ?>
+                                                                        </div>
+                                                                    </div>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                <?php endforeach; ?>
                                         <?php endif; ?>
                                     </div>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </div>
+                                </div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
-            </div>
 
-            <script>
-                document.querySelectorAll('.day-header').forEach(header => {
-                    header.addEventListener('click', () => {
-                        const item = header.parentElement;
-                        const wasActive = item.classList.contains('active');
-                        const content = item.querySelector('.day-content');
+                    <script>
+                        document.querySelectorAll('.day-header').forEach(header => {
+                            header.addEventListener('click', () => {
+                                const item = header.parentElement;
+                                const wasActive = item.classList.contains('active');
+                                const content = item.querySelector('.day-content');
 
-                        document.querySelectorAll('.day-item').forEach(i => {
-                            i.classList.remove('active');
-                            const c = i.querySelector('.day-content');
-                            if (c) c.style.maxHeight = '0px';
+                                document.querySelectorAll('.day-item').forEach(i => {
+                                    i.classList.remove('active');
+                                    const c = i.querySelector('.day-content');
+                                    if (c) c.style.maxHeight = '0px';
+                                });
+
+                                if (!wasActive) {
+                                    item.classList.add('active');
+                                    if (content) {
+                                        content.style.maxHeight = '20000px';
+                                        content.style.overflow = 'visible';
+                                    }
+                                }
+                            });
                         });
-
-                        if (!wasActive) {
-                            item.classList.add('active');
-                            if (content) {
-                                content.style.maxHeight = '20000px';
-                                content.style.overflow = 'visible';
-                            }
-                        }
-                    });
-                });
-            </script>
-        </div>
-        <?php
-        return ob_get_clean();
+                    </script>
+                </div>
+                <?php
+                return ob_get_clean();
     }
 
     /**
@@ -704,362 +706,362 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-        <div class="olama-schedule-v2">
-            <!-- Header -->
-            <div class="schedule-header-v2">
-                <div class="header-main">
-                    <h1 class="header-title"><?php echo $grade ? esc_html($grade->grade_name) : ''; ?> -
-                        <?php echo $section ? esc_html($section->section_name) : ''; ?>
-                    </h1>
-                </div>
-                <div class="header-badge">
-                    <span class="badge-icon">📅</span>
-                    <span class="badge-text"><?php
-                    // Get academic year
-                    $academic_year = $wpdb->get_row($wpdb->prepare(
-                        "SELECT ay.* FROM {$wpdb->prefix}olama_academic_years ay 
+                <div class="olama-schedule-v2">
+                    <!-- Header -->
+                    <div class="schedule-header-v2">
+                        <div class="header-main">
+                            <h1 class="header-title"><?php echo $grade ? esc_html($grade->grade_name) : ''; ?> -
+                                <?php echo $section ? esc_html($section->section_name) : ''; ?>
+                            </h1>
+                        </div>
+                        <div class="header-badge">
+                            <span class="badge-icon">📅</span>
+                            <span class="badge-text"><?php
+                            // Get academic year
+                            $academic_year = $wpdb->get_row($wpdb->prepare(
+                                "SELECT ay.* FROM {$wpdb->prefix}olama_academic_years ay 
                              INNER JOIN {$wpdb->prefix}olama_semesters s ON s.academic_year_id = ay.id 
                              WHERE s.id = %d",
-                        $semester_id
-                    ));
-                    if ($academic_year) {
-                        echo esc_html($academic_year->year_name) . ' - ';
-                    }
-                    echo $semester ? esc_html(Olama_School_Helpers::translate($semester->semester_name)) : '';
-                    ?></span>
-                </div>
-            </div>
-
-            <!-- Desktop Grid -->
-            <div class="schedule-grid-desktop">
-                <table class="schedule-table-v2">
-                    <thead>
-                        <tr>
-                            <th class="day-col-header"><?php echo Olama_School_Helpers::translate('اليوم'); ?></th>
-                            <?php for ($i = 1; $i <= $max_periods; $i++): ?>
-                                <th class="period-col-header">
-                                    <span class="period-label-text"><?php echo Olama_School_Helpers::translate('الحصة'); ?></span>
-                                    <span class="period-ordinal"><?php echo isset($periods_ar[$i]) ? $periods_ar[$i] : $i; ?></span>
-                                </th>
-                            <?php endfor; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($days_ar as $day_en => $day_ar): ?>
-                            <tr>
-                                <td class="day-cell">
-                                    <span class="day-name"><?php echo esc_html($day_ar); ?></span>
-                                </td>
-                                <?php for ($i = 1; $i <= $max_periods; $i++):
-                                    $item = $schedule[$day_en][$i] ?? null;
-                                    $colors = $item ? $get_subject_color($item->subject_name) : array('bg' => '#f8fafc', 'text' => '#94a3b8');
-                                    ?>
-                                    <td class="subject-cell">
-                                        <?php if ($item): ?>
-                                            <div class="subject-card-v2"
-                                                style="background: <?php echo esc_attr($colors['bg']); ?>; color: <?php echo esc_attr($colors['text']); ?>;">
-                                                <span class="subject-text"><?php echo esc_html($item->subject_name); ?></span>
-                                            </div>
-                                        <?php else: ?>
-                                            <div class="empty-cell">-</div>
-                                        <?php endif; ?>
-                                    </td>
-                                <?php endfor; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Mobile Accordion -->
-            <div class="schedule-mobile-v2">
-                <?php foreach ($days_ar as $day_en => $day_ar): ?>
-                    <div class="mobile-day-card">
-                        <div class="mobile-day-header" onclick="this.parentElement.classList.toggle('expanded')">
-                            <span class="day-icon">📆</span>
-                            <span class="day-title"><?php echo esc_html($day_ar); ?></span>
-                            <span class="toggle-arrow">▼</span>
-                        </div>
-                        <div class="mobile-day-content">
-                            <?php
-                            $has_periods = false;
-                            for ($i = 1; $i <= $max_periods; $i++):
-                                $item = $schedule[$day_en][$i] ?? null;
-                                if (!$item)
-                                    continue;
-                                $has_periods = true;
-                                $colors = $get_subject_color($item->subject_name);
-                                ?>
-                                <div class="mobile-period-item" style="background: <?php echo esc_attr($colors['bg']); ?>;">
-                                    <span class="period-badge" style="background: <?php echo esc_attr($colors['text']); ?>;">
-                                        <?php echo Olama_School_Helpers::translate('الحصة'); ?>
-                                        <?php echo isset($periods_ar[$i]) ? $periods_ar[$i] : $i; ?>
-                                    </span>
-                                    <span class="subject-name-mobile" style="color: <?php echo esc_attr($colors['text']); ?>;">
-                                        <?php echo esc_html($item->subject_name); ?>
-                                    </span>
-                                </div>
-                            <?php endfor; ?>
-                            <?php if (!$has_periods): ?>
-                                <div class="no-periods"><?php echo Olama_School_Helpers::translate('لا توجد حصص'); ?></div>
-                            <?php endif; ?>
+                                $semester_id
+                            ));
+                            if ($academic_year) {
+                                echo esc_html($academic_year->year_name) . ' - ';
+                            }
+                            echo $semester ? esc_html(Olama_School_Helpers::translate($semester->semester_name)) : '';
+                            ?></span>
                         </div>
                     </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
 
-        <style>
-            .olama-schedule-v2 {
-                font-family: 'Tajawal', 'Almarai', Arial, sans-serif;
-                max-width: 100%;
-                margin: 0 auto;
-                direction: rtl;
-            }
+                    <!-- Desktop Grid -->
+                    <div class="schedule-grid-desktop">
+                        <table class="schedule-table-v2">
+                            <thead>
+                                <tr>
+                                    <th class="day-col-header"><?php echo Olama_School_Helpers::translate('اليوم'); ?></th>
+                                    <?php for ($i = 1; $i <= $max_periods; $i++): ?>
+                                            <th class="period-col-header">
+                                                <span class="period-label-text"><?php echo Olama_School_Helpers::translate('الحصة'); ?></span>
+                                                <span class="period-ordinal"><?php echo isset($periods_ar[$i]) ? $periods_ar[$i] : $i; ?></span>
+                                            </th>
+                                    <?php endfor; ?>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($days_ar as $day_en => $day_ar): ?>
+                                        <tr>
+                                            <td class="day-cell">
+                                                <span class="day-name"><?php echo esc_html($day_ar); ?></span>
+                                            </td>
+                                            <?php for ($i = 1; $i <= $max_periods; $i++):
+                                                $item = $schedule[$day_en][$i] ?? null;
+                                                $colors = $item ? $get_subject_color($item->subject_name) : array('bg' => '#f8fafc', 'text' => '#94a3b8');
+                                                ?>
+                                                    <td class="subject-cell">
+                                                        <?php if ($item): ?>
+                                                                <div class="subject-card-v2"
+                                                                    style="background: <?php echo esc_attr($colors['bg']); ?>; color: <?php echo esc_attr($colors['text']); ?>;">
+                                                                    <span class="subject-text"><?php echo esc_html($item->subject_name); ?></span>
+                                                                </div>
+                                                        <?php else: ?>
+                                                                <div class="empty-cell">-</div>
+                                                        <?php endif; ?>
+                                                    </td>
+                                            <?php endfor; ?>
+                                        </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
 
-            /* Header */
-            .schedule-header-v2 {
-                background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-                color: #fff;
-                padding: 25px 30px;
-                border-radius: 16px 16px 0 0;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 15px;
-            }
+                    <!-- Mobile Accordion -->
+                    <div class="schedule-mobile-v2">
+                        <?php foreach ($days_ar as $day_en => $day_ar): ?>
+                                <div class="mobile-day-card">
+                                    <div class="mobile-day-header" onclick="this.parentElement.classList.toggle('expanded')">
+                                        <span class="day-icon">📆</span>
+                                        <span class="day-title"><?php echo esc_html($day_ar); ?></span>
+                                        <span class="toggle-arrow">▼</span>
+                                    </div>
+                                    <div class="mobile-day-content">
+                                        <?php
+                                        $has_periods = false;
+                                        for ($i = 1; $i <= $max_periods; $i++):
+                                            $item = $schedule[$day_en][$i] ?? null;
+                                            if (!$item)
+                                                continue;
+                                            $has_periods = true;
+                                            $colors = $get_subject_color($item->subject_name);
+                                            ?>
+                                                <div class="mobile-period-item" style="background: <?php echo esc_attr($colors['bg']); ?>;">
+                                                    <span class="period-badge" style="background: <?php echo esc_attr($colors['text']); ?>;">
+                                                        <?php echo Olama_School_Helpers::translate('الحصة'); ?>
+                                                        <?php echo isset($periods_ar[$i]) ? $periods_ar[$i] : $i; ?>
+                                                    </span>
+                                                    <span class="subject-name-mobile" style="color: <?php echo esc_attr($colors['text']); ?>;">
+                                                        <?php echo esc_html($item->subject_name); ?>
+                                                    </span>
+                                                </div>
+                                        <?php endfor; ?>
+                                        <?php if (!$has_periods): ?>
+                                                <div class="no-periods"><?php echo Olama_School_Helpers::translate('لا توجد حصص'); ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
 
-            .schedule-header-v2 .header-title {
-                margin: 0;
-                font-size: 1.6rem;
-                font-weight: 800;
-                color: #fff;
-            }
+                <style>
+                    .olama-schedule-v2 {
+                        font-family: 'Tajawal', 'Almarai', Arial, sans-serif;
+                        max-width: 100%;
+                        margin: 0 auto;
+                        direction: rtl;
+                    }
 
-            .schedule-header-v2 .header-badge {
-                background: rgba(255, 255, 255, 0.2);
-                padding: 12px 22px;
-                border-radius: 25px;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                font-size: 1.15rem;
-                font-weight: 700;
-                color: #fff;
-            }
+                    /* Header */
+                    .schedule-header-v2 {
+                        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                        color: #fff;
+                        padding: 25px 30px;
+                        border-radius: 16px 16px 0 0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        gap: 15px;
+                    }
 
-            .schedule-header-v2 .badge-icon {
-                font-size: 1.2rem;
-            }
+                    .schedule-header-v2 .header-title {
+                        margin: 0;
+                        font-size: 1.6rem;
+                        font-weight: 800;
+                        color: #fff;
+                    }
 
-            /* Desktop Grid */
-            .schedule-grid-desktop {
-                overflow-x: auto;
-                background: #fff;
-                border: 1px solid #e2e8f0;
-                border-top: none;
-                border-radius: 0 0 16px 16px;
-            }
+                    .schedule-header-v2 .header-badge {
+                        background: rgba(255, 255, 255, 0.2);
+                        padding: 12px 22px;
+                        border-radius: 25px;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        font-size: 1.15rem;
+                        font-weight: 700;
+                        color: #fff;
+                    }
 
-            .schedule-table-v2 {
-                width: 100%;
-                border-collapse: collapse;
-                min-width: 700px;
-            }
+                    .schedule-header-v2 .badge-icon {
+                        font-size: 1.2rem;
+                    }
 
-            .schedule-table-v2 thead th {
-                background: #f8fafc;
-                padding: 15px 10px;
-                text-align: center;
-                font-weight: 700;
-                color: #334155;
-                border-bottom: 2px solid #e2e8f0;
-                font-size: 0.85rem;
-            }
+                    /* Desktop Grid */
+                    .schedule-grid-desktop {
+                        overflow-x: auto;
+                        background: #fff;
+                        border: 1px solid #e2e8f0;
+                        border-top: none;
+                        border-radius: 0 0 16px 16px;
+                    }
 
-            .schedule-table-v2 .day-col-header {
-                width: 100px;
-                background: #f1f5f9;
-            }
+                    .schedule-table-v2 {
+                        width: 100%;
+                        border-collapse: collapse;
+                        min-width: 700px;
+                    }
 
-            .schedule-table-v2 .period-col-header .period-label-text,
-            .schedule-table-v2 .period-col-header .period-ordinal {
-                display: block;
-            }
+                    .schedule-table-v2 thead th {
+                        background: #f8fafc;
+                        padding: 15px 10px;
+                        text-align: center;
+                        font-weight: 700;
+                        color: #334155;
+                        border-bottom: 2px solid #e2e8f0;
+                        font-size: 0.85rem;
+                    }
 
-            .schedule-table-v2 .period-label-text {
-                font-size: 0.7rem;
-                color: #64748b;
-                font-weight: 500;
-            }
+                    .schedule-table-v2 .day-col-header {
+                        width: 100px;
+                        background: #f1f5f9;
+                    }
 
-            .schedule-table-v2 .period-ordinal {
-                font-size: 0.9rem;
-                color: #1e40af;
-                font-weight: 700;
-            }
+                    .schedule-table-v2 .period-col-header .period-label-text,
+                    .schedule-table-v2 .period-col-header .period-ordinal {
+                        display: block;
+                    }
 
-            .schedule-table-v2 tbody td {
-                padding: 8px;
-                text-align: center;
-                border-bottom: 1px solid #f1f5f9;
-                vertical-align: middle;
-            }
+                    .schedule-table-v2 .period-label-text {
+                        font-size: 0.7rem;
+                        color: #64748b;
+                        font-weight: 500;
+                    }
 
-            .schedule-table-v2 .day-cell {
-                background: #f8fafc;
-                font-weight: 700;
-                color: #1e293b;
-                font-size: 0.95rem;
-            }
+                    .schedule-table-v2 .period-ordinal {
+                        font-size: 0.9rem;
+                        color: #1e40af;
+                        font-weight: 700;
+                    }
 
-            .schedule-table-v2 .subject-card-v2 {
-                padding: 10px 8px;
-                border-radius: 10px;
-                font-size: 0.85rem;
-                font-weight: 600;
-                min-height: 40px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: transform 0.2s, box-shadow 0.2s;
-            }
+                    .schedule-table-v2 tbody td {
+                        padding: 8px;
+                        text-align: center;
+                        border-bottom: 1px solid #f1f5f9;
+                        vertical-align: middle;
+                    }
 
-            .schedule-table-v2 .subject-card-v2:hover {
-                transform: scale(1.03);
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            }
+                    .schedule-table-v2 .day-cell {
+                        background: #f8fafc;
+                        font-weight: 700;
+                        color: #1e293b;
+                        font-size: 0.95rem;
+                    }
 
-            .schedule-table-v2 .empty-cell {
-                color: #cbd5e1;
-                font-size: 1rem;
-            }
+                    .schedule-table-v2 .subject-card-v2 {
+                        padding: 10px 8px;
+                        border-radius: 10px;
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                        min-height: 40px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                    }
 
-            /* Mobile Accordion */
-            .schedule-mobile-v2 {
-                display: none;
-                flex-direction: column;
-                gap: 12px;
-                padding: 15px;
-                background: #f8fafc;
-                border-radius: 0 0 16px 16px;
-            }
+                    .schedule-table-v2 .subject-card-v2:hover {
+                        transform: scale(1.03);
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    }
 
-            .mobile-day-card {
-                background: #fff;
-                border-radius: 12px;
-                overflow: hidden;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-                border: 1px solid #e2e8f0;
-            }
+                    .schedule-table-v2 .empty-cell {
+                        color: #cbd5e1;
+                        font-size: 1rem;
+                    }
 
-            .mobile-day-header {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 16px 20px;
-                cursor: pointer;
-                background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-                transition: background 0.2s;
-            }
+                    /* Mobile Accordion */
+                    .schedule-mobile-v2 {
+                        display: none;
+                        flex-direction: column;
+                        gap: 12px;
+                        padding: 15px;
+                        background: #f8fafc;
+                        border-radius: 0 0 16px 16px;
+                    }
 
-            .mobile-day-header:hover {
-                background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-            }
+                    .mobile-day-card {
+                        background: #fff;
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                        border: 1px solid #e2e8f0;
+                    }
 
-            .mobile-day-header .day-icon {
-                font-size: 1.3rem;
-            }
+                    .mobile-day-header {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        padding: 16px 20px;
+                        cursor: pointer;
+                        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+                        transition: background 0.2s;
+                    }
 
-            .mobile-day-header .day-title {
-                flex: 1;
-                font-weight: 700;
-                font-size: 1.1rem;
-                color: #1e40af;
-            }
+                    .mobile-day-header:hover {
+                        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+                    }
 
-            .mobile-day-header .toggle-arrow {
-                color: #64748b;
-                transition: transform 0.3s;
-            }
+                    .mobile-day-header .day-icon {
+                        font-size: 1.3rem;
+                    }
 
-            .mobile-day-card.expanded .toggle-arrow {
-                transform: rotate(180deg);
-            }
+                    .mobile-day-header .day-title {
+                        flex: 1;
+                        font-weight: 700;
+                        font-size: 1.1rem;
+                        color: #1e40af;
+                    }
 
-            .mobile-day-content {
-                display: none;
-                padding: 15px;
-                flex-direction: column;
-                gap: 10px;
-            }
+                    .mobile-day-header .toggle-arrow {
+                        color: #64748b;
+                        transition: transform 0.3s;
+                    }
 
-            .mobile-day-card.expanded .mobile-day-content {
-                display: flex;
-            }
+                    .mobile-day-card.expanded .toggle-arrow {
+                        transform: rotate(180deg);
+                    }
 
-            .mobile-period-item {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 12px 15px;
-                border-radius: 10px;
-            }
+                    .mobile-day-content {
+                        display: none;
+                        padding: 15px;
+                        flex-direction: column;
+                        gap: 10px;
+                    }
 
-            .mobile-period-item .period-badge {
-                color: #fff;
-                padding: 5px 12px;
-                border-radius: 20px;
-                font-size: 0.75rem;
-                font-weight: 600;
-                white-space: nowrap;
-            }
+                    .mobile-day-card.expanded .mobile-day-content {
+                        display: flex;
+                    }
 
-            .mobile-period-item .subject-name-mobile {
-                font-weight: 700;
-                font-size: 1rem;
-            }
+                    .mobile-period-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        padding: 12px 15px;
+                        border-radius: 10px;
+                    }
 
-            .mobile-day-content .no-periods {
-                text-align: center;
-                color: #94a3b8;
-                padding: 20px;
-                font-size: 0.9rem;
-            }
+                    .mobile-period-item .period-badge {
+                        color: #fff;
+                        padding: 5px 12px;
+                        border-radius: 20px;
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                        white-space: nowrap;
+                    }
 
-            /* Responsive */
-            @media (max-width: 768px) {
-                .schedule-grid-desktop {
-                    display: none;
-                }
+                    .mobile-period-item .subject-name-mobile {
+                        font-weight: 700;
+                        font-size: 1rem;
+                    }
 
-                .schedule-mobile-v2 {
-                    display: flex;
-                }
+                    .mobile-day-content .no-periods {
+                        text-align: center;
+                        color: #94a3b8;
+                        padding: 20px;
+                        font-size: 0.9rem;
+                    }
 
-                .schedule-header-v2 {
-                    border-radius: 16px 16px 0 0;
-                    padding: 20px;
-                }
+                    /* Responsive */
+                    @media (max-width: 768px) {
+                        .schedule-grid-desktop {
+                            display: none;
+                        }
 
-                .schedule-header-v2 .header-title {
-                    font-size: 1.3rem;
-                }
-            }
+                        .schedule-mobile-v2 {
+                            display: flex;
+                        }
 
-            /* Fix for WordPress themes */
-            .olama-schedule-v2 table {
-                margin: 0 !important;
-            }
+                        .schedule-header-v2 {
+                            border-radius: 16px 16px 0 0;
+                            padding: 20px;
+                        }
 
-            .olama-schedule-v2 th,
-            .olama-schedule-v2 td {
-                border: none !important;
-            }
-        </style>
-        <?php
-        return ob_get_clean();
+                        .schedule-header-v2 .header-title {
+                            font-size: 1.3rem;
+                        }
+                    }
+
+                    /* Fix for WordPress themes */
+                    .olama-schedule-v2 table {
+                        margin: 0 !important;
+                    }
+
+                    .olama-schedule-v2 th,
+                    .olama-schedule-v2 td {
+                        border: none !important;
+                    }
+                </style>
+                <?php
+                return ob_get_clean();
     }
 
 
@@ -1111,341 +1113,342 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-        <div class="olama-stationary-container">
-            <!-- Header -->
-            <div class="olama-stationary-header">
-                <div class="header-icon">📚</div>
-                <div class="header-content">
-                    <h1><?php echo Olama_School_Helpers::translate('القرطاسية المدرسية'); ?></h1>
-                    <p><?php echo Olama_School_Helpers::translate('قائمة المستلزمات المدرسية لكل صف'); ?></p>
-                </div>
-                <div class="header-year">
-                    <span class="year-label"><?php echo Olama_School_Helpers::translate('العام الدراسي'); ?></span>
-                    <span class="year-value"><?php echo esc_html($year_name); ?></span>
-                </div>
-            </div>
-
-            <!-- Accordion -->
-            <div class="olama-stationary-accordion">
-                <?php
-                $index = 0;
-                foreach ($stationary_items as $item):
-                    $gradient = $gradients[$index % count($gradients)];
-                    $is_first = $index === 0;
-                    $index++;
-                    ?>
-                    <div class="accordion-item <?php echo $is_first ? 'active' : ''; ?>">
-                        <div class="accordion-header" style="background: <?php echo $gradient; ?>;">
-                            <div class="header-left">
-                                <span class="grade-icon">🎒</span>
-                                <span class="grade-name"><?php echo esc_html($item->grade_name); ?></span>
-                            </div>
-                            <div class="header-right">
-                                <span class="toggle-icon">▼</span>
-                            </div>
+                <div class="olama-stationary-container">
+                    <!-- Header -->
+                    <div class="olama-stationary-header">
+                        <div class="header-icon">📚</div>
+                        <div class="header-content">
+                            <h1><?php echo Olama_School_Helpers::translate('القرطاسية المدرسية'); ?></h1>
+                            <p><?php echo Olama_School_Helpers::translate('قائمة المستلزمات المدرسية لكل صف'); ?></p>
                         </div>
-                        <div class="accordion-content" <?php echo $is_first ? 'style="display: block;"' : ''; ?>>
-                            <?php if (!empty($item->notebooks)): ?>
-                                <div class="content-section">
-                                    <div class="section-title">
-                                        <span class="section-icon">📓</span>
-                                        <?php echo Olama_School_Helpers::translate('الدفاتر المطلوبة'); ?>
-                                    </div>
-                                    <div class="section-content">
-                                        <?php echo nl2br(esc_html($item->notebooks)); ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if (!empty($item->stationary)): ?>
-                                <div class="content-section">
-                                    <div class="section-title">
-                                        <span class="section-icon">📎</span>
-                                        <?php echo Olama_School_Helpers::translate('القرطاسية المطلوبة'); ?>
-                                    </div>
-                                    <div class="section-content">
-                                        <?php echo nl2br(esc_html($item->stationary)); ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if (!empty($item->teacher_notes)): ?>
-                                <div class="content-section notes">
-                                    <div class="section-title">
-                                        <span class="section-icon">📝</span>
-                                        <?php echo Olama_School_Helpers::translate('ملاحظات المعلم'); ?>
-                                    </div>
-                                    <div class="section-content">
-                                        <?php echo nl2br(esc_html($item->teacher_notes)); ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if (empty($item->notebooks) && empty($item->stationary) && empty($item->teacher_notes)): ?>
-                                <div class="empty-state">
-                                    <span class="empty-icon">📭</span>
-                                    <p><?php echo Olama_School_Helpers::translate('لم يتم تحديد قرطاسية لهذا الصف بعد.'); ?></p>
-                                </div>
-                            <?php endif; ?>
+                        <div class="header-year">
+                            <span class="year-label"><?php echo Olama_School_Helpers::translate('العام الدراسي'); ?></span>
+                            <span class="year-value"><?php echo esc_html($year_name); ?></span>
                         </div>
                     </div>
-                <?php endforeach; ?>
-            </div>
 
-            <!-- Footer -->
-            <div class="olama-stationary-footer">
-                <p><?php echo Olama_School_Helpers::translate('يرجى إحضار جميع المستلزمات في اليوم الأول من الدراسة'); ?> 📖</p>
-            </div>
-        </div>
+                    <!-- Accordion -->
+                    <div class="olama-stationary-accordion">
+                        <?php
+                        $index = 0;
+                        foreach ($stationary_items as $item):
+                            $gradient = $gradients[$index % count($gradients)];
+                            $is_first = $index === 0;
+                            $index++;
+                            ?>
+                                <div class="accordion-item <?php echo $is_first ? 'active' : ''; ?>">
+                                    <div class="accordion-header" style="background: <?php echo $gradient; ?>;">
+                                        <div class="header-left">
+                                            <span class="grade-icon">🎒</span>
+                                            <span class="grade-name"><?php echo esc_html($item->grade_name); ?></span>
+                                        </div>
+                                        <div class="header-right">
+                                            <span class="toggle-icon">▼</span>
+                                        </div>
+                                    </div>
+                                    <div class="accordion-content" <?php echo $is_first ? 'style="display: block;"' : ''; ?>>
+                                    <?php if (!empty($item->notebooks)): ?>
+                                        <div class="content-section">
+                                            <div class="section-title">
+                                                <span class="section-icon">📓</span>
+                                                <?php echo Olama_School_Helpers::translate('الدفاتر المطلوبة'); ?>
+                                            </div>
+                                            <div class="section-content">
+                                                <?php echo nl2br(esc_html($item->notebooks)); ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
 
-        <style>
-            .olama-stationary-container {
-                font-family: 'Tajawal', 'Almarai', Arial, sans-serif;
-                max-width: 900px;
-                margin: 0 auto;
-                direction: rtl;
-            }
+                                    <?php if (!empty($item->stationary)): ?>
+                                        <div class="content-section">
+                                            <div class="section-title">
+                                                <span class="section-icon">📎</span>
+                                                <?php echo Olama_School_Helpers::translate('القرطاسية المطلوبة'); ?>
+                                            </div>
+                                            <div class="section-content">
+                                                <?php echo nl2br(esc_html($item->stationary)); ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
 
-            .olama-stationary-header {
-                background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
-                color: #1e293b;
-                padding: 30px;
-                border-radius: 16px 16px 0 0;
-                display: flex;
-                align-items: center;
-                gap: 20px;
-                flex-wrap: wrap;
-                border: 1px solid #fde68a;
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-            }
+                                    <?php if (!empty($item->teacher_notes)): ?>
+                                        <div class="content-section notes">
+                                            <div class="section-title">
+                                                <span class="section-icon">📝</span>
+                                                <?php echo Olama_School_Helpers::translate('ملاحظات المعلم'); ?>
+                                            </div>
+                                            <div class="section-content">
+                                                <?php echo nl2br(esc_html($item->teacher_notes)); ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
 
-            .olama-stationary-header .header-icon {
-                font-size: 50px;
-            }
+                                    <?php if (empty($item->notebooks) && empty($item->stationary) && empty($item->teacher_notes)): ?>
+                                        <div class="empty-state">
+                                            <span class="empty-icon">📭</span>
+                                            <p><?php echo Olama_School_Helpers::translate('لم يتم تحديد قرطاسية لهذا الصف بعد.'); ?></p>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
 
-            .olama-stationary-header .header-content {
-                flex: 1;
-            }
+                    <!-- Footer -->
+                    <div class="olama-stationary-footer">
+                        <p><?php echo Olama_School_Helpers::translate('يرجى إحضار جميع المستلزمات في اليوم الأول من الدراسة'); ?>
+                            📖</p>
+                    </div>
+                </div>
 
-            .olama-stationary-header h1 {
-                margin: 0 0 5px 0;
-                font-size: 1.8rem;
-                font-weight: 800;
-                color: #92400e;
-            }
-
-            .olama-stationary-header p {
-                margin: 0;
-                color: #78716c;
-                font-size: 1rem;
-            }
-
-            .header-year {
-                background: #fff;
-                padding: 12px 20px;
-                border-radius: 12px;
-                text-align: center;
-                border: 1px solid #fde68a;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            }
-
-            .header-year .year-label {
-                display: block;
-                font-size: 0.75rem;
-                color: #92400e;
-                margin-bottom: 4px;
-            }
-
-            .header-year .year-value {
-                font-size: 1.1rem;
-                font-weight: 700;
-                color: #1e293b;
-            }
-
-            .olama-stationary-accordion {
-                background: #f8fafc;
-                padding: 20px;
-                border-radius: 0 0 16px 16px;
-            }
-
-            .accordion-item {
-                margin-bottom: 15px;
-                border-radius: 12px;
-                overflow: hidden;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            }
-
-            .accordion-header {
-                padding: 18px 24px;
-                cursor: pointer;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                color: #fff;
-                transition: all 0.3s ease;
-            }
-
-            .accordion-header:hover {
-                opacity: 0.95;
-                transform: translateY(-1px);
-            }
-
-            .header-left {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-            }
-
-            .grade-icon {
-                font-size: 24px;
-            }
-
-            .grade-name {
-                font-size: 1.2rem;
-                font-weight: 700;
-            }
-
-            .toggle-icon {
-                font-size: 14px;
-                transition: transform 0.3s ease;
-            }
-
-            .accordion-item.active .toggle-icon {
-                transform: rotate(180deg);
-            }
-
-            .accordion-content {
-                display: none;
-                background: #fff;
-                padding: 25px;
-                border-top: 3px solid rgba(0, 0, 0, 0.05);
-            }
-
-            .content-section {
-                margin-bottom: 20px;
-                padding-bottom: 20px;
-                border-bottom: 1px dashed #e2e8f0;
-            }
-
-            .content-section:last-child {
-                margin-bottom: 0;
-                padding-bottom: 0;
-                border-bottom: none;
-            }
-
-            .section-title {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                font-weight: 700;
-                font-size: 1.1rem;
-                color: #1e293b;
-                margin-bottom: 12px;
-            }
-
-            .section-icon {
-                font-size: 20px;
-            }
-
-            .section-content {
-                background: #f8fafc;
-                padding: 15px 20px;
-                border-radius: 10px;
-                line-height: 1.8;
-                color: #475569;
-                font-size: 0.95rem;
-                border-right: 4px solid #3b82f6;
-            }
-
-            .content-section.notes .section-content {
-                background: #fffbeb;
-                border-right-color: #f59e0b;
-                color: #92400e;
-            }
-
-            .empty-state {
-                text-align: center;
-                padding: 30px;
-                color: #94a3b8;
-            }
-
-            .empty-state .empty-icon {
-                font-size: 40px;
-                display: block;
-                margin-bottom: 10px;
-            }
-
-            .olama-stationary-footer {
-                text-align: center;
-                padding: 20px;
-                background: #f1f5f9;
-                border-radius: 12px;
-                margin-top: 20px;
-                color: #64748b;
-                font-size: 0.9rem;
-            }
-
-            /* Mobile Responsive */
-            @media (max-width: 600px) {
-                .olama-stationary-header {
-                    padding: 20px;
-                    flex-direction: column;
-                    text-align: center;
-                }
-
-                .olama-stationary-header h1 {
-                    font-size: 1.4rem;
-                }
-
-                .olama-stationary-header .header-icon {
-                    font-size: 40px;
-                }
-
-                .header-year {
-                    width: 100%;
-                }
-
-                .accordion-header {
-                    padding: 15px 18px;
-                }
-
-                .grade-name {
-                    font-size: 1rem;
-                }
-
-                .accordion-content {
-                    padding: 18px;
-                }
-
-                .section-content {
-                    padding: 12px 15px;
-                    font-size: 0.9rem;
-                }
-            }
-        </style>
-
-        <script>
-            document.querySelectorAll('.olama-stationary-accordion .accordion-header').forEach(header => {
-                header.addEventListener('click', () => {
-                    const item = header.parentElement;
-                    const content = item.querySelector('.accordion-content');
-                    const wasActive = item.classList.contains('active');
-
-                    // Close all others
-                    document.querySelectorAll('.olama-stationary-accordion .accordion-item').forEach(i => {
-                        i.classList.remove('active');
-                        i.querySelector('.accordion-content').style.display = 'none';
-                    });
-
-                    // Toggle current
-                    if (!wasActive) {
-                        item.classList.add('active');
-                        content.style.display = 'block';
+                <style>
+                    .olama-stationary-container {
+                        font-family: 'Tajawal', 'Almarai', Arial, sans-serif;
+                        max-width: 900px;
+                        margin: 0 auto;
+                        direction: rtl;
                     }
-                });
-            });
-        </script>
-        <?php
-        return ob_get_clean();
+
+                    .olama-stationary-header {
+                        background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+                        color: #1e293b;
+                        padding: 30px;
+                        border-radius: 16px 16px 0 0;
+                        display: flex;
+                        align-items: center;
+                        gap: 20px;
+                        flex-wrap: wrap;
+                        border: 1px solid #fde68a;
+                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+                    }
+
+                    .olama-stationary-header .header-icon {
+                        font-size: 50px;
+                    }
+
+                    .olama-stationary-header .header-content {
+                        flex: 1;
+                    }
+
+                    .olama-stationary-header h1 {
+                        margin: 0 0 5px 0;
+                        font-size: 1.8rem;
+                        font-weight: 800;
+                        color: #92400e;
+                    }
+
+                    .olama-stationary-header p {
+                        margin: 0;
+                        color: #78716c;
+                        font-size: 1rem;
+                    }
+
+                    .header-year {
+                        background: #fff;
+                        padding: 12px 20px;
+                        border-radius: 12px;
+                        text-align: center;
+                        border: 1px solid #fde68a;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                    }
+
+                    .header-year .year-label {
+                        display: block;
+                        font-size: 0.75rem;
+                        color: #92400e;
+                        margin-bottom: 4px;
+                    }
+
+                    .header-year .year-value {
+                        font-size: 1.1rem;
+                        font-weight: 700;
+                        color: #1e293b;
+                    }
+
+                    .olama-stationary-accordion {
+                        background: #f8fafc;
+                        padding: 20px;
+                        border-radius: 0 0 16px 16px;
+                    }
+
+                    .accordion-item {
+                        margin-bottom: 15px;
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                    }
+
+                    .accordion-header {
+                        padding: 18px 24px;
+                        cursor: pointer;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        color: #fff;
+                        transition: all 0.3s ease;
+                    }
+
+                    .accordion-header:hover {
+                        opacity: 0.95;
+                        transform: translateY(-1px);
+                    }
+
+                    .header-left {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    }
+
+                    .grade-icon {
+                        font-size: 24px;
+                    }
+
+                    .grade-name {
+                        font-size: 1.2rem;
+                        font-weight: 700;
+                    }
+
+                    .toggle-icon {
+                        font-size: 14px;
+                        transition: transform 0.3s ease;
+                    }
+
+                    .accordion-item.active .toggle-icon {
+                        transform: rotate(180deg);
+                    }
+
+                    .accordion-content {
+                        display: none;
+                        background: #fff;
+                        padding: 25px;
+                        border-top: 3px solid rgba(0, 0, 0, 0.05);
+                    }
+
+                    .content-section {
+                        margin-bottom: 20px;
+                        padding-bottom: 20px;
+                        border-bottom: 1px dashed #e2e8f0;
+                    }
+
+                    .content-section:last-child {
+                        margin-bottom: 0;
+                        padding-bottom: 0;
+                        border-bottom: none;
+                    }
+
+                    .section-title {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        font-weight: 700;
+                        font-size: 1.1rem;
+                        color: #1e293b;
+                        margin-bottom: 12px;
+                    }
+
+                    .section-icon {
+                        font-size: 20px;
+                    }
+
+                    .section-content {
+                        background: #f8fafc;
+                        padding: 15px 20px;
+                        border-radius: 10px;
+                        line-height: 1.8;
+                        color: #475569;
+                        font-size: 0.95rem;
+                        border-right: 4px solid #3b82f6;
+                    }
+
+                    .content-section.notes .section-content {
+                        background: #fffbeb;
+                        border-right-color: #f59e0b;
+                        color: #92400e;
+                    }
+
+                    .empty-state {
+                        text-align: center;
+                        padding: 30px;
+                        color: #94a3b8;
+                    }
+
+                    .empty-state .empty-icon {
+                        font-size: 40px;
+                        display: block;
+                        margin-bottom: 10px;
+                    }
+
+                    .olama-stationary-footer {
+                        text-align: center;
+                        padding: 20px;
+                        background: #f1f5f9;
+                        border-radius: 12px;
+                        margin-top: 20px;
+                        color: #64748b;
+                        font-size: 0.9rem;
+                    }
+
+                    /* Mobile Responsive */
+                    @media (max-width: 600px) {
+                        .olama-stationary-header {
+                            padding: 20px;
+                            flex-direction: column;
+                            text-align: center;
+                        }
+
+                        .olama-stationary-header h1 {
+                            font-size: 1.4rem;
+                        }
+
+                        .olama-stationary-header .header-icon {
+                            font-size: 40px;
+                        }
+
+                        .header-year {
+                            width: 100%;
+                        }
+
+                        .accordion-header {
+                            padding: 15px 18px;
+                        }
+
+                        .grade-name {
+                            font-size: 1rem;
+                        }
+
+                        .accordion-content {
+                            padding: 18px;
+                        }
+
+                        .section-content {
+                            padding: 12px 15px;
+                            font-size: 0.9rem;
+                        }
+                    }
+                </style>
+
+                <script>
+                    document.querySelectorAll('.olama-stationary-accordion .accordion-header').forEach(header => {
+                        header.addEventListener('click', () => {
+                            const item = header.parentElement;
+                            const content = item.querySelector('.accordion-content');
+                            const wasActive = item.classList.contains('active');
+
+                            // Close all others
+                            document.querySelectorAll('.olama-stationary-accordion .accordion-item').forEach(i => {
+                                i.classList.remove('active');
+                                i.querySelector('.accordion-content').style.display = 'none';
+                            });
+
+                            // Toggle current
+                            if (!wasActive) {
+                                item.classList.add('active');
+                                content.style.display = 'block';
+                            }
+                        });
+                    });
+                </script>
+                <?php
+                return ob_get_clean();
     }
 }
