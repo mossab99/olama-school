@@ -2028,7 +2028,6 @@ class Olama_School_Admin
     {
         global $wpdb;
         check_ajax_referer('olama_save_exam', 'nonce');
-        die('TEST_TEST_TEST');
 
         if (!Olama_School_Permissions::can('olama_manage_exams_schedule')) {
             wp_send_json_error(__('Unauthorized', 'olama-school'));
@@ -2050,7 +2049,6 @@ class Olama_School_Admin
 
         foreach ($subjects as $subject) {
             // Check if already exists
-            global $wpdb;
             $exists = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}olama_exams WHERE semester_exam_id = %d AND subject_id = %d",
                 $exam_id,
