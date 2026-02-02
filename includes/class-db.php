@@ -584,6 +584,11 @@ class Olama_School_DB
 		if (empty($exam_indices)) {
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD KEY semester_exam_id (semester_exam_id)");
 		}
+
+		// Ensure olama_semester_exams exists (dbDelta usually handles this but let's be safe)
+		if ($wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}olama_semester_exams'") !== "{$wpdb->prefix}olama_semester_exams") {
+			$this->create_tables();
+		}
 	}
 
 	public function drop_tables()

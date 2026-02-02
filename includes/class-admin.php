@@ -1334,8 +1334,9 @@ class Olama_School_Admin
             }
 
             if ($message) {
+                $notice_class = ($msg_type === 'error') ? 'notice notice-error' : 'notice notice-success';
                 // Allow HTML in error messages for the "Force Delete" link
-                echo '<div class="' . $msg_type . ' is-dismissible"><p>' . Olama_School_Helpers::translate($message) . '</p></div>';
+                echo '<div class="' . $notice_class . ' is-dismissible"><p>' . Olama_School_Helpers::translate($message) . '</p></div>';
             }
         }
 
@@ -2035,7 +2036,6 @@ class Olama_School_Admin
         $semester_id = intval($_POST['semester_id']);
         $exam_id = intval($_POST['semester_exam_id']);
         $grade_id = intval($_POST['grade_id']);
-
         if (!$year_id || !$semester_id || !$exam_id || !$grade_id) {
             wp_send_json_error(__('Missing parameters', 'olama-school'));
         }
