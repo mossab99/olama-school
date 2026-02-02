@@ -182,6 +182,8 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    text-align: right;
+    align-items: flex-end;
 }
 
 .day-name-ar {
