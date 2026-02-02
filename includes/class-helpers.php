@@ -512,6 +512,8 @@ class Olama_School_Helpers
         'Failed to delete plan.' => 'فشل حذف الخطة.',
         'No plans saved for today yet.' => 'لم يتم حفظ خطط لهذا اليوم بعد.',
         'Please enter at least one homework (Workbook, Notebook, or Booklet/Worksheet).' => 'يرجى إدخال واجب واحد على الأقل (كتاب التمارين، أو الدفتر، أو الدوسية).',
+        'واجبات مدرسية' => 'واجبات مدرسية',
+        'لا واجبات' => 'لا واجبات',
         // Plan Type Translations
         'Plan Type' => 'نوع الخطة',
         'Homework Plan' => 'خطة الواجبات',
