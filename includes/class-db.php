@@ -279,20 +279,24 @@ class Olama_School_DB
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				academic_year_id mediumint(9) NOT NULL,
 				semester_id mediumint(9) NOT NULL,
+				semester_exam_id mediumint(9) DEFAULT NULL,
 				grade_id mediumint(9) NOT NULL,
 				subject_id mediumint(9) NOT NULL,
 				evaluation_type varchar(50) NOT NULL,
 				exam_date date NOT NULL,
-				description text NOT NULL,
-				student_book_material text NOT NULL,
+				room_number varchar(50) DEFAULT NULL,
+				description text DEFAULT NULL,
+				student_book_material text DEFAULT NULL,
 				workbook_material text DEFAULT NULL,
 				exercise_book_material text DEFAULT NULL,
 				notebook_material text DEFAULT NULL,
-				teacher_notes text NOT NULL,
+				teacher_notes text DEFAULT NULL,
+				status varchar(20) DEFAULT 'draft' NOT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
 				KEY  year_semester (academic_year_id,semester_id),
-				KEY  grade_subject (grade_id,subject_id)
+				KEY  grade_subject (grade_id,subject_id),
+				KEY  semester_exam_id (semester_exam_id)
 			) $charset_collate;",
 
 			'olama_user_preferences' => "CREATE TABLE {$wpdb->prefix}olama_user_preferences (
@@ -560,6 +564,25 @@ class Olama_School_DB
 		}
 		if (!in_array('rating', $plan_col_names)) {
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_plans ADD COLUMN rating tinyint(4) DEFAULT 0 NOT NULL AFTER teacher_response");
+		}
+
+		// Ensure olama_exams schema updates
+		$exam_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_exams");
+		$exam_col_names = wp_list_pluck($exam_cols, 'Field');
+
+		if (!in_array('semester_exam_id', $exam_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD COLUMN semester_exam_id mediumint(9) DEFAULT NULL AFTER semester_id");
+		}
+		if (!in_array('room_number', $exam_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD COLUMN room_number varchar(50) DEFAULT NULL AFTER exam_date");
+		}
+		if (!in_array('status', $exam_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD COLUMN status varchar(20) DEFAULT 'draft' NOT NULL AFTER teacher_notes");
+		}
+
+		$exam_indices = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}olama_exams WHERE Key_name = 'semester_exam_id'");
+		if (empty($exam_indices)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD KEY semester_exam_id (semester_exam_id)");
 		}
 	}
 

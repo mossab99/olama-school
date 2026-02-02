@@ -614,6 +614,18 @@ class Olama_School_Academic
     }
 
     /**
+     * Get active exam for a semester
+     */
+    public static function get_active_exam($semester_id)
+    {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}olama_semester_exams WHERE semester_id = %d AND is_active = 1 LIMIT 1",
+            $semester_id
+        ));
+    }
+
+    /**
      * Activate a semester
      */
     public static function activate_semester($semester_id)

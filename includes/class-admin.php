@@ -36,6 +36,7 @@ class Olama_School_Admin
         add_action('wp_ajax_olama_save_exam', array($this, 'ajax_save_exam'));
         add_action('wp_ajax_olama_get_semesters', array($this, 'ajax_get_semesters'));
         add_action('wp_ajax_olama_get_subjects', array($this, 'ajax_get_subjects'));
+        add_action('wp_ajax_olama_bulk_add_exam_subjects', array($this, 'ajax_bulk_add_exam_subjects'));
         add_action('wp_ajax_olama_get_student_history', array($this, 'ajax_get_enrollment_history'));
         add_action('wp_ajax_olama_mark_notification_read', array($this, 'ajax_mark_notification_read'));
         add_action('wp_ajax_olama_get_notifications', array($this, 'ajax_get_notifications'));
@@ -1893,6 +1894,7 @@ class Olama_School_Admin
 
         $tabs_config = array(
             'exam_schedule' => array('label' => Olama_School_Helpers::translate('Exam Schedule'), 'cap' => 'olama_manage_exams_schedule'),
+            'teacher_exams' => array('label' => Olama_School_Helpers::translate('Teacher Exams'), 'cap' => 'olama_fill_exam_details'),
         );
 
         $allowed_tabs = array();
@@ -1930,6 +1932,9 @@ class Olama_School_Admin
                 switch ($active_tab) {
                     case 'exam_schedule':
                         $this->render_exam_schedule_content();
+                        break;
+                    case 'teacher_exams':
+                        $this->render_teacher_exams_content();
                         break;
                 }
                 ?>
@@ -1994,6 +1999,77 @@ class Olama_School_Admin
             </div>
         </div>
         <?php
+    }
+
+    /**
+     * Render Teacher Exams Tab Content
+     */
+    public function render_teacher_exams_content()
+    {
+        $years = Olama_School_Academic::get_years();
+        $active_year = Olama_School_Academic::get_active_year();
+        $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+
+        $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
+        $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
+        $selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : ($active_semester ? $active_semester->id : (!empty($semesters) ? $semesters[0]->id : 0));
+
+        $active_exam = Olama_School_Academic::get_active_exam($selected_semester_id);
+        $selected_exam_id = isset($_GET['semester_exam_id']) ? intval($_GET['semester_exam_id']) : ($active_exam ? $active_exam->id : 0);
+
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/teacher-exams.php';
+    }
+
+    /**
+     * AJAX: Bulk Add Exam Subjects
+     */
+    public function ajax_bulk_add_exam_subjects()
+    {
+        check_ajax_referer('olama_exam_nonce_field', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_manage_exams_schedule')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
+        $year_id = intval($_POST['academic_year_id']);
+        $semester_id = intval($_POST['semester_id']);
+        $exam_id = intval($_POST['semester_exam_id']);
+        $grade_id = intval($_POST['grade_id']);
+
+        if (!$year_id || !$semester_id || !$exam_id || !$grade_id) {
+            wp_send_json_error(__('Missing parameters', 'olama-school'));
+        }
+
+        $exam_meta = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_semester_exams WHERE id = %d", $exam_id));
+        $exam_name = $exam_meta ? $exam_meta->exam_name : '';
+
+        $subjects = Olama_School_Subject::get_subjects_by_grade($grade_id);
+        $added = 0;
+
+        foreach ($subjects as $subject) {
+            // Check if already exists
+            global $wpdb;
+            $exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}olama_exams WHERE semester_exam_id = %d AND subject_id = %d",
+                $exam_id,
+                $subject->id
+            ));
+
+            if (!$exists) {
+                Olama_School_Exam::save_exam(array(
+                    'academic_year_id' => $year_id,
+                    'semester_id' => $semester_id,
+                    'semester_exam_id' => $exam_id,
+                    'grade_id' => $grade_id,
+                    'subject_id' => $subject->id,
+                    'evaluation_type' => $exam_name,
+                    'status' => 'draft'
+                ));
+                $added++;
+            }
+        }
+
+        wp_send_json_success(array('message' => sprintf(__('%d subjects added to exam.', 'olama-school'), $added)));
     }
 
     /**

@@ -91,6 +91,7 @@ class Olama_School_Permissions
                 'caps' => array(
                     'olama_access_exams_mgmt' => __('Access Management', 'olama-school'),
                     'olama_manage_exams_schedule' => __('Exam Schedule', 'olama-school'),
+                    'olama_fill_exam_details' => __('Fill Exam Details', 'olama-school'),
                 )
             ),
             'evaluation' => array(
@@ -166,6 +167,8 @@ class Olama_School_Permissions
                                 'olama_manage_curriculum_analysis',
                                 'olama_access_evaluation',
                                 'olama_manage_evaluation_students',
+                                'olama_access_exams_mgmt',
+                                'olama_fill_exam_details',
                                 'olama_access_reports',
                                 'olama_view_reports_summary'
                             );
