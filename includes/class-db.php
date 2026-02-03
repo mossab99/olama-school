@@ -628,11 +628,23 @@ class Olama_School_DB
 		$schedule_col_names = wp_list_pluck($schedule_cols, 'Field');
 
 		if (!in_array('schedule_type', $schedule_col_names)) {
-			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_schedule ADD COLUMN schedule_type varchar(20) DEFAULT 'normal' NOT NULL AFTER subject_id");
+			// 1. Add column with default
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_schedule ADD COLUMN schedule_type varchar(20) DEFAULT 'normal' NOT NULL");
 
-			// Update the unique index to include schedule_type
-			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_schedule DROP INDEX schedule_slot");
+			// 2. Force update existing rows just in case default wasn't applied
+			$wpdb->query("UPDATE {$wpdb->prefix}olama_schedule SET schedule_type = 'normal' WHERE schedule_type IS NULL OR schedule_type = ''");
+
+			// 3. Drop old index (it might be named differently or missing)
+			$indices = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}olama_schedule WHERE Key_name = 'schedule_slot'");
+			if (!empty($indices)) {
+				$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_schedule DROP INDEX schedule_slot");
+			}
+
+			// 4. Add new unique index
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_schedule ADD UNIQUE KEY schedule_slot (semester_id, section_id, day_name, period_number, schedule_type)");
+		} else {
+			// Column exists, but let's ensure data integrity for existing rows
+			$wpdb->query("UPDATE {$wpdb->prefix}olama_schedule SET schedule_type = 'normal' WHERE schedule_type IS NULL OR schedule_type = '' OR schedule_type = '0'");
 		}
 	}
 

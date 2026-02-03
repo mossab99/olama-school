@@ -145,12 +145,16 @@ if ($current_semester_id && $selected_grade_id) {
         $approved_reviews = intval($stats->approved_reviews);
 
         // 3. Scheduled Periods
+        $analysis_date = $week_start; // Use week start to determine schedule type for the week
+        $schedule_type = Olama_School_Schedule::is_ramadan($analysis_date) ? 'ramadan' : 'normal';
+
         $sched_periods = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->prefix}olama_schedule 
-             WHERE subject_id = %d AND section_id = %d AND semester_id = %d",
+             WHERE subject_id = %d AND section_id = %d AND semester_id = %d AND schedule_type = %s",
             $sub->id,
             $selected_section_id,
-            $current_semester_id
+            $current_semester_id,
+            $schedule_type
         ));
         $total_sched_capacity = intval($sched_periods);
 
