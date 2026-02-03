@@ -89,7 +89,7 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-        <div class="olama-premium-oh-container" dir="rtl">
+        <div class="olama-premium-oh-container dark-mode" dir="rtl">
             <header class="oh-premium-hero">
                 <div class="hero-content">
                     <div class="hero-text">
@@ -141,17 +141,6 @@ class Olama_School_Shortcodes
                             </div>
                         </div>
 
-                        <div class="tags-container">
-                            <?php foreach ($assignments as $asgn):
-                                $tag_color = !empty($asgn->color_code) ? $asgn->color_code : '#2563eb';
-                                ?>
-                                <span class="assignment-tag"
-                                    style="--tag-bg: <?php echo esc_attr($tag_color); ?>20; --tag-color: <?php echo esc_attr($tag_color); ?>;">
-                                    <?php echo esc_html("{$asgn->grade_name} - {$asgn->section_name} - {$asgn->subject_name}"); ?>
-                                </span>
-                            <?php endforeach; ?>
-                        </div>
-
                         <div class="slots-section">
                             <h4 class="slots-header">
                                 <span class="material-icons">schedule</span>
@@ -165,6 +154,17 @@ class Olama_School_Shortcodes
                                     </div>
                                 <?php endforeach; ?>
                             </div>
+                        </div>
+
+                        <div class="tags-container">
+                            <?php foreach ($assignments as $asgn):
+                                $tag_color = !empty($asgn->color_code) ? $asgn->color_code : '#2563eb';
+                                ?>
+                                <span class="assignment-tag"
+                                    style="--tag-bg: <?php echo esc_attr($tag_color); ?>20; --tag-color: <?php echo esc_attr($tag_color); ?>;">
+                                    <?php echo esc_html("{$asgn->grade_name} - {$asgn->section_name} - {$asgn->subject_name}"); ?>
+                                </span>
+                            <?php endforeach; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
