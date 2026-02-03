@@ -678,6 +678,25 @@ class Olama_School_DB
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_teacher_office_hours ADD COLUMN semester_id mediumint(9) NOT NULL AFTER academic_year_id");
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_teacher_office_hours ADD KEY semester_id (semester_id)");
 		}
+
+		// Backfill legacy office hours to active year/semester
+		$active_year_id = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}olama_academic_years WHERE is_active = 1 LIMIT 1");
+		if ($active_year_id) {
+			$active_semester_id = $wpdb->get_var($wpdb->prepare(
+				"SELECT id FROM {$wpdb->prefix}olama_semesters WHERE academic_year_id = %d AND is_active = 1 LIMIT 1",
+				$active_year_id
+			));
+			if ($active_semester_id) {
+				$wpdb->query($wpdb->prepare(
+					"UPDATE {$wpdb->prefix}olama_teacher_office_hours 
+					SET academic_year_id = %d, semester_id = %d 
+					WHERE (academic_year_id = 0 OR academic_year_id IS NULL) 
+					OR (semester_id = 0 OR semester_id IS NULL)",
+					$active_year_id,
+					$active_semester_id
+				));
+			}
+		}
 	}
 
 	/**
