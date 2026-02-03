@@ -774,7 +774,7 @@ class Olama_School_Admin
                     'sending' => Olama_School_Helpers::translate('Sending...'),
                     'approving' => Olama_School_Helpers::translate('Approving...'),
                     'enterFeedback' => Olama_School_Helpers::translate('Please enter some feedback.'),
-                    'atLeastOneHomework' => Olama_School_Helpers::translate('Please enter at least one homework (Workbook, Notebook, or Booklet/Worksheet).'),
+                    'atLeastOneHomework' => Olama_School_Helpers::translate('Please enter at least one homework (Student Book, Workbook, Notebook, or Booklet/Worksheet).'),
                 )
             ));
         }

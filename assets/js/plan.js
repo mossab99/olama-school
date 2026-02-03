@@ -451,12 +451,13 @@ jQuery(document).ready(function ($) {
         // Homework validation
         const planType = $('#olama-plan-type').val();
         if (planType === 'homework') {
+            const hwSB = $('textarea[name="homework_sb"]').val().trim();
             const hwEB = $('textarea[name="homework_eb"]').val().trim();
             const hwNB = $('textarea[name="homework_nb"]').val().trim();
             const hwWS = $('textarea[name="homework_ws"]').val().trim();
 
-            if (!hwEB && !hwNB && !hwWS) {
-                alert(olamaPlan.i18n.atLeastOneHomework || 'Please enter at least one homework (Workbook, Notebook, or Booklet/Worksheet).');
+            if (!hwSB && !hwEB && !hwNB && !hwWS) {
+                alert(olamaPlan.i18n.atLeastOneHomework || 'Please enter at least one homework (Student Book, Workbook, Notebook, or Booklet/Worksheet).');
                 e.preventDefault();
                 return false;
             }
