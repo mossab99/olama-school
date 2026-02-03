@@ -76,12 +76,13 @@ class Olama_School_Plan
 
         // Homework validation
         if ($plan_type === 'homework') {
+            $hw_sb = trim($data['homework_sb'] ?? '');
             $hw_eb = trim($data['homework_eb'] ?? '');
             $hw_nb = trim($data['homework_nb'] ?? '');
             $hw_ws = trim($data['homework_ws'] ?? '');
 
-            if (empty($hw_eb) && empty($hw_nb) && empty($hw_ws)) {
-                return new WP_Error('missing_homework', Olama_School_Helpers::translate('Please enter at least one homework (Workbook, Notebook, or Booklet/Worksheet).'));
+            if (empty($hw_sb) && empty($hw_eb) && empty($hw_nb) && empty($hw_ws)) {
+                return new WP_Error('missing_homework', Olama_School_Helpers::translate('Please enter at least one homework (Student Book, Workbook, Notebook, or Booklet/Worksheet).'));
             }
         }
 
