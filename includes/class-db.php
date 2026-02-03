@@ -116,7 +116,9 @@ class Olama_School_DB
 				national_id varchar(50) DEFAULT NULL,
 				gender varchar(20) DEFAULT NULL,
 				is_active tinyint(1) DEFAULT 1 NOT NULL,
-				PRIMARY KEY  (id)
+				PRIMARY KEY  (id),
+				KEY student_uid (student_uid),
+				KEY family_id (family_id)
 			) $charset_collate;",
 
 			'olama_student_enrollment' => "CREATE TABLE {$wpdb->prefix}olama_student_enrollment (
@@ -162,7 +164,8 @@ class Olama_School_DB
 				KEY  section_date (section_id,plan_date),
 				KEY  plan_lookup (academic_year_id,section_id,plan_date),
 				KEY  subject_id (subject_id),
-				KEY  teacher_id (teacher_id)
+				KEY  teacher_id (teacher_id),
+				KEY  section_subject_date (section_id,subject_id,plan_date)
 			) $charset_collate;",
 
 			'olama_plan_questions' => "CREATE TABLE {$wpdb->prefix}olama_plan_questions (
@@ -179,7 +182,8 @@ class Olama_School_DB
 				template_data longtext NOT NULL,
 				teacher_id bigint(20) UNSIGNED NOT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-				PRIMARY KEY  (id)
+				PRIMARY KEY  (id),
+				KEY teacher_subject (teacher_id, subject_id)
 			) $charset_collate;",
 
 			'olama_schedule' => "CREATE TABLE {$wpdb->prefix}olama_schedule (
@@ -218,7 +222,8 @@ class Olama_School_DB
 				start_date date DEFAULT NULL,
 				end_date date DEFAULT NULL,
 				PRIMARY KEY  (id),
-				KEY  unit_id (unit_id)
+				KEY  unit_id (unit_id),
+				KEY  lesson_dates (start_date, end_date)
 			) $charset_collate;",
 
 			'olama_curriculum_questions' => "CREATE TABLE {$wpdb->prefix}olama_curriculum_questions (
@@ -264,7 +269,8 @@ class Olama_School_DB
 				KEY  academic_year_id (academic_year_id),
 				KEY  teacher_id (teacher_id),
 				KEY  section_id (section_id),
-				KEY  assignment (teacher_id, section_id, subject_id)
+				KEY  assignment (teacher_id, section_id, subject_id),
+				KEY  assignment_full (academic_year_id, grade_id, section_id)
 			) $charset_collate;",
 
 			'olama_teacher_office_hours' => "CREATE TABLE {$wpdb->prefix}olama_teacher_office_hours (
@@ -298,7 +304,8 @@ class Olama_School_DB
 				PRIMARY KEY  (id),
 				KEY  year_semester (academic_year_id,semester_id),
 				KEY  grade_subject (grade_id,subject_id),
-				KEY  semester_exam_id (semester_exam_id)
+				KEY  semester_exam_id (semester_exam_id),
+				KEY  exam_tracking (grade_id, subject_id, status)
 			) $charset_collate;",
 
 			'olama_user_preferences' => "CREATE TABLE {$wpdb->prefix}olama_user_preferences (
@@ -645,6 +652,32 @@ class Olama_School_DB
 		} else {
 			// Column exists, but let's ensure data integrity for existing rows
 			$wpdb->query("UPDATE {$wpdb->prefix}olama_schedule SET schedule_type = 'normal' WHERE schedule_type IS NULL OR schedule_type = '' OR schedule_type = '0'");
+		}
+
+		// New Performance Indexes Optimizations
+		$this->ensure_index_exists('olama_students', 'student_uid', 'student_uid');
+		$this->ensure_index_exists('olama_students', 'family_id', 'family_id');
+		$this->ensure_index_exists('olama_plans', 'section_subject_date', '(section_id, subject_id, plan_date)');
+		$this->ensure_index_exists('olama_templates', 'teacher_subject', '(teacher_id, subject_id)');
+		$this->ensure_index_exists('olama_curriculum_lessons', 'lesson_dates', '(start_date, end_date)');
+		$this->ensure_index_exists('olama_teacher_assignments', 'assignment_full', '(academic_year_id, grade_id, section_id)');
+		$this->ensure_index_exists('olama_exams', 'exam_tracking', '(grade_id, subject_id, status)');
+	}
+
+	/**
+	 * Helper to ensure an index exists on a table
+	 */
+	private function ensure_index_exists($table_name, $index_name, $index_columns)
+	{
+		global $wpdb;
+		$table_full = $wpdb->prefix . $table_name;
+		$index_exists = $wpdb->get_results($wpdb->prepare(
+			"SHOW INDEX FROM $table_full WHERE Key_name = %s",
+			$index_name
+		));
+
+		if (empty($index_exists)) {
+			$wpdb->query("ALTER TABLE $table_full ADD KEY $index_name $index_columns");
 		}
 	}
 
