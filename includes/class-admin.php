@@ -2822,6 +2822,18 @@ class Olama_School_Admin
      */
     public function render_search_plan_page_content()
     {
+        $active_year = Olama_School_Academic::get_active_year();
+        $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+        $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
+        $selected_semester_id = isset($_GET['semester_id']) ? $_GET['semester_id'] : '';
+        if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
+            $selected_semester_id = $active_semester ? $active_semester->id : 0;
+        } else {
+            $selected_semester_id = intval($selected_semester_id);
+        }
+
+        $all_weeks = Olama_School_Academic::get_academic_weeks($selected_year_id, $selected_semester_id);
+
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/weekly-search-plan.php';
     }
 

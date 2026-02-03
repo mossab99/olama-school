@@ -38,10 +38,7 @@ if (!empty($sections)) {
 $all_grade_subjects = Olama_School_Subject::get_by_grade($selected_grade_id);
 $selected_subject_id = isset($_GET['subject_id']) ? intval($_GET['subject_id']) : (isset($all_grade_subjects[0]->id) ? intval($all_grade_subjects[0]->id) : 0);
 
-// Reuse week selection logic
-$active_year = Olama_School_Academic::get_active_year();
-$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
-
+// $selected_year_id, $selected_semester_id and $all_weeks are already defined in class-admin.php
 // $all_weeks is already defined in class-admin.php
 $months_weeks = array();
 foreach ($all_weeks as $val => $label) {
