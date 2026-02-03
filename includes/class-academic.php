@@ -75,6 +75,15 @@ class Olama_School_Academic
     }
 
     /**
+     * Get single semester
+     */
+    public static function get_semester($semester_id)
+    {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_semesters WHERE id = %d", $semester_id));
+    }
+
+    /**
      * Update academic year
      */
     public static function update_year($year_id, $data)

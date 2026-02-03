@@ -44,6 +44,7 @@ class Olama_School_Admin
         add_action('wp_ajax_olama_get_units', array($this, 'ajax_get_units'));
         add_action('wp_ajax_olama_get_lessons', array($this, 'ajax_get_lessons'));
         add_action('admin_init', array($this, 'restrict_teacher_access'));
+        add_action('admin_post_olama_save_office_hours', array($this, 'handle_office_hours_save'));
         add_action('admin_bar_menu', array($this, 'clean_teacher_admin_bar'), 999);
 
         // Whitelabel Footer
@@ -2493,19 +2494,26 @@ class Olama_School_Admin
     public function handle_office_hours_save()
     {
         if (isset($_POST['olama_save_office_hours']) && check_admin_referer('olama_save_office_hours', 'olama_office_hours_nonce')) {
+            if (!Olama_School_Permissions::can('olama_access_academic_mgmt')) {
+                wp_die(__('Unauthorized', 'olama-school'));
+            }
+
             $teacher_id = intval($_POST['teacher_id']);
+            $academic_year_id = intval($_POST['academic_year_id'] ?? 0);
+            $semester_id = intval($_POST['semester_id'] ?? 0);
             $slots = $_POST['slots'] ?? [];
 
-            Olama_School_Teacher::save_office_hours($teacher_id, $slots);
+            Olama_School_Teacher::save_office_hours($teacher_id, $slots, $academic_year_id, $semester_id);
 
-            $url = add_query_arg(array(
-                'page' => 'olama-school-academic',
-                'tab' => 'office_hours',
-                'teacher_id' => $teacher_id,
-                'message' => 'office_hours_saved'
-            ), admin_url('admin.php'));
+            $redirect_url = admin_url('admin.php?page=olama-school-academic&tab=office_hours&teacher_id=' . $teacher_id);
+            if ($academic_year_id)
+                $redirect_url = add_query_arg('academic_year_id', $academic_year_id, $redirect_url);
+            if ($semester_id)
+                $redirect_url = add_query_arg('semester_id', $semester_id, $redirect_url);
 
-            wp_redirect($url);
+            $redirect_url = add_query_arg('message', 'office_hours_saved', $redirect_url);
+
+            wp_redirect($redirect_url);
             exit;
         }
     }

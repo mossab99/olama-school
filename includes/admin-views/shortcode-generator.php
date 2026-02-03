@@ -160,13 +160,12 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
 
             // Generate shortcode based on type
             var shortcode = '[olama_' + type;
+            var yearId = $('#academic_year_id').val();
 
-            if (type === 'stationary') {
-                // Stationary only needs year attribute
-                var yearId = $('#academic_year_id').val();
-                if (yearId) shortcode += ' year="' + yearId + '"';
-            } else {
-                if (semester) shortcode += ' semester="' + semester + '"';
+            if (yearId) shortcode += ' year="' + yearId + '"';
+
+            if (type !== 'stationary') {
+                if (semester && semester !== 'active') shortcode += ' semester="' + semester + '"';
                 if (grade) shortcode += ' grade="' + grade + '"';
                 if (section) shortcode += ' section="' + section + '"';
                 if (type === 'weekly_plan' && week) shortcode += ' week="' + week + '"';

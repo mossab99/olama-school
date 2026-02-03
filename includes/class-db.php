@@ -275,10 +275,14 @@ class Olama_School_DB
 
 			'olama_teacher_office_hours' => "CREATE TABLE {$wpdb->prefix}olama_teacher_office_hours (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL,
 				teacher_id bigint(20) UNSIGNED NOT NULL,
 				day_name varchar(20) NOT NULL,
 				available_time text NOT NULL,
 				PRIMARY KEY  (id),
+				KEY  academic_year_id (academic_year_id),
+				KEY  semester_id (semester_id),
 				KEY  teacher_id (teacher_id)
 			) $charset_collate;",
 
@@ -662,6 +666,18 @@ class Olama_School_DB
 		$this->ensure_index_exists('olama_curriculum_lessons', 'lesson_dates', '(start_date, end_date)');
 		$this->ensure_index_exists('olama_teacher_assignments', 'assignment_full', '(academic_year_id, grade_id, section_id)');
 		$this->ensure_index_exists('olama_exams', 'exam_tracking', '(grade_id, subject_id, status)');
+
+		// Ensure olama_teacher_office_hours has academic_year_id and semester_id
+		$oh_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_teacher_office_hours");
+		$oh_col_names = wp_list_pluck($oh_cols, 'Field');
+		if (!in_array('academic_year_id', $oh_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_teacher_office_hours ADD COLUMN academic_year_id mediumint(9) NOT NULL AFTER id");
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_teacher_office_hours ADD KEY academic_year_id (academic_year_id)");
+		}
+		if (!in_array('semester_id', $oh_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_teacher_office_hours ADD COLUMN semester_id mediumint(9) NOT NULL AFTER academic_year_id");
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_teacher_office_hours ADD KEY semester_id (semester_id)");
+		}
 	}
 
 	/**

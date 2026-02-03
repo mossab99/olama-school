@@ -27,8 +27,10 @@ class Olama_School_Shortcodes
      */
     public function enqueue_shortcode_assets()
     {
-        wp_enqueue_style('olama-google-fonts', 'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Almarai:wght@300;400;700;800&display=swap', array(), null);
-        wp_enqueue_style('olama-shortcodes-css', OLAMA_SCHOOL_URL . 'assets/css/shortcodes.css', array(), OLAMA_SCHOOL_VERSION);
+        wp_enqueue_style('olama-google-fonts', 'https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Inter:wght@400;600;700&display=swap', array(), null);
+        wp_enqueue_style('olama-material-icons', 'https://fonts.googleapis.com/icon?family=Material+Icons', array(), null);
+        wp_enqueue_style('olama-shortcodes', OLAMA_SCHOOL_URL . 'assets/css/shortcodes.css', array(), OLAMA_SCHOOL_VERSION);
+        wp_enqueue_script('olama-shortcodes-js', OLAMA_SCHOOL_URL . 'assets/js/shortcodes.js', array('jquery'), OLAMA_SCHOOL_VERSION, true);
     }
 
     /**
@@ -36,165 +38,181 @@ class Olama_School_Shortcodes
      */
     public function render_teachers_office_hours_shortcode($atts)
     {
-        $teachers = Olama_School_Teacher::get_teachers();
+        $atts = shortcode_atts(array(
+            'year' => '',
+            'semester' => '',
+            'grade' => '',
+            'section' => '',
+            'random' => 'false'
+        ), $atts, 'olama_teachers_office_hours');
+
+        $academic_year_id = intval($atts['year']);
+        if (!$academic_year_id) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $academic_year_id = $active_year ? $active_year->id : 0;
+        }
+
+        $year_obj = Olama_School_Academic::get_year($academic_year_id);
+        $year_name = $year_obj ? $year_obj->year_name : '2025 - 2026';
+
+        $semester_id = $atts['semester'];
+        if ($semester_id === 'active' || empty($semester_id)) {
+            $active_semester = Olama_School_Academic::get_active_semester($academic_year_id);
+            $semester_id = $active_semester ? $active_semester->id : 0;
+        } else {
+            $semester_id = intval($semester_id);
+        }
+
+        $semester_obj = Olama_School_Academic::get_semester($semester_id);
+        $semester_name = $semester_obj ? $semester_obj->semester_name : Olama_School_Helpers::translate('Semester');
+
+        $grade_id = intval($atts['grade']);
+        $section_id = intval($atts['section']);
+
+        // Fetch teachers based on filters
+        $teachers = array();
+        if ($section_id) {
+            $teachers = Olama_School_Teacher::get_teachers_for_section($section_id, $academic_year_id);
+        } elseif ($grade_id) {
+            $teachers = Olama_School_Teacher::get_teachers_for_grade($grade_id, $academic_year_id);
+        } else {
+            $teachers = Olama_School_Teacher::get_teachers();
+        }
 
         if (empty($teachers)) {
-            return '<div class="olama-no-plans">' . __('No teachers found.', 'olama-school') . '</div>';
+            return '<div class="olama-no-plans">' . Olama_School_Helpers::translate('No teachers found.') . '</div>';
+        }
+
+        if ($atts['random'] === 'true') {
+            shuffle($teachers);
         }
 
         ob_start();
         ?>
-        <div class="olama-teachers-office-hours-container">
-            <div class="olama-search-box">
-                <span class="dashicons dashicons-search"></span>
-                <input type="text" id="olama-teacher-search"
-                    placeholder="<?php _e('Search by teacher name...', 'olama-school'); ?>">
+        <div class="olama-premium-oh-container" dir="rtl">
+            <header class="oh-premium-hero">
+                <div class="hero-content">
+                    <div class="hero-text">
+                        <div class="portal-badge"><?php echo Olama_School_Helpers::translate('Academic Portal'); ?></div>
+                        <h1 class="hero-title"><?php echo Olama_School_Helpers::translate('Office Hours'); ?></h1>
+                        <h2 class="hero-subtitle english-font">Teacher Office Hours</h2>
+                    </div>
+                    <div class="hero-info-card">
+                        <div class="info-label"><?php echo Olama_School_Helpers::translate('Academic Year'); ?></div>
+                        <div class="info-value english-font"><?php echo esc_html($year_name); ?></div>
+                        <div class="info-semester"><?php echo esc_html($semester_name); ?></div>
+                    </div>
+                </div>
+                <div class="hero-blob blob-1"></div>
+                <div class="hero-blob blob-2"></div>
+            </header>
+
+            <div class="oh-premium-controls">
+                <div class="search-wrapper">
+                    <input type="text" id="oh-teacher-search"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Search by teacher name...'); ?>">
+                </div>
+                <div class="search-wrapper">
+                    <input type="text" id="oh-subject-search"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Search by subject name...'); ?>">
+                </div>
             </div>
 
-            <div class="olama-teachers-grid" id="olama-teachers-list">
+            <div class="oh-premium-grid" id="oh-teachers-list">
                 <?php foreach ($teachers as $teacher):
-                    $office_hours = Olama_School_Teacher::get_office_hours($teacher->ID);
+                    $office_hours = Olama_School_Teacher::get_office_hours($teacher->ID, $academic_year_id, $semester_id);
                     if (empty($office_hours))
                         continue;
+
+                    $assignments = Olama_School_Teacher::get_teacher_academic_assignments($teacher->ID, $academic_year_id);
+                    $subject_names = wp_list_pluck($assignments, 'subject_name');
+                    $subject_str = implode(', ', $subject_names);
                     ?>
-                    <div class="olama-teacher-card" data-name="<?php echo esc_attr(strtolower($teacher->display_name)); ?>">
-                        <div class="olama-teacher-info">
-                            <div class="teacher-avatar">
-                                <?php echo get_avatar($teacher->ID, 64); ?>
+                    <div class="oh-premium-card" data-name="<?php echo esc_attr(strtolower($teacher->display_name)); ?>"
+                        data-subjects="<?php echo esc_attr(strtolower($subject_str)); ?>">
+                        <div class="card-header">
+                            <div class="avatar-container">
+                                <?php echo get_avatar($teacher->ID, 80); ?>
+                                <div class="status-indicator"></div>
                             </div>
-                            <div class="teacher-details">
+                            <div class="teacher-meta">
                                 <h3 class="teacher-name"><?php echo esc_html($teacher->display_name); ?></h3>
-                                <div class="teacher-title"><?php _e('Teacher', 'olama-school'); ?></div>
+                                <p class="teacher-dept"><?php echo Olama_School_Helpers::translate('Teacher'); ?></p>
                             </div>
                         </div>
-                        <div class="olama-office-hours-list">
-                            <?php foreach ($office_hours as $oh): ?>
-                                <div class="olama-oh-item">
-                                    <span class="oh-day"><?php _e($oh->day_name, 'olama-school'); ?>:</span>
-                                    <span class="oh-time"><?php echo esc_html($oh->available_time); ?></span>
-                                </div>
+
+                        <div class="tags-container">
+                            <?php foreach ($assignments as $asgn):
+                                $tag_color = !empty($asgn->color_code) ? $asgn->color_code : '#2563eb';
+                                ?>
+                                <span class="assignment-tag"
+                                    style="--tag-bg: <?php echo esc_attr($tag_color); ?>20; --tag-color: <?php echo esc_attr($tag_color); ?>;">
+                                    <?php echo esc_html("{$asgn->grade_name} - {$asgn->section_name} - {$asgn->subject_name}"); ?>
+                                </span>
                             <?php endforeach; ?>
+                        </div>
+
+                        <div class="slots-section">
+                            <h4 class="slots-header">
+                                <span class="material-icons">schedule</span>
+                                <?php echo Olama_School_Helpers::translate('Available Times'); ?>
+                            </h4>
+                            <div class="slots-list">
+                                <?php foreach ($office_hours as $oh): ?>
+                                    <div class="slot-item">
+                                        <span class="day-name"><?php echo Olama_School_Helpers::translate($oh->day_name); ?></span>
+                                        <span class="time-value"><?php echo esc_html($oh->available_time); ?></span>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
+
+            <div id="oh-no-results" class="no-results" style="display: none;">
+                <span class="material-icons">search_off</span>
+                <p><?php echo Olama_School_Helpers::translate('No teachers match your search.'); ?></p>
+            </div>
         </div>
+
+        <button class="oh-theme-toggle"
+            onclick="document.querySelector('.olama-premium-oh-container').classList.toggle('dark-mode')">
+            <span class="material-icons">contrast</span>
+        </button>
 
         <script>
             jQuery(document).ready(function ($) {
-                $('#olama-teacher-search').on('input', function () {
-                    var searchTerm = $(this).val().toLowerCase();
-                    $('#olama-teachers-list .olama-teacher-card').each(function () {
+                function filterTeachers() {
+                    var nameTerm = $('#oh-teacher-search').val().toLowerCase();
+                    var subjectTerm = $('#oh-subject-search').val().toLowerCase();
+                    var visibleCount = 0;
+
+                    $('#oh-teachers-list .oh-premium-card').each(function () {
                         var name = $(this).data('name');
-                        if (name.includes(searchTerm)) {
-                            $(this).show();
+                        var subjects = $(this).data('subjects');
+
+                        var nameMatch = !nameTerm || name.includes(nameTerm);
+                        var subjectMatch = !subjectTerm || subjects.includes(subjectTerm);
+
+                        if (nameMatch && subjectMatch) {
+                            $(this).fadeIn(300).css('display', 'flex');
+                            visibleCount++;
                         } else {
                             $(this).hide();
                         }
                     });
-                });
+
+                    if (visibleCount === 0) {
+                        $('#oh-no-results').show();
+                    } else {
+                        $('#oh-no-results').hide();
+                    }
+                }
+
+                $('#oh-teacher-search, #oh-subject-search').on('input', filterTeachers);
             });
         </script>
-
-        <style>
-            .olama-teachers-office-hours-container {
-                max-width: 1000px;
-                margin: 0 auto;
-            }
-
-            .olama-search-box {
-                position: relative;
-                margin-bottom: 30px;
-            }
-
-            .olama-search-box .dashicons {
-                position: absolute;
-                left: 12px;
-                top: 50%;
-                transform: translateY(-50%);
-                color: #64748b;
-            }
-
-            .olama-search-box input {
-                width: 100%;
-                padding: 12px 12px 12px 40px;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                font-size: 1rem;
-            }
-
-            .olama-teachers-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-                gap: 20px;
-            }
-
-            .olama-teacher-card {
-                background: #fff;
-                border: 1px solid #e2e8f0;
-                border-radius: 12px;
-                padding: 20px;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-                transition: transform 0.2s;
-            }
-
-            .olama-teacher-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            }
-
-            .olama-teacher-info {
-                display: flex;
-                align-items: center;
-                gap: 15px;
-                margin-bottom: 15px;
-                border-bottom: 1px solid #f1f5f9;
-                padding-bottom: 15px;
-            }
-
-            .teacher-avatar img {
-                border-radius: 50%;
-            }
-
-            .teacher-name {
-                margin: 0;
-                font-size: 1.1rem;
-                font-weight: 700;
-                color: #1e293b;
-            }
-
-            .teacher-title {
-                font-size: 0.85rem;
-                color: #64748b;
-            }
-
-            .olama-office-hours-list {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .olama-oh-item {
-                display: flex;
-                justify-content: space-between;
-                font-size: 0.9rem;
-            }
-
-            .oh-day {
-                font-weight: 600;
-                color: #475569;
-            }
-
-            .oh-time {
-                color: #2563eb;
-            }
-
-            @media (max-width: 600px) {
-                .olama-teachers-grid {
-                    grid-template-columns: 1fr;
-                }
-            }
-        </style>
         <?php
         return ob_get_clean();
     }
@@ -1492,7 +1510,8 @@ class Olama_School_Shortcodes
                 <div class="exam-title-group">
                     <h2 class="exam-name"><?php echo esc_html($exam->exam_name); ?></h2>
                     <p class="exam-semester"><?php echo esc_html($semester->semester_name); ?> -
-                        <?php echo esc_html($active_year->year_name); ?></p>
+                        <?php echo esc_html($active_year->year_name); ?>
+                    </p>
                 </div>
                 <div class="exam-grade-badge">
                     <?php
@@ -1538,7 +1557,8 @@ class Olama_School_Shortcodes
                                 <?php if ($ex->student_book_material): ?>
                                     <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
                                         <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
-                                            <?php echo Olama_School_Helpers::translate('Student Book'); ?></div>
+                                            <?php echo Olama_School_Helpers::translate('Student Book'); ?>
+                                        </div>
                                         <div class="material-content"><?php echo esc_html($ex->student_book_material); ?></div>
                                     </div>
                                 <?php endif; ?>
@@ -1546,7 +1566,8 @@ class Olama_School_Shortcodes
                                 <?php if ($ex->workbook_material): ?>
                                     <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
                                         <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
-                                            <?php echo Olama_School_Helpers::translate('Workbook'); ?></div>
+                                            <?php echo Olama_School_Helpers::translate('Workbook'); ?>
+                                        </div>
                                         <div class="material-content"><?php echo esc_html($ex->workbook_material); ?></div>
                                     </div>
                                 <?php endif; ?>
@@ -1554,7 +1575,8 @@ class Olama_School_Shortcodes
                                 <?php if ($ex->exercise_book_material): ?>
                                     <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
                                         <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
-                                            <?php echo Olama_School_Helpers::translate('Exercise Notebook'); ?></div>
+                                            <?php echo Olama_School_Helpers::translate('Exercise Notebook'); ?>
+                                        </div>
                                         <div class="material-content"><?php echo esc_html($ex->exercise_book_material); ?></div>
                                     </div>
                                 <?php endif; ?>
@@ -1562,7 +1584,8 @@ class Olama_School_Shortcodes
                                 <?php if ($ex->notebook_material): ?>
                                     <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
                                         <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
-                                            <?php echo Olama_School_Helpers::translate('Notebook'); ?></div>
+                                            <?php echo Olama_School_Helpers::translate('Notebook'); ?>
+                                        </div>
                                         <div class="material-content"><?php echo esc_html($ex->notebook_material); ?></div>
                                     </div>
                                 <?php endif; ?>
