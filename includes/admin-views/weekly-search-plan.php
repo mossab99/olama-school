@@ -346,6 +346,21 @@ if ($current_semester_id && $selected_grade_id && $selected_subject_id) {
                                     </div>
                                 <?php endif; ?>
 
+                                <?php if ($plan->status === 'needs_edit'): ?>
+                                    <span class="olama-feedback-warning" title="<?php echo esc_attr($plan->supervisor_feedback); ?>"
+                                        style="position: absolute; top: 8px; right: 8px; font-size: 18px; cursor: help; z-index: 5;">
+                                        ⚠️
+                                    </span>
+                                <?php endif; ?>
+                                <?php if (!empty($plan->teacher_name)): ?>
+                                    <div class="olama-teacher-badge"
+                                        style="display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-bottom: 5px; color: #475569; background: #e2e8f0; margin-left: 4px;">
+                                        <i class="dashicons dashicons-admin-users"
+                                            style="font-size: 12px; width: 12px; height: 12px; margin-top: 1px;"></i>
+                                        <?php echo esc_html($plan->teacher_name); ?>
+                                    </div>
+                                <?php endif; ?>
+
                                 <div
                                     style="font-weight: 700; color: <?php echo esc_attr($plan->color_code); ?>; font-size: 0.9em; margin-bottom: 4px;">
                                     <?php echo esc_html($plan->subject_name); ?>
@@ -353,6 +368,17 @@ if ($current_semester_id && $selected_grade_id && $selected_subject_id) {
                                 <div style="font-size: 0.85em; color: #333; margin-bottom: 6px; line-height: 1.3;">
                                     <?php echo esc_html($plan->lesson_title); ?>
                                 </div>
+                                <?php if ($plan->homework_sb || $plan->homework_eb || $plan->homework_nb || $plan->homework_ws): ?>
+                                    <div
+                                        style="font-size: 0.75em; color: #777; border-top: 1px solid #eee; padding-top: 6px; margin-top: 6px;">
+                                        <i class="dashicons dashicons-book-alt"
+                                            style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;"></i>
+                                        <?php echo $plan->homework_sb ? Olama_School_Helpers::translate('SB:') . ' ' . esc_html($plan->homework_sb) : ''; ?>
+                                        <?php echo $plan->homework_eb ? ' ' . Olama_School_Helpers::translate('EB:') . ' ' . esc_html($plan->homework_eb) : ''; ?>
+                                        <?php echo $plan->homework_nb ? ' ' . Olama_School_Helpers::translate('NB:') . ' ' . esc_html($plan->homework_nb) : ''; ?>
+                                        <?php echo $plan->homework_ws ? ' ' . Olama_School_Helpers::translate('WS:') . ' ' . esc_html($plan->homework_ws) : ''; ?>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
