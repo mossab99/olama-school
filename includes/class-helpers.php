@@ -767,6 +767,8 @@ class Olama_School_Helpers
         'Second Exam' => 'التقويم الثاني',
         'Final Exam' => 'الامتحان النهائي',
         'Choose the appropriate exam' => 'اختر التقويم المناسب',
+        'Search Plan' => 'بحث الخطة',
+        'Select Subject' => 'اختر المادة',
         'Exam Date' => 'موعد الامتحان',
         'Exam Description' => 'وصف مادة الامتحان',
         'Student Book Material' => 'مادة كتاب الطالب',

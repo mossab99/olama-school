@@ -2403,6 +2403,7 @@ class Olama_School_Admin
             'data' => array('label' => __('Data Management', 'olama-school'), 'cap' => 'olama_manage_plans_data'),
             'load' => array('label' => __('Plan Load', 'olama-school'), 'cap' => 'olama_manage_plans_load'),
             'coverage' => array('label' => __('Curriculum Coverage', 'olama-school'), 'cap' => 'olama_manage_plans_coverage'),
+            'search' => array('label' => Olama_School_Helpers::translate('Search Plan'), 'cap' => 'olama_manage_plans_list'),
             'review' => array('label' => $review_label, 'cap' => 'olama_access_plans_mgmt'),
         );
 
@@ -2436,6 +2437,7 @@ class Olama_School_Admin
                     'section_id' => isset($_GET['section_id']) ? intval($_GET['section_id']) : 0,
                     'plan_month' => isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : '',
                     'week_start' => isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : '',
+                    'subject_id' => isset($_GET['subject_id']) ? intval($_GET['subject_id']) : 0,
                 );
 
                 foreach ($allowed_tabs as $tab_slug => $tab_data):
@@ -2474,6 +2476,9 @@ class Olama_School_Admin
                         break;
                     case 'review':
                         $this->render_review_queue_page_content();
+                        break;
+                    case 'search':
+                        $this->render_search_plan_page_content();
                         break;
                 }
                 ?>
@@ -2810,6 +2815,14 @@ class Olama_School_Admin
             });
         }
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/weekly-plan-list.php';
+    }
+
+    /**
+     * Render Weekly Search Plan Content
+     */
+    public function render_search_plan_page_content()
+    {
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/weekly-search-plan.php';
     }
 
 
