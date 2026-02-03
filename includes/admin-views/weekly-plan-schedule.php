@@ -49,6 +49,9 @@ if ($requested_semester_id === 'active' || empty($requested_semester_id)) {
     $selected_semester_id = intval($requested_semester_id);
 }
 
+$requested_schedule_type = isset($_GET['schedule_type']) ? sanitize_text_field($_GET['schedule_type']) : 'normal';
+$selected_schedule_type = ($requested_schedule_type === 'ramadan') ? 'ramadan' : 'normal';
+
 $periods_to_show = 8;
 if ($selected_grade_id) {
     $current_grade = Olama_School_Grade::get_grade($selected_grade_id);
@@ -85,13 +88,13 @@ if ($start_idx <= $last_idx) {
 // Fetch master schedule
 $schedule = [];
 if ($selected_section_id && $selected_semester_id) {
-    $schedule = Olama_School_Schedule::get_schedule($selected_section_id, $selected_semester_id);
+    $schedule = Olama_School_Schedule::get_schedule($selected_section_id, $selected_semester_id, $selected_schedule_type);
 }
 
 // Subjects for dropdown
 $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_grade_id) : [];
 
-$scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
+$scheduled_sections = Olama_School_Schedule::get_scheduled_sections($selected_schedule_type);
 ?>
 
 <?php if (isset($_GET['message'])): ?>
@@ -142,9 +145,9 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
                         <td><?php echo esc_html(__($ss->grade_name, 'olama-school')); ?></td>
                         <td><?php echo esc_html(__($ss->section_name, 'olama-school')); ?></td>
                         <td>
-                            <a href="<?php echo admin_url('admin.php?page=olama-school-plans&tab=schedule&grade_id=' . $ss->grade_id . '&section_id=' . $ss->section_id . '&semester_id=' . $ss->semester_id); ?>" class="button button-small"><?php _e('View', 'olama-school'); ?></a>
+                            <a href="<?php echo admin_url('admin.php?page=olama-school-plans&tab=schedule&grade_id=' . $ss->grade_id . '&section_id=' . $ss->section_id . '&semester_id=' . $ss->semester_id . '&schedule_type=' . $selected_schedule_type); ?>" class="button button-small"><?php _e('View', 'olama-school'); ?></a>
                             <?php if ($is_admin): ?>
-                                <a href="<?php echo wp_nonce_url(add_query_arg(['action' => 'delete_full_schedule', 'section_id' => $ss->section_id, 'semester_id' => $ss->semester_id]), 'olama_delete_full_schedule'); ?>" class="button button-small button-link-delete" onclick="return confirm('<?php esc_attr_e('Delete this entire schedule?', 'olama-school'); ?>')"><?php _e('Delete', 'olama-school'); ?></a>
+                                <a href="<?php echo wp_nonce_url(add_query_arg(['action' => 'delete_full_schedule', 'section_id' => $ss->section_id, 'semester_id' => $ss->semester_id, 'schedule_type' => $selected_schedule_type]), 'olama_delete_full_schedule'); ?>" class="button button-small button-link-delete" onclick="return confirm('<?php esc_attr_e('Delete this entire schedule?', 'olama-school'); ?>')"><?php _e('Delete', 'olama-school'); ?></a>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -202,6 +205,14 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
                     <?php endforeach; ?>
                 </select>
             </div>
+
+            <div class="olama-filter-item">
+                <label><?php echo Olama_School_Helpers::translate('Schedule Type'); ?></label>
+                <select name="schedule_type" onchange="this.form.submit()">
+                    <option value="normal" <?php selected($selected_schedule_type, 'normal'); ?>><?php echo Olama_School_Helpers::translate('Normal Schedule'); ?></option>
+                    <option value="ramadan" <?php selected($selected_schedule_type, 'ramadan'); ?>><?php echo Olama_School_Helpers::translate('Ramadan Schedule'); ?></option>
+                </select>
+            </div>
         </form>
 
         <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
@@ -212,6 +223,7 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
                 <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>" />
                 <input type="hidden" name="section_id" value="<?php echo $selected_section_id; ?>" />
                 <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>" />
+                <input type="hidden" name="schedule_type" value="<?php echo $selected_schedule_type; ?>" />
                 <button type="submit" class="button" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
                     <span class="dashicons dashicons-download" style="margin-top: 4px;"></span>
                     <?php echo Olama_School_Helpers::translate('Export Schedule (CSV)'); ?>
@@ -225,6 +237,7 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections();
                     <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>" />
                     <input type="hidden" name="section_id" value="<?php echo $selected_section_id; ?>" />
                     <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>" />
+                    <input type="hidden" name="schedule_type" value="<?php echo $selected_schedule_type; ?>" />
                     <input type="file" name="olama_schedule_file" accept=".csv" required style="font-size: 12px;" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?> />
                     <button type="submit" name="olama_import_schedule" value="1" class="button button-primary" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
                         <span class="dashicons dashicons-upload" style="margin-top: 4px;"></span>
@@ -311,9 +324,27 @@ function olamaPrintSchedule() {
         <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>" />
         <input type="hidden" name="section_id" value="<?php echo $selected_section_id; ?>" />
         <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>" />
+        <input type="hidden" name="schedule_type" value="<?php echo $selected_schedule_type; ?>" />
 
         <?php if ($is_admin): ?>
-            <div style="display: flex; justify-content: flex-end; padding: 10px;">
+            <div style="display: flex; justify-content: space-between; padding: 10px; align-items: center;">
+                <div>
+                    <?php if ($selected_schedule_type === 'ramadan' && empty($schedule)): ?>
+                        <form method="post" style="display: inline;">
+                            <?php wp_nonce_field('olama_clone_schedule'); ?>
+                            <input type="hidden" name="olama_clone_schedule" value="1" />
+                            <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>" />
+                            <input type="hidden" name="section_id" value="<?php echo $selected_section_id; ?>" />
+                            <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>" />
+                            <input type="hidden" name="from_type" value="normal" />
+                            <input type="hidden" name="to_type" value="ramadan" />
+                            <button type="submit" class="button">
+                                <span class="dashicons dashicons-admin-page" style="margin-top: 4px;"></span>
+                                <?php echo Olama_School_Helpers::translate('Clone Normal to Ramadan'); ?>
+                            </button>
+                        </form>
+                    <?php endif; ?>
+                </div>
                 <button type="submit" name="olama_save_bulk_schedule" value="1" class="button button-primary" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
                     <span class="dashicons dashicons-saved" style="margin-top: 4px;"></span>
                     <?php _e('Save Master Schedule', 'olama-school'); ?>

@@ -189,8 +189,9 @@ class Olama_School_DB
 				day_name varchar(20) NOT NULL,
 				period_number tinyint(4) NOT NULL,
 				subject_id mediumint(9) NOT NULL,
+				schedule_type varchar(20) DEFAULT 'normal' NOT NULL,
 				PRIMARY KEY  (id),
-				UNIQUE KEY  schedule_slot (semester_id,section_id,day_name,period_number)
+				UNIQUE KEY  schedule_slot (semester_id,section_id,day_name,period_number,schedule_type)
 			) $charset_collate;",
 
 			'olama_curriculum_units' => "CREATE TABLE {$wpdb->prefix}olama_curriculum_units (
@@ -617,9 +618,21 @@ class Olama_School_DB
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_semester_exams ADD KEY grade_id (grade_id)");
 		}
 
-		// Ensure olama_semester_exams exists (dbDelta usually handles this but let's be safe)
+		// Ensure olama_semester_exams exists
 		if ($wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}olama_semester_exams'") !== "{$wpdb->prefix}olama_semester_exams") {
 			$this->create_tables();
+		}
+
+		// Ensure olama_schedule schema updates
+		$schedule_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_schedule");
+		$schedule_col_names = wp_list_pluck($schedule_cols, 'Field');
+
+		if (!in_array('schedule_type', $schedule_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_schedule ADD COLUMN schedule_type varchar(20) DEFAULT 'normal' NOT NULL AFTER subject_id");
+
+			// Update the unique index to include schedule_type
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_schedule DROP INDEX schedule_slot");
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_schedule ADD UNIQUE KEY schedule_slot (semester_id, section_id, day_name, period_number, schedule_type)");
 		}
 	}
 

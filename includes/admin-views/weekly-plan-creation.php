@@ -199,7 +199,7 @@ if (!defined('ABSPATH')) {
                             </option>
                             <?php
                             // semester_id is already calculated in class-admin.php
-                            $scheduled_subjects = Olama_School_Schedule::get_unique_subjects_for_day($selected_section_id, $active_day, $semester_id);
+                            $scheduled_subjects = Olama_School_Schedule::get_unique_subjects_for_day($selected_section_id, $active_day, $semester_id, $selected_date);
 
                             $filled_subject_ids = array_map(function ($p) {
                                 return $p->subject_id;
