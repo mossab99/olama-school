@@ -65,9 +65,36 @@ class Olama_School_Exam
             'exercise_book_material' => 'sanitize_textarea_field',
             'notebook_material' => 'sanitize_textarea_field',
             'teacher_notes' => 'sanitize_textarea_field',
+            'supervisor_comments' => 'sanitize_textarea_field',
             'exam_material_json' => 'wp_unslash', // JSON data, needs special handling
             'status' => 'sanitize_text_field'
         );
+
+        // Fetch existing data if needed for validation
+        $val_date = isset($data['exam_date']) ? $data['exam_date'] : ($existing ? $existing['exam_date'] : '');
+        $val_grade = isset($data['grade_id']) ? $data['grade_id'] : ($existing ? $existing['grade_id'] : 0);
+        $val_status = isset($data['status']) ? $data['status'] : ($existing ? $existing['status'] : 'draft');
+
+        // Date validation: Prevent duplicate subjects for same grade on same date
+        if ($val_date && $val_grade) {
+            $sanitized_val_date = Olama_School_Helpers::sanitize_date($val_date);
+
+            // For now, we allow multiple subjects in 'draft' or 'not completed' status on the same date,
+            // but we STRICTLY block more than one 'approved' exam per grade per date.
+            // Actually, the user says "the system allowed two approved exams". 
+            // Let's block same-date subjects if ANY of them are to be approved, or if another is already approved.
+
+            $query = "SELECT id, status FROM {$wpdb->prefix}olama_exams 
+                     WHERE grade_id = %d AND exam_date = %s AND id != %d";
+            $conflicts = $wpdb->get_results($wpdb->prepare($query, $val_grade, $sanitized_val_date, $exam_id));
+
+            foreach ($conflicts as $conflict) {
+                // If the current save is for 'approved' status, or if a conflict is already 'approved'
+                if ($val_status === 'approved' || $conflict->status === 'approved') {
+                    return new WP_Error('duplicate_date', Olama_School_Helpers::translate('This grade already has an approved exam on this date. Please change the date before approving.'));
+                }
+            }
+        }
 
         foreach ($keys as $key => $sanitizer) {
             if (isset($data[$key])) {
@@ -89,6 +116,41 @@ class Olama_School_Exam
                 $fields[$key] = $existing[$key];
             } elseif ($key === 'status') {
                 $fields[$key] = 'draft';
+            }
+        }
+
+        // Mandatory material validation for Approval status
+        if ($val_status === 'approved') {
+            $desc = isset($fields['description']) ? trim($fields['description']) : '';
+            $json_str = isset($fields['exam_material_json']) ? $fields['exam_material_json'] : '';
+            $material = json_decode($json_str, true);
+
+            // Check curriculum items in JSON
+            $has_curriculum = !empty($material['curriculum_items']);
+
+            // Check booklets and teacher notes (favoring JSON structure but falling back to columns)
+            $booklets = !empty($material['booklets_notebooks']) ? trim($material['booklets_notebooks']) : (isset($fields['notebook_material']) ? trim($fields['notebook_material']) : '');
+            $notes = !empty($material['teacher_notes']) ? trim($material['teacher_notes']) : (isset($fields['teacher_notes']) ? trim($fields['teacher_notes']) : '');
+
+            $missing = array();
+            if (empty($desc)) {
+                $missing[] = Olama_School_Helpers::translate('Exam Description');
+            }
+            if (!$has_curriculum) {
+                $missing[] = Olama_School_Helpers::translate('Curriculum Material');
+            }
+            if (empty($booklets)) {
+                $missing[] = Olama_School_Helpers::translate('Booklets & Notebooks');
+            }
+            if (empty($notes)) {
+                $missing[] = Olama_School_Helpers::translate('Teacher Notes');
+            }
+
+            if (!empty($missing)) {
+                return new WP_Error(
+                    'missing_material',
+                    Olama_School_Helpers::translate('Approval denied! Please fill the required fields first:') . ' ' . implode(', ', $missing)
+                );
             }
         }
 

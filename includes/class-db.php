@@ -604,6 +604,9 @@ class Olama_School_DB
 		if (!in_array('status', $exam_col_names)) {
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD COLUMN status varchar(20) DEFAULT 'draft' NOT NULL AFTER teacher_notes");
 		}
+		if (!in_array('supervisor_comments', $exam_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD COLUMN supervisor_comments text DEFAULT NULL AFTER status");
+		}
 		if (!in_array('exam_material_json', $exam_col_names)) {
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_exams ADD COLUMN exam_material_json longtext DEFAULT NULL AFTER teacher_notes");
 		}

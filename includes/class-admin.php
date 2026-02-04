@@ -1649,14 +1649,16 @@ class Olama_School_Admin
 
         $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
         $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
-        $selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : (!empty($semesters) ? $semesters[0]->id : 0);
+        $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
+        $selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : ($active_semester ? $active_semester->id : (!empty($semesters) ? $semesters[0]->id : 0));
 
         $grades = Olama_School_Grade::get_grades();
         $selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : (!empty($grades) ? $grades[0]->id : 0);
 
         $subjects = $selected_grade_id ? Olama_School_Subject::get_subjects_by_grade($selected_grade_id) : array();
         $selected_subject_id = isset($_GET['subject_id']) ? intval($_GET['subject_id']) : 0;
-        $selected_semester_exam_id = isset($_GET['semester_exam_id']) ? intval($_GET['semester_exam_id']) : 0;
+        $active_exam = Olama_School_Academic::get_active_exam($selected_semester_id);
+        $selected_semester_exam_id = isset($_GET['semester_exam_id']) ? intval($_GET['semester_exam_id']) : ($active_exam ? $active_exam->id : 0);
 
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/exam-schedule.php';
     }
@@ -3200,11 +3202,18 @@ class Olama_School_Admin
      */
     public function ajax_save_exam()
     {
-        // Check nonce from either the appended 'nonce' param or the form field
-        $nonce = isset($_POST['nonce']) ? $_POST['nonce'] : (isset($_POST['olama_exam_nonce_field']) ? $_POST['olama_exam_nonce_field'] : '');
+        // Check nonce from various potential sources
+        $nonce = '';
+        if (isset($_POST['nonce'])) {
+            $nonce = $_POST['nonce'];
+        } elseif (isset($_POST['olama_exam_nonce_field'])) {
+            $nonce = $_POST['olama_exam_nonce_field'];
+        } elseif (isset($_POST['olama_material_nonce_field'])) {
+            $nonce = $_POST['olama_material_nonce_field'];
+        }
 
         if (empty($nonce) || !wp_verify_nonce($nonce, 'olama_save_exam')) {
-            wp_send_json_error(__('Security check failed.', 'olama-school'));
+            wp_send_json_error(__('Session expired or security check failed. Please refresh the page and try again.', 'olama-school'));
         }
 
         if (!Olama_School_Permissions::can('olama_manage_exams_schedule') && !Olama_School_Permissions::can('olama_fill_exam_details')) {

@@ -22,16 +22,17 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
 
     <!-- Filter Bar -->
     <div class="olama-filter-bar"
-        style="background: #fff; padding: 15px; border: 1px solid #ccd0d4; margin-bottom: 20px; border-radius: 4px;">
-        <form method="get" action="" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+        style="background: #fff; padding: 15px; border: 1px solid #ccd0d4; margin-bottom: 20px; border-radius: 4px; overflow-x: auto;">
+        <form method="get" action=""
+            style="display: flex; flex-wrap: nowrap; gap: 15px; align-items: flex-end; min-width: max-content;">
             <input type="hidden" name="page" value="olama-school-exams">
             <input type="hidden" name="tab" value="teacher_exams">
 
-            <div class="filter-group">
-                <label style="display:block; font-size:11px; color:#666;">
+            <div class="filter-group" style="flex: 0 1 auto; min-width: 150px;">
+                <label style="display:block; font-size:11px; color:#666; font-weight: 600; margin-bottom: 4px;">
                     <?php echo Olama_School_Helpers::translate('Academic Year'); ?>
                 </label>
-                <select name="academic_year_id" onchange="this.form.submit();">
+                <select name="academic_year_id" onchange="this.form.submit();" style="width: 100%;">
                     <?php foreach ($years as $y): ?>
                         <option value="<?php echo $y->id; ?>" <?php selected($selected_year_id, $y->id); ?>>
                             <?php echo esc_html($y->year_name); ?>
@@ -40,11 +41,11 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                 </select>
             </div>
 
-            <div class="filter-group">
-                <label style="display:block; font-size:11px; color:#666;">
+            <div class="filter-group" style="flex: 0 1 auto; min-width: 150px;">
+                <label style="display:block; font-size:11px; color:#666; font-weight: 600; margin-bottom: 4px;">
                     <?php echo Olama_School_Helpers::translate('Semester'); ?>
                 </label>
-                <select name="semester_id" onchange="this.form.submit();">
+                <select name="semester_id" onchange="this.form.submit();" style="width: 100%;">
                     <?php foreach ($semesters as $s): ?>
                         <option value="<?php echo $s->id; ?>" <?php selected($selected_semester_id, $s->id); ?>>
                             <?php echo esc_html($s->semester_name); ?>
@@ -53,11 +54,11 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                 </select>
             </div>
 
-            <div class="filter-group">
-                <label style="display:block; font-size:11px; color:#666;">
+            <div class="filter-group" style="flex: 0 1 auto; min-width: 200px;">
+                <label style="display:block; font-size:11px; color:#666; font-weight: 600; margin-bottom: 4px;">
                     <?php echo Olama_School_Helpers::translate('Active Exam'); ?>
                 </label>
-                <select name="semester_exam_id" onchange="this.form.submit();">
+                <select name="semester_exam_id" onchange="this.form.submit();" style="width: 100%;">
                     <option value="0">
                         <?php echo Olama_School_Helpers::translate('Choose Exam'); ?>
                     </option>
@@ -69,7 +70,7 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                 </select>
             </div>
 
-            <button type="submit" class="button button-secondary" style="margin-top: 15px;">
+            <button type="submit" class="button button-secondary" style="height: 30px; margin-bottom: 2px;">
                 <?php echo Olama_School_Helpers::translate('Search'); ?>
             </button>
         </form>
@@ -79,22 +80,19 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
         <table class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
-                    <th style="font-weight: 600;">
-                        <?php echo Olama_School_Helpers::translate('Grade'); ?>
-                    </th>
-                    <th style="font-weight: 600;">
+                    <th style="font-weight: 600; width: 25%;">
                         <?php echo Olama_School_Helpers::translate('Subject'); ?>
                     </th>
-                    <th style="font-weight: 600;">
+                    <th style="font-weight: 600; width: 15%;">
                         <?php echo Olama_School_Helpers::translate('Date'); ?>
                     </th>
-                    <th style="font-weight: 600;">
-                        <?php echo Olama_School_Helpers::translate('Room'); ?>
+                    <th style="font-weight: 600; width: 35%;">
+                        <?php echo Olama_School_Helpers::translate('Supervisor Comments'); ?>
                     </th>
-                    <th style="font-weight: 600;">
+                    <th style="font-weight: 600; width: 10%;">
                         <?php echo Olama_School_Helpers::translate('Status'); ?>
                     </th>
-                    <th style="width: 150px; text-align: center; font-weight: 600;">
+                    <th style="width: 140px; text-align: center; font-weight: 600;">
                         <?php echo Olama_School_Helpers::translate('Actions'); ?>
                     </th>
                 </tr>
@@ -102,28 +100,51 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
             <tbody>
                 <?php if (empty($exams)): ?>
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
+                        <td colspan="5" style="text-align: center; padding: 40px; color: #666;">
                             <?php echo Olama_School_Helpers::translate('No subjects assigned for the selected exam.'); ?>
                         </td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($exams as $exam):
                         $exam->formatted_date = Olama_School_Helpers::format_date($exam->exam_date);
-                        $status_label = ($exam->status === 'completed') ? Olama_School_Helpers::translate('Completed') : Olama_School_Helpers::translate('Not Completed');
-                        $status_color = ($exam->status === 'completed') ? '#10b981' : '#f59e0b';
+                        $status = $exam->status;
+                        if ($status === 'approved') {
+                            $status_label = Olama_School_Helpers::translate('Approved');
+                            $status_color = '#10b981';
+                        } elseif ($status === 'completed') {
+                            $status_label = Olama_School_Helpers::translate('Completed');
+                            $status_color = '#3b82f6';
+                        } else {
+                            $status_label = Olama_School_Helpers::translate('Not Completed');
+                            $status_color = '#f59e0b';
+                        }
+
+                        // Get exam name from semester_exams array
+                        $current_exam_name = '';
+                        foreach ($semester_exams as $se) {
+                            if ($se->id == $exam->semester_exam_id) {
+                                $current_exam_name = $se->exam_name;
+                                break;
+                            }
+                        }
                         ?>
                         <tr>
                             <td>
-                                <?php echo esc_html($exam->grade_name); ?>
-                            </td>
-                            <td>
-                                <?php echo esc_html($exam->subject_name); ?>
+                                <strong><?php echo esc_html($exam->subject_name); ?></strong>
+                                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                                    <?php echo esc_html($current_exam_name ?: $exam->evaluation_type); ?> -
+                                    <small><?php echo esc_html($exam->grade_name); ?></small>
+                                </div>
                             </td>
                             <td>
                                 <?php echo $exam->formatted_date; ?>
                             </td>
                             <td>
-                                <?php echo esc_html($exam->room_number); ?>
+                                <?php if (!empty($exam->supervisor_comments)): ?>
+                                    <div style="font-size: 12px; color: #475569; font-style: italic; white-space: pre-wrap;">
+                                        <?php echo esc_html($exam->supervisor_comments); ?>
+                                    </div>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <span
@@ -167,6 +188,18 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                 <input type="hidden" name="action" value="olama_save_exam">
 
                 <div style="padding: 20px; max-height: 70vh; overflow-y: auto;">
+                    <!-- Supervisor Comments (Show if exists) -->
+                    <div id="supervisor-comments-container" class="material-section"
+                        style="display: none; background: #fffbeb; border: 1px solid #fef3c7; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                        <h3
+                            style="margin: 0 0 10px; font-size: 14px; color: #92400e; border-bottom: 1px solid #fde68a; padding-bottom: 5px;">
+                            <span class="dashicons dashicons-warning" style="font-size: 18px; margin-top: 2px;"></span>
+                            <?php echo Olama_School_Helpers::translate('Supervisor Comments'); ?>
+                        </h3>
+                        <div id="supervisor-comments-text"
+                            style="color: #92400e; font-style: italic; white-space: pre-wrap;"></div>
+                    </div>
+
                     <!-- Description Section (Added back as requested by visual consistency) -->
                     <div class="material-section">
                         <h3
@@ -190,7 +223,8 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                                     <th style="width: 30%;"><?php echo Olama_School_Helpers::translate('Lesson'); ?>
                                     </th>
                                     <th style="width: 35%;">
-                                        <?php echo Olama_School_Helpers::translate('Required Material'); ?></th>
+                                        <?php echo Olama_School_Helpers::translate('Required Material'); ?>
+                                    </th>
                                     <th style="width: 5%;"></th>
                                 </tr>
                             </thead>
@@ -396,6 +430,13 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
             $('#subject-name-title').text(data.subject_name);
             $('#t_description').val(data.description || '');
 
+            if (data.supervisor_comments) {
+                $('#supervisor-comments-text').text(data.supervisor_comments);
+                $('#supervisor-comments-container').show();
+            } else {
+                $('#supervisor-comments-container').hide();
+            }
+
             $('#curriculum-rows').empty();
             currentUnits = [];
             unitLessonsCache = {};
@@ -432,9 +473,29 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
 
         $('#teacher-exam-form').on('submit', function (e) {
             e.preventDefault();
+
+            // Validation
+            var description = $('#t_description').val().trim();
+            var booklets = $('#booklets_notebooks').val().trim();
+            var teacherNotes = $('#material_teacher_notes').val().trim();
+
             var jsonData = serializeCurriculumData();
+            var hasCurriculum = jsonData.curriculum_items && jsonData.curriculum_items.length > 0;
+
+            var missing = [];
+            if (!description) missing.push('<?php echo Olama_School_Helpers::translate('Exam Description'); ?>');
+            if (!hasCurriculum) missing.push('<?php echo Olama_School_Helpers::translate('Curriculum Material'); ?>');
+            if (!booklets) missing.push('<?php echo Olama_School_Helpers::translate('Booklets & Notebooks'); ?>');
+            if (!teacherNotes) missing.push('<?php echo Olama_School_Helpers::translate('Teacher Notes'); ?>');
+
+            if (missing.length > 0) {
+                alert('<?php echo Olama_School_Helpers::translate('Please fill the following required fields:'); ?>\n- ' + missing.join('\n- '));
+                return;
+            }
+
             $('#exam_material_json').val(JSON.stringify(jsonData));
-            var formData = $(this).serialize() + '&action=olama_save_exam&nonce=' + $('#olama_exam_nonce_field').val();
+            var nonce = $(this).find('[name="olama_exam_nonce_field"]').val();
+            var formData = $(this).serialize() + '&action=olama_save_exam&nonce=' + nonce;
             $.post(ajaxurl, formData, function (response) {
                 if (response.success) { window.location.reload(); } else { alert('Error: ' + response.data); }
             });
