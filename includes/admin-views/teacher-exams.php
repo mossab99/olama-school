@@ -152,11 +152,19 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                                     <?php echo $status_label; ?>
                                 </span>
                             </td>
-                            <td style="text-align: center;">
+                            <td style="text-align: center; white-space: nowrap;">
                                 <button type="button" class="button button-primary fill-details"
                                     data-exam='<?php echo json_encode($exam); ?>'>
                                     <?php echo Olama_School_Helpers::translate('Enter Details'); ?>
                                 </button>
+                                <?php if ($exam->attachment_id): ?>
+                                    <a href="<?php echo wp_nonce_url(admin_url('admin-ajax.php?action=olama_download_exam_file&exam_id=' . $exam->id), 'olama_download_file_' . $exam->id); ?>"
+                                        class="button button-small"
+                                        title="<?php echo Olama_School_Helpers::translate('Download Exam'); ?>"
+                                        style="background: #e1effe; color: #1e429f; margin-right: 5px;">
+                                        <span class="dashicons dashicons-download"></span>
+                                    </a>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -244,7 +252,7 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                             style="margin: 0 0 10px; font-size: 14px; color: #475569; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
                             <?php echo Olama_School_Helpers::translate('Booklets & Notebooks'); ?>
                         </h3>
-                        <textarea id="booklets_notebooks" rows="3" style="width: 100%;"
+                        <textarea name="notebook_material" id="material_notebook_material" rows="3" style="width: 100%;"
                             placeholder="<?php echo Olama_School_Helpers::translate('e.g., Worksheet #3, Notebook entries from week 2'); ?>"></textarea>
                     </div>
 
@@ -256,6 +264,55 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                         </h3>
                         <textarea name="teacher_notes" id="material_teacher_notes" rows="2"
                             style="width: 100%;"></textarea>
+                    </div>
+
+                    <!-- Exam Attachment Section -->
+                    <div class="material-section"
+                        style="margin-top: 20px; background: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px solid #bae6fd;">
+                        <h3
+                            style="margin: 0 0 10px; font-size: 14px; color: #0369a1; border-bottom: 2px solid #bae6fd; padding-bottom: 8px;">
+                            <?php echo Olama_School_Helpers::translate('Exam File (Word .docx)'); ?>
+                        </h3>
+                        <div id="exam-attachment-container">
+                            <!-- Status Info -->
+                            <div id="attachment-status" style="margin-bottom: 10px; display: none;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span class="dashicons dashicons-media-document" style="color: #64748b;"></span>
+                                    <span id="attachment-filename" style="font-weight: 500; color: #1e293b;"></span>
+                                    <span id="attachment-badge" class="olama-badge" style="font-size: 11px;"></span>
+                                </div>
+                                <div style="margin-top: 10px;">
+                                    <a href="#" id="download-attachment-btn" class="button button-secondary">
+                                        <span class="dashicons dashicons-download"
+                                            style="vertical-align: middle;"></span>
+                                        <?php echo Olama_School_Helpers::translate('Download My File'); ?>
+                                    </a>
+                                    <button type="button" id="delete-attachment-btn" class="button button-link-delete"
+                                        style="color: #ef4444;">
+                                        <span class="dashicons dashicons-trash" style="vertical-align: middle;"></span>
+                                        <?php echo Olama_School_Helpers::translate('Delete File'); ?>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Upload Input -->
+                            <div id="attachment-upload-section" style="display: none;">
+                                <input type="file" id="exam_file_input" accept=".docx"
+                                    style="margin-bottom: 10px; width: 100%;">
+                                <button type="button" id="upload-exam-btn" class="button button-primary">
+                                    <span class="dashicons dashicons-upload" style="vertical-align: middle;"></span>
+                                    <?php echo Olama_School_Helpers::translate('Upload Exam File'); ?>
+                                </button>
+                                <p class="description" style="margin-top: 5px;">
+                                    <?php echo Olama_School_Helpers::translate('Only .docx files are accepted. Maximum size 10MB.'); ?>
+                                </p>
+                            </div>
+
+                            <div id="attachment-loading" style="text-align: center; display: none;">
+                                <span class="dashicons dashicons-update spin"></span>
+                                <?php echo Olama_School_Helpers::translate('Loading...'); ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -413,10 +470,18 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                 var lessonId = $(this).find('.lesson-select').val();
                 var material = $(this).find('.material-input').val();
                 if (unitId || lessonId || material) {
-                    items.push({ unit_id: unitId ? parseInt(unitId) : null, lesson_id: lessonId ? parseInt(lessonId) : null, material: material });
+                    items.push({
+                        unit_id: unitId ? parseInt(unitId) : null,
+                        lesson_id: lessonId ? parseInt(lessonId) : null,
+                        material: material
+                    });
                 }
             });
-            return { curriculum_items: items, booklets_notebooks: $('#booklets_notebooks').val(), teacher_notes: $('#material_teacher_notes').val() };
+            return {
+                curriculum_items: items,
+                notebook_material: $('#material_notebook_material').val(),
+                teacher_notes: $('#material_teacher_notes').val()
+            };
         }
 
         $('.fill-details').on('click', function () {
@@ -450,14 +515,128 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                 materialJson.curriculum_items.forEach(function (item) {
                     $('#curriculum-rows').append(createCurriculumRow(item.unit_id, item.lesson_id, item.material));
                 });
-                $('#booklets_notebooks').val(materialJson.booklets_notebooks || '');
+                $('#material_notebook_material').val(materialJson.notebook_material || '');
                 $('#material_teacher_notes').val(materialJson.teacher_notes || '');
             } else {
                 $('#curriculum-rows').append(createCurriculumRow());
-                $('#booklets_notebooks').val(data.notebook_material || '');
+                $('#material_notebook_material').val(data.notebook_material || '');
                 $('#material_teacher_notes').val(data.teacher_notes || '');
             }
             $('#teacher-exam-modal').fadeIn(200);
+            loadAttachmentInfo(data.id);
+        });
+
+        function loadAttachmentInfo(examId) {
+            $('#attachment-status, #attachment-upload-section').hide();
+            $('#attachment-loading').show();
+            $('#attachment-filename').text('');
+            $('#attachment-badge').text('').css('background', 'transparent');
+
+            $.post(ajaxurl, {
+                action: 'olama_get_exam_attachment',
+                nonce: $('#olama_exam_nonce_field').val(),
+                exam_id: examId
+            }, function (response) {
+                $('#attachment-loading').hide();
+                if (response.success && response.data) {
+                    var info = response.data;
+                    $('#attachment-filename').text(info.stored_filename || info.original_filename);
+                    $('#attachment-badge')
+                        .text(info.file_status.charAt(0).toUpperCase() + info.file_status.slice(1))
+                        .css('background', getStatusColor(info.file_status));
+                    $('#download-attachment-btn').attr('href', info.download_url);
+                    $('#attachment-status').fadeIn(200);
+
+                    // Teachers can replace/delete if not approved
+                    if (info.file_status !== 'approved') {
+                        $('#attachment-upload-section').show();
+                        $('#upload-exam-btn').text('<?php echo Olama_School_Helpers::translate('Replace File'); ?>');
+                    } else {
+                        // If approved, hide delete button for teachers
+                        $('#delete-attachment-btn').hide();
+                    }
+                } else {
+                    $('#attachment-upload-section').show();
+                    $('#upload-exam-btn').html('<span class="dashicons dashicons-upload"></span> <?php echo Olama_School_Helpers::translate('Upload Exam File'); ?>');
+                }
+            }).fail(function () {
+                $('#attachment-loading').hide();
+                $('#attachment-upload-section').show();
+            });
+        }
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 'approved': return '#def7ec';
+                case 'rejected': return '#fde8e8';
+                case 'uploaded': return '#e1effe';
+                default: return '#f3f4f6';
+            }
+        }
+
+        $('#upload-exam-btn').on('click', function () {
+            var fileInput = $('#exam_file_input')[0];
+            var examId = $('#t_exam_id').val();
+
+            if (fileInput.files.length === 0) {
+                alert('<?php echo Olama_School_Helpers::translate('Please select a file first.'); ?>');
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('action', 'olama_upload_exam_file');
+            formData.append('nonce', $('#olama_exam_nonce_field').val());
+            formData.append('exam_id', examId);
+            formData.append('exam_file', fileInput.files[0]);
+
+            var btn = $(this);
+            btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span>');
+
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    if (response.success) {
+                        alert('<?php echo Olama_School_Helpers::translate('File uploaded successfully'); ?>');
+                        loadAttachmentInfo(examId);
+                        fileInput.value = '';
+                    } else {
+                        alert('Error: ' + response.data);
+                    }
+                    btn.prop('disabled', false).html('<span class="dashicons dashicons-upload"></span> <?php echo Olama_School_Helpers::translate('Upload Exam File'); ?>');
+                },
+                error: function () {
+                    alert('Upload failed');
+                    btn.prop('disabled', false).html('<span class="dashicons dashicons-upload"></span> <?php echo Olama_School_Helpers::translate('Upload Exam File'); ?>');
+                }
+            });
+        });
+
+        $(document).on('click', '#delete-attachment-btn', function () {
+            var examId = $('#t_exam_id').val();
+            if (!confirm('<?php echo Olama_School_Helpers::translate('Are you sure you want to delete this file?'); ?>')) return;
+
+            var btn = $(this);
+            btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span>');
+
+            $.post(ajaxurl, {
+                action: 'olama_delete_exam_attachment',
+                nonce: $('#olama_exam_nonce_field').val(),
+                exam_id: examId
+            }, function (response) {
+                if (response.success) {
+                    loadAttachmentInfo(examId);
+                } else {
+                    alert('Error: ' + response.data);
+                    btn.prop('disabled', false).html('<span class="dashicons dashicons-trash"></span> <?php echo Olama_School_Helpers::translate('Delete File'); ?>');
+                }
+            }).fail(function (xhr) {
+                alert('Request failed: ' + xhr.statusText);
+                btn.prop('disabled', false).html('<span class="dashicons dashicons-trash"></span> <?php echo Olama_School_Helpers::translate('Delete File'); ?>');
+            });
         });
 
         $('#add-curriculum-row').on('click', function () { $('#curriculum-rows').append(createCurriculumRow()); });
@@ -476,7 +655,7 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
 
             // Validation
             var description = $('#t_description').val().trim();
-            var booklets = $('#booklets_notebooks').val().trim();
+            var booklets = $('#material_notebook_material').val().trim();
             var teacherNotes = $('#material_teacher_notes').val().trim();
 
             var jsonData = serializeCurriculumData();

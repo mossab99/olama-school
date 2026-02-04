@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define Constants
-define('OLAMA_SCHOOL_VERSION', '1.9.7');
+define('OLAMA_SCHOOL_VERSION', '1.9.8');
 define('OLAMA_SCHOOL_PATH', plugin_dir_path(__FILE__));
 define('OLAMA_SCHOOL_URL', plugin_dir_url(__FILE__));
 
@@ -36,6 +36,7 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-family.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-curriculum.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-plan.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-exam.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-exam-attachment.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-stationary.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-template.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-curriculum.php';

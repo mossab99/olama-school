@@ -51,6 +51,14 @@ class Olama_School_Ajax_Handlers
 
         // Plan Review AJAX Handler
         add_action('wp_ajax_olama_handle_plan_approval', array($this, 'handle_plan_approval'));
+
+        // Exam Attachment AJAX Handlers
+        add_action('wp_ajax_olama_upload_exam_file', array($this, 'upload_exam_file'));
+        add_action('wp_ajax_olama_download_exam_file', array($this, 'download_exam_file'));
+        add_action('wp_ajax_olama_get_exam_attachment', array($this, 'get_exam_attachment'));
+        add_action('wp_ajax_olama_delete_exam_attachment', array($this, 'delete_exam_attachment'));
+        add_action('wp_ajax_olama_save_exam_attachment_comment', array($this, 'save_exam_attachment_comment'));
+        add_action('wp_ajax_olama_download_all_exams_zip', array($this, 'download_all_exams_zip'));
     }
 
     // ==========================================
@@ -790,12 +798,11 @@ class Olama_School_Ajax_Handlers
             $unit_ids
         ));
 
-        // Delete all units
+        // Delete units themselves
         $wpdb->query($wpdb->prepare(
             "DELETE FROM {$wpdb->prefix}olama_curriculum_units 
-             WHERE semester_id = %d AND grade_id = %d",
-            $semester_id,
-            $grade_id
+             WHERE id IN ($placeholders)",
+            $unit_ids
         ));
 
         // Log activity
@@ -957,5 +964,117 @@ class Olama_School_Ajax_Handlers
             error_log('Olama Review Crash: ' . $th->getMessage());
             wp_send_json_error('Server Error: ' . $th->getMessage());
         }
+    }
+
+    // ==========================================
+    // Exam Attachment Handlers
+    // ==========================================
+
+    public function upload_exam_file()
+    {
+        check_ajax_referer('olama_save_exam', 'nonce');
+
+        if (!isset($_POST['exam_id']) || empty($_FILES['exam_file'])) {
+            wp_send_json_error(__('Missing parameters', 'olama-school'));
+        }
+
+        $exam_id = intval($_POST['exam_id']);
+        $result = Olama_School_Exam_Attachment::handle_upload($exam_id, $_FILES['exam_file']);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success(__('File uploaded successfully', 'olama-school'));
+    }
+
+    public function delete_exam_attachment()
+    {
+        check_ajax_referer('olama_save_exam', 'nonce');
+
+        if (empty($_POST['exam_id'])) {
+            wp_send_json_error(__('Missing exam ID', 'olama-school'));
+        }
+
+        $exam_id = intval($_POST['exam_id']);
+        $result = Olama_School_Exam_Attachment::delete_attachment($exam_id);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success(__('File deleted successfully', 'olama-school'));
+    }
+
+    public function download_exam_file()
+    {
+        if (!isset($_GET['exam_id']) || !isset($_GET['_wpnonce'])) {
+            wp_die(__('Missing parameters', 'olama-school'));
+        }
+
+        $exam_id = intval($_GET['exam_id']);
+        if (!wp_verify_nonce($_GET['_wpnonce'], 'olama_download_file_' . $exam_id)) {
+            wp_die(__('Security check failed', 'olama-school'));
+        }
+
+        Olama_School_Exam_Attachment::stream_file($exam_id);
+    }
+
+    public function get_exam_attachment()
+    {
+        check_ajax_referer('olama_save_exam', 'nonce');
+        $exam_id = intval($_POST['exam_id']);
+        $info = Olama_School_Exam_Attachment::get_attachment_info($exam_id);
+
+        if ($info) {
+            $info->download_url = add_query_arg(
+                array(
+                    'action' => 'olama_download_exam_file',
+                    'exam_id' => $exam_id,
+                    '_wpnonce' => wp_create_nonce('olama_download_file_' . $exam_id)
+                ),
+                admin_url('admin-ajax.php')
+            );
+        }
+
+        wp_send_json_success($info);
+    }
+
+    public function save_exam_attachment_comment()
+    {
+        check_ajax_referer('olama_save_exam', 'nonce');
+
+        if (!Olama_School_Permissions::can('manage_options') && !current_user_can('editor')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
+        $exam_id = intval($_POST['exam_id']);
+        $status = sanitize_text_field($_POST['file_status']);
+        $comment = sanitize_textarea_field($_POST['supervisor_comments']);
+
+        global $wpdb;
+        $wpdb->update(
+            "{$wpdb->prefix}olama_exam_attachments",
+            array('file_status' => $status, 'supervisor_comments' => $comment),
+            array('exam_id' => $exam_id)
+        );
+
+        wp_send_json_success(__('Comments saved successfully', 'olama-school'));
+    }
+
+    public function download_all_exams_zip()
+    {
+        if (!Olama_School_Permissions::can('manage_options')) {
+            wp_die(__('Unauthorized', 'olama-school'));
+        }
+
+        $filters = array(
+            'academic_year_id' => isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : 0,
+            'semester_id' => isset($_GET['semester_id']) ? intval($_GET['semester_id']) : 0,
+            'semester_exam_id' => isset($_GET['semester_exam_id']) ? intval($_GET['semester_exam_id']) : 0,
+            'grade_id' => isset($_GET['grade_id']) ? intval($_GET['grade_id']) : 0,
+        );
+
+        Olama_School_Exam_Attachment::download_all_approved_zip($filters);
     }
 }

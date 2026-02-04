@@ -423,6 +423,22 @@ class Olama_School_DB
 				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
 				UNIQUE KEY grade_year (academic_year_id, grade_id)
+			) $charset_collate;",
+
+			'olama_exam_attachments' => "CREATE TABLE {$wpdb->prefix}olama_exam_attachments (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				exam_id mediumint(9) NOT NULL,
+				user_id bigint(20) UNSIGNED NOT NULL,
+				original_filename varchar(255) NOT NULL,
+				stored_filename varchar(255) NOT NULL,
+				file_size bigint(20) NOT NULL,
+				file_hash varchar(64) NOT NULL,
+				file_status varchar(20) DEFAULT 'uploaded' NOT NULL,
+				supervisor_comments text DEFAULT NULL,
+				uploaded_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				KEY  exam_id (exam_id),
+				KEY  user_id (user_id)
 			) $charset_collate;"
 
 
@@ -730,6 +746,7 @@ class Olama_School_DB
 			'olama_ev_categories',
 			'olama_ev_domains',
 			'olama_ev_templates',
+			'olama_exam_attachments',
 			'olama_stationary',
 			'olama_exams',
 			'olama_teacher_office_hours',
