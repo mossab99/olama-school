@@ -49,6 +49,9 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 <option value="stationary">
                     <?php _e('Stationary', 'olama-school'); ?>
                 </option>
+                <option value="exam_report">
+                    <?php _e('Exam Report', 'olama-school'); ?>
+                </option>
             </select>
         </div>
         <div>
@@ -109,6 +112,17 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 <?php endforeach; ?>
             </select>
         </div>
+        <div id="gen-exam-wrapper" style="display: none;">
+            <label style="display: block; font-weight: 600; color: #475569; margin-bottom: 8px; font-size: 0.9rem;">
+                <?php _e('Specific Exam', 'olama-school'); ?>
+            </label>
+            <select id="gen-exam" style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                <option value="active"><?php _e('Active Exam', 'olama-school'); ?></option>
+                <option value="">
+                    <?php _e('-- All Exams --', 'olama-school'); ?>
+                </option>
+            </select>
+        </div>
     </div>
 
     <div
@@ -138,6 +152,9 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
             var grade = $('#gen-grade').val();
             var section = $('#gen-section').val();
             var week = $('#gen-week').val();
+            var exam = $('#gen-exam').val();
+            var activeYearId = '<?php echo $active_year ? $active_year->id : 0; ?>';
+            var selectedYearId = $('#academic_year_id').val();
 
             // Hide/show fields based on type
             if (type === 'stationary') {
@@ -146,29 +163,46 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 $('#gen-grade').closest('div').hide();
                 $('#gen-section').closest('div').hide();
                 $('#gen-week-wrapper').hide();
+                $('#gen-exam-wrapper').hide();
+            } else if (type === 'exam_report') {
+                $('#gen-semester').closest('div').show();
+                $('#gen-grade').closest('div').show();
+                $('#gen-section').closest('div').hide();
+                $('#gen-week-wrapper').hide();
+                $('#gen-exam-wrapper').show();
             } else if (type === 'weekly_schedule' || type === 'teachers_office_hours') {
                 $('#gen-semester').closest('div').show();
                 $('#gen-grade').closest('div').show();
                 $('#gen-section').closest('div').show();
                 $('#gen-week-wrapper').hide();
+                $('#gen-exam-wrapper').hide();
             } else {
                 $('#gen-semester').closest('div').show();
                 $('#gen-grade').closest('div').show();
                 $('#gen-section').closest('div').show();
                 $('#gen-week-wrapper').show();
+                $('#gen-exam-wrapper').hide();
             }
 
             // Generate shortcode based on type
             var shortcode = '[olama_' + type;
-            var yearId = $('#academic_year_id').val();
 
-            if (yearId) shortcode += ' year="' + yearId + '"';
+            if (selectedYearId == activeYearId) {
+                shortcode += ' year="active"';
+            } else if (selectedYearId) {
+                shortcode += ' year="' + selectedYearId + '"';
+            }
 
             if (type !== 'stationary') {
-                if (semester && semester !== 'active') shortcode += ' semester="' + semester + '"';
+                if (semester) shortcode += ' semester="' + semester + '"';
                 if (grade) shortcode += ' grade="' + grade + '"';
-                if (section) shortcode += ' section="' + section + '"';
-                if (type === 'weekly_plan' && week) shortcode += ' week="' + week + '"';
+
+                if (type === 'exam_report') {
+                    if (exam) shortcode += ' exam="' + exam + '"';
+                } else {
+                    if (section) shortcode += ' section="' + section + '"';
+                    if (type === 'weekly_plan' && week) shortcode += ' week="' + week + '"';
+                }
             }
             shortcode += ']';
 
@@ -210,7 +244,40 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
             });
         });
 
-        $('#gen-semester, #gen-section, #gen-week').on('change', updateShortcode);
+        $('#gen-semester').on('change', function () {
+            var semesterId = $(this).val();
+            var $examSelect = $('#gen-exam');
+            var type = $('#gen-type').val();
+
+            if (type !== 'exam_report' || !semesterId || semesterId === 'active') {
+                $examSelect.html('<option value="active"><?php _e('Active Exam', 'olama-school'); ?></option><option value=""><?php _e('-- All Exams --', 'olama-school'); ?></option>');
+                updateShortcode();
+                return;
+            }
+
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'olama_get_semester_exams',
+                    semester_id: semesterId,
+                    nonce: '<?php echo wp_create_nonce("olama_curriculum_nonce"); ?>'
+                },
+                success: function (response) {
+                    var options = '<option value="active"><?php _e('Active Exam', 'olama-school'); ?></option>';
+                    options += '<option value=""><?php _e('-- All Exams --', 'olama-school'); ?></option>';
+                    if (response.success && response.data) {
+                        $.each(response.data, function (i, exam) {
+                            options += '<option value="' + exam.id + '">' + exam.exam_name + '</option>';
+                        });
+                    }
+                    $examSelect.html(options);
+                    updateShortcode();
+                }
+            });
+        });
+
+        $('#gen-section, #gen-week, #gen-exam').on('change', updateShortcode);
 
         $('#copy-shortcode').on('click', function () {
             var text = $('#generated-shortcode').text().trim();

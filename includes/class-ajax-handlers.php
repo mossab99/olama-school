@@ -59,6 +59,7 @@ class Olama_School_Ajax_Handlers
         add_action('wp_ajax_olama_delete_exam_attachment', array($this, 'delete_exam_attachment'));
         add_action('wp_ajax_olama_save_exam_attachment_comment', array($this, 'save_exam_attachment_comment'));
         add_action('wp_ajax_olama_download_all_exams_zip', array($this, 'download_all_exams_zip'));
+        add_action('wp_ajax_olama_get_semester_exams', array($this, 'get_semester_exams'));
     }
 
     // ==========================================
@@ -1076,5 +1077,13 @@ class Olama_School_Ajax_Handlers
         );
 
         Olama_School_Exam_Attachment::download_all_approved_zip($filters);
+    }
+
+    public function get_semester_exams()
+    {
+        check_ajax_referer('olama_curriculum_nonce', 'nonce');
+        $semester_id = intval($_POST['semester_id']);
+        $exams = Olama_School_Academic::get_semester_exams($semester_id);
+        wp_send_json_success($exams);
     }
 }

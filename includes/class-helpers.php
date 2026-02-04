@@ -790,6 +790,11 @@ class Olama_School_Helpers
         'Notebook' => 'الدفتر',
         'Search by teacher name...' => 'البحث باسم المعلم...',
         'No teachers found.' => 'لم يتم العثور على معلمين.',
+        'Exam Report' => 'تقرير الاختبارات',
+        'Specific Exam' => 'اختبار محدد',
+        '-- All Exams --' => '-- جميع الاختبارات --',
+        'Active Exam' => 'الاختبار النشط',
+        'No exams found' => 'لم يتم العثور على اختبارات',
 
         // Bulk Upload Strings
         'Bulk Upload' => 'رفع جماعي',
