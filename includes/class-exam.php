@@ -15,8 +15,9 @@ class Olama_School_Exam
     public static function get_exams($year_id, $semester_id, $grade_id, $subject_id = 0, $semester_exam_id = 0)
     {
         global $wpdb;
-        $query = "SELECT e.*, se.room_number as master_room, a.id as attachment_id, a.file_status as attachment_status 
+        $query = "SELECT e.*, s.subject_name, se.room_number as master_room, a.id as attachment_id, a.file_status as attachment_status 
                   FROM {$wpdb->prefix}olama_exams e
+                  LEFT JOIN {$wpdb->prefix}olama_subjects s ON e.subject_id = s.id
                   LEFT JOIN {$wpdb->prefix}olama_semester_exams se ON e.semester_exam_id = se.id
                   LEFT JOIN {$wpdb->prefix}olama_exam_attachments a ON e.id = a.exam_id
                   WHERE e.academic_year_id = %d AND e.semester_id = %d AND e.grade_id = %d";

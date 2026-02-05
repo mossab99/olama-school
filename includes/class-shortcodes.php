@@ -758,7 +758,8 @@ class Olama_School_Shortcodes
             <div class="plan-header-v2" style="background: linear-gradient(145deg, #818cf8 0%, #6366f1 100%);">
                 <div class="header-content">
                     <h1 class="header-title" style="color: #ffffff;">
-                        <?php echo Olama_School_Helpers::translate('جدول الاختبارات'); ?></h1>
+                        <?php echo Olama_School_Helpers::translate('جدول الاختبارات'); ?>
+                    </h1>
                     <div class="header-subtitle">
                         <?php echo $grade ? esc_html($grade->grade_name) : ''; ?>
                     </div>
@@ -817,20 +818,16 @@ class Olama_School_Shortcodes
                             <?php foreach ($exams_on_date as $exam):
                                 $icon = $get_icon($exam->subject_name);
                                 $bg_color = $get_subject_bg($exam->subject_name);
-                                // Fetch full details for subject name etc.
-                                error_log("Olama: Fetching details for exam " . $exam->id);
-                                $full_exam = Olama_School_Exam::get_full_exam_details($exam->id);
                                 ?>
                                 <div class="subject-card"
                                     style="background: <?php echo esc_attr($bg_color); ?>; border-inline-start: 5px solid #6366f1;">
                                     <div class="subject-header">
                                         <span class="dashicons <?php echo $icon; ?> subject-icon"></span>
-                                        <span
-                                            class="subject-name"><?php echo esc_html($full_exam->subject_name ?? $exam->subject_name ?? ''); ?></span>
-                                        <?php if (!empty($full_exam->exam_name)): ?>
+                                        <span class="subject-name"><?php echo esc_html($exam->subject_name ?? ''); ?></span>
+                                        <?php if (!empty($exam->exam_name)): ?>
                                             <span class="exam-type-badge"
                                                 style="background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 700; margin-right: auto;">
-                                                <?php echo esc_html($full_exam->exam_name); ?>
+                                                <?php echo esc_html($exam->exam_name); ?>
                                             </span>
                                         <?php endif; ?>
                                     </div>
