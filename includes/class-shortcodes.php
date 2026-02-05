@@ -2402,8 +2402,7 @@ class Olama_School_Shortcodes
                     </div>
 
                     <script>
-                        jQuery(do                
-                                                                cument).ready(function ($) {
+                        jQuery(document).ready(function ($) {
                             $(".student-attendance-btn").on("click", function () {
                                 var $btn = $(this);
                                 var studentId = $btn.data("student");
