@@ -76,12 +76,14 @@ $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_
                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
                 <h2 id="timeline-title" style="margin: 0;"></h2>
                 <div style="display: flex; gap: 10px;">
-                    <button type="button" id="clear-timeline-btn" class="button button-secondary button-large">
-                        <?php echo Olama_School_Helpers::translate('Clear All Dates'); ?>
-                    </button>
-                    <button type="button" id="save-timeline-btn" class="button button-primary button-large">
-                        <?php echo Olama_School_Helpers::translate('Save All Dates'); ?>
-                    </button>
+                    <?php if (Olama_School_Permissions::can('olama_manage_curriculum_timeline')): ?>
+                        <button type="button" id="clear-timeline-btn" class="button button-secondary button-large">
+                            <?php echo Olama_School_Helpers::translate('Clear All Dates'); ?>
+                        </button>
+                        <button type="button" id="save-timeline-btn" class="button button-primary button-large">
+                            <?php echo Olama_School_Helpers::translate('Save All Dates'); ?>
+                        </button>
+                    <?php endif; ?>
                 </div>
             </div>
 

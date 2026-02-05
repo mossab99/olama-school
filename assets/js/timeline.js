@@ -118,11 +118,11 @@ jQuery(document).ready(function ($) {
                             <div class="timeline-unit-dates">
                                 <div class="date-group">
                                     <label>${olamaTimeline.i18n.unitStart}</label>
-                                    <input type="text" class="timeline-date-input unit-start olama-datepicker" value="${unit.formatted_start_date || ''}" data-raw="${unit.start_date || ''}" autocomplete="off">
+                                    <input type="text" class="timeline-date-input unit-start olama-datepicker" value="${unit.formatted_start_date || ''}" data-raw="${unit.start_date || ''}" autocomplete="off" ${!olamaTimeline.canManage ? 'disabled' : ''}>
                                 </div>
                                 <div class="date-group">
                                     <label>${olamaTimeline.i18n.unitEnd}</label>
-                                    <input type="text" class="timeline-date-input unit-end olama-datepicker" value="${unit.formatted_end_date || ''}" data-raw="${unit.end_date || ''}" autocomplete="off">
+                                    <input type="text" class="timeline-date-input unit-end olama-datepicker" value="${unit.formatted_end_date || ''}" data-raw="${unit.end_date || ''}" autocomplete="off" ${!olamaTimeline.canManage ? 'disabled' : ''}>
                                 </div>
                             </div>
                         </div>
@@ -145,14 +145,14 @@ jQuery(document).ready(function ($) {
                             <td class="lesson-number">${lesson.lesson_number}</td>
                             <td class="lesson-title">${lesson.lesson_title}</td>
                             <td>
-                                <input type="number" class="timeline-periods-input lesson-periods" value="${lesson.periods || 1}" min="1" style="width: 60px;">
+                                <input type="number" class="timeline-periods-input lesson-periods" value="${lesson.periods || 1}" min="1" style="width: 60px;" ${!olamaTimeline.canManage ? 'disabled' : ''}>
                             </td>
                             <td>
-                                <input type="text" class="timeline-date-input lesson-start olama-datepicker" value="${lesson.formatted_start_date || ''}" data-raw="${lesson.start_date || ''}" autocomplete="off">
+                                <input type="text" class="timeline-date-input lesson-start olama-datepicker" value="${lesson.formatted_start_date || ''}" data-raw="${lesson.start_date || ''}" autocomplete="off" ${!olamaTimeline.canManage ? 'disabled' : ''}>
                                 <div class="date-error"></div>
                             </td>
                             <td>
-                                <input type="text" class="timeline-date-input lesson-end olama-datepicker" value="${lesson.formatted_end_date || ''}" data-raw="${lesson.end_date || ''}" autocomplete="off">
+                                <input type="text" class="timeline-date-input lesson-end olama-datepicker" value="${lesson.formatted_end_date || ''}" data-raw="${lesson.end_date || ''}" autocomplete="off" ${!olamaTimeline.canManage ? 'disabled' : ''}>
                                 <div class="date-error"></div>
                             </td>
                         </tr>`;

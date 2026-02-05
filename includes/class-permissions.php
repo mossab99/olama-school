@@ -59,6 +59,7 @@ class Olama_School_Permissions
                     'olama_manage_plans_schedule' => __('Weekly Schedule', 'olama-school'),
                     'olama_manage_plans_data' => __('Data Management', 'olama-school'),
                     'olama_manage_plans_load' => __('Plan Load', 'olama-school'),
+                    'olama_view_plans_load' => __('View Plan Load', 'olama-school'),
                     'olama_manage_plans_coverage' => __('Curriculum Coverage', 'olama-school'),
                     'olama_manage_own_plans' => __('Edit Own Plans', 'olama-school'),
                     'olama_approve_plans' => __('Approve/Request Edits', 'olama-school'),
@@ -82,6 +83,7 @@ class Olama_School_Permissions
                     'olama_access_curriculum_mgmt' => __('Access Management', 'olama-school'),
                     'olama_manage_curriculum_list' => __('Manage Curriculum', 'olama-school'),
                     'olama_manage_curriculum_timeline' => __('Timeline Management', 'olama-school'),
+                    'olama_view_curriculum_timeline' => __('View Timeline', 'olama-school'),
                     'olama_manage_curriculum_upload' => __('Bulk Upload', 'olama-school'),
                     'olama_manage_curriculum_analysis' => __('Curriculum Analysis', 'olama-school'),
                 )
@@ -165,6 +167,7 @@ class Olama_School_Permissions
                                 'olama_manage_academic_office_hours',
                                 'olama_access_curriculum_mgmt',
                                 'olama_manage_curriculum_timeline',
+                                'olama_view_curriculum_timeline',
                                 'olama_manage_curriculum_analysis',
                                 'olama_access_evaluation',
                                 'olama_manage_evaluation_students',
@@ -172,7 +175,8 @@ class Olama_School_Permissions
                                 'olama_fill_exam_details',
                                 'olama_upload_exam_files',
                                 'olama_access_reports',
-                                'olama_view_reports_summary'
+                                'olama_view_reports_summary',
+                                'olama_view_plans_load'
                             );
                             if (in_array($cap, $teacher_caps)) {
                                 $role->add_cap($cap);
