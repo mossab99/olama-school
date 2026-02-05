@@ -1842,10 +1842,49 @@ class Olama_School_Shortcodes
                                         <?php endif; ?>
 
                                         <?php if ($ex->description): ?>
-                                                <div class="detail-row description">
+                                                <div class="detail-row description" style="margin-bottom: 15px;">
                                                     <span class="label"><?php echo Olama_School_Helpers::translate('Description'); ?>:</span>
-                                                    <div class="value"><?php echo nl2br(esc_html($ex->description)); ?></div>
+                                                    <div class="value" style="font-weight: 600; color: #1e293b;"><?php echo nl2br(esc_html($ex->description)); ?></div>
                                                 </div>
+                                        <?php endif; ?>
+
+                                        <?php
+                                        $json_material = json_decode($ex->exam_material_json, true);
+                                        $material = is_array($json_material) ? $json_material : array();
+
+                                        // Render Curriculum Items if they exist
+                                        if (!empty($material['curriculum_items'])): ?>
+                                            <div class="curriculum-material-section" style="margin-bottom: 20px;">
+                                                <span class="label" style="margin-bottom: 8px;"><?php echo Olama_School_Helpers::translate('Curriculum Material'); ?>:</span>
+                                                <div class="curriculum-table-wrapper" style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                                                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                                                        <thead>
+                                                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                                                <th style="padding: 10px; text-align: start; font-weight: 700; color: #475569;"><?php echo Olama_School_Helpers::translate('Unit / Lesson'); ?></th>
+                                                                <th style="padding: 10px; text-align: start; font-weight: 700; color: #475569;"><?php echo Olama_School_Helpers::translate('Material'); ?></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php foreach ($material['curriculum_items'] as $item): 
+                                                                $unit = !empty($item['unit_id']) ? Olama_School_Unit::get_unit($item['unit_id']) : null;
+                                                                $lesson = !empty($item['lesson_id']) ? Olama_School_Lesson::get_lesson($item['lesson_id']) : null;
+                                                                $unit_name = $unit ? $unit->unit_name : '';
+                                                                $lesson_name = $lesson ? $lesson->lesson_title : '';
+                                                                ?>
+                                                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                                                    <td style="padding: 10px;">
+                                                                        <div style="font-weight: 700; color: #1e293b;"><?php echo esc_html($unit_name); ?></div>
+                                                                        <div style="font-size: 0.8rem; color: #64748b;"><?php echo esc_html($lesson_name); ?></div>
+                                                                    </td>
+                                                                    <td style="padding: 10px; color: #334155;">
+                                                                        <?php echo esc_html($item['material']); ?>
+                                                                    </td>
+                                                                </tr>
+                                                            <?php endforeach; ?>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
                                         <?php endif; ?>
 
                                         <div class="material-sections"
@@ -1877,22 +1916,26 @@ class Olama_School_Shortcodes
                                                     </div>
                                             <?php endif; ?>
 
-                                            <?php if ($ex->notebook_material): ?>
+                                            <?php
+                                            $booklets_val = !empty($material['notebook_material']) ? $material['notebook_material'] : (!empty($ex->notebook_material) ? $ex->notebook_material : '');
+                                            if (!empty($booklets_val)): ?>
                                                     <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
                                                         <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
-                                                            <?php echo Olama_School_Helpers::translate('Notebook'); ?>
+                                                            <?php echo Olama_School_Helpers::translate('Booklets & Notebooks'); ?>
                                                         </div>
-                                                        <div class="material-content"><?php echo esc_html($ex->notebook_material); ?></div>
+                                                        <div class="material-content"><?php echo esc_html($booklets_val); ?></div>
                                                     </div>
                                             <?php endif; ?>
                                         </div>
 
-                                        <?php if ($ex->teacher_notes): ?>
+                                        <?php
+                                        $notes_val = !empty($material['teacher_notes']) ? $material['teacher_notes'] : (!empty($ex->teacher_notes) ? $ex->teacher_notes : '');
+                                        if (!empty($notes_val)): ?>
                                                 <div class="teacher-notes-box"
                                                     style="background:#fff7ed; border-right:4px solid #f97316; padding:10px; border-radius:4px;">
                                                     <span class="label"
                                                         style="color:#c2410c; font-weight:800; font-size:11px;"><?php echo Olama_School_Helpers::translate('Teacher Notes'); ?>:</span>
-                                                    <div class="value"><?php echo nl2br(esc_html($ex->teacher_notes)); ?></div>
+                                                    <div class="value"><?php echo nl2br(esc_html($notes_val)); ?></div>
                                                 </div>
                                         <?php endif; ?>
                                     </div>
