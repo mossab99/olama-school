@@ -83,13 +83,20 @@ if (!defined('ABSPATH')) {
                     <label
                         class="olama-label"><?php echo Olama_School_Helpers::translate('Score Labels (Max 5, Highest to Lowest)'); ?></label>
                     <div id="score-labels-container" style="display: flex; flex-direction: column; gap: 5px;">
-                        <input type="text" name="score_config[]" placeholder="e.g., Mastered" style="width: 100%;">
-                        <input type="text" name="score_config[]" placeholder="e.g., Partially Mastered"
+                        <input type="text" name="score_config[]"
+                            placeholder="<?php echo Olama_School_Helpers::translate('e.g., Mastered'); ?>"
                             style="width: 100%;">
-                        <input type="text" name="score_config[]" placeholder="e.g., Not Mastered" style="width: 100%;">
-                        <input type="text" name="score_config[]" placeholder="e.g., (Optional Level 4)"
+                        <input type="text" name="score_config[]"
+                            placeholder="<?php echo Olama_School_Helpers::translate('e.g., Partially Mastered'); ?>"
                             style="width: 100%;">
-                        <input type="text" name="score_config[]" placeholder="e.g., (Optional Level 5)"
+                        <input type="text" name="score_config[]"
+                            placeholder="<?php echo Olama_School_Helpers::translate('e.g., Not Mastered'); ?>"
+                            style="width: 100%;">
+                        <input type="text" name="score_config[]"
+                            placeholder="<?php echo Olama_School_Helpers::translate('e.g., (Optional Level 4)'); ?>"
+                            style="width: 100%;">
+                        <input type="text" name="score_config[]"
+                            placeholder="<?php echo Olama_School_Helpers::translate('e.g., (Optional Level 5)'); ?>"
                             style="width: 100%;">
                     </div>
                 </div>
@@ -214,7 +221,8 @@ if (!defined('ABSPATH')) {
                             class="olama-label"><?php echo Olama_School_Helpers::translate('Score Labels (Max 5, Highest to Lowest)'); ?></label>
                         <div style="display: flex; flex-direction: column; gap: 5px;">
                             <?php for ($i = 0; $i < 5; $i++): ?>
-                                <input type="text" name="score_config[]" placeholder="Level <?php echo ($i + 1); ?>"
+                                <input type="text" name="score_config[]"
+                                    placeholder="<?php echo Olama_School_Helpers::translate('Level') . ' ' . ($i + 1); ?>"
                                     value="<?php echo esc_attr($config_values[$i] ?? ''); ?>" style="width: 100%;">
                             <?php endfor; ?>
                         </div>

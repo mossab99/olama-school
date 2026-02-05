@@ -68,7 +68,8 @@ if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
                 <label><?php _e('Semester', 'olama-school'); ?></label>
                 <select name="semester_id" class="olama-select" onchange="this.form.submit()">
                     <option value="active" <?php selected($selected_semester_id, 'active'); ?>>
-                        <?php _e('Active Semester', 'olama-school'); ?></option>
+                        <?php _e('Active Semester', 'olama-school'); ?>
+                    </option>
                     <?php foreach ($semesters as $sem): ?>
                         <option value="<?php echo $sem->id; ?>" <?php selected($active_semester_id, $sem->id); ?>>
                             <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
@@ -106,7 +107,8 @@ if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
             <div
                 style="background: #fff; padding: 25px; border-radius: 8px; border-top: 4px solid #2271b1; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                <h2><?php echo esc_html(Olama_School_Section::get_section($sec1_id)->section_name ?? 'Section 1'); ?></h2>
+                <h2><?php echo esc_html(Olama_School_Section::get_section($sec1_id)->section_name ?? Olama_School_Helpers::translate('Section 1')); ?>
+                </h2>
                 <table class="wp-list-table widefat fixed striped" style="margin-top: 15px;">
                     <thead>
                         <tr>
@@ -132,7 +134,7 @@ if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
                             ?>
                             <tr>
                                 <td><strong><?php echo esc_html($sub->subject_name); ?></strong></td>
-                                <td><?php echo $latest_plan ? esc_html(($latest_plan->unit_name ?? '') . ' - ' . ($latest_plan->lesson_title ?? '')) : '<i style="color:#999">No data</i>'; ?>
+                                <td><?php echo $latest_plan ? esc_html(($latest_plan->unit_name ?? '') . ' - ' . ($latest_plan->lesson_title ?? '')) : '<i style="color:#999">' . Olama_School_Helpers::translate('No data') . '</i>'; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -142,7 +144,8 @@ if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
 
             <div
                 style="background: #fff; padding: 25px; border-radius: 8px; border-top: 4px solid #d63638; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                <h2><?php echo esc_html(Olama_School_Section::get_section($sec2_id)->section_name ?? 'Section 2'); ?></h2>
+                <h2><?php echo esc_html(Olama_School_Section::get_section($sec2_id)->section_name ?? Olama_School_Helpers::translate('Section 2')); ?>
+                </h2>
                 <table class="wp-list-table widefat fixed striped" style="margin-top: 15px;">
                     <thead>
                         <tr>
@@ -168,7 +171,7 @@ if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
                             ?>
                             <tr>
                                 <td><strong><?php echo esc_html($sub->subject_name); ?></strong></td>
-                                <td><?php echo $latest_plan ? esc_html(($latest_plan->unit_name ?? '') . ' - ' . ($latest_plan->lesson_title ?? '')) : '<i style="color:#999">No data</i>'; ?>
+                                <td><?php echo $latest_plan ? esc_html(($latest_plan->unit_name ?? '') . ' - ' . ($latest_plan->lesson_title ?? '')) : '<i style="color:#999">' . Olama_School_Helpers::translate('No data') . '</i>'; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
