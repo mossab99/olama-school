@@ -154,7 +154,7 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                             </td>
                             <td style="text-align: center; white-space: nowrap;">
                                 <button type="button" class="button button-primary fill-details"
-                                    data-exam='<?php echo json_encode($exam); ?>'>
+                                    data-exam='<?php echo esc_attr(json_encode($exam)); ?>'>
                                     <?php echo Olama_School_Helpers::translate('Enter Details'); ?>
                                 </button>
                                 <?php if ($exam->attachment_id): ?>
@@ -534,7 +534,7 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
 
             $.post(ajaxurl, {
                 action: 'olama_get_exam_attachment',
-                nonce: $('#olama_exam_nonce_field').val(),
+                nonce: $('#olama_exam_nonce_field').val() || $('input[name="olama_exam_nonce_field"]').val(),
                 exam_id: examId
             }, function (response) {
                 $('#attachment-loading').hide();
@@ -585,7 +585,7 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
 
             var formData = new FormData();
             formData.append('action', 'olama_upload_exam_file');
-            formData.append('nonce', $('#olama_exam_nonce_field').val());
+            formData.append('nonce', $('#olama_exam_nonce_field').val() || $('input[name="olama_exam_nonce_field"]').val());
             formData.append('exam_id', examId);
             formData.append('exam_file', fileInput.files[0]);
 
@@ -624,7 +624,7 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
 
             $.post(ajaxurl, {
                 action: 'olama_delete_exam_attachment',
-                nonce: $('#olama_exam_nonce_field').val(),
+                nonce: $('#olama_exam_nonce_field').val() || $('input[name="olama_exam_nonce_field"]').val(),
                 exam_id: examId
             }, function (response) {
                 if (response.success) {

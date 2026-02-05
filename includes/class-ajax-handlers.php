@@ -973,7 +973,9 @@ class Olama_School_Ajax_Handlers
 
     public function upload_exam_file()
     {
-        check_ajax_referer('olama_save_exam', 'nonce');
+        if (!check_ajax_referer('olama_save_exam', 'nonce', false)) {
+            wp_send_json_error(__('Session expired or security check failed. Please refresh.', 'olama-school'));
+        }
 
         if (!isset($_POST['exam_id']) || empty($_FILES['exam_file'])) {
             wp_send_json_error(__('Missing parameters', 'olama-school'));
@@ -991,7 +993,9 @@ class Olama_School_Ajax_Handlers
 
     public function delete_exam_attachment()
     {
-        check_ajax_referer('olama_save_exam', 'nonce');
+        if (!check_ajax_referer('olama_save_exam', 'nonce', false)) {
+            wp_send_json_error(__('Session expired or security check failed. Please refresh.', 'olama-school'));
+        }
 
         if (empty($_POST['exam_id'])) {
             wp_send_json_error(__('Missing exam ID', 'olama-school'));
@@ -1023,7 +1027,9 @@ class Olama_School_Ajax_Handlers
 
     public function get_exam_attachment()
     {
-        check_ajax_referer('olama_save_exam', 'nonce');
+        if (!check_ajax_referer('olama_save_exam', 'nonce', false)) {
+            wp_send_json_error(__('Session expired or security check failed. Please refresh.', 'olama-school'));
+        }
         $exam_id = intval($_POST['exam_id']);
         $info = Olama_School_Exam_Attachment::get_attachment_info($exam_id);
 
