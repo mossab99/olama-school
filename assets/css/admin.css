@@ -646,3 +646,8 @@
 .olama-feedback-item:first-child {
     font-weight: 600;
 }
+
+/* Exam Tables Actions Column */
+.olama-actions-col {
+    width: 200px !important;
+}

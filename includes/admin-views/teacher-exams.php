@@ -92,7 +92,7 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                     <th style="font-weight: 600; width: 10%;">
                         <?php echo Olama_School_Helpers::translate('Status'); ?>
                     </th>
-                    <th style="width: 140px; text-align: center; font-weight: 600;">
+                    <th style="width: 200px; text-align: center; font-weight: 600;">
                         <?php echo Olama_School_Helpers::translate('Actions'); ?>
                     </th>
                 </tr>
