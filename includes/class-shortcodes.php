@@ -863,8 +863,15 @@ class Olama_School_Shortcodes
                                                         style="padding: 5px; background: rgba(255,255,255,0.5); border-radius: 6px; margin-bottom: 4px;">
                                                         <span class="dashicons dashicons-arrow-left-alt2 detail-icon"
                                                             style="font-size: 12px;"></span>
-                                                        <span
-                                                            class="detail-value"><?php echo esc_html($unit_name . ($lesson_name ? ' - ' . $lesson_name : '')); ?></span>
+                                                        <span class="detail-value">
+                                                            <strong><?php echo esc_html($unit_name . ($lesson_name ? ' - ' . $lesson_name : '')); ?></strong>
+                                                            <?php if (!empty($item['material'])): ?>
+                                                                <div
+                                                                    style="font-size: 0.85rem; color: #475569; margin-top: 2px; padding-right: 20px;">
+                                                                    <?php echo esc_html($item['material']); ?>
+                                                                </div>
+                                                            <?php endif; ?>
+                                                        </span>
                                                     </div>
                                                 <?php endforeach;
                                             endif; ?>
