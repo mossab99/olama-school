@@ -52,6 +52,9 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 <option value="exam_report">
                     <?php _e('Exam Report', 'olama-school'); ?>
                 </option>
+                <option value="attendance">
+                    <?php _e('Daily Attendance', 'olama-school'); ?>
+                </option>
             </select>
         </div>
         <div>
@@ -170,7 +173,7 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 $('#gen-section').closest('div').hide();
                 $('#gen-week-wrapper').hide();
                 $('#gen-exam-wrapper').show();
-            } else if (type === 'weekly_schedule' || type === 'teachers_office_hours') {
+            } else if (type === 'weekly_schedule' || type === 'teachers_office_hours' || type === 'attendance') {
                 $('#gen-semester').closest('div').show();
                 $('#gen-grade').closest('div').show();
                 $('#gen-section').closest('div').show();

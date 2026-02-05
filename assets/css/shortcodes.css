@@ -1123,3 +1123,68 @@
         width: 100%;
     }
 }
+/* Attendance Summary Cards */
+.attendance-summary-cards {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    direction: rtl;
+}
+
+.summary-card {
+    flex: 1;
+    padding: 15px 20px;
+    border-radius: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.summary-card.present {
+    background: #e6fffa;
+    border-color: #b2f5ea;
+}
+
+.summary-card.absent {
+    background: #fff5f5;
+    border-color: #fed7d7;
+}
+
+.summary-card .card-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.summary-card .label-ar {
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.summary-card.present .label-ar { color: #2c7a7b; }
+.summary-card.absent .label-ar { color: #c53030; }
+
+.summary-card .label-en {
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0.7;
+}
+
+.summary-card.present .label-en { color: #319795; }
+.summary-card.absent .label-en { color: #e53e3e; }
+
+.summary-card .card-value {
+    font-size: 2.2rem;
+    font-weight: 900;
+}
+
+.summary-card.present .card-value { color: #234e52; }
+.summary-card.absent .card-value { color: #742a2a; }
+
+@media (max-width: 480px) {
+    .attendance-summary-cards {
+        flex-direction: column;
+    }
+}

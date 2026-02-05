@@ -32,6 +32,8 @@ class Olama_School_Admin
         add_action('admin_init', array($this, 'handle_kg_evaluation_save'));
         add_action('admin_init', array($this, 'handle_kg_report_print'));
         add_action('admin_init', array($this, 'handle_family_actions'));
+        add_action('admin_init', array($this, 'handle_attendance_save'));
+        add_action('wp_ajax_olama_save_attendance', array($this, 'ajax_save_attendance'));
         add_action('wp_ajax_olama_kg_autosave', array($this, 'ajax_kg_autosave'));
         add_action('wp_ajax_olama_save_exam', array($this, 'ajax_save_exam'));
         add_action('wp_ajax_olama_get_semesters', array($this, 'ajax_get_semesters'));
@@ -648,6 +650,15 @@ class Olama_School_Admin
 
         add_submenu_page(
             'olama-school',
+            Olama_School_Helpers::translate('Follow Up'),
+            Olama_School_Helpers::translate('Follow Up'),
+            'olama_access_plans_mgmt', // Reusing capability for now
+            'olama-school-follow-up',
+            array($this, 'render_follow_up_page')
+        );
+
+        add_submenu_page(
+            'olama-school',
             Olama_School_Helpers::translate('Academic Management'),
             Olama_School_Helpers::translate('Academic Management'),
             'olama_access_academic_mgmt',
@@ -997,8 +1008,15 @@ class Olama_School_Admin
             ));
         }
 
+        // Attendance AJAX Localization
+        wp_localize_script('olama-admin-script', 'olama_admin_ajax', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('olama_admin_nonce'),
+        ));
+
         // Enqueue print stylesheet for weekly schedule
         if (isset($_GET['page']) && $_GET['page'] === 'olama-school-plans' && isset($_GET['tab']) && $_GET['tab'] === 'schedule') {
+
             wp_enqueue_style('olama-schedule-print', OLAMA_SCHOOL_URL . 'assets/css/schedule-print.css', array(), OLAMA_SCHOOL_VERSION, 'print');
         }
     }
@@ -3894,5 +3912,180 @@ class Olama_School_Admin
             wp_redirect(admin_url('admin.php?page=olama-school-users&tab=families'));
             exit;
         }
+    }
+
+    /**
+     * Handle Attendance Save from Admin
+     */
+    public function handle_attendance_save()
+    {
+        if (isset($_POST['olama_save_bulk_attendance']) && check_admin_referer('olama_save_bulk_attendance')) {
+            $date = Olama_School_Helpers::sanitize_date($_POST['attendance_date']);
+            $section_id = intval($_POST['section_id']);
+            $academic_year_id = intval($_POST['academic_year_id']);
+            $semester_id = intval($_POST['semester_id']);
+            $attendance_data = $_POST['attendance'] ?? array();
+
+            global $wpdb;
+            $table = $wpdb->prefix . 'olama_attendance';
+
+            // Ensure table exists
+            if ($wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table) {
+                $olama_db = new Olama_School_DB();
+                $olama_db->create_tables();
+            }
+
+            foreach ($attendance_data as $student_id => $data) {
+                $status = sanitize_text_field($data['status'] ?? 'present');
+                $reason = sanitize_text_field($data['reason'] ?? '');
+
+                $res = $wpdb->query($wpdb->prepare(
+                    "INSERT INTO $table (student_id, academic_year_id, semester_id, section_id, attendance_date, status, reason, recorded_by)
+                    VALUES (%d, %d, %d, %d, %s, %s, %s, %d)
+                    ON DUPLICATE KEY UPDATE status = %s, reason = %s, recorded_by = %d",
+                    $student_id,
+                    $academic_year_id,
+                    $semester_id,
+                    $section_id,
+                    $date,
+                    $status,
+                    $reason,
+                    get_current_user_id(),
+                    $status,
+                    $reason,
+                    get_current_user_id()
+                ));
+
+                if ($res === false) {
+                    error_log("Olama Attendance: Failed to save attendance for student $student_id on date $date. DB Error: " . $wpdb->last_error);
+                }
+            }
+
+            wp_redirect(add_query_arg('message', 'attendance_saved', wp_get_referer()));
+            exit;
+        }
+    }
+
+    /**
+     * AJAX: Save Attendance (for Teachers/Real-time)
+     */
+    public function ajax_save_attendance()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        $student_id = intval($_POST['student_id']);
+        $status = sanitize_text_field($_POST['status']);
+        $date = Olama_School_Helpers::sanitize_date($_POST['date']);
+        $section_id = intval($_POST['section_id'] ?? 0);
+        $academic_year_id = intval($_POST['academic_year_id'] ?? 0);
+        $semester_id = intval($_POST['semester_id'] ?? 0);
+
+        if (!$student_id || !$date) {
+            wp_send_json_error('Missing parameters');
+        }
+
+        // Auto-fetch active parameters if not provided
+        if (!$academic_year_id || !$semester_id || !$section_id) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $academic_year_id = $academic_year_id ?: ($active_year ? $active_year->id : 0);
+            $active_sem = Olama_School_Academic::get_active_semester($academic_year_id);
+            $semester_id = $semester_id ?: ($active_sem ? $active_sem->id : 0);
+
+            if (!$section_id) {
+                $enrollment = Olama_School_Student::get_student_enrollment($student_id, $academic_year_id);
+                $section_id = $enrollment ? $enrollment->section_id : 0;
+            }
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'olama_attendance';
+
+        // Check if table exists
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table) {
+            $olama_db = new Olama_School_DB();
+            $olama_db->create_tables();
+        }
+
+        $result = $wpdb->query($wpdb->prepare(
+            "INSERT INTO $table (student_id, academic_year_id, semester_id, section_id, attendance_date, status, recorded_by)
+            VALUES (%d, %d, %d, %d, %s, %s, %d)
+            ON DUPLICATE KEY UPDATE status = %s, recorded_by = %d",
+            $student_id,
+            $academic_year_id,
+            $semester_id,
+            $section_id,
+            $date,
+            $status,
+            get_current_user_id(),
+            $status,
+            get_current_user_id()
+        ));
+
+        if ($result !== false) {
+            wp_send_json_success();
+        } else {
+            error_log("Olama Attendance AJAX: Failed to save attendance for student $student_id on date $date. DB Error: " . $wpdb->last_error);
+            wp_send_json_error(__('Database error', 'olama-school'));
+        }
+    }
+
+    /**
+     * Render Follow Up Page
+     */
+    public function render_follow_up_page()
+    {
+        $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'student_attendance';
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/follow-up.php';
+    }
+
+    /**
+     * Render Daily Absence Report
+     */
+    public function render_daily_absence_report()
+    {
+        $date = isset($_GET['attendance_date']) ? sanitize_text_field($_GET['attendance_date']) : current_time('Y-m-d');
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'olama_attendance';
+        $students_table = $wpdb->prefix . 'olama_students';
+        $sections_table = $wpdb->prefix . 'olama_sections';
+        $grades_table = $wpdb->prefix . 'olama_grades';
+
+        $absentees = $wpdb->get_results($wpdb->prepare(
+            "SELECT a.*, s.student_name, s.student_uid, sec.section_name, g.grade_name 
+            FROM $table a
+            JOIN $students_table s ON a.student_id = s.id
+            JOIN $sections_table sec ON a.section_id = sec.id
+            JOIN $grades_table g ON sec.grade_id = g.id
+            WHERE a.attendance_date = %s AND a.status = 'absent'
+            ORDER BY g.id, sec.id, s.student_name",
+            $date
+        ));
+
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/report-daily-absence.php';
+    }
+
+    /**
+     * Render Detailed Attendance Report
+     */
+    public function render_detailed_attendance_report()
+    {
+        $student_id = isset($_GET['student_id']) ? intval($_GET['student_id']) : 0;
+        $start_date = isset($_GET['start_date']) ? sanitize_text_field($_GET['start_date']) : date('Y-m-01');
+        $end_date = isset($_GET['end_date']) ? sanitize_text_field($_GET['end_date']) : current_time('Y-m-d');
+
+        $attendance = array();
+        if ($student_id) {
+            global $wpdb;
+            $table = $wpdb->prefix . 'olama_attendance';
+            $attendance = $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM $table WHERE student_id = %d AND attendance_date BETWEEN %s AND %s ORDER BY attendance_date DESC",
+                $student_id,
+                $start_date,
+                $end_date
+            ));
+        }
+
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/report-detailed-attendance.php';
     }
 }

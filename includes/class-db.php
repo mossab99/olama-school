@@ -439,6 +439,26 @@ class Olama_School_DB
 				PRIMARY KEY  (id),
 				KEY  exam_id (exam_id),
 				KEY  user_id (user_id)
+			) $charset_collate;",
+
+			'olama_attendance' => "CREATE TABLE {$wpdb->prefix}olama_attendance (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				student_id mediumint(9) NOT NULL,
+				academic_year_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL,
+				section_id mediumint(9) NOT NULL,
+				attendance_date date NOT NULL,
+				status varchar(20) DEFAULT 'present' NOT NULL,
+				reason text DEFAULT NULL,
+				recorded_by bigint(20) UNSIGNED DEFAULT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY student_date (student_id, attendance_date),
+				KEY student_id (student_id),
+				KEY academic_year_id (academic_year_id),
+				KEY semester_id (semester_id),
+				KEY section_id (section_id),
+				KEY attendance_date (attendance_date)
 			) $charset_collate;"
 
 
@@ -740,6 +760,7 @@ class Olama_School_DB
 		global $wpdb;
 
 		$tables = array(
+			'olama_attendance',
 			'olama_ev_scores',
 			'olama_ev_records',
 			'olama_ev_indicators',
