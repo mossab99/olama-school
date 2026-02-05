@@ -297,14 +297,14 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
 
                             <!-- Upload Input -->
                             <div id="attachment-upload-section" style="display: none;">
-                                <input type="file" id="exam_file_input" accept=".docx"
+                                <input type="file" id="exam_file_input" accept=".docx,.pdf"
                                     style="margin-bottom: 10px; width: 100%;">
                                 <button type="button" id="upload-exam-btn" class="button button-primary">
                                     <span class="dashicons dashicons-upload" style="vertical-align: middle;"></span>
                                     <?php echo Olama_School_Helpers::translate('Upload Exam File'); ?>
                                 </button>
                                 <p class="description" style="margin-top: 5px;">
-                                    <?php echo Olama_School_Helpers::translate('Only .docx files are accepted. Maximum size 10MB.'); ?>
+                                    <?php echo Olama_School_Helpers::translate('Only .docx and .pdf files are accepted. Maximum size 10MB.'); ?>
                                 </p>
                             </div>
 

@@ -357,7 +357,7 @@ if ($selected_semester_exam_id) {
                         style="margin-top: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                         <h3
                             style="margin: 0 0 10px; font-size: 14px; color: #475569; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
-                            <?php echo Olama_School_Helpers::translate('Exam File (Word .docx)'); ?>
+                            <?php echo Olama_School_Helpers::translate('Exam File (Word .docx / PDF)'); ?>
                         </h3>
                         <div id="exam-attachment-container">
                             <!-- Status Info -->
@@ -383,13 +383,14 @@ if ($selected_semester_exam_id) {
 
                             <!-- Upload Input (For Teacher / Replacement) -->
                             <div id="attachment-upload-section" style="display: none;">
-                                <input type="file" id="exam_file_input" accept=".docx" style="margin-bottom: 10px;">
+                                <input type="file" id="exam_file_input" accept=".docx,.pdf"
+                                    style="margin-bottom: 10px;">
                                 <button type="button" id="upload-exam-btn" class="button button-primary">
                                     <span class="dashicons dashicons-upload" style="vertical-align: middle;"></span>
                                     <?php echo Olama_School_Helpers::translate('Upload File'); ?>
                                 </button>
                                 <p class="description" style="margin-top: 5px;">
-                                    <?php echo Olama_School_Helpers::translate('Only .docx files are accepted.'); ?>
+                                    <?php echo Olama_School_Helpers::translate('Only .docx and .pdf files are accepted.'); ?>
                                 </p>
                             </div>
 

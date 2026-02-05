@@ -57,15 +57,15 @@ class Olama_School_Exam_Attachment
      */
     public static function validate_file($file)
     {
-        // 1. Check extension
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if ($ext !== 'docx') {
-            return new WP_Error('invalid_extension', __('Only .docx files are allowed.', 'olama-school'));
+        if (!in_array($ext, array('docx', 'pdf'))) {
+            return new WP_Error('invalid_extension', __('Only .docx and .pdf files are allowed.', 'olama-school'));
         }
 
         // 2. Check MIME type
         $allowed_mimes = array(
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/pdf',
             'application/zip', // Some systems might report docx as zip
             'application/octet-stream' // Fallback
         );
@@ -78,16 +78,18 @@ class Olama_School_Exam_Attachment
             return new WP_Error('invalid_mime', __('Invalid file type. Please upload a genuine Word document.', 'olama-school'));
         }
 
-        // 3. Deep validation: Check internal .docx structure (ZIP + word/document.xml)
-        $zip = new ZipArchive();
-        if ($zip->open($file['tmp_name']) === TRUE) {
-            if ($zip->locateName('word/document.xml') === false) {
+        // 3. Deep validation for .docx
+        if ($ext === 'docx') {
+            $zip = new ZipArchive();
+            if ($zip->open($file['tmp_name']) === TRUE) {
+                if ($zip->locateName('word/document.xml') === false) {
+                    $zip->close();
+                    return new WP_Error('invalid_structure', __('The file is not a valid Word (.docx) document.', 'olama-school'));
+                }
                 $zip->close();
-                return new WP_Error('invalid_structure', __('The file is not a valid Word (.docx) document.', 'olama-school'));
+            } else {
+                return new WP_Error('zip_error', __('Could not open the file for validation.', 'olama-school'));
             }
-            $zip->close();
-        } else {
-            return new WP_Error('zip_error', __('Could not open the file for validation.', 'olama-school'));
         }
 
         return true;
@@ -138,13 +140,13 @@ class Olama_School_Exam_Attachment
 
             // If it ends up empty or too short, fallback to UUID
             if (mb_strlen(trim($clean_name, '-')) < 3) {
-                $stored_filename = wp_generate_uuid4() . '.docx';
+                $stored_filename = wp_generate_uuid4() . '.' . $ext;
             } else {
-                $stored_filename = trim($clean_name, '-') . '.docx';
+                $stored_filename = trim($clean_name, '-') . '.' . $ext;
             }
         } else {
             // Fallback to UUID if details can't be fetched
-            $stored_filename = wp_generate_uuid4() . '.docx';
+            $stored_filename = wp_generate_uuid4() . '.' . $ext;
         }
 
         $destination = $upload_dir . $stored_filename;
@@ -241,8 +243,11 @@ class Olama_School_Exam_Attachment
         }
 
         // Set headers for download
+        $ext = strtolower(pathinfo($filepath, PATHINFO_EXTENSION));
+        $mime_type = ($ext === 'pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
         header('Content-Description: File Transfer');
-        header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        header('Content-Type: ' . $mime_type);
         header('Content-Disposition: attachment; filename="' . $attachment->stored_filename . '"');
         header('Expires: 0');
         header('Cache-Control: must-revalidate');
