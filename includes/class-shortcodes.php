@@ -711,6 +711,9 @@ class Olama_School_Shortcodes
         $grade = Olama_School_Grade::get_grade($grade_id);
         $year_obj = Olama_School_Academic::get_year($year_id);
         $year_name = $year_obj ? $year_obj->year_name : '';
+        $semester_exam = Olama_School_Academic::get_semester_exam($semester_exam_id);
+        $exam_display_name = $semester_exam ? $semester_exam->exam_name : '';
+        $total_exams = count($approved_exams);
 
         // Helper to get subject icons (reuse logic from weekly plan)
         $get_icon = function ($subject_name) {
@@ -754,16 +757,27 @@ class Olama_School_Shortcodes
             <!-- Illustrated Header -->
             <div class="plan-header-v2" style="background: linear-gradient(145deg, #818cf8 0%, #6366f1 100%);">
                 <div class="header-content">
-                    <h1 class="header-title"><?php echo Olama_School_Helpers::translate('جدول الاختبارات'); ?></h1>
+                    <h1 class="header-title" style="color: #ffffff;">
+                        <?php echo Olama_School_Helpers::translate('جدول الاختبارات'); ?></h1>
                     <div class="header-subtitle">
                         <?php echo $grade ? esc_html($grade->grade_name) : ''; ?>
                     </div>
                 </div>
                 <!-- Academic Year & Info Bar -->
                 <div class="semester-bar" style="background: rgba(255, 255, 255, 0.15);">
-                    <div class="semester-left">
-                        <span class="week-label"><?php echo Olama_School_Helpers::translate('العام الدراسي'); ?></span>
-                        <span class="week-dates" style="color: #fff;"><?php echo esc_html($year_name); ?></span>
+                    <div class="semester-left" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span class="week-label"><?php echo Olama_School_Helpers::translate('العام الدراسي'); ?></span>
+                            <span class="week-dates" style="color: #fff;"><?php echo esc_html($year_name); ?></span>
+                        </div>
+                        <?php if ($exam_display_name): ?>
+                            <div style="margin-top: 5px; font-weight: 700; color: rgba(255,255,255,0.9);">
+                                <?php echo esc_html($exam_display_name); ?>
+                                <span style="font-weight: 400; font-size: 0.9em; margin-inline-start: 10px; opacity: 0.8;">
+                                    (<?php echo Olama_School_Helpers::translate('Total Exams'); ?>: <?php echo $total_exams; ?>)
+                                </span>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -775,6 +789,9 @@ class Olama_School_Shortcodes
                 foreach ($grouped_exams as $date => $exams_on_date):
                     $is_active = $first ? 'active' : '';
                     $first = false;
+                    // Get first subject for the header
+                    $first_exam = reset($exams_on_date);
+                    $header_subject = $first_exam->subject_name ?? '';
                     ?>
                     <div class="day-item <?php echo $is_active; ?>">
                         <div class="day-header">
@@ -782,9 +799,10 @@ class Olama_School_Shortcodes
                                 <div class="day-text">
                                     <span class="day-name-ar">
                                         <?php echo date_i18n('l', strtotime($date)); ?>
-                                    </span>
-                                    <span class="day-count">
-                                        <?php echo count($exams_on_date) . ' ' . Olama_School_Helpers::translate('اختبارات'); ?>
+                                        <?php if ($header_subject): ?>
+                                            <span style="font-weight: 400; margin-inline-start: 10px; color: #64748b;">-
+                                                <?php echo esc_html($header_subject); ?></span>
+                                        <?php endif; ?>
                                     </span>
                                 </div>
                                 <span class="toggle-chevron dashicons dashicons-arrow-down-alt2"></span>

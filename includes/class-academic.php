@@ -316,6 +316,15 @@ class Olama_School_Academic
     }
 
     /**
+     * Get single semester exam
+     */
+    public static function get_semester_exam($exam_id)
+    {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_semester_exams WHERE id = %d", $exam_id));
+    }
+
+    /**
      * Update semester
      */
     public static function update_semester($semester_id, $data)
