@@ -179,7 +179,7 @@ if ($current_semester_id && $selected_grade_id) {
 
 <div class="olama-plan-list-container">
     <?php if (current_user_can('olama_manage_plans')): ?>
-        <!-- Feedback Modal HTML (Phase 3) -->
+        <!-- Feedback Modal -->
         <div id="olama-feedback-modal"
             style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
             <div
@@ -194,7 +194,7 @@ if ($current_semester_id && $selected_grade_id) {
                 <div style="display: flex; justify-content: flex-end; gap: 10px;">
                     <button
                         class="button olama-modal-cancel"><?php echo Olama_School_Helpers::translate('Cancel'); ?></button>
-                    <button
+                    <button id="olama-confirm-feedback-btn"
                         class="button button-primary olama-modal-submit"><?php echo Olama_School_Helpers::translate('Send & Request Edits'); ?></button>
                 </div>
             </div>

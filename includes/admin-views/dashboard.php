@@ -665,7 +665,7 @@ jQuery(document).ready(function($) {
         <textarea id="olama-feedback-text" style="width: 100%; height: 120px; margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: none;" placeholder="<?php _e('Enter your comments here...', 'olama-school'); ?>"></textarea>
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
             <button class="button olama-modal-cancel"><?php _e('Cancel', 'olama-school'); ?></button>
-            <button class="button button-primary olama-modal-submit"><?php _e('Send & Request Edits', 'olama-school'); ?></button>
+            <button id=\"olama-confirm-feedback-btn\" class=\"button button-primary olama-modal-submit\"><?php _e('Send \u0026 Request Edits', 'olama-school'); ?\u003e\u003c/button\u003e
         </div>
     </div>
 </div>

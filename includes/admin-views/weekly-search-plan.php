@@ -513,4 +513,23 @@ if ($current_semester_id && $selected_grade_id && $selected_subject_id) {
             <!-- Content will be injected by JS -->
         </div>
     </div>
+
+    <!-- Feedback Modal -->
+    <div id="olama-feedback-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+        <div
+            style="background: #fff; padding: 30px; border-radius: 12px; width: 400px; max-width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: #1e293b;"><?php echo Olama_School_Helpers::translate('Request Edits'); ?>
+            </h3>
+            <textarea id="olama-feedback-text"
+                style="width: 100%; height: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; font-family: inherit;"
+                placeholder="<?php echo Olama_School_Helpers::translate('Enter your feedback here...'); ?>"></textarea>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="button olama-modal-cancel"
+                    style="height: 35px;"><?php echo Olama_School_Helpers::translate('Cancel'); ?></button>
+                <button id="olama-confirm-feedback-btn" class="button button-primary olama-modal-submit"
+                    style="height: 35px;"><?php echo Olama_School_Helpers::translate('Send & Request Edits'); ?></button>
+            </div>
+        </div>
+    </div>
 </div>

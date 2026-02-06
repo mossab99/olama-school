@@ -3524,59 +3524,7 @@ class Olama_School_Admin
         return $coverage;
     }
 
-    /**
-     * AJAX: Handle Plan Approval
-     */
-    public function ajax_handle_plan_approval()
-    {
-        global $wpdb;
-        check_ajax_referer('olama_admin_nonce', 'nonce');
 
-        if (!current_user_can('olama_manage_plans')) {
-            wp_send_json_error(__('Permission denied.', 'olama-school'));
-        }
-
-        $plan_id = isset($_POST['plan_id']) ? intval($_POST['plan_id']) : 0;
-        $new_status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
-
-        if (!$plan_id || !in_array($new_status, array('approved', 'draft'))) {
-            wp_send_json_error(__('Invalid request parameters.', 'olama-school'));
-        }
-
-        $result = Olama_School_Plan::update_status($plan_id, $new_status);
-
-        if ($result) {
-            // Log the action
-            Olama_School_Logger::log(
-                sprintf('Plan %s by supervisor', $new_status),
-                sprintf('Plan ID %d changed to %s', $plan_id, $new_status)
-            );
-            // Notify teacher of the status change (Phase 3)
-            $plan = $wpdb->get_row($wpdb->prepare("
-                SELECT p.teacher_id, s.subject_name 
-                FROM {$wpdb->prefix}olama_plans p
-                JOIN {$wpdb->prefix}olama_subjects s ON p.subject_id = s.id
-                WHERE p.id = %d
-            ", $plan_id));
-
-            if ($plan) {
-                $feedback = isset($_POST['feedback']) ? sanitize_textarea_field($_POST['feedback']) : '';
-                $status_label = ($new_status === 'approved') ? __('Approved', 'olama-school') : (($new_status === 'draft') ? __('Rejected/Needs Edits', 'olama-school') : $new_status);
-
-                if (!empty($feedback)) {
-                    $msg = sprintf(__('Your plan for %s has been %s. Feedback: %s', 'olama-school'), $plan->subject_name, $status_label, $feedback);
-                } else {
-                    $msg = sprintf(__('Your plan for %s has been %s.', 'olama-school'), $plan->subject_name, $status_label);
-                }
-
-                self::create_notification($plan->teacher_id, 'plan_status', $msg);
-            }
-
-            wp_send_json_success(array('message' => sprintf(__('Plan %s successfully.', 'olama-school'), $new_status)));
-        } else {
-            wp_send_json_error(__('Database error: Could not update plan status.', 'olama-school'));
-        }
-    }
 
     /**
      * Get teaching schedule for a specific day

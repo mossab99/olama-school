@@ -924,7 +924,7 @@ class Olama_School_Ajax_Handlers
                 wp_send_json_error(__('Session expired. Please refresh the page.', 'olama-school'));
             }
 
-            if (!Olama_School_Permissions::can('olama_approve_plans')) {
+            if (!Olama_School_Permissions::can('olama_approve_plans') && !current_user_can('olama_manage_plans')) {
                 wp_send_json_error(__('Unauthorized access.', 'olama-school'));
             }
 
@@ -951,13 +951,27 @@ class Olama_School_Ajax_Handlers
                 $data['supervisor_feedback'] = $existing_feedback ? $existing_feedback . "\n" . $new_feedback : $new_feedback;
             }
 
-            $updated = $wpdb->update(
-                "{$wpdb->prefix}olama_plans",
-                $data,
-                array('id' => $plan_id)
-            );
+            // Update plan with explicit LIMIT 1 for safety to prevent unintended bulk changes
+            $updated = $wpdb->query($wpdb->prepare(
+                "UPDATE {$wpdb->prefix}olama_plans 
+                 SET status = %s, supervisor_feedback = %s, updated_at = %s
+                 WHERE id = %d LIMIT 1",
+                $status,
+                $data['supervisor_feedback'] ?? null,
+                current_time('mysql'),
+                $plan_id
+            ));
 
             if ($updated !== false) {
+                // Log activity for audit trail
+                if (class_exists('Olama_School_Logger')) {
+                    Olama_School_Logger::log('plan_status_update', sprintf(
+                        'Plan ID %d status updated to %s by user %d',
+                        $plan_id,
+                        $status,
+                        get_current_user_id()
+                    ));
+                }
                 wp_send_json_success(__('Plan status updated successfully.', 'olama-school'));
             } else {
                 wp_send_json_error(__('Failed to update plan status.', 'olama-school'));
