@@ -47,7 +47,7 @@ class Olama_School_Section
              FROM {$wpdb->prefix}olama_sections s 
              JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id 
              WHERE s.academic_year_id = %d 
-             ORDER BY g.grade_level, s.section_name",
+             ORDER BY CAST(g.grade_level AS UNSIGNED), s.section_name",
             $academic_year_id
         ));
         self::$cache[$cache_key] = $results;

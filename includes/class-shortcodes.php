@@ -2249,13 +2249,26 @@ class Olama_School_Shortcodes
      */
     public function render_attendance_shortcode($atts)
     {
+        $atts = shortcode_atts(array(
+            'semester' => 'active',
+            'grade' => 0,
+            'year' => 0
+        ), $atts);
+
         if (!is_user_logged_in()) {
             return '<div class="olama-error">' . Olama_School_Helpers::translate("Please log in to mark attendance.") . '</div>';
         }
 
         $active_year = Olama_School_Academic::get_active_year();
         $year_id = $active_year ? $active_year->id : 0;
-        $semester = Olama_School_Academic::get_active_semester($year_id);
+
+        if ($atts['semester'] === 'active') {
+            $semester = Olama_School_Academic::get_active_semester($year_id);
+        } else {
+            // Support passing semester ID directly
+            $semester_id = intval($atts['semester']);
+            $semester = Olama_School_Academic::get_semester($semester_id);
+        }
         $semester_id = $semester ? $semester->id : 0;
 
         $teacher_id = get_current_user_id();
@@ -2557,7 +2570,7 @@ class Olama_School_Shortcodes
                             overflow-x: auto;
                             padding-bottom: 15px;
                             margin-bottom: 25px;
-                            justify-content: center;
+                            justify-content: flex-start;
                         }
 
                         .section-chip {
