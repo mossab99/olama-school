@@ -459,6 +459,39 @@ class Olama_School_DB
 				KEY semester_id (semester_id),
 				KEY section_id (section_id),
 				KEY attendance_date (attendance_date)
+			) $charset_collate;",
+
+			'olama_shifts_locations' => "CREATE TABLE {$wpdb->prefix}olama_shifts_locations (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				location_name varchar(100) NOT NULL,
+				area_floor varchar(100) DEFAULT NULL,
+				is_active tinyint(1) DEFAULT 1 NOT NULL,
+				PRIMARY KEY  (id)
+			) $charset_collate;",
+
+			'olama_shifts_time_slots' => "CREATE TABLE {$wpdb->prefix}olama_shifts_time_slots (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				slot_label varchar(100) NOT NULL,
+				start_time time NOT NULL,
+				end_time time NOT NULL,
+				gender_focus varchar(20) DEFAULT 'mixed' NOT NULL,
+				is_active tinyint(1) DEFAULT 1 NOT NULL,
+				PRIMARY KEY  (id)
+			) $charset_collate;",
+
+			'olama_shifts_schedule' => "CREATE TABLE {$wpdb->prefix}olama_shifts_schedule (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
+				teacher_id bigint(20) UNSIGNED NOT NULL,
+				location_id mediumint(9) NOT NULL,
+				day_of_week tinyint(4) NOT NULL,
+				slot_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL,
+				academic_year_id mediumint(9) NOT NULL,
+				PRIMARY KEY  (id),
+				KEY teacher_id (teacher_id),
+				KEY location_id (location_id),
+				KEY slot_id (slot_id),
+				KEY semester_year (semester_id, academic_year_id)
 			) $charset_collate;"
 
 
@@ -790,7 +823,10 @@ class Olama_School_DB
 			'olama_academic_years',
 			'olama_settings',
 			'olama_user_preferences',
-			'olama_notifications'
+			'olama_notifications',
+			'olama_shifts_schedule',
+			'olama_shifts_time_slots',
+			'olama_shifts_locations'
 		);
 
 		foreach ($tables as $table) {

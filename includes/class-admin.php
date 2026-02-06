@@ -991,6 +991,24 @@ class Olama_School_Admin
             ));
         }
 
+        if (isset($_GET['page']) && $_GET['page'] === 'olama-school-follow-up' && isset($_GET['tab']) && $_GET['tab'] === 'employee_shifts') {
+            wp_enqueue_script('olama-shifts-script', OLAMA_SCHOOL_URL . 'assets/js/shifts.js', array('jquery'), OLAMA_SCHOOL_VERSION, true);
+            wp_localize_script('olama-shifts-script', 'olamaShifts', array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('olama_admin_nonce'),
+                'i18n' => array(
+                    'selectTeacher' => __('Select Teacher', 'olama-school'),
+                    'selectLocation' => __('Select Location', 'olama-school'),
+                    'selectSlot' => __('Select Time Slot', 'olama-school'),
+                    'confirmDelete' => __('Are you sure you want to delete this assignment?', 'olama-school'),
+                    'saving' => __('Saving...', 'olama-school'),
+                    'error' => __('Server Error', 'olama-school'),
+                    'conflict' => __('Teacher double-booked!', 'olama-school'),
+                    'copied' => __('Bulk copy successful', 'olama-school'),
+                )
+            ));
+        }
+
         if (isset($_GET['page']) && $_GET['page'] === 'olama-school-academic' && isset($_GET['tab']) && $_GET['tab'] === 'assign_teachers') {
             wp_enqueue_script('olama-teacher-assignment-script', OLAMA_SCHOOL_URL . 'assets/js/teacher-assignment.js', array('jquery'), OLAMA_SCHOOL_VERSION, true);
             wp_localize_script('olama-teacher-assignment-script', 'olamaAssignment', array(

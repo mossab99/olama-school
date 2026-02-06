@@ -18,7 +18,7 @@ class Olama_School_Teacher
         global $wpdb;
 
         // Get only users with teacher role
-        $teacher_users = get_users(array('role' => 'teacher'));
+        $teacher_users = get_users(array('role__in' => array('administrator', 'editor', 'author', 'teacher')));
 
         if (empty($teacher_users)) {
             return array();
