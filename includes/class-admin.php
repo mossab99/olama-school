@@ -27,6 +27,7 @@ class Olama_School_Admin
         add_action('admin_init', array($this, 'handle_stationary_save'));
         add_action('admin_init', array($this, 'handle_academic_calendar_actions'));
         add_action('admin_init', array($this, 'handle_subject_actions'));
+        add_action('admin_init', array($this, 'handle_backup_restore_actions'));
         add_action('admin_init', array($this, 'handle_teacher_settings_save'));
         add_action('admin_init', array($this, 'handle_kg_curriculum_actions'));
         add_action('admin_init', array($this, 'handle_kg_evaluation_save'));
@@ -578,6 +579,99 @@ class Olama_School_Admin
             Olama_School_EV_Report::render_report(intval($_GET['evaluation_id']));
             exit;
         }
+    }
+
+    /**
+     * Handle Backup and Restore Actions
+     */
+    public function handle_backup_restore_actions()
+    {
+        if (!is_admin() || !current_user_can('manage_options')) {
+            return;
+        }
+
+        // Handle Export
+        if (isset($_POST['olama_export_db']) && check_admin_referer('olama_backup_action', 'olama_backup_nonce')) {
+            $backup_data = Olama_School_Backup::generate_backup();
+            $filename = 'olama-backup-' . current_time('Y-m-d-His') . '.json';
+
+            header('Content-Type: application/json');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+            if (ob_get_length()) {
+                ob_clean();
+            }
+
+            echo json_encode($backup_data);
+            exit;
+        }
+
+        // Handle Restore
+        if (isset($_POST['olama_restore_db']) && check_admin_referer('olama_backup_action', 'olama_backup_nonce')) {
+            if (!empty($_FILES['backup_file']['tmp_name'])) {
+                $json_data = file_get_contents($_FILES['backup_file']['tmp_name']);
+                $result = Olama_School_Backup::restore_backup($json_data);
+
+                if ($result === true) {
+                    wp_redirect(admin_url('admin.php?page=olama-school-settings&tab=backup&restored=1'));
+                    exit;
+                } else {
+                    $error_msg = is_wp_error($result) ? $result->get_error_message() : __('An error occurred during restoration.', 'olama-school');
+                    wp_redirect(admin_url('admin.php?page=olama-school-settings&tab=backup&error=' . urlencode($error_msg)));
+                    exit;
+                }
+            }
+        }
+    }
+
+    /**
+     * Render Backup & Restore Tab Content
+     */
+    private function render_backup_settings_content()
+    {
+        if (isset($_GET['restored'])) {
+            echo '<div class="notice notice-success is-dismissible"><p>' . __('Database restored successfully!', 'olama-school') . '</p></div>';
+        }
+        if (isset($_GET['error'])) {
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($_GET['error']) . '</p></div>';
+        }
+        ?>
+        <div class="card" style="max-width: 600px; padding: 25px;">
+            <h2 style="margin-top:0;"><?php _e('Database Backup', 'olama-school'); ?></h2>
+            <p><?php _e('Download a full backup of all school data (grades, sections, students, plans, exams, etc.) in JSON format.', 'olama-school'); ?>
+            </p>
+
+            <form method="post" action="">
+                <?php wp_nonce_field('olama_backup_action', 'olama_backup_nonce'); ?>
+                <input type="hidden" name="olama_export_db" value="1" />
+                <button type="submit" class="button button-primary">
+                    <span class="dashicons dashicons-download" style="vertical-align: middle; margin-right: 5px;"></span>
+                    <?php _e('Generate & Download Backup', 'olama-school'); ?>
+                </button>
+            </form>
+
+            <hr style="margin: 30px 0;">
+
+            <h2 style="margin-top:0; color: #d63638;"><?php _e('Restore Data', 'olama-school'); ?></h2>
+            <p style="color: #d63638; font-weight: 600;">
+                <span class="dashicons dashicons-warning"></span>
+                <?php _e('WARNING: Restoring data will PERMANENTLY overwrite all current plugin data with the contents of the backup file.', 'olama-school'); ?>
+            </p>
+
+            <form method="post" action="" enctype="multipart/form-data"
+                onsubmit="return confirm('<?php _e('Are you absolutely sure you want to restore this backup? All current data will be lost.', 'olama-school'); ?>');">
+                <?php wp_nonce_field('olama_backup_action', 'olama_backup_nonce'); ?>
+                <input type="hidden" name="olama_restore_db" value="1" />
+                <p>
+                    <input type="file" name="backup_file" accept=".json" required />
+                </p>
+                <button type="submit" class="button" style="background: #fcf0f1; border-color: #d63638; color: #d63638;">
+                    <span class="dashicons dashicons-upload" style="vertical-align: middle; margin-right: 5px;"></span>
+                    <?php _e('Restore from File', 'olama-school'); ?>
+                </button>
+            </form>
+        </div>
+        <?php
     }
 
     /**
@@ -2241,6 +2335,7 @@ class Olama_School_Admin
         $tabs_config = array(
             'general' => array('label' => __('General Settings', 'olama-school'), 'cap' => 'olama_manage_settings_general'),
             'shortcode' => array('label' => __('Shortcode Generator', 'olama-school'), 'cap' => 'olama_manage_settings_shortcode'),
+            'backup' => array('label' => __('Backup & Restore', 'olama-school'), 'cap' => 'manage_options'),
         );
 
         $allowed_tabs = array();
@@ -2401,6 +2496,8 @@ class Olama_School_Admin
                         </table>
                         <?php submit_button(); ?>
                     </form>
+                <?php elseif ($active_tab === 'backup'): ?>
+                    <?php $this->render_backup_settings_content(); ?>
                 <?php else: ?>
                     <?php $this->render_shortcode_generator_content(); ?>
                 <?php endif; ?>

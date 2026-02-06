@@ -55,6 +55,7 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-exporter.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-importer.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-permissions.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-helpers.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-backup.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ajax-handlers.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-shortcodes.php';
 
