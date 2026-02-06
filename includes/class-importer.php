@@ -271,12 +271,12 @@ class Olama_School_Importer
             // Map headers (case-insensitive and flexible)
             $map = array();
             $fields_map = array(
-                'unit_number' => array('unit #', 'unit number', 'ط±ظ‚ظ… ط§ظ„ظˆط­ط¯ط©'),
-                'unit_name' => array('unit name', 'ط§ط³ظ… ط§ظ„ظˆط­ط¯ط©'),
-                'objectives' => array('objectives', 'learning objectives', 'ط§ظ„ط£ظ‡ط¯ط§ظپ'),
-                'lesson_number' => array('lesson #', 'lesson number', 'ط±ظ‚ظ… ط§ظ„ط¯ط±ط³'),
-                'lesson_title' => array('lesson title', 'lesson name', 'ط¹ظ†ظˆط§ظ† ط§ظ„ط¯ط±ط³', 'lesson tit'),
-                'video_url' => array('video url', 'link', 'ط±ط§ط¨ط· ط§ظ„ظپظٹط¯ظٹظˆ')
+                'unit_number' => array('unit #', 'unit number', 'رقم الوحدة'),
+                'unit_name' => array('unit name', 'اسم الوحدة'),
+                'objectives' => array('objectives', 'learning objectives', 'الأهداف'),
+                'lesson_number' => array('lesson #', 'lesson number', 'رقم الدرس'),
+                'lesson_title' => array('lesson title', 'lesson name', 'عنوان الدرس', 'lesson tit'),
+                'video_url' => array('video url', 'link', 'رابط الفيديو')
             );
 
             foreach ($headers as $index => $header) {
@@ -720,14 +720,14 @@ class Olama_School_Importer
         // Map headers
         $map = array();
         $fields_map = array(
-            'subject_name' => array('subject', 'subject name', 'ط§ظ„ظ…ط§ط¯ط©', 'ط§ط³ظ… ط§ظ„ظ…ط§ط¯ط©', 'ط§ط³ظ… ظ…ط§ط¯ظ‡', 'subject_name'),
-            'unit_number' => array('unit #', 'unit number', 'ط±ظ‚ظ… ط§ظ„ظˆط­ط¯ط©', 'ظˆط­ط¯ط©', 'ط±ظ‚ظ… ظˆط­ط¯ظ‡', 'unit', 'unit_no', 'unit_number'),
-            'unit_name' => array('unit name', 'ط§ط³ظ… ط§ظ„ظˆط­ط¯ط©', 'ط§ط³ظ… ظˆط­ط¯ظ‡', 'unit_name'),
-            'objectives' => array('objectives', 'learning objectives', 'ط§ظ„ط£ظ‡ط¯ط§ظپ', 'ط§ظ‡ط¯ط§ظپ', 'objective'),
-            'lesson_number' => array('lesson #', 'lesson number', 'ط±ظ‚ظ… ط§ظ„ط¯ط±ط³', 'ط¯ط±ط³', 'ط±ظ‚ظ… ط¯ط±ط³', 'lesson', 'lesson_no', 'lesson_number'),
-            'lesson_title' => array('lesson title', 'lesson name', 'ط¹ظ†ظˆط§ظ† ط§ظ„ط¯ط±ط³', 'ط¹ظ†ظˆط§ظ† ط¯ط±ط³', 'lesson_title'),
-            'video_url' => array('video url', 'link', 'ط±ط§ط¨ط· ط§ظ„ظپظٹط¯ظٹظˆ', 'ظپظٹط¯ظٹظˆ', 'video', 'url'),
-            'periods' => array('number of periods', 'periods', 'ط¹ط¯ط¯ ط§ظ„ط­طµطµ', 'ط­طµطµ', 'ط¹ط¯ط¯ ط­طµطµ', 'period_count')
+            'subject_name' => array('subject', 'subject name', 'المادة', 'اسم المادة', 'اسم ماده', 'subject_name'),
+            'unit_number' => array('unit #', 'unit number', 'رقم الوحدة', 'وحدة', 'رقم وحده', 'unit', 'unit_no', 'unit_number'),
+            'unit_name' => array('unit name', 'اسم الوحدة', 'اسم وحده', 'unit_name'),
+            'objectives' => array('objectives', 'learning objectives', 'الأهداف', 'اهداف', 'objective'),
+            'lesson_number' => array('lesson #', 'lesson number', 'رقم الدرس', 'درس', 'رقم درس', 'lesson', 'lesson_no', 'lesson_number'),
+            'lesson_title' => array('lesson title', 'lesson name', 'عنوان الدرس', 'عنوان درس', 'lesson_title'),
+            'video_url' => array('video url', 'link', 'رابط الفيديو', 'فيديو', 'video', 'url'),
+            'periods' => array('number of periods', 'periods', 'عدد الحصص', 'حصص', 'عدد حصص', 'period_count')
         );
 
         foreach ($headers as $index => $header) {

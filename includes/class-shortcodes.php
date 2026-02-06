@@ -324,21 +324,21 @@ class Olama_School_Shortcodes
         // Helper to get subject icons
         $get_icon = function ($subject_name) {
             $subject_name = strtolower($subject_name);
-            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'ط±ظٹط§ط¶ظٹط§طھ') !== false)
+            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'رياضيات') !== false)
                 return 'dashicons-calculator';
-            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'ط§ظ†ط¬ظ„ظٹط²ظٹ') !== false || strpos($subject_name, 'ط¥ظ†ط¬ظ„ظٹط²ظٹط©') !== false)
+            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'انجليزي') !== false || strpos($subject_name, 'إنجليزية') !== false)
                 return 'dashicons-admin-site-alt3';
-            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'ط¹ظ„ظˆظ…') !== false)
+            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'علوم') !== false)
                 return 'dashicons-rest-api';
-            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'ط¹ط±ط¨ظٹ') !== false || strpos($subject_name, 'ط¹ط±ط¨ظٹط©') !== false)
+            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'عربي') !== false || strpos($subject_name, 'عربية') !== false)
                 return 'dashicons-translation';
-            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'ط¯ظٹظ†') !== false || strpos($subject_name, 'ط¥ط³ظ„ط§ظ…ظٹط©') !== false)
+            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'دين') !== false || strpos($subject_name, 'إسلامية') !== false)
                 return 'dashicons-heart';
-            if (strpos($subject_name, 'digital') !== false || strpos($subject_name, 'ط­ط§ط³ظˆط¨') !== false || strpos($subject_name, 'ظ…ظ‡ط§ط±ط§طھ ط±ظ‚ظ…ظٹط©') !== false)
+            if (strpos($subject_name, 'digital') !== false || strpos($subject_name, 'حاسوب') !== false || strpos($subject_name, 'مهارات رقمية') !== false)
                 return 'dashicons-desktop';
-            if (strpos($subject_name, 'art') !== false || strpos($subject_name, 'ظپظ†ظٹط©') !== false)
+            if (strpos($subject_name, 'art') !== false || strpos($subject_name, 'فنية') !== false)
                 return 'dashicons-art';
-            if (strpos($subject_name, 'physic') !== false || strpos($subject_name, 'ط±ظٹط§ط¶ط©') !== false)
+            if (strpos($subject_name, 'physic') !== false || strpos($subject_name, 'رياضة') !== false)
                 return 'dashicons-universal-access';
             return 'dashicons-book-alt';
         };
@@ -346,15 +346,15 @@ class Olama_School_Shortcodes
         // Helper to get subject background color (pastel based on subject type)
         $get_subject_bg = function ($subject_name) {
             $subject_name = strtolower($subject_name);
-            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'ط¹ط±ط¨ظٹ') !== false || strpos($subject_name, 'ط¹ط±ط¨ظٹط©') !== false)
+            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'عربي') !== false || strpos($subject_name, 'عربية') !== false)
                 return '#dcfce7'; // mint
-            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'ط±ظٹط§ط¶ظٹط§طھ') !== false)
+            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'رياضيات') !== false)
                 return '#dbeafe'; // light blue
-            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'ط¯ظٹظ†') !== false || strpos($subject_name, 'ط¥ط³ظ„ط§ظ…ظٹط©') !== false || strpos($subject_name, 'طھط±ط¨ظٹط©') !== false)
+            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'دين') !== false || strpos($subject_name, 'إسلامية') !== false || strpos($subject_name, 'تربية') !== false)
                 return '#fef3c7'; // amber
-            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'ط§ظ†ط¬ظ„ظٹط²ظٹ') !== false || strpos($subject_name, 'ط¥ظ†ط¬ظ„ظٹط²ظٹط©') !== false)
+            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'انجليزي') !== false || strpos($subject_name, 'إنجليزية') !== false)
                 return '#e0e7ff'; // indigo
-            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'ط¹ظ„ظˆظ…') !== false)
+            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'علوم') !== false)
                 return '#ccfbf1'; // teal
             return '#f1f5f9'; // default gray
         };
@@ -396,33 +396,33 @@ class Olama_School_Shortcodes
 
             // Arabic ordinal week names
             $week_ordinals = array(
-                1 => 'ط§ظ„ط£ظˆظ„',
-                2 => 'ط§ظ„ط«ط§ظ†ظٹ',
-                3 => 'ط§ظ„ط«ط§ظ„ط«',
-                4 => 'ط§ظ„ط±ط§ط¨ط¹',
-                5 => 'ط§ظ„ط®ط§ظ…ط³',
-                6 => 'ط§ظ„ط³ط§ط¯ط³',
-                7 => 'ط§ظ„ط³ط§ط¨ط¹',
-                8 => 'ط§ظ„ط«ط§ظ…ظ†',
-                9 => 'ط§ظ„طھط§ط³ط¹',
-                10 => 'ط§ظ„ط¹ط§ط´ط±',
-                11 => 'ط§ظ„ط­ط§ط¯ظٹ ط¹ط´ط±',
-                12 => 'ط§ظ„ط«ط§ظ†ظٹ ط¹ط´ط±',
-                13 => 'ط§ظ„ط«ط§ظ„ط« ط¹ط´ط±',
-                14 => 'ط§ظ„ط±ط§ط¨ط¹ ط¹ط´ط±',
-                15 => 'ط§ظ„ط®ط§ظ…ط³ ط¹ط´ط±',
-                16 => 'ط§ظ„ط³ط§ط¯ط³ ط¹ط´ط±',
-                17 => 'ط§ظ„ط³ط§ط¨ط¹ ط¹ط´ط±',
-                18 => 'ط§ظ„ط«ط§ظ…ظ† ط¹ط´ط±',
-                19 => 'ط§ظ„طھط§ط³ط¹ ط¹ط´ط±',
-                20 => 'ط§ظ„ط¹ط´ط±ظˆظ†'
+                1 => 'الأول',
+                2 => 'الثاني',
+                3 => 'الثالث',
+                4 => 'الرابع',
+                5 => 'الخامس',
+                6 => 'السادس',
+                7 => 'السابع',
+                8 => 'الثامن',
+                9 => 'التاسع',
+                10 => 'العاشر',
+                11 => 'الحادي عشر',
+                12 => 'الثاني عشر',
+                13 => 'الثالث عشر',
+                14 => 'الرابع عشر',
+                15 => 'الخامس عشر',
+                16 => 'السادس عشر',
+                17 => 'السابع عشر',
+                18 => 'الثامن عشر',
+                19 => 'التاسع عشر',
+                20 => 'العشرون'
             );
             $week_ordinal = isset($week_ordinals[$week_number]) ? $week_ordinals[$week_number] : $week_number;
             ?>
             <!-- Illustrated Header -->
             <div class="plan-header-v2">
                 <div class="header-content">
-                    <h1 class="header-title">ط§ظ„ط®ط·ط© ط§ظ„ط£ط³ط¨ظˆط¹ظٹط©</h1>
+                    <h1 class="header-title">الخطة الأسبوعية</h1>
                     <div class="header-subtitle">
                         <?php echo $grade ? esc_html($grade->grade_name) : ''; ?> -
                         <?php echo $section ? esc_html($section->section_name) : ''; ?>
@@ -432,7 +432,7 @@ class Olama_School_Shortcodes
                 <div class="semester-bar">
                     <div class="semester-left">
                         <span class="week-label">
-                            <?php echo Olama_School_Helpers::translate('ط§ظ„ط£ط³ط¨ظˆط¹ ط§ظ„ط¯ط±ط§ط³ظٹ') . ' ' . $week_ordinal; ?>
+                            <?php echo Olama_School_Helpers::translate('الأسبوع الدراسي') . ' ' . $week_ordinal; ?>
                         </span>
                         <span class="week-dates">(
                             <?php echo date_i18n('j', strtotime($week_start)); ?>-
@@ -441,7 +441,7 @@ class Olama_School_Shortcodes
                     </div>
                     <div class="semester-right">
                         <span class="academic-year-label">
-                            <?php echo Olama_School_Helpers::translate('ط§ظ„ط¹ط§ظ… ط§ظ„ط¯ط±ط§ط³ظٹ'); ?>
+                            <?php echo Olama_School_Helpers::translate('العام الدراسي'); ?>
                         </span>
                         <span class="academic-year">
                             <?php echo esc_html($academic_year_display); ?>
@@ -453,7 +453,7 @@ class Olama_School_Shortcodes
             <!-- Days Accordion -->
             <div class="days-accordion">
                 <?php
-                $days_of_week = array('Sunday' => 'ط§ظ„ط£ط­ط¯', 'Monday' => 'ط§ظ„ط§ط«ظ†ظٹظ†', 'Tuesday' => 'ط§ظ„ط«ظ„ط§ط«ط§ط،', 'Wednesday' => 'ط§ظ„ط£ط±ط¨ط¹ط§ط،', 'Thursday' => 'ط§ظ„ط®ظ…ظٹط³');
+                $days_of_week = array('Sunday' => 'الأحد', 'Monday' => 'الاثنين', 'Tuesday' => 'الثلاثاء', 'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس');
                 $day_index = 0;
                 foreach ($days_of_week as $day_en => $day_ar):
                     $current_date = date('Y-m-d', strtotime($week_start . ' +' . $day_index . ' days'));
@@ -487,15 +487,15 @@ class Olama_School_Shortcodes
                                             <?php
                                             $parts = array();
                                             if ($homework_count > 0) {
-                                                $parts[] = $homework_count . ' ' . Olama_School_Helpers::translate('ظˆط§ط¬ط¨ط§طھ');
+                                                $parts[] = $homework_count . ' ' . Olama_School_Helpers::translate('واجبات');
                                             }
                                             if ($review_count > 0) {
-                                                $parts[] = $review_count . ' ' . Olama_School_Helpers::translate('ظ…طھط§ط¨ط¹ط§طھ');
+                                                $parts[] = $review_count . ' ' . Olama_School_Helpers::translate('متابعات');
                                             }
                                             echo implode(' - ', $parts);
                                             ?>
                                         <?php else: ?>
-                                            <?php echo Olama_School_Helpers::translate('ظ„ط§ ظˆط§ط¬ط¨ط§طھ'); ?>
+                                            <?php echo Olama_School_Helpers::translate('لا واجبات'); ?>
                                         <?php endif; ?>
                                     </span>
                                 </div>
@@ -515,7 +515,7 @@ class Olama_School_Shortcodes
                                 <div class="empty-day">
                                     <span class="dashicons dashicons-calendar-alt"></span>
                                     <p>
-                                        <?php echo Olama_School_Helpers::translate('ظ„ط§ طھظˆط¬ط¯ ط­طµطµ ظ…ط®ط·ط·ط© ظ„ظ‡ط°ط§ ط§ظ„ظٹظˆظ…'); ?>
+                                        <?php echo Olama_School_Helpers::translate('لا توجد حصص مخططة لهذا اليوم'); ?>
                                     </p>
                                 </div>
                             <?php else: ?>
@@ -547,7 +547,7 @@ class Olama_School_Shortcodes
                                                 if (isset($plan->plan_type) && $plan->plan_type === 'review') {
                                                     echo Olama_School_Helpers::translate('Review the following lesson');
                                                 } else {
-                                                    echo Olama_School_Helpers::translate('ط­طµط© ط§ظ„ظٹظˆظ…');
+                                                    echo Olama_School_Helpers::translate('حصة اليوم');
                                                 }
                                                 ?>
                                                 <?php if (!isset($plan->plan_type) || $plan->plan_type !== 'review'): ?>
@@ -559,7 +559,7 @@ class Olama_School_Shortcodes
                                                     <div class="detail-item">
                                                         <span class="dashicons dashicons-category detail-icon"></span>
                                                         <span class="detail-label">
-                                                            <?php echo Olama_School_Helpers::translate('ط§ظ„ظˆط­ط¯ط©'); ?>:
+                                                            <?php echo Olama_School_Helpers::translate('الوحدة'); ?>:
                                                         </span>
                                                         <span class="detail-value" style="text-align: right;">
                                                             <?php echo esc_html($plan->unit_name); ?>
@@ -569,7 +569,7 @@ class Olama_School_Shortcodes
                                                 <div class="detail-item">
                                                     <span class="dashicons dashicons-book-alt detail-icon"></span>
                                                     <span class="detail-label">
-                                                        <?php echo Olama_School_Helpers::translate('ط§ظ„ط¯ط±ط³'); ?>:
+                                                        <?php echo Olama_School_Helpers::translate('الدرس'); ?>:
                                                     </span>
                                                     <span class="detail-value" style="text-align: right;">
                                                         <?php echo esc_html($plan->lesson_title); ?>
@@ -583,7 +583,7 @@ class Olama_School_Shortcodes
                                             <div class="section-block homework">
                                                 <div class="section-label">
                                                     <span class="dashicons dashicons-admin-home"></span>
-                                                    <?php echo Olama_School_Helpers::translate('ط§ظ„ظˆط§ط¬ط¨ ط§ظ„ط¨ظٹطھظٹ'); ?>
+                                                    <?php echo Olama_School_Helpers::translate('الواجب البيتي'); ?>
                                                 </div>
                                                 <div class="homework-list">
                                                     <?php if ($plan->homework_sb): ?>
@@ -591,7 +591,7 @@ class Olama_School_Shortcodes
                                                             <div class="homework-item-header">
                                                                 <span class="dashicons dashicons-book hw-icon"></span>
                                                                 <span class="hw-label">
-                                                                    <?php echo Olama_School_Helpers::translate('ظƒطھط§ط¨ ط§ظ„ط·ط§ظ„ط¨'); ?>:
+                                                                    <?php echo Olama_School_Helpers::translate('كتاب الطالب'); ?>:
                                                                 </span>
                                                             </div>
                                                             <span class="hw-value" style="text-align: right; display: block;">
@@ -604,7 +604,7 @@ class Olama_School_Shortcodes
                                                             <div class="homework-item-header">
                                                                 <span class="dashicons dashicons-edit hw-icon"></span>
                                                                 <span class="hw-label">
-                                                                    <?php echo Olama_School_Helpers::translate('ظƒطھط§ط¨ ط§ظ„طھظ…ط§ط±ظٹظ†'); ?>:
+                                                                    <?php echo Olama_School_Helpers::translate('كتاب التمارين'); ?>:
                                                                 </span>
                                                             </div>
                                                             <span class="hw-value" style="text-align: right; display: block;">
@@ -617,7 +617,7 @@ class Olama_School_Shortcodes
                                                             <div class="homework-item-header">
                                                                 <span class="dashicons dashicons-media-text hw-icon"></span>
                                                                 <span class="hw-label">
-                                                                    <?php echo Olama_School_Helpers::translate('ط§ظ„ط¯ظپطھط±'); ?>:
+                                                                    <?php echo Olama_School_Helpers::translate('الدفتر'); ?>:
                                                                 </span>
                                                             </div>
                                                             <span class="hw-value" style="text-align: right; display: block;">
@@ -630,7 +630,7 @@ class Olama_School_Shortcodes
                                                             <div class="homework-item-header">
                                                                 <span class="dashicons dashicons-media-document hw-icon"></span>
                                                                 <span class="hw-label">
-                                                                    <?php echo Olama_School_Helpers::translate('ط§ظ„ط¯ظˆط³ظٹط©'); ?>:
+                                                                    <?php echo Olama_School_Helpers::translate('الدوسية'); ?>:
                                                                 </span>
                                                             </div>
                                                             <span class="hw-value" style="text-align: right; display: block;">
@@ -647,7 +647,7 @@ class Olama_School_Shortcodes
                                             <div class="section-block teacher-notes">
                                                 <div class="section-label">
                                                     <span class="dashicons dashicons-admin-comments"></span>
-                                                    <?php echo Olama_School_Helpers::translate('ظ…ظ„ط§ط­ط¸ط§طھ ط§ظ„ظ…ط¹ظ„ظ…'); ?>
+                                                    <?php echo Olama_School_Helpers::translate('ملاحظات المعلم'); ?>
                                                 </div>
                                                 <div class="notes-content" style="text-align: right;">
                                                     <?php echo nl2br(esc_html($plan->teacher_notes)); ?>
@@ -771,19 +771,19 @@ class Olama_School_Shortcodes
         // Helper to get subject icons (reuse logic from weekly plan)
         $get_icon = function ($subject_name) {
             $subject_name = strtolower($subject_name);
-            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'ط±ظٹط§ط¶ظٹط§طھ') !== false)
+            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'رياضيات') !== false)
                 return 'dashicons-calculator';
-            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'ط§ظ†ط¬ظ„ظٹط²ظٹ') !== false || strpos($subject_name, 'ط¥ظ†ط¬ظ„ظٹط²ظٹط©') !== false)
+            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'انجليزي') !== false || strpos($subject_name, 'إنجليزية') !== false)
                 return 'dashicons-admin-site-alt3';
-            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'ط¹ظ„ظˆظ…') !== false)
+            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'علوم') !== false)
                 return 'dashicons-rest-api';
-            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'ط¹ط±ط¨ظٹ') !== false || strpos($subject_name, 'ط¹ط±ط¨ظٹط©') !== false)
+            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'عربي') !== false || strpos($subject_name, 'عربية') !== false)
                 return 'dashicons-translation';
-            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'ط¯ظٹظ†') !== false || strpos($subject_name, 'ط¥ط³ظ„ط§ظ…ظٹط©') !== false)
+            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'دين') !== false || strpos($subject_name, 'إسلامية') !== false)
                 return 'dashicons-heart';
-            if (strpos($subject_name, 'digital') !== false || strpos($subject_name, 'ط­ط§ط³ظˆط¨') !== false || strpos($subject_name, 'ظ…ظ‡ط§ط±ط§طھ ط±ظ‚ظ…ظٹط©') !== false)
+            if (strpos($subject_name, 'digital') !== false || strpos($subject_name, 'حاسوب') !== false || strpos($subject_name, 'مهارات رقمية') !== false)
                 return 'dashicons-desktop';
-            if (strpos($subject_name, 'social') !== false || strpos($subject_name, 'ط§ط¬طھظ…ط§ط¹ظٹط©') !== false || strpos($subject_name, 'ط¯ط±ط§ط³ط§طھ') !== false)
+            if (strpos($subject_name, 'social') !== false || strpos($subject_name, 'اجتماعية') !== false || strpos($subject_name, 'دراسات') !== false)
                 return 'dashicons-admin-site';
             return 'dashicons-book-alt';
         };
@@ -791,15 +791,15 @@ class Olama_School_Shortcodes
         // Helper to get subject background color
         $get_subject_bg = function ($subject_name) {
             $subject_name = strtolower($subject_name);
-            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'ط¹ط±ط¨ظٹ') !== false || strpos($subject_name, 'ط¹ط±ط¨ظٹط©') !== false)
+            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'عربي') !== false || strpos($subject_name, 'عربية') !== false)
                 return '#f0fdf4'; // fresh green
-            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'ط±ظٹط§ط¶ظٹط§طھ') !== false)
+            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'رياضيات') !== false)
                 return '#eff6ff'; // blue
-            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'ط¯ظٹظ†') !== false || strpos($subject_name, 'ط¥ط³ظ„ط§ظ…ظٹط©') !== false)
+            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'دين') !== false || strpos($subject_name, 'إسلامية') !== false)
                 return '#fffbeb'; // amber
-            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'ط§ظ†ط¬ظ„ظٹط²ظٹ') !== false || strpos($subject_name, 'ط¥ظ†ط¬ظ„ظٹط²ظٹط©') !== false)
+            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'انجليزي') !== false || strpos($subject_name, 'إنجليزية') !== false)
                 return '#eef2ff'; // indigo
-            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'ط¹ظ„ظˆظ…') !== false)
+            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'علوم') !== false)
                 return '#f0fdfa'; // teal
             return '#f8fafc'; // slate
         };
@@ -811,7 +811,7 @@ class Olama_School_Shortcodes
             <div class="plan-header-v2" style="background: linear-gradient(145deg, #818cf8 0%, #6366f1 100%);">
                 <div class="header-content">
                     <h1 class="header-title" style="color: #ffffff;">
-                        <?php echo Olama_School_Helpers::translate('ط¬ط¯ظˆظ„ ط§ظ„ط§ط®طھط¨ط§ط±ط§طھ'); ?>
+                        <?php echo Olama_School_Helpers::translate('جدول الاختبارات'); ?>
                     </h1>
                     <div class="header-subtitle">
                         <?php echo $grade ? esc_html($grade->grade_name) : ''; ?>
