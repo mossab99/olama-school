@@ -804,14 +804,13 @@ class Olama_School_DB
 		}
 
 		// Ensure shifts refactor updates
-		$location_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_shifts_locations");
-		$location_col_names = wp_list_pluck($location_cols, 'Field');
-		if (!in_array('gender', $location_col_names)) {
-			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_shifts_locations ADD COLUMN gender varchar(20) DEFAULT 'mixed' NOT NULL AFTER area_floor");
+		if ($wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}olama_shifts_locations'") === "{$wpdb->prefix}olama_shifts_locations") {
+			$location_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_shifts_locations");
+			$location_col_names = wp_list_pluck($location_cols, 'Field');
+			if (!in_array('gender', $location_col_names)) {
+				$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_shifts_locations ADD COLUMN gender varchar(20) DEFAULT 'mixed' NOT NULL AFTER area_floor");
+			}
 		}
-
-		// Ensure new shift tables exist
-		$this->create_tables();
 	}
 
 	/**
