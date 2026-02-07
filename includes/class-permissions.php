@@ -131,10 +131,9 @@ class Olama_School_Permissions
      */
     public static function add_capabilities()
     {
+        // Ensure teacher role exists
         if (!get_role('teacher')) {
-            $author_role = get_role('author');
-            $teacher_caps = $author_role ? $author_role->capabilities : array();
-            add_role('teacher', 'Teacher', $teacher_caps);
+            add_role('teacher', __('Teacher', 'olama-school'), get_role('author')->capabilities);
         }
 
         $all_groups = self::get_all_capabilities();
