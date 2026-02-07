@@ -847,75 +847,75 @@ class Olama_School_Admin
         </div>
 
         <script>
-                            jQuery(document).ready(function ($) {
-                                const $form = $('#olama-restore-form');
-                                const $fileInput = $('#restore-file');
-                                const $startButton = $('#start-restore');
-                                const $progressContainer = $('#restore-progress-container');
-                                const $progressBar = $('#restore-progress-bar');
-                                const $statusText = $('#restore-status');
-                                const $log = $('#restore-log');
+                                    jQuery(document).ready(function ($) {
+                                        const $form = $('#olama-restore-form');
+                                        const $fileInput = $('#restore-file');
+                                        const $startButton = $('#start-restore');
+                                        const $progressContainer = $('#restore-progress-container');
+                                        const $progressBar = $('#restore-progress-bar');
+                                        const $statusText = $('#restore-status');
+                                        const $log = $('#restore-log');
 
-                                function addLog(message, type = 'info') {
-                                    const colors = { info: '#1d2327', success: '#008a20', error: '#d63638' };
-                                    const time = new Date().toLocaleTimeString();
-                                    $log.append(`<div style="color: ${colors[type]}">[${time}] ${message}</div>`);
-                                    $log.scrollTop($log[0].scrollHeight);
-                                }
-
-                                $startButton.on('click', function () {
-                                    const file = $fileInput[0].files[0];
-                                    if (!file) {
-                                        alert('<?php _e('Please select a backup file.', 'olama-school'); ?>');
-                                        return;
-                                    }
-
-                                    if (!confirm('<?php _e('Are you absolutely sure? All current data will be lost.', 'olama-school'); ?>')) {
-                                        return;
-                                    }
-
-                                    $startButton.prop('disabled', true);
-                                    $fileInput.prop('disabled', true);
-                                    $progressContainer.show();
-                                    $log.empty();
-                                    addLog('<?php _e('Starting restoration process...', 'olama-school'); ?>');
-                                    $progressBar.css('width', '50%');
-                                    $statusText.text('<?php _e('Restoring database, please wait...', 'olama-school'); ?>');
-
-                                    const formData = new FormData();
-                                    formData.append('action', 'olama_initiate_restore');
-                                    formData.append('backup_file', file);
-                                    formData.append('nonce', '<?php echo wp_create_nonce("olama_backup_action"); ?>');
-
-                                    const ajax_url = (typeof ajaxurl !== 'undefined') ? ajaxurl : '<?php echo admin_url('admin-ajax.php'); ?>';
-
-                                    $.ajax({
-                                        url: ajax_url,
-                                        type: 'POST',
-                                        data: formData,
-                                        processData: false,
-                                        contentType: false,
-                                        success: function (response) {
-                                            if (response.success) {
-                                                $progressBar.css('width', '100%');
-                                                $statusText.text('<?php _e('Restoration Complete!', 'olama-school'); ?>');
-                                                addLog(response.data, 'success');
-                                                alert(response.data);
-                                                location.reload();
-                                            } else {
-                                                addLog('<?php _e('Error:', 'olama-school'); ?> ' + response.data, 'error');
-                                                $startButton.prop('disabled', false);
-                                        $fileInput.prop('disabled', false);
-                                            }
-                                        },
-                                        error: function (jqXHR, textStatus, errorThrown) {
-                                            addLog('<?php _e('Network Error:', 'olama-school'); ?> ' + textStatus + ' - ' + errorThrown, 'error');
-                                            $startButton.prop('disabled', false);
-                                            $fileInput.prop('disabled', false);
+                                        function addLog(message, type = 'info') {
+                                            const colors = { info: '#1d2327', success: '#008a20', error: '#d63638' };
+                                            const time = new Date().toLocaleTimeString();
+                                            $log.append(`<div style="color: ${colors[type]}">[${time}] ${message}</div>`);
+                                            $log.scrollTop($log[0].scrollHeight);
                                         }
+
+                                        $startButton.on('click', function () {
+                                            const file = $fileInput[0].files[0];
+                                            if (!file) {
+                                                alert('<?php _e('Please select a backup file.', 'olama-school'); ?>');
+                                                return;
+                                            }
+
+                                            if (!confirm('<?php _e('Are you absolutely sure? All current data will be lost.', 'olama-school'); ?>')) {
+                                                return;
+                                            }
+
+                                            $startButton.prop('disabled', true);
+                                            $fileInput.prop('disabled', true);
+                                            $progressContainer.show();
+                                            $log.empty();
+                                            addLog('<?php _e('Starting restoration process...', 'olama-school'); ?>');
+                                            $progressBar.css('width', '50%');
+                                            $statusText.text('<?php _e('Restoring database, please wait...', 'olama-school'); ?>');
+
+                                            const formData = new FormData();
+                                            formData.append('action', 'olama_initiate_restore');
+                                            formData.append('backup_file', file);
+                                            formData.append('nonce', '<?php echo wp_create_nonce("olama_backup_action"); ?>');
+
+                                            const ajax_url = (typeof ajaxurl !== 'undefined') ? ajaxurl : '<?php echo admin_url('admin-ajax.php'); ?>';
+
+                                            $.ajax({
+                                                url: ajax_url,
+                                                type: 'POST',
+                                                data: formData,
+                                                processData: false,
+                                                contentType: false,
+                                                success: function (response) {
+                                                    if (response.success) {
+                                                        $progressBar.css('width', '100%');
+                                                        $statusText.text('<?php _e('Restoration Complete!', 'olama-school'); ?>');
+                                                        addLog(response.data, 'success');
+                                                alert(response.data);
+                                                        location.reload();
+                                                    } else {
+                                                        addLog('<?php _e('Error:', 'olama-school'); ?> ' + response.data, 'error');
+                                                        $startButton.prop('disabled', false);
+                                                $fileInput.prop('disabled', false);
+                                                    }
+                                                },
+                                                error: function (jqXHR, textStatus, errorThrown) {
+                                                    addLog('<?php _e('Network Error:', 'olama-school'); ?> ' + textStatus + ' - ' + errorThrown, 'error');
+                                                    $startButton.prop('disabled', false);
+                                                    $fileInput.prop('disabled', false);
+                                                }
+                                            });
+                                        });
                                     });
-                                });
-                            });
         </script>
         <?php
     }
@@ -1337,14 +1337,16 @@ class Olama_School_Admin
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('olama_admin_nonce'),
                 'i18n' => array(
-                    'selectTeacher' => __('Select Teacher', 'olama-school'),
-                    'selectLocation' => __('Select Location', 'olama-school'),
-                    'selectSlot' => __('Select Time Slot', 'olama-school'),
-                    'confirmDelete' => __('Are you sure you want to delete this assignment?', 'olama-school'),
+                    'day' => Olama_School_Helpers::translate('Day'),
+                    'slot' => Olama_School_Helpers::translate('Time Slot'),
+                    'location' => Olama_School_Helpers::translate('Location'),
+                    'gender' => Olama_School_Helpers::translate('Gender'),
+                    'teachers' => Olama_School_Helpers::translate('Teachers'),
+                    'actions' => Olama_School_Helpers::translate('Actions'),
+                    'confirmDelete' => __('Are you sure you want to delete this shift?', 'olama-school'),
                     'saving' => __('Saving...', 'olama-school'),
                     'error' => __('Server Error', 'olama-school'),
                     'conflict' => __('Teacher double-booked!', 'olama-school'),
-                    'copied' => __('Bulk copy successful', 'olama-school'),
                 )
             ));
         }
