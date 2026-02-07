@@ -41,19 +41,20 @@ $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_ye
 // $selected_semester_id, $current_semesters and $all_weeks are already defined in class-admin.php
 $months_weeks = array();
 foreach ($all_weeks as $val => $label) {
+    if (empty($val))
+        continue;
     $m_key_start = date('Y-m', strtotime($val));
     $months_weeks[$m_key_start][] = array('val' => $val, 'label' => $label);
 
-    // Check if week ends in a different month
-    $m_key_end = date('Y-m', strtotime($val . ' + 4 days'));
+    $week_range = Olama_School_Helpers::get_week_range($val);
+    $m_key_end = date('Y-m', strtotime($week_range['end']));
     if ($m_key_end !== $m_key_start) {
         $months_weeks[$m_key_end][] = array('val' => $val, 'label' => $label);
     }
 }
 
-$today = time();
-$today_val = date('Y-m-d', $today - ((int) date('w', $today) * 86400));
-$initial_week = isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : $today_val;
+$week_start_dynamic = Olama_School_Helpers::get_active_week_start();
+$initial_week = isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : $week_start_dynamic;
 $selected_month = isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : date('Y-m', strtotime($initial_week));
 
 if (!isset($months_weeks[$selected_month]) && !empty($months_weeks)) {
@@ -74,15 +75,16 @@ if (!$valid_week && !empty($current_month_weeks)) {
     $week_start = $current_month_weeks[0]['val'] ?? '';
 }
 
-$days = array(
-    'Sunday' => date('Y-m-d', strtotime($week_start)),
-    'Monday' => date('Y-m-d', strtotime($week_start . ' + 1 day')),
-    'Tuesday' => date('Y-m-d', strtotime($week_start . ' + 2 days')),
-    'Wednesday' => date('Y-m-d', strtotime($week_start . ' + 3 days')),
-    'Thursday' => date('Y-m-d', strtotime($week_start . ' + 4 days')),
-);
-
-$all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, date('Y-m-d', strtotime($week_start . ' + 4 days')));
+$week_range = Olama_School_Helpers::get_week_range($week_start);
+$week_end = $week_range['end'];
+$school_days = Olama_School_Helpers::get_school_days();
+$days = array();
+foreach ($school_days as $day_en) {
+    // Find the date for this day within the week
+    $date = date('Y-m-d', strtotime("next $day_en", strtotime($week_start . " -1 day")));
+    $days[$day_en] = $date;
+}
+$all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, $week_end);
 
 // Group plans by date
 $grouped_plans = array();
@@ -97,15 +99,15 @@ $current_semester_id = 0;
 if ($selected_year_id) {
     $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
     $semesters = $active_semester ? array($active_semester) : [];
-    $week_sunday = strtotime($week_start);
-    $week_thursday = $week_sunday + (4 * 86400);
+    $week_start_ts = strtotime($week_start);
+    $week_end_ts = strtotime($week_end);
 
     foreach ($semesters as $sem) {
         $sem_start = strtotime($sem->start_date);
         $sem_end = strtotime($sem->end_date);
 
         // Check if the week overlaps with the semester
-        if ($sem_start <= $week_thursday && $sem_end >= $week_sunday) {
+        if ($sem_start <= $week_end_ts && $sem_end >= $week_start_ts) {
             $current_semester_id = $sem->id;
             break;
         }
@@ -120,7 +122,6 @@ if ($selected_year_id) {
 $analysis_data = [];
 if ($current_semester_id && $selected_grade_id) {
     $all_grade_subjects = Olama_School_Subject::get_by_grade($selected_grade_id);
-    $week_end = date('Y-m-d', strtotime($week_start . ' + 6 days'));
 
     foreach ($all_grade_subjects as $sub) {
         // 1. Required Plans (from subject limits)
@@ -288,9 +289,8 @@ if ($current_semester_id && $selected_grade_id) {
         </form>
     </div>
 
-    <!-- Weekly Grid -->
     <div class="olama-weekly-list-grid"
-        style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; align-items: stretch;">
+        style="display: grid; grid-template-columns: repeat(<?php echo count($days); ?>, 1fr); gap: 15px; align-items: stretch;">
         <?php foreach ($days as $day_name => $date): ?>
             <div class="olama-day-column"
                 style="background: #fbfbfb; border-radius: 8px; border: 1px solid #eee; display: flex; flex-direction: column;">

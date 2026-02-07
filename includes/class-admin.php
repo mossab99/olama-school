@@ -3791,14 +3791,16 @@ class Olama_School_Admin
             );
         }
 
-        $next_sunday = date('Y-m-d', strtotime('next Sunday'));
-        $next_saturday = date('Y-m-d', strtotime('next Sunday + 6 days'));
+        $current_week_start = Olama_School_Helpers::get_active_week_start();
+        $next_week_start = date('Y-m-d', strtotime($current_week_start . ' + 7 days'));
+        $next_week_range = Olama_School_Helpers::get_week_range($next_week_start);
+        $next_week_end = $next_week_range['end'];
 
         $sections_planned = $wpdb->get_col($wpdb->prepare(
             "SELECT DISTINCT section_id FROM {$wpdb->prefix}olama_plans WHERE academic_year_id = %d AND plan_date BETWEEN %s AND %s",
             $active_year_id,
-            $next_sunday,
-            $next_saturday
+            $next_week_start,
+            $next_week_end
         ));
 
         $total_sections_ids = $wpdb->get_col($wpdb->prepare(

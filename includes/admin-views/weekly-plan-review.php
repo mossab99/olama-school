@@ -35,8 +35,7 @@ $all_weeks = Olama_School_Academic::get_academic_weeks($selected_year_id, $selec
 $today = date('Y-m-d');
 $current_week_start = null;
 foreach ($all_weeks as $week_start => $week_info) {
-    $week_end = date('Y-m-d', strtotime($week_start) + (6 * 86400));
-    if ($today >= $week_start && $today <= $week_end) {
+    if ($today >= $week_start && $today <= $week_info['end']) {
         $current_week_start = $week_start;
         break;
     }
@@ -58,7 +57,8 @@ if ($selected_section_id) {
 }
 
 if ($selected_week) {
-    $week_end = date('Y-m-d', strtotime($selected_week) + (4 * 86400)); // Thursday
+    $week_range = Olama_School_Helpers::get_week_range($selected_week);
+    $week_end = $week_range['end'];
     $where .= " AND p.plan_date >= %s AND p.plan_date <= %s";
     $params[] = $selected_week;
     $params[] = $week_end;

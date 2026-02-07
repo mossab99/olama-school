@@ -93,7 +93,7 @@ if (!empty($semester_weeks)) {
     if ($selected_week && isset($semester_weeks[$selected_week])) {
         // Filter by specific week
         $effective_start = $semester_weeks[$selected_week]['start'];
-        $effective_end = date('Y-m-d', strtotime($semester_weeks[$selected_week]['start'] . ' +6 days'));
+        $effective_end = $semester_weeks[$selected_week]['end'];
     } else {
         // Fallback or specific logic
         $effective_start = $current_semester->start_date;
