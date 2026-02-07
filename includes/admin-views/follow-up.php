@@ -274,10 +274,9 @@ if ($section_id && $active_year) {
                                 <label style="font-size: 0.8em;"><?php _e('Year:', 'olama-school'); ?></label>
                                 <select name="academic_year_id" class="widefat" required>
                                     <?php
-                                    $years = Olama_School_Academic::get_years();
-                                    $active_year_id = $active_year ? $active_year->id : 0;
+                                    $years = Olama_School_Academic::get_academic_years();
                                     foreach ($years as $y)
-                                        echo '<option value="' . $y->id . '" ' . selected($active_year_id, $y->id, false) . '>' . $y->year_name . '</option>';
+                                        echo '<option value="' . $y->id . '" ' . selected($active_year->id, $y->id, false) . '>' . $y->year_name . '</option>';
                                     ?>
                                 </select>
                             </div>
@@ -285,11 +284,9 @@ if ($section_id && $active_year) {
                                 <label style="font-size: 0.8em;"><?php _e('Semester:', 'olama-school'); ?></label>
                                 <select name="semester_id" class="widefat" required>
                                     <?php
-                                    $active_year_id = $active_year ? $active_year->id : 0;
-                                    $active_sem_id = $active_sem ? $active_sem->id : 0;
-                                    $sems = $active_year_id ? Olama_School_Academic::get_semesters($active_year_id) : array();
+                                    $sems = Olama_School_Academic::get_semesters($active_year->id);
                                     foreach ($sems as $s)
-                                        echo '<option value="' . $s->id . '" ' . selected($active_sem_id, $s->id, false) . '>' . $s->semester_name . '</option>';
+                                        echo '<option value="' . $s->id . '" ' . selected($active_sem->id, $s->id, false) . '>' . $s->semester_name . '</option>';
                                     ?>
                                 </select>
                             </div>
