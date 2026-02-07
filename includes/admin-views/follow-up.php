@@ -294,7 +294,7 @@ if ($section_id && $active_year) {
                                 </select>
                             </div>
                             <div>
-                                <label style="font-size: 0.8em;"><?php _e('Type:', 'olama-school'); ?></label>
+                                <label style="font-size: 0.8em;"><?php _e('Break Type:', 'olama-school'); ?></label>
                                 <input type="text" name="shift_type"
                                     placeholder="<?php _e('Morning, Evening...', 'olama-school'); ?>" required
                                     class="widefat">
@@ -307,7 +307,7 @@ if ($section_id && $active_year) {
                         <table class="wp-list-table widefat fixed striped">
                             <thead>
                                 <tr>
-                                    <th><?php _e('Type', 'olama-school'); ?></th>
+                                    <th><?php _e('Break Type', 'olama-school'); ?></th>
                                     <th><?php _e('Semester', 'olama-school'); ?></th>
                                     <th><?php _e('Actions', 'olama-school'); ?></th>
                                 </tr>
