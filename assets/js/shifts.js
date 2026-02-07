@@ -188,12 +188,12 @@ jQuery(document).ready(function ($) {
     function renderGrid(data) {
         let html = '<table class="wp-list-table widefat fixed striped">';
         html += `<thead><tr>
-            <th>${olamaShifts.i18n.day}</th>
-            <th>${olamaShifts.i18n.slot}</th>
-            <th>${olamaShifts.i18n.location}</th>
-            <th>${olamaShifts.i18n.gender}</th>
-            <th>${olamaShifts.i18n.teachers}</th>
-            <th>${olamaShifts.i18n.actions}</th>
+            <th>DAY</th>
+            <th>${olamaShifts.i18n.selectSlot}</th>
+            <th>${olamaShifts.i18n.selectLocation}</th>
+            <th>GENDER</th>
+            <th>TEACHERS</th>
+            <th>ACTIONS</th>
         </tr></thead><tbody>`;
 
         if (data.length === 0) {
