@@ -13,6 +13,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+error_log('[OLAMA DEBUG] Plugin loaded. Request URI: ' . ($_SERVER['REQUEST_URI'] ?? 'unknown'));
+
 // Define Constants
 define('OLAMA_SCHOOL_VERSION', '2.0.0');
 define('OLAMA_SCHOOL_PATH', plugin_dir_path(__FILE__));
@@ -59,6 +61,12 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-backup.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ajax-handlers.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-shortcodes.php';
 
+// Register WP-CLI commands
+if (defined('WP_CLI') && WP_CLI) {
+    require_once OLAMA_SCHOOL_PATH . 'includes/class-cli.php';
+    WP_CLI::add_command('olama', 'Olama_School_CLI');
+}
+
 /**
  * Plugin activation
  */
@@ -99,6 +107,9 @@ function olama_school_deactivate()
 
     // Flush rewrite rules
     flush_rewrite_rules();
+
+    // Clear scheduled backup
+    wp_clear_scheduled_hook('olama_scheduled_backup');
 }
 register_deactivation_hook(__FILE__, 'olama_school_deactivate');
 
@@ -130,6 +141,9 @@ function olama_school_init()
 
     // Initialize Shortcodes
     new Olama_School_Shortcodes();
+
+    // Hook scheduled backup
+    add_action('olama_scheduled_backup', array('Olama_School_Backup', 'run_scheduled_backup'));
 }
 add_action('plugins_loaded', 'olama_school_init');
 
