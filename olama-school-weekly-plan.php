@@ -6,14 +6,14 @@
  * Version: 1.6.0
  * Author: د. مصعب الحنيطي
  * Author URI: https://olama.online
- * Text Domain: أكاديمية علماء المستقبل
+ * Text Domain: olama-school
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-error_log('[OLAMA DEBUG] Plugin loaded. Request URI: ' . ($_SERVER['REQUEST_URI'] ?? 'unknown'));
+
 
 // Define Constants
 define('OLAMA_SCHOOL_VERSION', '2.0.0');
