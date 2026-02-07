@@ -290,6 +290,11 @@ class Olama_School_Backup
      */
     public static function get_backup_storage_dir()
     {
+        $custom_path = get_option('olama_backup_path');
+        if (!empty($custom_path)) {
+            return wp_normalize_path(trailingslashit($custom_path));
+        }
+
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             // Windows: Outside the public/ folder in Local Sites structure
             $public_dir = wp_normalize_path(untrailingslashit(ABSPATH));
@@ -298,7 +303,7 @@ class Olama_School_Backup
             $base = $site_dir . '/olama_backups/';
         } else {
             // Linux (Production)
-            $base = '/srv/exams/backups/';
+            $base = '/srv/olama-backups/';
         }
 
         return wp_normalize_path($base . '/');
