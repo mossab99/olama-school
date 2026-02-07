@@ -211,11 +211,17 @@ if ($section_id && $active_year) {
                 </div>
             <?php endif; ?>
 
-        <?php elseif ($active_tab === 'employee_shifts'): ?>
+        <?php elseif ($active_tab === 'employee_shifts'):
+            $all_teachers = get_users(array('role__in' => array('administrator', 'editor', 'author', 'teacher')));
+            ?>
             <div class="olama-shifts-container">
                 <div class="olama-shifts-header"
                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div>
+                        <button class="button button-secondary" id="olama-manage-periods-btn">
+                            <span class="dashicons dashicons-calendar-alt"></span>
+                            <?php _e('Manage Periods', 'olama-school'); ?>
+                        </button>
                         <button class="button button-secondary" id="olama-manage-locations-btn">
                             <span class="dashicons dashicons-location-alt"></span>
                             <?php _e('Manage Locations', 'olama-school'); ?>
@@ -225,9 +231,8 @@ if ($section_id && $active_year) {
                         </button>
                     </div>
                     <div>
-                        <button class="button button-primary" id="olama-bulk-copy-btn">
-                            <span class="dashicons dashicons-slides"></span>
-                            <?php _e('Bulk Copy to Sem 2', 'olama-school'); ?>
+                        <button class="button button-primary" id="olama-add-shift-btn">
+                            <span class="dashicons dashicons-plus"></span> <?php _e('Define Shift', 'olama-school'); ?>
                         </button>
                     </div>
                 </div>
@@ -235,21 +240,12 @@ if ($section_id && $active_year) {
                 <div class="card olama-shifts-controls" style="padding: 15px; margin-bottom: 20px;">
                     <div style="display: flex; gap: 15px; align-items: flex-end;">
                         <div>
-                            <label><strong><?php _e('Select Teacher:', 'olama-school'); ?></strong></label><br>
-                            <?php
-                            $all_teachers = get_users(array('role__in' => array('administrator', 'editor', 'author', 'teacher')));
-                            ?>
-                            <select id="olama-shift-teacher-select" class="regular-text">
-                                <option value=""><?php _e('All Teachers', 'olama-school'); ?></option>
-                                <?php foreach ($all_teachers as $teacher): ?>
-                                    <option value="<?php echo $teacher->ID; ?>"><?php echo esc_html($teacher->display_name); ?>
-                                    </option>
-                                <?php endforeach; ?>
+                            <label><strong><?php _e('Select Period:', 'olama-school'); ?></strong></label><br>
+                            <select id="olama-shift-period-select" class="regular-text">
+                                <option value=""><?php _e('Select Period', 'olama-school'); ?></option>
+                                <!-- Populated via JS -->
                             </select>
                         </div>
-                        <button class="button button-primary" id="olama-add-shift-btn">
-                            <span class="dashicons dashicons-plus"></span> <?php _e('Add Assignment', 'olama-school'); ?>
-                        </button>
                     </div>
                 </div>
 
@@ -259,6 +255,66 @@ if ($section_id && $active_year) {
                         <?php _e('Loading shifts...', 'olama-school'); ?>
                     </div>
                     <div id="olama-shifts-grid"></div>
+                </div>
+            </div>
+
+            <!-- Periods Management Modal -->
+            <div id="olama-periods-modal" class="olama-modal" style="display:none;">
+                <div class="olama-modal-content card" style="max-width: 600px; margin: 10% auto; padding: 25px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
+                        <h3 style="margin:0;"><?php _e('Manage Shift Periods', 'olama-school'); ?></h3>
+                        <button class="olama-modal-close" style="background:none; border:none; cursor:pointer;"><span
+                                class="dashicons dashicons-no-alt"></span></button>
+                    </div>
+
+                    <form id="olama-add-period-form" style="margin-bottom: 20px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end;">
+                            <div>
+                                <label style="font-size: 0.8em;"><?php _e('Year:', 'olama-school'); ?></label>
+                                <select name="academic_year_id" class="widefat" required>
+                                    <?php
+                                    $years = Olama_School_Academic::get_years();
+                                    $active_year_id = $active_year ? $active_year->id : 0;
+                                    foreach ($years as $y)
+                                        echo '<option value="' . $y->id . '" ' . selected($active_year_id, $y->id, false) . '>' . $y->year_name . '</option>';
+                                    ?>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.8em;"><?php _e('Semester:', 'olama-school'); ?></label>
+                                <select name="semester_id" class="widefat" required>
+                                    <?php
+                                    $active_year_id = $active_year ? $active_year->id : 0;
+                                    $active_sem_id = $active_sem ? $active_sem->id : 0;
+                                    $sems = $active_year_id ? Olama_School_Academic::get_semesters($active_year_id) : array();
+                                    foreach ($sems as $s)
+                                        echo '<option value="' . $s->id . '" ' . selected($active_sem_id, $s->id, false) . '>' . $s->semester_name . '</option>';
+                                    ?>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.8em;"><?php _e('Type:', 'olama-school'); ?></label>
+                                <input type="text" name="shift_type"
+                                    placeholder="<?php _e('Morning, Evening...', 'olama-school'); ?>" required
+                                    class="widefat">
+                            </div>
+                            <button type="submit" class="button button-primary"><?php _e('Add', 'olama-school'); ?></button>
+                        </div>
+                    </form>
+
+                    <div id="olama-periods-list">
+                        <table class="wp-list-table widefat fixed striped">
+                            <thead>
+                                <tr>
+                                    <th><?php _e('Type', 'olama-school'); ?></th>
+                                    <th><?php _e('Semester', 'olama-school'); ?></th>
+                                    <th><?php _e('Actions', 'olama-school'); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -272,13 +328,24 @@ if ($section_id && $active_year) {
                                 class="dashicons dashicons-no-alt"></span></button>
                     </div>
 
-                    <form id="olama-add-location-form" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <input type="text" name="location_name"
-                            placeholder="<?php _e('Location Name (e.g. Playground)', 'olama-school'); ?>" required
-                            class="regular-text">
-                        <input type="text" name="area_floor" placeholder="<?php _e('Area/Floor', 'olama-school'); ?>"
-                            class="regular-text">
-                        <button type="submit" class="button button-primary"><?php _e('Add', 'olama-school'); ?></button>
+                    <form id="olama-add-location-form"
+                        style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" name="location_name"
+                                placeholder="<?php _e('Location Name (e.g. Playground)', 'olama-school'); ?>" required
+                                class="regular-text" style="flex:2;">
+                            <input type="text" name="area_floor" placeholder="<?php _e('Area/Floor', 'olama-school'); ?>"
+                                class="regular-text" style="flex:1;">
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select name="gender" class="regular-text">
+                                <option value="mixed"><?php _e('Mixed Gender', 'olama-school'); ?></option>
+                                <option value="male"><?php _e('Boys School', 'olama-school'); ?></option>
+                                <option value="female"><?php _e('Girls School', 'olama-school'); ?></option>
+                            </select>
+                            <button type="submit" class="button button-primary"
+                                style="flex-shrink: 0;"><?php _e('Add Location', 'olama-school'); ?></button>
+                        </div>
                     </form>
 
                     <div id="olama-locations-list">
@@ -287,6 +354,7 @@ if ($section_id && $active_year) {
                                 <tr>
                                     <th><?php _e('Name', 'olama-school'); ?></th>
                                     <th><?php _e('Area', 'olama-school'); ?></th>
+                                    <th><?php _e('Gender', 'olama-school'); ?></th>
                                     <th><?php _e('Actions', 'olama-school'); ?></th>
                                 </tr>
                             </thead>
@@ -307,15 +375,10 @@ if ($section_id && $active_year) {
                     </div>
 
                     <form id="olama-add-slot-form" style="margin-bottom: 20px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 10px;">
                             <input type="text" name="slot_label"
                                 placeholder="<?php _e('Slot Label (e.g. Morning Break)', 'olama-school'); ?>" required
                                 class="widefat">
-                            <select name="gender_focus" class="widefat">
-                                <option value="mixed"><?php _e('Mixed Focus', 'olama-school'); ?></option>
-                                <option value="male"><?php _e('Boys', 'olama-school'); ?></option>
-                                <option value="female"><?php _e('Girls', 'olama-school'); ?></option>
-                            </select>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end;">
                             <div>
@@ -337,7 +400,7 @@ if ($section_id && $active_year) {
                                 <tr>
                                     <th><?php _e('Label', 'olama-school'); ?></th>
                                     <th><?php _e('Time', 'olama-school'); ?></th>
-                                    <th><?php _e('Gender', 'olama-school'); ?></th>
+                                    <th><?php _e('Actions', 'olama-school'); ?></th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -346,53 +409,70 @@ if ($section_id && $active_year) {
                 </div>
             </div>
 
-            <!-- Add Assignment Modal -->
+            <!-- Add Shift Assignment Modal (Two Phases) -->
             <div id="olama-assignment-modal" class="olama-modal" style="display:none;">
-                <div class="olama-modal-content card" style="max-width: 450px; margin: 10% auto; padding: 25px;">
+                <div class="olama-modal-content card" style="max-width: 500px; margin: 5% auto; padding: 25px;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
-                        <h3 style="margin:0;"><?php _e('Add Shift Assignment', 'olama-school'); ?></h3>
+                        <h3 style="margin:0;"><?php _e('Define Shift & Assign Teachers', 'olama-school'); ?></h3>
                         <button class="olama-modal-close" style="background:none; border:none; cursor:pointer;"><span
                                 class="dashicons dashicons-no-alt"></span></button>
                     </div>
 
                     <form id="olama-save-assignment-form">
-                        <input type="hidden" name="semester_id" value="<?php echo esc_attr($active_sem->id ?? 0); ?>">
-                        <input type="hidden" name="academic_year_id" value="<?php echo esc_attr($active_year->id ?? 0); ?>">
-                        <div style="margin-bottom: 15px;">
-                            <label><strong><?php _e('Teacher:', 'olama-school'); ?></strong></label>
-                            <select name="teacher_id" required class="widefat">
-                                <option value=""><?php _e('Select Teacher', 'olama-school'); ?></option>
+                        <div class="shift-definition-phase">
+                            <div style="margin-bottom: 15px;">
+                                <label><strong><?php _e('Period:', 'olama-school'); ?></strong></label>
+                                <select name="period_id" required class="widefat" id="olama-modal-period-select">
+                                    <!-- Populated via JS -->
+                                </select>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                                <div>
+                                    <label><strong><?php _e('Day of Week:', 'olama-school'); ?></strong></label>
+                                    <select name="day_of_week" required class="widefat">
+                                        <option value="0"><?php _e('Sunday', 'olama-school'); ?></option>
+                                        <option value="1"><?php _e('Monday', 'olama-school'); ?></option>
+                                        <option value="2"><?php _e('Tuesday', 'olama-school'); ?></option>
+                                        <option value="3"><?php _e('Wednesday', 'olama-school'); ?></option>
+                                        <option value="4"><?php _e('Thursday', 'olama-school'); ?></option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label><strong><?php _e('Time Slot:', 'olama-school'); ?></strong></label>
+                                    <select name="slot_id" required class="widefat" id="olama-modal-slot-select">
+                                        <!-- Populated via JS -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label><strong><?php _e('Location:', 'olama-school'); ?></strong></label>
+                                <select name="location_id" required class="widefat" id="olama-modal-location-select">
+                                    <!-- Populated via JS -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="teacher-assignment-phase"
+                            style="border-top: 1px solid #eee; padding-top: 15px; margin-top: 15px;">
+                            <label><strong><?php _e('Assign Teachers:', 'olama-school'); ?></strong></label>
+                            <div id="olama-teacher-multiselect"
+                                style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-top: 5px; border-radius: 4px;">
                                 <?php foreach ($all_teachers as $teacher): ?>
-                                    <option value="<?php echo $teacher->ID; ?>"><?php echo esc_html($teacher->display_name); ?>
-                                    </option>
+                                    <div style="margin-bottom: 5px;">
+                                        <label>
+                                            <input type="checkbox" name="teacher_ids[]" value="<?php echo $teacher->ID; ?>">
+                                            <?php echo esc_html($teacher->display_name); ?>
+                                        </label>
+                                    </div>
                                 <?php endforeach; ?>
-                            </select>
+                            </div>
                         </div>
-                        <div style="margin-bottom: 15px;">
-                            <label><strong><?php _e('Location:', 'olama-school'); ?></strong></label>
-                            <select name="location_id" required class="widefat" id="olama-modal-location-select">
-                                <!-- Populated via JS -->
-                            </select>
+
+                        <div style="margin-top: 25px;">
+                            <button type="submit"
+                                class="button button-primary button-large widefat"><?php _e('Save Shift & Assignments', 'olama-school'); ?></button>
                         </div>
-                        <div style="margin-bottom: 15px;">
-                            <label><strong><?php _e('Time Slot:', 'olama-school'); ?></strong></label>
-                            <select name="slot_id" required class="widefat" id="olama-modal-slot-select">
-                                <!-- Populated via JS -->
-                            </select>
-                        </div>
-                        <div style="margin-bottom: 20px;">
-                            <label><strong><?php _e('Day of Week:', 'olama-school'); ?></strong></label>
-                            <select name="day_of_week" required class="widefat">
-                                <option value="0"><?php _e('Sunday', 'olama-school'); ?></option>
-                                <option value="1"><?php _e('Monday', 'olama-school'); ?></option>
-                                <option value="2"><?php _e('Tuesday', 'olama-school'); ?></option>
-                                <option value="3"><?php _e('Wednesday', 'olama-school'); ?></option>
-                                <option value="4"><?php _e('Thursday', 'olama-school'); ?></option>
-                            </select>
-                        </div>
-                        <button type="submit"
-                            class="button button-primary button-large widefat"><?php _e('Save Assignment', 'olama-school'); ?></button>
                     </form>
                 </div>
             </div>

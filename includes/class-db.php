@@ -492,6 +492,39 @@ class Olama_School_DB
 				KEY location_id (location_id),
 				KEY slot_id (slot_id),
 				KEY semester_year (semester_id, academic_year_id)
+			) $charset_collate;",
+
+			'olama_shifts_periods' => "CREATE TABLE {$wpdb->prefix}olama_shifts_periods (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL,
+				shift_type varchar(50) NOT NULL,
+				is_active tinyint(1) DEFAULT 1 NOT NULL,
+				PRIMARY KEY  (id),
+				KEY academic_year_id (academic_year_id),
+				KEY semester_id (semester_id)
+			) $charset_collate;",
+
+			'olama_shifts' => "CREATE TABLE {$wpdb->prefix}olama_shifts (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
+				period_id mediumint(9) NOT NULL,
+				day_of_week tinyint(4) NOT NULL,
+				slot_id mediumint(9) NOT NULL,
+				location_id mediumint(9) NOT NULL,
+				PRIMARY KEY  (id),
+				KEY period_id (period_id),
+				KEY slot_id (slot_id),
+				KEY location_id (location_id)
+			) $charset_collate;",
+
+			'olama_shifts_assignments' => "CREATE TABLE {$wpdb->prefix}olama_shifts_assignments (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
+				shift_id bigint(20) NOT NULL,
+				teacher_id bigint(20) UNSIGNED NOT NULL,
+				role varchar(50) DEFAULT 'primary' NOT NULL,
+				PRIMARY KEY  (id),
+				KEY shift_id (shift_id),
+				KEY teacher_id (teacher_id)
 			) $charset_collate;"
 
 
@@ -769,6 +802,16 @@ class Olama_School_DB
 				));
 			}
 		}
+
+		// Ensure shifts refactor updates
+		$location_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_shifts_locations");
+		$location_col_names = wp_list_pluck($location_cols, 'Field');
+		if (!in_array('gender', $location_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_shifts_locations ADD COLUMN gender varchar(20) DEFAULT 'mixed' NOT NULL AFTER area_floor");
+		}
+
+		// Ensure new shift tables exist
+		$this->create_tables();
 	}
 
 	/**
@@ -826,6 +869,9 @@ class Olama_School_DB
 			'olama_notifications',
 			'olama_shifts_schedule',
 			'olama_shifts_time_slots',
+			'olama_shifts_periods',
+			'olama_shifts',
+			'olama_shifts_assignments',
 			'olama_shifts_locations'
 		);
 

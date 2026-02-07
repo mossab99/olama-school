@@ -51,7 +51,9 @@ class Olama_School_Backup
             'olama_attendance',
             'olama_shifts_locations',
             'olama_shifts_time_slots',
-            'olama_shifts_schedule'
+            'olama_shifts_periods',
+            'olama_shifts',
+            'olama_shifts_assignments'
         );
     }
 
