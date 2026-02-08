@@ -443,14 +443,24 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
         }
 
         function loadUnits(gradeId, subjectId, semesterId, callback) {
-            $.post(ajaxurl, { action: 'olama_get_units', grade_id: gradeId, subject_id: subjectId, semester_id: semesterId }, function (response) {
+            $.post(ajaxurl, {
+                action: 'olama_get_units',
+                nonce: olama_admin_ajax.nonce,
+                grade_id: gradeId,
+                subject_id: subjectId,
+                semester_id: semesterId
+            }, function (response) {
                 if (response.success) { callback(response.data); } else { callback([]); }
             });
         }
 
         function loadLessonsForRow(row, unitId, selectedLessonId) {
             if (unitLessonsCache[unitId]) { populateLessons(row, unitLessonsCache[unitId], selectedLessonId); } else {
-                $.post(ajaxurl, { action: 'olama_get_lessons', unit_id: unitId }, function (response) {
+                $.post(ajaxurl, {
+                    action: 'olama_get_lessons',
+                    nonce: olama_admin_ajax.nonce,
+                    unit_id: unitId
+                }, function (response) {
                     if (response.success) { unitLessonsCache[unitId] = response.data; populateLessons(row, response.data, selectedLessonId); }
                 });
             }

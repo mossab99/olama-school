@@ -773,6 +773,7 @@ if ($selected_semester_exam_id) {
             console.log('Loading units for grade:', gradeId, 'subject:', subjectId, 'semester:', semesterId);
             $.post(ajaxurl, {
                 action: 'olama_get_units',
+                nonce: olama_admin_ajax.nonce,
                 grade_id: gradeId,
                 subject_id: subjectId,
                 semester_id: semesterId
@@ -796,6 +797,7 @@ if ($selected_semester_exam_id) {
             } else {
                 $.post(ajaxurl, {
                     action: 'olama_get_lessons',
+                    nonce: olama_admin_ajax.nonce,
                     unit_id: unitId
                 }, function (response) {
                     if (response.success) {
