@@ -822,7 +822,7 @@ class Olama_School_Shortcodes
                     <div class="semester-left" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
                         <div style="display: flex; gap: 8px; align-items: center;">
                             <span class="week-label">
-                                <?php echo Olama_School_Helpers::translate('ط§ظ„ط¹ط§ظ… ط§ظ„ط¯ط±ط§ط³ظٹ'); ?>
+                                <?php echo Olama_School_Helpers::translate('العام الدراسي'); ?>
                             </span>
                             <span class="week-dates" style="color: #fff;">
                                 <?php echo esc_html($year_name); ?>
@@ -903,7 +903,7 @@ class Olama_School_Shortcodes
                                             <div class="detail-item">
                                                 <span class="dashicons dashicons-location detail-icon"></span>
                                                 <span class="detail-label">
-                                                    <?php echo Olama_School_Helpers::translate('ط§ظ„ظ‚ط§ط¹ط©/ط§ظ„ط؛ط±ظپط©'); ?>:
+                                                    <?php echo Olama_School_Helpers::translate('القاعة/الغرفة'); ?>:
                                                 </span>
                                                 <span class="detail-value">
                                                     <?php echo esc_html($exam->room_number ?: $exam->master_room); ?>
@@ -917,7 +917,7 @@ class Olama_School_Shortcodes
                                         style="border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.1);">
                                         <div class="section-label" style="color: #4f46e5;">
                                             <span class="dashicons dashicons-welcome-learn-more"></span>
-                                            <?php echo Olama_School_Helpers::translate('ظ…ط§ط¯ط© ط§ظ„ط§ط®طھط¨ط§ط±'); ?>
+                                            <?php echo Olama_School_Helpers::translate('مادة الاختبار'); ?>
                                         </div>
 
                                         <?php if ($exam->description): ?>
@@ -1008,7 +1008,7 @@ class Olama_School_Shortcodes
                                             style="background: rgba(254, 243, 199, 0.4); border-color: rgba(251, 191, 36, 0.2);">
                                             <div class="section-label" style="color: #b45309;">
                                                 <span class="dashicons dashicons-info"></span>
-                                                <?php echo Olama_School_Helpers::translate('ظ…ظ„ط§ط­ط¸ط§طھ ظ‡ط§ظ…ط©'); ?>
+                                                <?php echo Olama_School_Helpers::translate('ملاحظات هامة'); ?>
                                             </div>
                                             <div class="notes-content">
                                                 <?php echo nl2br(esc_html($notes_val)); ?>
@@ -1065,25 +1065,26 @@ class Olama_School_Shortcodes
 
         // Arabic day names
         $days_ar = array(
-            'Sunday' => 'ط§ظ„ط£ط­ط¯',
-            'Monday' => 'ط§ظ„ط§ط«ظ†ظٹظ†',
-            'Tuesday' => 'ط§ظ„ط«ظ„ط§ط«ط§ط،',
-            'Wednesday' => 'ط§ظ„ط£ط±ط¨ط¹ط§ط،',
-            'Thursday' => 'ط§ظ„ط®ظ…ظٹط³',
+            'Saturday' => 'السبت',
+            'Sunday' => 'الأحد',
+            'Monday' => 'الاثنين',
+            'Tuesday' => 'الثلاثاء',
+            'Wednesday' => 'الأربعاء',
+            'Thursday' => 'الخميس',
         );
 
         // Arabic ordinal period names
         $periods_ar = array(
-            1 => 'ط§ظ„ط£ظˆظ„ظ‰',
-            2 => 'ط§ظ„ط«ط§ظ†ظٹط©',
-            3 => 'ط§ظ„ط«ط§ظ„ط«ط©',
-            4 => 'ط§ظ„ط±ط§ط¨ط¹ط©',
-            5 => 'ط§ظ„ط®ط§ظ…ط³ط©',
-            6 => 'ط§ظ„ط³ط§ط¯ط³ط©',
-            7 => 'ط§ظ„ط³ط§ط¨ط¹ط©',
-            8 => 'ط§ظ„ط«ط§ظ…ظ†ط©',
-            9 => 'ط§ظ„طھط§ط³ط¹ط©',
-            10 => 'ط§ظ„ط¹ط§ط´ط±ط©',
+            1 => 'الأولى',
+            2 => 'الثانية',
+            3 => 'الثالثة',
+            4 => 'الرابعة',
+            5 => 'الخامسة',
+            6 => 'السادسة',
+            7 => 'السابعة',
+            8 => 'الثامنة',
+            9 => 'التاسعة',
+            10 => 'العاشرة',
         );
 
         $max_periods = $grade ? intval($grade->periods_count) : 8;
@@ -1091,23 +1092,23 @@ class Olama_School_Shortcodes
         // Get subject color based on name
         $get_subject_color = function ($subject_name) {
             $subject_name = strtolower($subject_name);
-            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'ط±ظٹط§ط¶ظٹط§طھ') !== false)
+            if (strpos($subject_name, 'math') !== false || strpos($subject_name, 'رياضيات') !== false)
                 return array('bg' => '#dbeafe', 'text' => '#1e40af');
-            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'ط¹ط±ط¨ظٹ') !== false || strpos($subject_name, 'ط¹ط±ط¨ظٹط©') !== false)
+            if (strpos($subject_name, 'arabic') !== false || strpos($subject_name, 'عربي') !== false || strpos($subject_name, 'عربية') !== false)
                 return array('bg' => '#dcfce7', 'text' => '#166534');
-            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'ط§ظ†ط¬ظ„ظٹط²ظٹ') !== false || strpos($subject_name, 'ط¥ظ†ط¬ظ„ظٹط²ظٹط©') !== false)
+            if (strpos($subject_name, 'english') !== false || strpos($subject_name, 'انجليزي') !== false || strpos($subject_name, 'إنجليزية') !== false)
                 return array('bg' => '#e0e7ff', 'text' => '#4338ca');
-            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'ط¹ظ„ظˆظ…') !== false)
+            if (strpos($subject_name, 'science') !== false || strpos($subject_name, 'علوم') !== false)
                 return array('bg' => '#ccfbf1', 'text' => '#0f766e');
-            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'ط¯ظٹظ†') !== false || strpos($subject_name, 'ط¥ط³ظ„ط§ظ…ظٹط©') !== false || strpos($subject_name, 'طھط±ط¨ظٹط©') !== false)
+            if (strpos($subject_name, 'islamic') !== false || strpos($subject_name, 'دين') !== false || strpos($subject_name, 'إسلامية') !== false || strpos($subject_name, 'تربية') !== false)
                 return array('bg' => '#fef3c7', 'text' => '#92400e');
-            if (strpos($subject_name, 'social') !== false || strpos($subject_name, 'ط§ط¬طھظ…ط§ط¹ظٹط©') !== false || strpos($subject_name, 'ط¯ط±ط§ط³ط§طھ') !== false)
+            if (strpos($subject_name, 'social') !== false || strpos($subject_name, 'اجتماعية') !== false || strpos($subject_name, 'دراسات') !== false)
                 return array('bg' => '#fce7f3', 'text' => '#9d174d');
-            if (strpos($subject_name, 'digital') !== false || strpos($subject_name, 'ط­ط§ط³ظˆط¨') !== false || strpos($subject_name, 'ط±ظ‚ظ…ظٹط©') !== false)
+            if (strpos($subject_name, 'digital') !== false || strpos($subject_name, 'حاسوب') !== false || strpos($subject_name, 'رقمية') !== false)
                 return array('bg' => '#f3e8ff', 'text' => '#7c3aed');
-            if (strpos($subject_name, 'art') !== false || strpos($subject_name, 'ظپظ†ظٹط©') !== false)
+            if (strpos($subject_name, 'art') !== false || strpos($subject_name, 'فنية') !== false)
                 return array('bg' => '#fff7ed', 'text' => '#c2410c');
-            if (strpos($subject_name, 'physic') !== false || strpos($subject_name, 'ط±ظٹط§ط¶ط©') !== false || strpos($subject_name, 'ط¨ط¯ظ†ظٹط©') !== false)
+            if (strpos($subject_name, 'physic') !== false || strpos($subject_name, 'رياضة') !== false || strpos($subject_name, 'بدنية') !== false)
                 return array('bg' => '#fef2f2', 'text' => '#b91c1c');
             return array('bg' => '#f1f5f9', 'text' => '#475569');
         };
@@ -1124,7 +1125,7 @@ class Olama_School_Shortcodes
                         </h1>
                     </div>
                     <div class="header-badge">
-                        <span class="badge-icon">ًں“…</span>
+                        <span class="badge-icon">📅</span>
                         <span class="badge-text">
                             <?php
                             // Get academic year
@@ -1149,12 +1150,12 @@ class Olama_School_Shortcodes
                         <thead>
                             <tr>
                                 <th class="day-col-header">
-                                    <?php echo Olama_School_Helpers::translate('ط§ظ„ظٹظˆظ…'); ?>
+                                    <?php echo Olama_School_Helpers::translate('اليوم'); ?>
                                 </th>
                                 <?php for ($i = 1; $i <= $max_periods; $i++): ?>
                                     <th class="period-col-header">
                                         <span class="period-label-text">
-                                            <?php echo Olama_School_Helpers::translate('ط§ظ„ط­طµط©'); ?>
+                                            <?php echo Olama_School_Helpers::translate('الحصة'); ?>
                                         </span>
                                         <span class="period-ordinal">
                                             <?php echo isset($periods_ar[$i]) ? $periods_ar[$i] : $i; ?>
@@ -1199,11 +1200,11 @@ class Olama_School_Shortcodes
                     <?php foreach ($days_ar as $day_en => $day_ar): ?>
                         <div class="mobile-day-card">
                             <div class="mobile-day-header" onclick="this.parentElement.classList.toggle('expanded')">
-                                <span class="day-icon">ًں“†</span>
+                                <span class="day-icon">📅</span>
                                 <span class="day-title">
                                     <?php echo esc_html($day_ar); ?>
                                 </span>
-                                <span class="toggle-arrow">â–¼</span>
+                                <span class="toggle-arrow">▼</span>
                             </div>
                             <div class="mobile-day-content">
                                 <?php
@@ -1217,7 +1218,7 @@ class Olama_School_Shortcodes
                                     ?>
                                     <div class="mobile-period-item" style="background: <?php echo esc_attr($colors['bg']); ?>;">
                                         <span class="period-badge" style="background: <?php echo esc_attr($colors['text']); ?>;">
-                                            <?php echo Olama_School_Helpers::translate('ط§ظ„ط­طµط©'); ?>
+                                            <?php echo Olama_School_Helpers::translate('الحصة'); ?>
                                             <?php echo isset($periods_ar[$i]) ? $periods_ar[$i] : $i; ?>
                                         </span>
                                         <span class="subject-name-mobile" style="color: <?php echo esc_attr($colors['text']); ?>;">
@@ -1227,7 +1228,7 @@ class Olama_School_Shortcodes
                                 <?php endfor; ?>
                                 <?php if (!$has_periods): ?>
                                     <div class="no-periods">
-                                        <?php echo Olama_School_Helpers::translate('ظ„ط§ طھظˆط¬ط¯ ط­طµطµ'); ?>
+                                        <?php echo Olama_School_Helpers::translate('لا توجد حصص'); ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -1541,18 +1542,18 @@ class Olama_School_Shortcodes
             <div class="olama-stationary-container">
                 <!-- Header -->
                 <div class="olama-stationary-header">
-                    <div class="header-icon">ًں“ڑ</div>
+                    <div class="header-icon">📚</div>
                     <div class="header-content">
                         <h1>
-                            <?php echo Olama_School_Helpers::translate('ط§ظ„ظ‚ط±ط·ط§ط³ظٹط© ط§ظ„ظ…ط¯ط±ط³ظٹط©'); ?>
+                            <?php echo Olama_School_Helpers::translate('القرطاسية المدرسية'); ?>
                         </h1>
                         <p>
-                            <?php echo Olama_School_Helpers::translate('ظ‚ط§ط¦ظ…ط© ط§ظ„ظ…ط³طھظ„ط²ظ…ط§طھ ط§ظ„ظ…ط¯ط±ط³ظٹط© ظ„ظƒظ„ طµظپ'); ?>
+                            <?php echo Olama_School_Helpers::translate('قائمة المستلزمات المدرسية لكل صف'); ?>
                         </p>
                     </div>
                     <div class="header-year">
                         <span class="year-label">
-                            <?php echo Olama_School_Helpers::translate('ط§ظ„ط¹ط§ظ… ط§ظ„ط¯ط±ط§ط³ظٹ'); ?>
+                            <?php echo Olama_School_Helpers::translate('العام الدراسي'); ?>
                         </span>
                         <span class="year-value">
                             <?php echo esc_html($year_name); ?>
@@ -1572,21 +1573,21 @@ class Olama_School_Shortcodes
                         <div class="accordion-item <?php echo $is_first ? 'active' : ''; ?>">
                             <div class="accordion-header" style="background: <?php echo $gradient; ?>;">
                                 <div class="header-left">
-                                    <span class="grade-icon">ًںژ’</span>
+                                    <span class="grade-icon">🎒</span>
                                     <span class="grade-name">
                                         <?php echo esc_html($item->grade_name); ?>
                                     </span>
                                 </div>
                                 <div class="header-right">
-                                    <span class="toggle-icon">â–¼</span>
+                                    <span class="toggle-icon">▼</span>
                                 </div>
                             </div>
                             <div class="accordion-content" <?php echo $is_first ? 'style="display: block;"' : ''; ?>>
                                 <?php if (!empty($item->notebooks)): ?>
                                     <div class="content-section">
                                         <div class="section-title">
-                                            <span class="section-icon">ًں““</span>
-                                            <?php echo Olama_School_Helpers::translate('ط§ظ„ط¯ظپط§طھط± ط§ظ„ظ…ط·ظ„ظˆط¨ط©'); ?>
+                                            <span class="section-icon">📓</span>
+                                            <?php echo Olama_School_Helpers::translate('الدفاتر المطلوبة'); ?>
                                         </div>
                                         <div class="section-content">
                                             <?php echo nl2br(esc_html($item->notebooks)); ?>
@@ -1597,8 +1598,8 @@ class Olama_School_Shortcodes
                                 <?php if (!empty($item->stationary)): ?>
                                     <div class="content-section">
                                         <div class="section-title">
-                                            <span class="section-icon">ًں“ژ</span>
-                                            <?php echo Olama_School_Helpers::translate('ط§ظ„ظ‚ط±ط·ط§ط³ظٹط© ط§ظ„ظ…ط·ظ„ظˆط¨ط©'); ?>
+                                            <span class="section-icon">📏</span>
+                                            <?php echo Olama_School_Helpers::translate('القرطاسية المطلوبة'); ?>
                                         </div>
                                         <div class="section-content">
                                             <?php echo nl2br(esc_html($item->stationary)); ?>
@@ -1609,8 +1610,8 @@ class Olama_School_Shortcodes
                                 <?php if (!empty($item->teacher_notes)): ?>
                                     <div class="content-section notes">
                                         <div class="section-title">
-                                            <span class="section-icon">ًں“‌</span>
-                                            <?php echo Olama_School_Helpers::translate('ظ…ظ„ط§ط­ط¸ط§طھ ط§ظ„ظ…ط¹ظ„ظ…'); ?>
+                                            <span class="section-icon">📝</span>
+                                            <?php echo Olama_School_Helpers::translate('ملاحظات المعلم'); ?>
                                         </div>
                                         <div class="section-content">
                                             <?php echo nl2br(esc_html($item->teacher_notes)); ?>
@@ -1620,9 +1621,9 @@ class Olama_School_Shortcodes
 
                                 <?php if (empty($item->notebooks) && empty($item->stationary) && empty($item->teacher_notes)): ?>
                                     <div class="empty-state">
-                                        <span class="empty-icon">ًں“­</span>
+                                        <span class="empty-icon">📭</span>
                                         <p>
-                                            <?php echo Olama_School_Helpers::translate('ظ„ظ… ظٹطھظ… طھط­ط¯ظٹط¯ ظ‚ط±ط·ط§ط³ظٹط© ظ„ظ‡ط°ط§ ط§ظ„طµظپ ط¨ط¹ط¯.'); ?>
+                                            <?php echo Olama_School_Helpers::translate('لم يتم تحديد قرطاسية لهذا الصف بعد.'); ?>
                                         </p>
                                     </div>
                                 <?php endif; ?>
@@ -1634,8 +1635,8 @@ class Olama_School_Shortcodes
                 <!-- Footer -->
                 <div class="olama-stationary-footer">
                     <p>
-                        <?php echo Olama_School_Helpers::translate('ظٹط±ط¬ظ‰ ط¥ط­ط¶ط§ط± ط¬ظ…ظٹط¹ ط§ظ„ظ…ط³طھظ„ط²ظ…ط§طھ ظپظٹ ط§ظ„ظٹظˆظ… ط§ظ„ط£ظˆظ„ ظ…ظ† ط§ظ„ط¯ط±ط§ط³ط©'); ?>
-                        ًں“–
+                        <?php echo Olama_School_Helpers::translate('يرجى إحضار جميع المستلزمات في اليوم الأول من الدراسة'); ?>
+                        📖
                     </p>
                 </div>
             </div>

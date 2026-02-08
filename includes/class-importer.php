@@ -972,14 +972,14 @@ class Olama_School_Importer
                 // Map headers to field names
                 $map = array();
                 $fields_map = array(
-                    'subject_name' => array('subject', 'subject name', 'ط§ظ„ظ…ط§ط¯ط©', 'ط§ط³ظ… ط§ظ„ظ…ط§ط¯ط©', 'ط§ط³ظ… ظ…ط§ط¯ظ‡'),
-                    'unit_number' => array('unit #', 'unit number', 'ط±ظ‚ظ… ط§ظ„ظˆط­ط¯ط©', 'ظˆط­ط¯ط©', 'ط±ظ‚ظ… ظˆط­ط¯ظ‡'),
-                    'unit_name' => array('unit name', 'ط§ط³ظ… ط§ظ„ظˆط­ط¯ط©', 'ط§ط³ظ… ظˆط­ط¯ظ‡'),
-                    'objectives' => array('objectives', 'learning objectives', 'ط§ظ„ط£ظ‡ط¯ط§ظپ', 'ط§ظ‡ط¯ط§ظپ'),
-                    'lesson_number' => array('lesson #', 'lesson number', 'ط±ظ‚ظ… ط§ظ„ط¯ط±ط³', 'ط¯ط±ط³', 'ط±ظ‚ظ… ط¯ط±ط³'),
-                    'lesson_title' => array('lesson title', 'lesson name', 'ط¹ظ†ظˆط§ظ† ط§ظ„ط¯ط±ط³', 'ط¹ظ†ظˆط§ظ† ط¯ط±ط³'),
-                    'video_url' => array('video url', 'link', 'ط±ط§ط¨ط· ط§ظ„ظپظٹط¯ظٹظˆ', 'ظپظٹط¯ظٹظˆ'),
-                    'periods' => array('number of periods', 'periods', 'ط¹ط¯ط¯ ط§ظ„ط­طµطµ', 'ط­طµطµ', 'ط¹ط¯ط¯ ط­طµطµ')
+                    'subject_name' => array('subject', 'subject name', 'المادة', 'اسم المادة', 'اسم ماده'),
+                    'unit_number' => array('unit #', 'unit number', 'رقم الوحدة', 'وحدة', 'رقم وحده'),
+                    'unit_name' => array('unit name', 'اسم الوحدة', 'اسم وحده'),
+                    'objectives' => array('objectives', 'learning objectives', 'الأهداف', 'اهداف'),
+                    'lesson_number' => array('lesson #', 'lesson number', 'رقم الدرس', 'درس', 'رقم درس'),
+                    'lesson_title' => array('lesson title', 'lesson name', 'عنوان الدرس', 'عنوان درس'),
+                    'video_url' => array('video url', 'link', 'رابط الفيديو', 'فيديو'),
+                    'periods' => array('number of periods', 'periods', 'عدد الحصص', 'حصص', 'عدد حصص')
                 );
 
                 foreach ($headers as $col => $header) {
