@@ -62,6 +62,10 @@ class Olama_School_Backup
      */
     public static function generate_backup()
     {
+        // Increase resource limits for large databases
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
+
         global $wpdb;
         $tables = self::get_plugin_tables();
         $backup_data = array(
@@ -392,9 +396,12 @@ class Olama_School_Backup
      */
     public static function run_scheduled_backup()
     {
+        $start_time = current_time('mysql');
+        error_log('[OLAMA CRON] Starting scheduled backup at ' . $start_time);
+
         $result = self::save_backup_to_server();
         if (is_wp_error($result)) {
-            error_log('[OLAMA CRON ERROR] Scheduled backup failed: ' . $result->get_error_message());
+            error_log('[OLAMA CRON ERROR] Scheduled backup failed (Started: ' . $start_time . '): ' . $result->get_error_message());
         } else {
             error_log('[OLAMA CRON SUCCESS] Scheduled backup completed: ' . $result);
         }
