@@ -3362,7 +3362,7 @@ class Olama_School_Admin
 
         $roles = array(
             'administrator' => __('Administrator', 'olama-school'),
-            'editor' => __('Coordinator/Editor', 'olama-school'),
+            'editor' => __('Supervisor', 'olama-school'),
             'author' => __('Teacher/Author', 'olama-school'),
             'subscriber' => __('Student/Subscriber', 'olama-school'),
         );
