@@ -1331,7 +1331,7 @@ class Olama_School_Admin
             ));
         }
 
-        if (isset($_GET['page']) && $_GET['page'] === 'olama-school-follow-up' && isset($_GET['tab']) && $_GET['tab'] === 'employee_shifts') {
+        if (isset($_GET['page']) && $_GET['page'] === 'olama-school-follow-up') {
             wp_enqueue_script('olama-shifts-script', OLAMA_SCHOOL_URL . 'assets/js/shifts.js', array('jquery'), OLAMA_SCHOOL_VERSION, true);
             wp_localize_script('olama-shifts-script', 'olamaShifts', array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),

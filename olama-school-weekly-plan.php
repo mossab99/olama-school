@@ -3,7 +3,7 @@
  * Plugin Name: Olama School System
  * Plugin URI: https://olama.online/olama-school-weekly-plan
  * Description: A comprehensive WordPress plugin for managing school weekly plans, including hierarchical structures (Grades, Sections), subject management, and teacher/student assignments.
- * Version: 1.6.0
+ * Version: 2.0.1
  * Author: د. مصعب الحنيطي
  * Author URI: https://olama.online
  * Text Domain: أكاديمية علماء المستقبل
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 error_log('[OLAMA DEBUG] Plugin loaded. Request URI: ' . ($_SERVER['REQUEST_URI'] ?? 'unknown'));
 
 // Define Constants
-define('OLAMA_SCHOOL_VERSION', '2.0.0');
+define('OLAMA_SCHOOL_VERSION', '2.0.4');
 define('OLAMA_SCHOOL_PATH', plugin_dir_path(__FILE__));
 define('OLAMA_SCHOOL_URL', plugin_dir_url(__FILE__));
 

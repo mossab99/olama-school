@@ -42,6 +42,7 @@ if ($section_id && $active_year) {
 ?>
 
 <div class="wrap olama-school-wrap">
+
     <h1>
         <?php echo Olama_School_Helpers::translate('Follow Up'); ?>
     </h1>
@@ -274,7 +275,7 @@ if ($section_id && $active_year) {
                                 <label style="font-size: 0.8em;"><?php _e('Year:', 'olama-school'); ?></label>
                                 <select name="academic_year_id" class="widefat" required>
                                     <?php
-                                    $years = Olama_School_Academic::get_academic_years();
+                                    $years = Olama_School_Academic::get_years();
                                     foreach ($years as $y)
                                         echo '<option value="' . $y->id . '" ' . selected($active_year->id, $y->id, false) . '>' . $y->year_name . '</option>';
                                     ?>
@@ -476,19 +477,36 @@ if ($section_id && $active_year) {
 
             <style>
                 .olama-modal {
+                    display: none;
                     position: fixed;
                     top: 0;
                     left: 0;
+                    right: 0;
+                    bottom: 0;
                     width: 100%;
                     height: 100%;
-                    background: rgba(0, 0, 0, 0.5);
-                    z-index: 10000;
+                    background: rgba(0, 0, 0, 0.6);
+                    z-index: 100000;
+                    overflow: auto;
                 }
 
                 .olama-modal-content {
                     background: #fff;
-                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
                     border-radius: 8px;
+                    position: relative;
+                    max-width: 600px;
+                    margin: 50px auto;
+                    padding: 25px;
+                    min-height: 200px;
+                    overflow: visible;
+                }
+
+                .olama-modal-close {
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 20px;
                 }
             </style>
         <?php endif; ?>

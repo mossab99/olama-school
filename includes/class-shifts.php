@@ -103,10 +103,27 @@ class Olama_School_Shifts
         $table = $wpdb->prefix . 'olama_shifts_periods';
 
         $id = isset($data['id']) ? intval($data['id']) : 0;
+        $academic_year_id = intval($data['academic_year_id']);
+        $semester_id = intval($data['semester_id']);
+        $shift_type = sanitize_text_field($data['shift_type']);
+
+        // Prevent duplicates
+        if (!$id) {
+            $exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM $table WHERE academic_year_id = %d AND semester_id = %d AND shift_type = %s",
+                $academic_year_id,
+                $semester_id,
+                $shift_type
+            ));
+            if ($exists) {
+                return $exists; // Return existing ID if it already exists
+            }
+        }
+
         $period_data = array(
-            'academic_year_id' => intval($data['academic_year_id']),
-            'semester_id' => intval($data['semester_id']),
-            'shift_type' => sanitize_text_field($data['shift_type']),
+            'academic_year_id' => $academic_year_id,
+            'semester_id' => $semester_id,
+            'shift_type' => $shift_type,
             'is_active' => isset($data['is_active']) ? intval($data['is_active']) : 1,
         );
 
