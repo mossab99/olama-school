@@ -569,27 +569,40 @@ class Olama_School_Academic
             return array();
         }
 
+        $settings = get_option('olama_school_settings', array());
+        $start_day_setting = $settings['start_day'] ?? 'Sunday';
+        $last_day_setting = $settings['last_day'] ?? 'Thursday';
+
+        $all_days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        $start_idx = array_search($start_day_setting, $all_days);
+        $last_idx = array_search($last_day_setting, $all_days);
+        if ($start_idx === false)
+            $start_idx = 0;
+        if ($last_idx === false)
+            $last_idx = 4;
+        $days_diff = ($last_idx - $start_idx + 7) % 7;
+
         $weeks = array();
         $week_num = 1;
         foreach ($semesters as $semester) {
             $start_ts = strtotime($semester->start_date);
             $end_ts = strtotime($semester->end_date);
 
-            // Find the Sunday of the week containing the start date
-            $day_of_week = date('w', $start_ts);
-            $current_sunday = $start_ts - ($day_of_week * 86400);
+            // Find the start day of the week containing the start date
+            $day_of_week = (int) date('w', $start_ts);
+            $current_week_start_ts = $start_ts - ((($day_of_week - $start_idx + 7) % 7) * 86400);
 
-            while ($current_sunday <= $end_ts) {
-                $week_start = date('Y-m-d', $current_sunday);
-                $week_end = date('Y-m-d', $current_sunday + (4 * 86400)); // Thursday
+            while ($current_week_start_ts <= $end_ts) {
+                $week_start = date('Y-m-d', $current_week_start_ts);
+                $week_end_ts = $current_week_start_ts + ($days_diff * 86400);
+                $week_end = date('Y-m-d', $week_end_ts);
 
                 // Check overlap with semester
-                $week_end_ts = $current_sunday + (4 * 86400);
-                if ($week_end_ts >= $start_ts && $current_sunday <= $end_ts) {
+                if ($week_end_ts >= $start_ts && $current_week_start_ts <= $end_ts) {
                     $label = sprintf(
                         '(%s - %s)',
-                        Olama_School_Helpers::format_date($current_sunday),
-                        Olama_School_Helpers::format_date($current_sunday + (4 * 86400))
+                        Olama_School_Helpers::format_date($current_week_start_ts),
+                        Olama_School_Helpers::format_date($week_end_ts)
                     );
 
                     if ($full_info) {
@@ -604,7 +617,7 @@ class Olama_School_Academic
                     }
                 }
 
-                $current_sunday += (7 * 86400); // Next Sunday
+                $current_week_start_ts += (7 * 86400); // Next week same day
             }
         }
         ksort($weeks);

@@ -106,11 +106,9 @@ class Olama_School_Plan
 
         // Limit Validation (only for homework plans)
         if (!$plan_id && $plan_type === 'homework') {
-            // Find week range (Sunday to Thursday)
-            $ts = strtotime($plan_date);
-            $day_of_week = date('w', $ts);
-            $week_start = date('Y-m-d', $ts - ($day_of_week * 86400));
-            $week_end = date('Y-m-d', strtotime($week_start . ' +4 days'));
+            $week_range = Olama_School_Helpers::get_week_range($plan_date);
+            $week_start = $week_range['start'];
+            $week_end = $week_range['end'];
 
             // Get Grade Limit
             $section = Olama_School_Section::get_section($section_id);
@@ -131,7 +129,7 @@ class Olama_School_Plan
                 }
 
                 // Check Daily Limit (Only count homework plans)
-                $day_map = [0 => 'sun', 1 => 'mon', 2 => 'tue', 3 => 'wed', 4 => 'thu'];
+                $day_map = [0 => 'sun', 1 => 'mon', 2 => 'tue', 3 => 'wed', 4 => 'thu', 5 => 'fri', 6 => 'sat'];
                 $day_key = intval(date('w', strtotime($plan_date)));
 
                 if (isset($day_map[$day_key])) {

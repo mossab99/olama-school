@@ -503,7 +503,8 @@ class Olama_School_Ajax_Handlers
         }
 
         global $wpdb;
-        $week_end = date('Y-m-d', strtotime($week_start . ' +4 days'));
+        $week_range = Olama_School_Helpers::get_week_range($week_start);
+        $week_end = $week_range['end'];
 
         $result = $wpdb->query($wpdb->prepare(
             "UPDATE {$wpdb->prefix}olama_plans SET status = 'approved' 

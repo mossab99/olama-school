@@ -280,7 +280,8 @@ class Olama_School_Shortcodes
             $week_start = Olama_School_Helpers::get_previous_week_start();
         }
 
-        $week_end = date('Y-m-d', strtotime($week_start . ' +4 days'));
+        $week_range = Olama_School_Helpers::get_week_range($week_start);
+        $week_end = $week_range['end'];
         $all_plans = Olama_School_Plan::get_plans($section_id, $week_start, $week_end);
 
         $is_admin = Olama_School_Permissions::can('olama_view_reports_summary');
@@ -453,9 +454,19 @@ class Olama_School_Shortcodes
             <!-- Days Accordion -->
             <div class="days-accordion">
                 <?php
-                $days_of_week = array('Sunday' => 'الأحد', 'Monday' => 'الاثنين', 'Tuesday' => 'الثلاثاء', 'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس');
+                $school_days = Olama_School_Helpers::get_school_days();
+                $day_translations = array(
+                    'Sunday' => 'الأحد',
+                    'Monday' => 'الاثنين',
+                    'Tuesday' => 'الثلاثاء',
+                    'Wednesday' => 'الأربعاء',
+                    'Thursday' => 'الخميس',
+                    'Friday' => 'الجمعة',
+                    'Saturday' => 'السبت'
+                );
                 $day_index = 0;
-                foreach ($days_of_week as $day_en => $day_ar):
+                foreach ($school_days as $day_en):
+                    $day_ar = $day_translations[$day_en] ?? $day_en;
                     $current_date = date('Y-m-d', strtotime($week_start . ' +' . $day_index . ' days'));
                     $day_plans = $grouped_plans[$current_date] ?? array();
                     $is_active = $current_date == date('Y-m-d') ? 'active' : '';
@@ -1063,15 +1074,20 @@ class Olama_School_Shortcodes
             return '<div class="olama-no-plans">' . __('No master schedule found for the selected section and semester.', 'olama-school') . '</div>';
         }
 
-        // Arabic day names
-        $days_ar = array(
-            'Saturday' => 'السبت',
+        $school_days = Olama_School_Helpers::get_school_days();
+        $day_translations = array(
             'Sunday' => 'الأحد',
             'Monday' => 'الاثنين',
             'Tuesday' => 'الثلاثاء',
             'Wednesday' => 'الأربعاء',
             'Thursday' => 'الخميس',
+            'Friday' => 'الجمعة',
+            'Saturday' => 'السبت'
         );
+        $days_ar = array();
+        foreach ($school_days as $day_en) {
+            $days_ar[$day_en] = $day_translations[$day_en] ?? $day_en;
+        }
 
         // Arabic ordinal period names
         $periods_ar = array(

@@ -40,29 +40,41 @@ class Olama_School_Helpers
     }
 
     /**
-     * Get the active week start date (Sunday) based on current logic:
-     * - If today is Saturday, return tomorrow's date (beginning of next week)
-     * - Otherwise, return the most recent Sunday
+     * Get the active week start date based on plugin settings:
+     * - If today is the day before the configured start day, return tomorrow's date
+     * - Otherwise, return the most recent occurrence of the start day
      * 
      * @return string Date in Y-m-d format
      */
     public static function get_active_week_start()
     {
-        // Use WordPress current_time to respect site timezone settings
-        $today = current_time('timestamp');
-        $day_of_week = (int) date('w', $today); // 0 (Sunday) to 6 (Saturday)
+        $settings = get_option('olama_school_settings', array());
+        $start_day_name = $settings['start_day'] ?? 'Sunday';
 
-        if ($day_of_week === 6) {
-            // It's Saturday, return tomorrow (Sunday)
+        $today = current_time('timestamp');
+        $today_idx = (int) date('w', $today); // 0 (Sunday) to 6 (Saturday)
+
+        $all_days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        $start_idx = array_search($start_day_name, $all_days);
+
+        if ($start_idx === false)
+            $start_idx = 0;
+
+        // Switch day is the day before start day
+        $switch_idx = ($start_idx - 1 + 7) % 7;
+
+        if ($today_idx === $switch_idx) {
+            // It's the switch day, return tomorrow
             return date('Y-m-d', $today + 86400);
         }
 
-        // Return the most recent Sunday
-        return date('Y-m-d', $today - ($day_of_week * 86400));
+        // Return the most recent start day
+        $days_to_subtract = ($today_idx - $start_idx + 7) % 7;
+        return date('Y-m-d', $today - ($days_to_subtract * 86400));
     }
 
     /**
-     * Get the previous week start date (Sunday)
+     * Get the previous week start date
      * 
      * @return string Date in Y-m-d format
      */
@@ -73,17 +85,34 @@ class Olama_School_Helpers
     }
 
     /**
-     * Get week date range from a given date
+     * Get week date range from a given date based on school settings
      * 
      * @param string $date Any date within the week
      * @return array Array with 'start' and 'end' keys
      */
     public static function get_week_range($date)
     {
+        $settings = get_option('olama_school_settings', array());
+        $start_day_name = $settings['start_day'] ?? 'Sunday';
+        $last_day_name = $settings['last_day'] ?? 'Thursday';
+
         $ts = strtotime($date);
-        $day_of_week = date('w', $ts);
-        $week_start = date('Y-m-d', $ts - ($day_of_week * 86400));
-        $week_end = date('Y-m-d', strtotime($week_start . ' +4 days'));
+        $today_idx = (int) date('w', $ts);
+
+        $all_days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        $start_idx = array_search($start_day_name, $all_days);
+        $last_idx = array_search($last_day_name, $all_days);
+
+        if ($start_idx === false)
+            $start_idx = 0;
+        if ($last_idx === false)
+            $last_idx = 4;
+
+        $days_to_subtract = ($today_idx - $start_idx + 7) % 7;
+        $week_start = date('Y-m-d', $ts - ($days_to_subtract * 86400));
+
+        $days_diff = ($last_idx - $start_idx + 7) % 7;
+        $week_end = date('Y-m-d', strtotime($week_start . " +$days_diff days"));
 
         return array(
             'start' => $week_start,
@@ -1259,5 +1288,42 @@ class Olama_School_Helpers
         );
 
         return $map[$day] ?? null;
+    }
+
+    /**
+     * Get configured school days
+     * 
+     * @return array Array of English day names
+     */
+    public static function get_school_days()
+    {
+        $settings = get_option('olama_school_settings', array());
+        $start_day = $settings['start_day'] ?? 'Sunday';
+        $last_day = $settings['last_day'] ?? 'Thursday';
+
+        $all_days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        $start_idx = array_search($start_day, $all_days);
+        $last_idx = array_search($last_day, $all_days);
+
+        if ($start_idx === false)
+            $start_idx = 0;
+        if ($last_idx === false)
+            $last_idx = 4;
+
+        $display_days = [];
+        if ($start_idx <= $last_idx) {
+            for ($i = $start_idx; $i <= $last_idx; $i++) {
+                $display_days[] = $all_days[$i];
+            }
+        } else {
+            // Wraps around
+            for ($i = $start_idx; $i < 7; $i++) {
+                $display_days[] = $all_days[$i];
+            }
+            for ($i = 0; $i <= $last_idx; $i++) {
+                $display_days[] = $all_days[$i];
+            }
+        }
+        return $display_days;
     }
 }

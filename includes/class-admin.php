@@ -1095,12 +1095,13 @@ class Olama_School_Admin
             $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
 
             // Calculate semester_id based on selected date to ensure AJAX works correctly
-            $today = time();
-            $today_val = date('Y-m-d', $today - ((int) date('w', $today) * 86400));
+            $today_val = Olama_School_Helpers::get_active_week_start();
             $week_start = isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : $today_val;
-            $active_day = isset($_GET['active_day']) ? sanitize_text_field($_GET['active_day']) : 'Sunday';
 
-            $days_map = array('Sunday' => 0, 'Monday' => 1, 'Tuesday' => 2, 'Wednesday' => 3, 'Thursday' => 4);
+            $school_days = Olama_School_Helpers::get_school_days();
+            $active_day = isset($_GET['active_day']) ? sanitize_text_field($_GET['active_day']) : ($school_days[0] ?? 'Sunday');
+
+            $days_map = array_flip($school_days);
             $offset = $days_map[$active_day] ?? 0;
             $selected_date = date('Y-m-d', strtotime($week_start . " +$offset days"));
 
@@ -3075,7 +3076,7 @@ class Olama_School_Admin
             $selected_semester_id = intval($current_semesters[0]->id);
         }
 
-        // Date logic: Week start (Sunday) dropdown grouped by month
+        // Date logic: Week start dropdown grouped by month
         $all_weeks = Olama_School_Academic::get_academic_weeks($selected_year_id, $selected_semester_id);
         $months_weeks = array();
         foreach ($all_weeks as $val => $label) {
@@ -3083,7 +3084,8 @@ class Olama_School_Admin
             $months_weeks[$m_key_start][] = array('val' => $val, 'label' => $label);
 
             // Check if week ends in a different month (cross-month support)
-            $m_key_end = date('Y-m', strtotime($val . ' +4 days'));
+            $week_range = Olama_School_Helpers::get_week_range($val);
+            $m_key_end = date('Y-m', strtotime($week_range['end']));
             if ($m_key_end !== $m_key_start) {
                 $months_weeks[$m_key_end][] = array('val' => $val, 'label' => $label);
             }
@@ -3129,22 +3131,21 @@ class Olama_School_Admin
             $week_start = Olama_School_Helpers::get_previous_week_start();
         }
 
-        $days = array(
-            'Sunday' => date('Y-m-d', strtotime($week_start)),
-            'Monday' => date('Y-m-d', strtotime($week_start . ' +1 day')),
-            'Tuesday' => date('Y-m-d', strtotime($week_start . ' +2 days')),
-            'Wednesday' => date('Y-m-d', strtotime($week_start . ' +3 days')),
-            'Thursday' => date('Y-m-d', strtotime($week_start . ' +4 days')),
-        );
+        $school_days = Olama_School_Helpers::get_school_days();
+        $days = array();
+        foreach ($school_days as $idx => $day_name) {
+            $days[$day_name] = date('Y-m-d', strtotime($week_start . " +$idx days"));
+        }
 
-        $active_day = isset($_GET['active_day']) ? sanitize_text_field($_GET['active_day']) : 'Sunday';
-        $selected_date = $days[$active_day];
+        $active_day = isset($_GET['active_day']) ? sanitize_text_field($_GET['active_day']) : ($school_days[0] ?? 'Sunday');
+        $selected_date = $days[$active_day] ?? ($days[array_key_first($days)] ?? $week_start);
 
         // Use the selected semester directly for all queries including subject loading
         // This ensures subjects from the schedule (linked to semester_id) are correctly loaded
         $semester_id = $selected_semester_id;
 
-        $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, date('Y-m-d', strtotime($week_start . ' +4 days')));
+        $week_range = Olama_School_Helpers::get_week_range($week_start);
+        $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, $week_range['end']);
         $today_plans = array_filter($all_plans, function ($p) use ($selected_date) {
             return $p->plan_date === $selected_date;
         });
@@ -3236,15 +3237,14 @@ class Olama_School_Admin
             $week_start = $current_month_weeks[0]['val'] ?? '';
         }
 
-        $days = array(
-            'Sunday' => date('Y-m-d', strtotime($week_start)),
-            'Monday' => date('Y-m-d', strtotime($week_start . ' +1 day')),
-            'Tuesday' => date('Y-m-d', strtotime($week_start . ' +2 days')),
-            'Wednesday' => date('Y-m-d', strtotime($week_start . ' +3 days')),
-            'Thursday' => date('Y-m-d', strtotime($week_start . ' +4 days')),
-        );
+        $school_days = Olama_School_Helpers::get_school_days();
+        $days = array();
+        foreach ($school_days as $idx => $day_name) {
+            $days[$day_name] = date('Y-m-d', strtotime($week_start . " +$idx days"));
+        }
 
-        $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, date('Y-m-d', strtotime($week_start . ' +4 days')));
+        $week_range = Olama_School_Helpers::get_week_range($week_start);
+        $all_plans = Olama_School_Plan::get_plans($selected_section_id, $week_start, $week_range['end']);
 
         // Group plans by date
         $grouped_plans = array();
