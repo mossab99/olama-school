@@ -123,6 +123,14 @@ class Olama_School_Permissions
                     'olama_manage_settings_general' => __('General Settings', 'olama-school'),
                 )
             ),
+            'followup' => array(
+                'label' => __('Follow Up', 'olama-school'),
+                'caps' => array(
+                    'olama_access_followup' => __('Access Management', 'olama-school'),
+                    'olama_manage_attendance' => __('Student Attendance', 'olama-school'),
+                    'olama_manage_shifts' => __('Employee Shifts', 'olama-school'),
+                )
+            ),
         );
     }
 
@@ -176,7 +184,9 @@ class Olama_School_Permissions
                                 'olama_upload_exam_files',
                                 'olama_access_reports',
                                 'olama_view_reports_summary',
-                                'olama_view_plans_load'
+                                'olama_view_plans_load',
+                                'olama_access_followup',
+                                'olama_manage_attendance'
                             );
                             if (in_array($cap, $teacher_caps)) {
                                 $role->add_cap($cap);

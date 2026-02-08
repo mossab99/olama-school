@@ -7,7 +7,22 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'student_attendance';
+$can_manage_attendance = Olama_School_Permissions::can('olama_manage_attendance');
+$can_manage_shifts = Olama_School_Permissions::can('olama_manage_shifts');
+
+if (!$can_manage_attendance && !$can_manage_shifts) {
+    wp_die(__('Unauthorized', 'olama-school'));
+}
+
+$active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : ($can_manage_attendance ? 'student_attendance' : 'employee_shifts');
+
+// Validate active tab access
+if ($active_tab === 'student_attendance' && !$can_manage_attendance) {
+    $active_tab = 'employee_shifts';
+} elseif ($active_tab === 'employee_shifts' && !$can_manage_shifts) {
+    $active_tab = 'student_attendance';
+}
+
 $grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : 0;
 $section_id = isset($_GET['section_id']) ? intval($_GET['section_id']) : 0;
 $attendance_date = isset($_GET['attendance_date']) ? sanitize_text_field($_GET['attendance_date']) : current_time('Y-m-d');
@@ -21,7 +36,7 @@ $sections = $grade_id ? Olama_School_Section::get_by_grade($grade_id, $active_ye
 $students = array();
 $attendance_records = array();
 
-if ($section_id && $active_year) {
+if ($section_id && $active_year && $can_manage_attendance) {
     $students = Olama_School_Student::get_students(array(
         'academic_year_id' => $active_year->id,
         'section_id' => $section_id
@@ -56,18 +71,22 @@ if ($section_id && $active_year) {
     <?php endif; ?>
 
     <h2 class="nav-tab-wrapper">
-        <a href="?page=olama-school-follow-up&tab=student_attendance"
-            class="nav-tab <?php echo $active_tab === 'student_attendance' ? 'nav-tab-active' : ''; ?>">
-            <?php echo Olama_School_Helpers::translate('Student Attendance'); ?>
-        </a>
-        <a href="?page=olama-school-follow-up&tab=employee_shifts"
-            class="nav-tab <?php echo $active_tab === 'employee_shifts' ? 'nav-tab-active' : ''; ?>">
-            <?php echo Olama_School_Helpers::translate('Employee Shifts'); ?>
-        </a>
+        <?php if ($can_manage_attendance): ?>
+            <a href="?page=olama-school-follow-up&tab=student_attendance"
+                class="nav-tab <?php echo $active_tab === 'student_attendance' ? 'nav-tab-active' : ''; ?>">
+                <?php echo Olama_School_Helpers::translate('Student Attendance'); ?>
+            </a>
+        <?php endif; ?>
+        <?php if ($can_manage_shifts): ?>
+            <a href="?page=olama-school-follow-up&tab=employee_shifts"
+                class="nav-tab <?php echo $active_tab === 'employee_shifts' ? 'nav-tab-active' : ''; ?>">
+                <?php echo Olama_School_Helpers::translate('Employee Shifts'); ?>
+            </a>
+        <?php endif; ?>
     </h2>
 
     <div class="olama-tab-content" style="margin-top: 20px;">
-        <?php if ($active_tab === 'student_attendance'): ?>
+        <?php if ($active_tab === 'student_attendance' && $can_manage_attendance): ?>
             <div class="attendance-filters card" style="padding: 15px; margin-bottom: 20px; max-width: 100%;">
                 <form method="get" action="">
                     <input type="hidden" name="page" value="olama-school-follow-up">
@@ -212,7 +231,7 @@ if ($section_id && $active_year) {
                 </div>
             <?php endif; ?>
 
-        <?php elseif ($active_tab === 'employee_shifts'):
+        <?php elseif ($active_tab === 'employee_shifts' && $can_manage_shifts):
             $all_teachers = get_users(array('role__in' => array('administrator', 'editor', 'author', 'teacher')));
             ?>
             <div class="olama-shifts-container">
@@ -336,16 +355,19 @@ if ($section_id && $active_year) {
                         style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
                         <div style="display: flex; gap: 10px;">
                             <input type="text" name="location_name"
-                                placeholder="<?php echo Olama_School_Helpers::translate('Location Name (e.g. Playground)'); ?>" required
-                                class="regular-text" style="flex:2;">
-                            <input type="text" name="area_floor" placeholder="<?php echo Olama_School_Helpers::translate('Area/Floor'); ?>"
+                                placeholder="<?php echo Olama_School_Helpers::translate('Location Name (e.g. Playground)'); ?>"
+                                required class="regular-text" style="flex:2;">
+                            <input type="text" name="area_floor"
+                                placeholder="<?php echo Olama_School_Helpers::translate('Area/Floor'); ?>"
                                 class="regular-text" style="flex:1;">
                         </div>
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <select name="gender" class="regular-text">
-                                <option value="mixed"><?php echo Olama_School_Helpers::translate('Mixed Gender'); ?></option>
+                                <option value="mixed"><?php echo Olama_School_Helpers::translate('Mixed Gender'); ?>
+                                </option>
                                 <option value="male"><?php echo Olama_School_Helpers::translate('Boys School'); ?></option>
-                                <option value="female"><?php echo Olama_School_Helpers::translate('Girls School'); ?></option>
+                                <option value="female"><?php echo Olama_School_Helpers::translate('Girls School'); ?>
+                                </option>
                             </select>
                             <button type="submit" class="button button-primary"
                                 style="flex-shrink: 0;"><?php echo Olama_School_Helpers::translate('Add Location'); ?></button>
@@ -381,16 +403,18 @@ if ($section_id && $active_year) {
                     <form id="olama-add-slot-form" style="margin-bottom: 20px;">
                         <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 10px;">
                             <input type="text" name="slot_label"
-                                placeholder="<?php echo Olama_School_Helpers::translate('Slot Label (e.g. Morning Break)'); ?>" required
-                                class="widefat">
+                                placeholder="<?php echo Olama_School_Helpers::translate('Slot Label (e.g. Morning Break)'); ?>"
+                                required class="widefat">
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end;">
                             <div>
-                                <label style="font-size: 0.8em;"><?php echo Olama_School_Helpers::translate('Start:'); ?></label>
+                                <label
+                                    style="font-size: 0.8em;"><?php echo Olama_School_Helpers::translate('Start:'); ?></label>
                                 <input type="time" name="start_time" required class="widefat">
                             </div>
                             <div>
-                                <label style="font-size: 0.8em;"><?php echo Olama_School_Helpers::translate('End:'); ?></label>
+                                <label
+                                    style="font-size: 0.8em;"><?php echo Olama_School_Helpers::translate('End:'); ?></label>
                                 <input type="time" name="end_time" required class="widefat">
                             </div>
                             <button type="submit"
@@ -418,7 +442,9 @@ if ($section_id && $active_year) {
                 <div class="olama-modal-content card" style="max-width: 500px; margin: 5% auto; padding: 25px;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
-                        <h3 style="margin:0;"><?php echo Olama_School_Helpers::translate('Define Shift & Assign Teachers'); ?></h3>
+                        <h3 style="margin:0;">
+                            <?php echo Olama_School_Helpers::translate('Define Shift & Assign Teachers'); ?>
+                        </h3>
                         <button class="olama-modal-close" style="background:none; border:none; cursor:pointer;"><span
                                 class="dashicons dashicons-no-alt"></span></button>
                     </div>
@@ -438,8 +464,10 @@ if ($section_id && $active_year) {
                                         <option value="0"><?php echo Olama_School_Helpers::translate('Sunday'); ?></option>
                                         <option value="1"><?php echo Olama_School_Helpers::translate('Monday'); ?></option>
                                         <option value="2"><?php echo Olama_School_Helpers::translate('Tuesday'); ?></option>
-                                        <option value="3"><?php echo Olama_School_Helpers::translate('Wednesday'); ?></option>
-                                        <option value="4"><?php echo Olama_School_Helpers::translate('Thursday'); ?></option>
+                                        <option value="3"><?php echo Olama_School_Helpers::translate('Wednesday'); ?>
+                                        </option>
+                                        <option value="4"><?php echo Olama_School_Helpers::translate('Thursday'); ?>
+                                        </option>
                                     </select>
                                 </div>
                                 <div>

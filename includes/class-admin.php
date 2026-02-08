@@ -992,7 +992,7 @@ class Olama_School_Admin
             'olama-school',
             Olama_School_Helpers::translate('Follow Up'),
             Olama_School_Helpers::translate('Follow Up'),
-            'olama_access_plans_mgmt', // Reusing capability for now
+            'olama_access_followup',
             'olama-school-follow-up',
             array($this, 'render_follow_up_page')
         );
@@ -4229,6 +4229,9 @@ class Olama_School_Admin
     public function handle_attendance_save()
     {
         if (isset($_POST['olama_save_bulk_attendance']) && check_admin_referer('olama_save_bulk_attendance')) {
+            if (!Olama_School_Permissions::can('olama_manage_attendance')) {
+                wp_die(__('Unauthorized', 'olama-school'));
+            }
             $date = Olama_School_Helpers::sanitize_date($_POST['attendance_date']);
             $section_id = intval($_POST['section_id']);
             $academic_year_id = intval($_POST['academic_year_id']);
@@ -4281,6 +4284,10 @@ class Olama_School_Admin
     public function ajax_save_attendance()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_manage_attendance')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
 
         $student_id = intval($_POST['student_id']);
         $status = sanitize_text_field($_POST['status']);
