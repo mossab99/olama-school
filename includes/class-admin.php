@@ -4086,7 +4086,8 @@ class Olama_School_Admin
      */
     public function restrict_teacher_access()
     {
-        if (!Olama_School_Permissions::can('olama_view_dashboard') || current_user_can('manage_options')) {
+        // Don't restrict if user is an administrator
+        if (current_user_can('manage_options')) {
             return;
         }
 

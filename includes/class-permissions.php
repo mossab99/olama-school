@@ -145,7 +145,7 @@ class Olama_School_Permissions
         }
 
         $all_groups = self::get_all_capabilities();
-        $roles = array('administrator', 'editor', 'author', 'teacher');
+        $roles = array('administrator', 'editor', 'author', 'teacher', 'assistant');
 
         foreach ($roles as $role_name) {
             $role = get_role($role_name);
@@ -163,7 +163,7 @@ class Olama_School_Permissions
                         // or they had the old general cap.
                         if ($role_name === 'editor') {
                             $role->add_cap($cap); // Editors also get most things by default
-                        } elseif ($role_name === 'author' || $role_name === 'teacher') {
+                        } elseif ($role_name === 'author' || $role_name === 'teacher' || $role_name === 'assistant') {
                             // Map teachers/authors to restricted set
                             $teacher_caps = array(
                                 'olama_view_dashboard',
