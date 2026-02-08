@@ -14,7 +14,7 @@ $roles = array(
     'administrator' => __('Administrator', 'olama-school'),
     'editor' => __('Supervisor', 'olama-school'),
     'teacher' => __('Teacher', 'olama-school'),
-    'author' => __('Author', 'olama-school'),
+    'author' => __('Assistant', 'olama-school'),
 );
 
 $capability_groups = Olama_School_Permissions::get_all_capabilities();

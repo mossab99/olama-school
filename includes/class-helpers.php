@@ -423,7 +423,7 @@ class Olama_School_Helpers
         'Administrator' => 'مدير النظام',
         'Supervisor' => 'مشرف',
         'Teacher' => 'معلم',
-        'Author' => 'مؤلف',
+        'Assistant' => 'مساعد',
         'Activity Logs' => 'سجلات النشاط',
         'Add Student' => 'إضافة طالب',
         'Name' => 'الاسم',
