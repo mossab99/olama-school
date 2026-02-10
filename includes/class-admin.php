@@ -1044,6 +1044,15 @@ class Olama_School_Admin
 
         add_submenu_page(
             'olama-school',
+            Olama_School_Helpers::translate('Transportation'),
+            Olama_School_Helpers::translate('Transportation'),
+            'olama_access_transport_mgmt',
+            'olama-school-transport',
+            array($this, 'render_transport_management_page')
+        );
+
+        add_submenu_page(
+            'olama-school',
             Olama_School_Helpers::translate('Settings'),
             Olama_School_Helpers::translate('Settings'),
             'olama_access_settings_mgmt',
@@ -1085,6 +1094,7 @@ class Olama_School_Admin
         wp_localize_script('olama-admin-script', 'olamaAdmin', array(
             'dateFormat' => 'dd-mm-yy',
             'isArabic' => Olama_School_Helpers::is_arabic(),
+            'adminNonce' => wp_create_nonce('olama_admin_nonce'),
         ));
 
         $page = $_GET['page'] ?? '';
@@ -2226,6 +2236,37 @@ class Olama_School_Admin
         // Permissions and logs tabs don't need user data
 
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/admin-users.php';
+    }
+
+    /**
+     * Render Transportation Management page
+     */
+    public function render_transport_management_page()
+    {
+        $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'buses';
+
+        $allowed_tabs = array(
+            'buses' => Olama_School_Helpers::translate('Buses'),
+            'assignments' => Olama_School_Helpers::translate('Student Assignments'),
+        );
+
+        if (!Olama_School_Permissions::can('olama_access_transport_mgmt')) {
+            wp_die(__('Unauthorized access', 'olama-school'));
+        }
+
+        if ($active_tab === 'buses') {
+            $buses = Olama_School_Bus::get_buses();
+            $drivers = Olama_School_Bus::get_available_drivers();
+            $companions = Olama_School_Bus::get_available_companions();
+        } elseif ($active_tab === 'assignments') {
+            $buses = Olama_School_Bus::get_buses();
+            $years = Olama_School_Academic::get_years();
+            $active_year = Olama_School_Academic::get_active_year();
+            $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+            $selected_bus_id = isset($_GET['bus_id']) ? intval($_GET['bus_id']) : 0;
+        }
+
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/admin-transport-buses.php';
     }
 
     /**

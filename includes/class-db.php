@@ -248,6 +248,39 @@ class Olama_School_DB
 				KEY  created_at (created_at)
 			) $charset_collate;",
 
+			'olama_transport_buses' => "CREATE TABLE {$wpdb->prefix}olama_transport_buses (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				bus_number varchar(50) NOT NULL,
+				plate_number varchar(50) NOT NULL,
+				passenger_capacity tinyint(4) NOT NULL,
+				driver_user_id bigint(20) UNSIGNED DEFAULT NULL,
+				companion_user_id bigint(20) UNSIGNED DEFAULT NULL,
+				license_expiry_date date DEFAULT NULL,
+				engine_capacity varchar(50) DEFAULT NULL,
+				fuel_type varchar(50) DEFAULT NULL,
+				status varchar(20) DEFAULT 'active' NOT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY plate_number (plate_number)
+			) $charset_collate;",
+
+			'olama_student_bus_assignments' => "CREATE TABLE {$wpdb->prefix}olama_student_bus_assignments (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				student_id mediumint(9) NOT NULL,
+				bus_id mediumint(9) NOT NULL,
+				academic_year_id mediumint(9) NOT NULL,
+				pickup_location varchar(255) DEFAULT NULL,
+				dropoff_location varchar(255) DEFAULT NULL,
+				notes text DEFAULT NULL,
+				assigned_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				assigned_by bigint(20) UNSIGNED NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY student_year (student_id, academic_year_id),
+				KEY bus_id (bus_id),
+				KEY academic_year_id (academic_year_id)
+			) $charset_collate;",
+
 			'olama_academic_events' => "CREATE TABLE {$wpdb->prefix}olama_academic_events (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				academic_year_id mediumint(9) NOT NULL,

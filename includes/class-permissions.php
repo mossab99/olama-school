@@ -131,6 +131,13 @@ class Olama_School_Permissions
                     'olama_manage_shifts' => __('Employee Shifts', 'olama-school'),
                 )
             ),
+            'transportation' => array(
+                'label' => __('Transportation', 'olama-school'),
+                'caps' => array(
+                    'olama_access_transport_mgmt' => __('Access Management', 'olama-school'),
+                    'olama_manage_transport_buses' => __('Manage Buses', 'olama-school'),
+                )
+            ),
         );
     }
 

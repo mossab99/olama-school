@@ -77,6 +77,18 @@ class Olama_School_Ajax_Handlers
         add_action('wp_ajax_olama_get_shift_schedule', array($this, 'get_shift_schedule'));
         add_action('wp_ajax_olama_delete_shift', array($this, 'delete_shift'));
         add_action('wp_ajax_olama_bulk_copy_shifts', array($this, 'bulk_copy_shifts'));
+
+        // Transportation (Buses) AJAX Handlers
+        add_action('wp_ajax_olama_save_bus', array($this, 'save_bus'));
+        add_action('wp_ajax_olama_get_buses', array($this, 'get_buses'));
+        add_action('wp_ajax_olama_get_bus', array($this, 'get_bus'));
+        add_action('wp_ajax_olama_delete_bus', array($this, 'delete_bus'));
+
+        // Student-Bus Assignment AJAX Handlers
+        add_action('wp_ajax_olama_assign_students_to_bus', array($this, 'assign_students_to_bus'));
+        add_action('wp_ajax_olama_unassign_student_from_bus', array($this, 'unassign_student_from_bus'));
+        add_action('wp_ajax_olama_get_bus_students', array($this, 'get_bus_students'));
+        add_action('wp_ajax_olama_get_unassigned_students', array($this, 'get_unassigned_students'));
     }
 
     // ==========================================
@@ -1284,9 +1296,209 @@ class Olama_School_Ajax_Handlers
         $to_semester_id = intval($_POST['to_semester_id']);
 
         if (!$from_semester_id || !$to_semester_id)
-            wp_send_json_error(__('Invalid parameters', 'olama-school'));
-
-        $count = Olama_School_Shifts::bulk_copy($from_semester_id, $to_semester_id);
+            $count = Olama_School_Shifts::bulk_copy($from_semester_id, $to_semester_id);
         wp_send_json_success(sprintf(__('%d shifts copied successfully', 'olama-school'), $count));
+    }
+
+    // ==========================================
+    // Transportation (Buses) Handlers
+    // ==========================================
+
+    public function save_bus()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_manage_transport_buses')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
+        $result = Olama_School_Bus::save_bus($_POST);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        } else {
+            wp_send_json_success(array(
+                'id' => $result,
+                'message' => __('Bus saved successfully', 'olama-school'),
+            ));
+        }
+    }
+
+    public function get_buses()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_access_transport_mgmt')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
+        $buses = Olama_School_Bus::get_buses();
+        wp_send_json_success($buses);
+    }
+
+    public function get_bus()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_access_transport_mgmt')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
+        $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        $bus = Olama_School_Bus::get_bus($id);
+
+        if ($bus) {
+            wp_send_json_success($bus);
+        } else {
+            wp_send_json_error(__('Bus not found', 'olama-school'));
+        }
+    }
+
+    public function delete_bus()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_manage_transport_buses')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
+
+        $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        $result = Olama_School_Bus::delete_bus($id);
+
+        if ($result) {
+            wp_send_json_success(__('Bus deleted successfully', 'olama-school'));
+        } else {
+            wp_send_json_error(__('Failed to delete bus', 'olama-school'));
+        }
+    }
+
+    // ==========================================
+    // Student-Bus Assignment Handlers
+    // ==========================================
+
+    public function assign_students_to_bus()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_manage_transport_buses')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
+        $bus_id = isset($_POST['bus_id']) ? intval($_POST['bus_id']) : 0;
+        $student_ids = isset($_POST['student_ids']) ? array_map('intval', $_POST['student_ids']) : array();
+        $academic_year_id = isset($_POST['academic_year_id']) ? intval($_POST['academic_year_id']) : 0;
+
+        if (!$bus_id || empty($student_ids) || !$academic_year_id) {
+            wp_send_json_error(__('Missing required parameters', 'olama-school'));
+        }
+
+        $result = Olama_School_Bus::assign_students_to_bus($bus_id, $student_ids, $academic_year_id);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        } else {
+            wp_send_json_success(array(
+                'message' => sprintf(
+                    __('%d student(s) assigned successfully', 'olama-school'),
+                    $result['success']
+                ),
+                'result' => $result
+            ));
+        }
+    }
+
+    public function unassign_student_from_bus()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_manage_transport_buses')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
+        $student_id = isset($_POST['student_id']) ? intval($_POST['student_id']) : 0;
+        $academic_year_id = isset($_POST['academic_year_id']) ? intval($_POST['academic_year_id']) : 0;
+
+        if (!$student_id || !$academic_year_id) {
+            wp_send_json_error(__('Missing required parameters', 'olama-school'));
+        }
+
+        $result = Olama_School_Bus::unassign_student($student_id, $academic_year_id);
+
+        if ($result) {
+            wp_send_json_success(__('Student unassigned successfully', 'olama-school'));
+        } else {
+            wp_send_json_error(__('Failed to unassign student', 'olama-school'));
+        }
+    }
+
+    public function get_bus_students()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_access_transport_mgmt')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
+        $bus_id = isset($_GET['bus_id']) ? intval($_GET['bus_id']) : 0;
+        $academic_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : 0;
+
+        if (!$bus_id || !$academic_year_id) {
+            wp_send_json_error(__('Missing required parameters', 'olama-school'));
+        }
+
+        $students = Olama_School_Bus::get_bus_students($bus_id, $academic_year_id);
+        $capacity_info = Olama_School_Bus::get_bus_capacity_info($bus_id, $academic_year_id);
+
+        wp_send_json_success(array(
+            'students' => $students,
+            'capacity' => $capacity_info
+        ));
+    }
+
+    public function get_unassigned_students()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_access_transport_mgmt')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
+        $academic_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : 0;
+
+        if (!$academic_year_id) {
+            wp_send_json_error(__('Missing academic year ID', 'olama-school'));
+        }
+
+        global $wpdb;
+
+        // Get all enrolled students who don't have a bus assignment
+        $students = $wpdb->get_results($wpdb->prepare("
+            SELECT s.*, sec.section_name, g.grade_name
+            FROM {$wpdb->prefix}olama_students s
+            JOIN {$wpdb->prefix}olama_student_enrollment e ON s.id = e.student_id
+            JOIN {$wpdb->prefix}olama_sections sec ON e.section_id = sec.id
+            JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id
+            LEFT JOIN {$wpdb->prefix}olama_student_bus_assignments a 
+                ON s.id = a.student_id AND a.academic_year_id = %d
+            WHERE e.academic_year_id = %d AND a.id IS NULL
+            ORDER BY g.id, sec.id, s.student_name
+        ", $academic_year_id, $academic_year_id));
+
+        // Debug: Get total enrolled students
+        $total_enrolled = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) 
+            FROM {$wpdb->prefix}olama_student_enrollment 
+            WHERE academic_year_id = %d
+        ", $academic_year_id));
+
+        // Debug: Get total assigned students
+        $total_assigned = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) 
+            FROM {$wpdb->prefix}olama_student_bus_assignments 
+            WHERE academic_year_id = %d
+        ", $academic_year_id));
+
+        wp_send_json_success(array(
+            'students' => $students,
+            'debug' => array(
+                'total_enrolled' => $total_enrolled,
+                'total_assigned' => $total_assigned,
+                'unassigned_count' => count($students),
+                'academic_year_id' => $academic_year_id
+            )
+        ));
     }
 }
