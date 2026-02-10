@@ -285,6 +285,7 @@ if (!defined('ABSPATH')) {
                                     onsubmit="return confirm('<?php echo Olama_School_Helpers::translate('Are you sure you want to delete this domain and all its contents?'); ?>')">
                                     <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
                                     <input type="hidden" name="olama_ev_action" value="delete_domain">
+                                    <input type="hidden" name="template_id" value="<?php echo $selected_template_id; ?>">
                                     <input type="hidden" name="id" value="<?php echo $domain->id; ?>">
                                     <button type="submit" class="button button-link-delete" style="color: #ef4444;">
                                         <?php echo Olama_School_Helpers::translate('Delete'); ?>
@@ -300,6 +301,7 @@ if (!defined('ABSPATH')) {
                                 <form method="post" action="">
                                     <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
                                     <input type="hidden" name="olama_ev_action" value="save_category">
+                                    <input type="hidden" name="template_id" value="<?php echo $selected_template_id; ?>">
                                     <input type="hidden" name="domain_id" value="<?php echo $domain->id; ?>">
                                     <div style="display: flex; gap: 10px; align-items: flex-end;">
                                         <div style="flex: 2;">
@@ -332,6 +334,7 @@ if (!defined('ABSPATH')) {
                                                 onsubmit="return confirm('<?php echo Olama_School_Helpers::translate('Delete this category?'); ?>')">
                                                 <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
                                                 <input type="hidden" name="olama_ev_action" value="delete_category">
+                                                <input type="hidden" name="template_id" value="<?php echo $selected_template_id; ?>">
                                                 <input type="hidden" name="id" value="<?php echo $category->id; ?>">
                                                 <button type="submit" class="button button-link-delete" style="color: #ef4444;">
                                                     <?php echo Olama_School_Helpers::translate('Delete'); ?>
@@ -346,6 +349,7 @@ if (!defined('ABSPATH')) {
                                         <form method="post" action="">
                                             <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
                                             <input type="hidden" name="olama_ev_action" value="save_indicator">
+                                            <input type="hidden" name="template_id" value="<?php echo $selected_template_id; ?>">
                                             <input type="hidden" name="category_id" value="<?php echo $category->id; ?>">
                                             <div style="display: flex; gap: 10px; align-items: flex-end;">
                                                 <div style="flex: 2;">
@@ -373,6 +377,7 @@ if (!defined('ABSPATH')) {
                                                             onsubmit="return confirm('<?php echo Olama_School_Helpers::translate('Delete this indicator?'); ?>')">
                                                             <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
                                                             <input type="hidden" name="olama_ev_action" value="delete_indicator">
+                                                            <input type="hidden" name="template_id" value="<?php echo $selected_template_id; ?>">
                                                             <input type="hidden" name="id" value="<?php echo $indicator->id; ?>">
                                                             <button type="submit" class="button button-link"
                                                                 style="color: #ef4444; font-size: 12px; padding: 0; min-height: auto;">

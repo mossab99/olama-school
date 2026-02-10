@@ -72,7 +72,7 @@ class Olama_School_EV_Manager
                 break;
         }
 
-        if ($result) {
+        if ($result !== false) {
             $url = wp_get_referer();
             if (!$url) {
                 $url = admin_url('admin.php?page=olama-school-evaluation&tab=evaluation_mgmt');
@@ -87,7 +87,10 @@ class Olama_School_EV_Manager
 
             if ($action === 'save_template' && is_numeric($result)) {
                 $url = add_query_arg('template_id', $result, $url);
+            } elseif (!empty($_POST['template_id'])) {
+                $url = add_query_arg('template_id', intval($_POST['template_id']), $url);
             }
+
             if ($action === 'delete_template') {
                 $url = remove_query_arg('template_id', $url);
             }
