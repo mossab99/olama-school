@@ -327,6 +327,10 @@ if (!defined('ABSPATH')) {
                                         </h4>
                                         <div class="ev-actions">
                                             <button type="button" class="button button-small"
+                                                onclick="jQuery('#edit-cat-<?php echo $category->id; ?>').toggle();">
+                                                <span class="dashicons dashicons-edit" style="margin-top:2px;"></span>
+                                            </button>
+                                            <button type="button" class="button button-small"
                                                 onclick="jQuery('#add-ind-<?php echo $category->id; ?>').toggle();">
                                                 <?php echo Olama_School_Helpers::translate('Add Indicator'); ?>
                                             </button>
@@ -341,6 +345,35 @@ if (!defined('ABSPATH')) {
                                                 </button>
                                             </form>
                                         </div>
+                                    </div>
+
+                                    <!-- Edit Category Form -->
+                                    <div id="edit-cat-<?php echo $category->id; ?>"
+                                        style="display: none; background: #f0fdf4; padding: 15px; border: 1px solid #22c55e; border-radius: 8px; margin-bottom: 15px;">
+                                        <form method="post" action="">
+                                            <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
+                                            <input type="hidden" name="olama_ev_action" value="save_category">
+                                            <input type="hidden" name="template_id" value="<?php echo $selected_template_id; ?>">
+                                            <input type="hidden" name="domain_id" value="<?php echo $domain->id; ?>">
+                                            <input type="hidden" name="id" value="<?php echo $category->id; ?>">
+
+                                            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                                <div style="flex: 2;">
+                                                    <label><?php echo Olama_School_Helpers::translate('Edit Category Title'); ?></label>
+                                                    <input type="text" name="title_ar"
+                                                        value="<?php echo esc_attr($category->title_ar); ?>" required
+                                                        style="width: 100%;">
+                                                </div>
+                                                <div style="flex: 1;">
+                                                    <label><?php echo Olama_School_Helpers::translate('Sort Order'); ?></label>
+                                                    <input type="number" name="sort_order"
+                                                        value="<?php echo esc_attr($category->sort_order); ?>" style="width: 100%;">
+                                                </div>
+                                                <button type="submit" class="button button-primary">
+                                                    <?php echo Olama_School_Helpers::translate('Update'); ?>
+                                                </button>
+                                            </div>
+                                        </form>
                                     </div>
 
                                     <!-- Add Indicator Form -->
@@ -368,21 +401,60 @@ if (!defined('ABSPATH')) {
                                     <table class="widefat striped" style="border: none; box-shadow: none;">
                                         <tbody>
                                             <?php foreach ($category->indicators as $indicator): ?>
-                                                <tr>
+                                                <tr id="indicator-row-<?php echo $indicator->id; ?>">
                                                     <td style="padding: 10px 0; border: none;">
                                                         <?php echo esc_html($indicator->indicator_text); ?>
                                                     </td>
-                                                    <td style="text-align: right; width: 60px; border: none;">
-                                                        <form method="post" action=""
+                                                    <td style="text-align: right; width: 100px; border: none;">
+                                                        <button type="button" class="button button-link"
+                                                            onclick="jQuery('#edit-ind-row-<?php echo $indicator->id; ?>').toggle(); jQuery('#indicator-row-<?php echo $indicator->id; ?>').hide();"
+                                                            style="margin-left: 5px;">
+                                                            <span class="dashicons dashicons-edit"></span>
+                                                        </button>
+                                                        <form method="post" action="" style="display: inline-block;"
                                                             onsubmit="return confirm('<?php echo Olama_School_Helpers::translate('Delete this indicator?'); ?>')">
                                                             <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
                                                             <input type="hidden" name="olama_ev_action" value="delete_indicator">
-                                                            <input type="hidden" name="template_id" value="<?php echo $selected_template_id; ?>">
+                                                            <input type="hidden" name="template_id"
+                                                                value="<?php echo $selected_template_id; ?>">
                                                             <input type="hidden" name="id" value="<?php echo $indicator->id; ?>">
                                                             <button type="submit" class="button button-link"
                                                                 style="color: #ef4444; font-size: 12px; padding: 0; min-height: auto;">
                                                                 <span class="dashicons dashicons-no-alt" style="font-size: 16px;"></span>
                                                             </button>
+                                                        </form>
+                                                    </td>
+                                                </tr>
+                                                <!-- Edit Indicator Row -->
+                                                <tr id="edit-ind-row-<?php echo $indicator->id; ?>"
+                                                    style="display: none; background: #f0fdf4;">
+                                                    <td colspan="2" style="padding: 10px; border: none;">
+                                                        <form method="post" action="">
+                                                            <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
+                                                            <input type="hidden" name="olama_ev_action" value="save_indicator">
+                                                            <input type="hidden" name="template_id"
+                                                                value="<?php echo $selected_template_id; ?>">
+                                                            <input type="hidden" name="category_id" value="<?php echo $category->id; ?>">
+                                                            <input type="hidden" name="id" value="<?php echo $indicator->id; ?>">
+
+                                                            <div style="display: flex; gap: 10px; align-items: center;">
+                                                                <textarea name="indicator_text" required style="width: 100%;"
+                                                                    rows="2"><?php echo esc_textarea($indicator->indicator_text); ?></textarea>
+                                                                <input type="number" name="sort_order"
+                                                                    value="<?php echo esc_attr($indicator->sort_order); ?>"
+                                                                    style="width: 60px;" placeholder="Ord">
+                                                                <div style="display: flex; flex-direction: column; gap: 5px;">
+                                                                    <button type="submit" class="button button-primary button-small">
+                                                                        <span class="dashicons dashicons-yes"
+                                                                            style="margin-top: 2px;"></span>
+                                                                    </button>
+                                                                    <button type="button" class="button button-secondary button-small"
+                                                                        onclick="jQuery('#edit-ind-row-<?php echo $indicator->id; ?>').hide(); jQuery('#indicator-row-<?php echo $indicator->id; ?>').show();">
+                                                                        <span class="dashicons dashicons-no-alt"
+                                                                            style="margin-top: 2px;"></span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
                                                         </form>
                                                     </td>
                                                 </tr>
