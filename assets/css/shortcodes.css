@@ -13,6 +13,21 @@
     min-height: 100vh;
 }
 
+/* RTL Helpers */
+.olama-weekly-plan-v2.is-rtl,
+.olama-weekly-plan-v2 .is-rtl {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+.olama-weekly-plan-v2.is-rtl .stacked-value,
+.olama-weekly-plan-v2.is-rtl .stacked-label,
+.olama-weekly-plan-v2.is-rtl .detail-value,
+.olama-weekly-plan-v2.is-rtl .unit-group-header,
+.olama-weekly-plan-v2.is-rtl .lesson-info div {
+    text-align: right !important;
+}
+
 /* =====================================================
    ILLUSTRATED HEADER
    ===================================================== */

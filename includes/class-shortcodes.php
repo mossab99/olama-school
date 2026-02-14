@@ -817,7 +817,7 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-        <div class="olama-weekly-plan-v2 olama-exam-report-v2">
+        <div class="olama-weekly-plan-v2 olama-exam-report-v2 <?php echo Olama_School_Helpers::is_arabic() ? 'is-rtl' : ''; ?>">
             <!-- Illustrated Header -->
             <div class="plan-header-v2" style="background: linear-gradient(145deg, #818cf8 0%, #6366f1 100%);">
                 <div class="header-content">
@@ -1000,18 +1000,18 @@ class Olama_School_Shortcodes
                                                 <?php endforeach;
                                             endif; ?>
 
-                                            <div class="material-details-v2"
+                                            <div class="material-details-v2 <?php echo Olama_School_Helpers::is_arabic() ? 'is-rtl' : ''; ?>"
                                                 style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px; display: flex; flex-direction: column; gap: 15px;">
                                                 <?php if ($exam->student_book_material): ?>
                                                     <div class="detail-item-stacked">
                                                         <div class="stacked-label"
-                                                            style="display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">
+                                                            style="display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; text-align: inherit;">
                                                             <span class="dashicons dashicons-book"
                                                                 style="font-size: 16px; width: 16px; height: 16px; color: #94a3b8;"></span>
                                                             <?php echo Olama_School_Helpers::translate('Student Book'); ?>:
                                                         </div>
                                                         <div class="stacked-value"
-                                                            style="color: #1e293b; font-size: 0.95rem; padding-inline-start: 24px; line-height: 1.6; word-break: break-word;">
+                                                            style="color: #1e293b; font-size: 0.95rem; padding-inline-start: 24px; line-height: 1.6; word-break: break-word; text-align: inherit;">
                                                             <?php echo esc_html($exam->student_book_material); ?>
                                                         </div>
                                                     </div>
@@ -1020,13 +1020,13 @@ class Olama_School_Shortcodes
                                                 <?php if ($exam->workbook_material): ?>
                                                     <div class="detail-item-stacked">
                                                         <div class="stacked-label"
-                                                            style="display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">
+                                                            style="display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; text-align: inherit;">
                                                             <span class="dashicons dashicons-edit"
                                                                 style="font-size: 16px; width: 16px; height: 16px; color: #94a3b8;"></span>
                                                             <?php echo Olama_School_Helpers::translate('Workbook'); ?>:
                                                         </div>
                                                         <div class="stacked-value"
-                                                            style="color: #1e293b; font-size: 0.95rem; padding-inline-start: 24px; line-height: 1.6; word-break: break-word;">
+                                                            style="color: #1e293b; font-size: 0.95rem; padding-inline-start: 24px; line-height: 1.6; word-break: break-word; text-align: inherit;">
                                                             <?php echo esc_html($exam->workbook_material); ?>
                                                         </div>
                                                     </div>
@@ -1037,13 +1037,13 @@ class Olama_School_Shortcodes
                                                 if (!empty($booklets_val)): ?>
                                                     <div class="detail-item-stacked">
                                                         <div class="stacked-label"
-                                                            style="display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">
+                                                            style="display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; text-align: inherit;">
                                                             <span class="dashicons dashicons-media-text"
                                                                 style="font-size: 16px; width: 16px; height: 16px; color: #94a3b8;"></span>
                                                             <?php echo Olama_School_Helpers::translate('Booklets & Notebooks'); ?>:
                                                         </div>
                                                         <div class="stacked-value"
-                                                            style="color: #1e293b; font-size: 0.95rem; padding-inline-start: 24px; line-height: 1.6; word-break: break-word;">
+                                                            style="color: #1e293b; font-size: 0.95rem; padding-inline-start: 24px; line-height: 1.6; word-break: break-word; text-align: inherit;">
                                                             <?php echo esc_html($booklets_val); ?>
                                                         </div>
                                                     </div>
@@ -2473,258 +2473,258 @@ class Olama_School_Shortcodes
                     </div>
 
                     <script>
-                                    jQuery(document).ready(f                              unction ($) {
-                                        $(".student-attendance-btn").on("click", function () {
-                                            var $btn = $(this);
-                                            var studentId = $btn.data("student");
-                                            var sectionId = $btn.data("section");
-                                            var yearId = $btn.data("year");
-                                            var semId = $btn.data("semester");
-                                            var date = $btn.data("date");
-                                            var currentStatus = $btn.hasClass("present") ? "present" : "absent";
-                                            var newStatus = currentStatus === "present" ? "absent" : "present";
+                        jQuery(document).ready(f                              unction($) {
+                            $(".student-attendance-btn").on("click", function () {
+                                var $btn = $(this);
+                                var studentId = $btn.data("student");
+                                var sectionId = $btn.data("section");
+                                var yearId = $btn.data("year");
+                                var semId = $btn.data("semester");
+                                var date = $btn.data("date");
+                                var currentStatus = $btn.hasClass("present") ? "present" : "absent";
+                                var newStatus = currentStatus === "present" ? "absent" : "present";
 
-                                            $btn.addClass("loading");
+                                $btn.addClass("loading");
 
-                                            $.post(olama_admin_ajax.ajax_url, {
-                                                action: "olama_save_attendance",
-                                                nonce: olama_admin_ajax.nonce,
-                                                student_id: studentId,
-                                                status: newStatus,
-                                                section_id: sectionId,
-                                                academic_year_id: yearId,
-                                                semester_id: semId,
-                                                date: date
-                                            }, function (response) {
-                                                $btn.removeClass("loading");
-                                                if (response.success) {
-                                                    $btn.removeClass("present absent").addClass(newStatus);
-                                                } else {
-                                                    alert("Error: " + response.data);
-                                                }
-                                            });
-                                        });
-                                    });
-                                </script>
-
-                                <style>
-                                    .olama-attendance-shortcode {
-                                        font-family: "Tajawal", sans-serif;
-                                        max-width: 800px;
-                                        margin: 0 auto;
-                                        background: #f8fafc;
-                                        padding: 20px;
-                                        border-radius: 16px;
+                                $.post(olama_admin_ajax.ajax_url, {
+                                    action: "olama_save_attendance",
+                                    nonce: olama_admin_ajax.nonce,
+                                    student_id: studentId,
+                                    status: newStatus,
+                                    section_id: sectionId,
+                                    academic_year_id: yearId,
+                                    semester_id: semId,
+                                    date: date
+                                }, function (response) {
+                                    $btn.removeClass("loading");
+                                    if (response.success) {
+                                        $btn.removeClass("present absent").addClass(newStatus);
+                                    } else {
+                                        alert("Error: " + response.data);
                                     }
+                                });
+                            });
+                        });
+                    </script>
 
-                                    /* Attendance Summary Cards */
-                                    .attendance-summary-cards {
-                                        display: flex;
-                                        gap: 15px;
-                                        margin-bottom: 25px;
-                                        direction: rtl;
-                                    }
+                    <style>
+                        .olama-attendance-shortcode {
+                            font-family: "Tajawal", sans-serif;
+                            max-width: 800px;
+                            margin: 0 auto;
+                            background: #f8fafc;
+                            padding: 20px;
+                            border-radius: 16px;
+                        }
 
-                                    .summary-card {
-                                        flex: 1;
-                                        padding: 15px 20px;
-                                        border-radius: 20px;
-                                        display: flex;
-                                        justify-content: space-between;
-                                        align-items: center;
-                                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-                                        border: 1px solid rgba(0, 0, 0, 0.05);
-                                    }
+                        /* Attendance Summary Cards */
+                        .attendance-summary-cards {
+                            display: flex;
+                            gap: 15px;
+                            margin-bottom: 25px;
+                            direction: rtl;
+                        }
 
-                                    .summary-card.present {
-                                        background: #e6fffa;
-                                        border-color: #b2f5ea;
-                                    }
+                        .summary-card {
+                            flex: 1;
+                            padding: 15px 20px;
+                            border-radius: 20px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                            border: 1px solid rgba(0, 0, 0, 0.05);
+                        }
 
-                                    .summary-card.absent {
-                                        background: #fff5f5;
-                                        border-color: #fed7d7;
-                                    }
+                        .summary-card.present {
+                            background: #e6fffa;
+                            border-color: #b2f5ea;
+                        }
 
-                                    .summary-card .card-label {
-                                        display: flex;
-                                        flex-direction: column;
-                                        gap: 2px;
-                                    }
+                        .summary-card.absent {
+                            background: #fff5f5;
+                            border-color: #fed7d7;
+                        }
 
-                                    .summary-card .label-ar {
-                                        font-size: 1.1rem;
-                                        font-weight: 800;
-                                    }
+                        .summary-card .card-label {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 2px;
+                        }
 
-                                    .summary-card.present .label-ar {
-                                        color: #2c7a7b;
-                                    }
+                        .summary-card .label-ar {
+                            font-size: 1.1rem;
+                            font-weight: 800;
+                        }
 
-                                    .summary-card.absent .label-ar {
-                                        color: #c53030;
-                                    }
+                        .summary-card.present .label-ar {
+                            color: #2c7a7b;
+                        }
 
-                                    .summary-card .label-en {
-                                        font-size: 0.8rem;
-                                        font-weight: 600;
-                                        opacity: 0.7;
-                                    }
+                        .summary-card.absent .label-ar {
+                            color: #c53030;
+                        }
 
-                                    .summary-card.present .label-en {
-                                        color: #319795;
-                                    }
+                        .summary-card .label-en {
+                            font-size: 0.8rem;
+                            font-weight: 600;
+                            opacity: 0.7;
+                        }
 
-                                    .summary-card.absent .label-en {
-                                        color: #e53e3e;
-                                    }
+                        .summary-card.present .label-en {
+                            color: #319795;
+                        }
 
-                                    .summary-card .card-value {
-                                        font-size: 2.2rem;
-                                        font-weight: 900;
-                                    }
+                        .summary-card.absent .label-en {
+                            color: #e53e3e;
+                        }
 
-                                    .summary-card.present .card-value {
-                                        color: #234e52;
-                                    }
+                        .summary-card .card-value {
+                            font-size: 2.2rem;
+                            font-weight: 900;
+                        }
 
-                                    .summary-card.absent .card-value {
-                                        color: #742a2a;
-                                    }
+                        .summary-card.present .card-value {
+                            color: #234e52;
+                        }
 
-                                    @media (max-width: 480px) {
-                                        .attendance-summary-cards {
-                                            flex-direction: column;
-                                        }
-                                    }
+                        .summary-card.absent .card-value {
+                            color: #742a2a;
+                        }
 
-                                    .attendance-header {
-                                        margin-bottom: 25px;
-                                        text-align: center;
-                                    }
+                        @media (max-width: 480px) {
+                            .attendance-summary-cards {
+                                flex-direction: column;
+                            }
+                        }
 
-                                    .attendance-header h2 {
-                                        margin: 0 0 10px;
-                                        color: #1e293b;
-                                        font-size: 1.8rem;
-                                    }
+                        .attendance-header {
+                            margin-bottom: 25px;
+                            text-align: center;
+                        }
 
-                                    .attendance-meta {
-                                        color: #64748b;
-                                        display: flex;
-                                        justify-content: center;
-                                        gap: 20px;
-                                    }
+                        .attendance-header h2 {
+                            margin: 0 0 10px;
+                            color: #1e293b;
+                            font-size: 1.8rem;
+                        }
 
-                                    .meta-item {
-                                        display: flex;
-                                        align-items: center;
-                                        gap: 5px;
-                                    }
+                        .attendance-meta {
+                            color: #64748b;
+                            display: flex;
+                            justify-content: center;
+                            gap: 20px;
+                        }
 
-                                    .section-selector {
-                                        display: flex;
-                                        gap: 10px;
-                                        overflow-x: auto;
-                                        padding-bottom: 15px;
-                                        margin-bottom: 25px;
-                                        justify-content: flex-start;
-                                    }
+                        .meta-item {
+                            display: flex;
+                            align-items: center;
+                            gap: 5px;
+                        }
 
-                                    .section-chip {
-                                        padding: 8px 16px;
-                                        background: #fff;
-                                        border: 1px solid #e2e8f0;
-                                        border-radius: 20px;
-                                        text-decoration: none;
-                                        color: #475569;
-                                        white-space: nowrap;
-                                        font-weight: 500;
-                                        transition: all 0.2s;
-                                    }
+                        .section-selector {
+                            display: flex;
+                            gap: 10px;
+                            overflow-x: auto;
+                            padding-bottom: 15px;
+                            margin-bottom: 25px;
+                            justify-content: flex-start;
+                        }
 
-                                    .section-chip.active {
-                                        background: #3b82f6;
-                                        color: #fff;
-                                        border-color: #3b82f6;
-                                    }
+                        .section-chip {
+                            padding: 8px 16px;
+                            background: #fff;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 20px;
+                            text-decoration: none;
+                            color: #475569;
+                            white-space: nowrap;
+                            font-weight: 500;
+                            transition: all 0.2s;
+                        }
 
-                                    .students-grid {
-                                        display: grid;
-                                        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-                                        gap: 12px;
-                                    }
+                        .section-chip.active {
+                            background: #3b82f6;
+                            color: #fff;
+                            border-color: #3b82f6;
+                        }
 
-                                    .student-attendance-btn {
-                                        padding: 15px 10px;
-                                        background: #fff;
-                                        border-radius: 12px;
-                                        border: 2px solid #e2e8f0;
-                                        cursor: pointer;
-                                        text-align: center;
-                                        transition: all 0.2s;
-                                        position: relative;
-                                    }
+                        .students-grid {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                            gap: 12px;
+                        }
 
-                                    .student-attendance-btn.present {
-                                        border-color: #3b82f6;
-                                        background: #eff6ff;
-                                    }
+                        .student-attendance-btn {
+                            padding: 15px 10px;
+                            background: #fff;
+                            border-radius: 12px;
+                            border: 2px solid #e2e8f0;
+                            cursor: pointer;
+                            text-align: center;
+                            transition: all 0.2s;
+                            position: relative;
+                        }
 
-                                    .student-attendance-btn.absent {
-                                        border-color: #ef4444;
-                                        background: #fef2f2;
-                                    }
+                        .student-attendance-btn.present {
+                            border-color: #3b82f6;
+                            background: #eff6ff;
+                        }
 
-                                    .student-name {
-                                        font-weight: 600;
-                                        color: #1e293b;
-                                        margin-bottom: 8px;
-                                        font-size: 0.95rem;
-                                        line-height: 1.3;
-                                    }
+                        .student-attendance-btn.absent {
+                            border-color: #ef4444;
+                            background: #fef2f2;
+                        }
 
-                                    .student-status {
-                                        font-size: 0.8rem;
-                                        font-weight: 700;
-                                        text-transform: uppercase;
-                                    }
+                        .student-name {
+                            font-weight: 600;
+                            color: #1e293b;
+                            margin-bottom: 8px;
+                            font-size: 0.95rem;
+                            line-height: 1.3;
+                        }
 
-                                    .student-attendance-btn.present .status-absent {
-                                        display: none;
-                                    }
+                        .student-status {
+                            font-size: 0.8rem;
+                            font-weight: 700;
+                            text-transform: uppercase;
+                        }
 
-                                    .student-attendance-btn.present .status-present {
-                                        color: #3b82f6;
-                                    }
+                        .student-attendance-btn.present .status-absent {
+                            display: none;
+                        }
 
-                                    .student-attendance-btn.absent .status-present {
-                                        display: none;
-                                    }
+                        .student-attendance-btn.present .status-present {
+                            color: #3b82f6;
+                        }
 
-                                    .student-attendance-btn.absent .status-absent {
-                                        color: #ef4444;
-                                    }
+                        .student-attendance-btn.absent .status-present {
+                            display: none;
+                        }
 
-                                    .student-attendance-btn.loading {
-                                        opacity: 0.6;
-                                        pointer-events: none;
-                                    }
+                        .student-attendance-btn.absent .status-absent {
+                            color: #ef4444;
+                        }
 
-                                    .attendance-footer {
-                                        margin-top: 30px;
-                                        text-align: center;
-                                        color: #64748b;
-                                        font-size: 0.9rem;
-                                    }
+                        .student-attendance-btn.loading {
+                            opacity: 0.6;
+                            pointer-events: none;
+                        }
 
-                                    @media (max-width: 480px) {
-                                        .students-grid {
-                                            grid-template-columns: repeat(2, 1fr);
-                                        }
-                                    }
-                                </style>
-                                <?php
+                        .attendance-footer {
+                            margin-top: 30px;
+                            text-align: center;
+                            color: #64748b;
+                            font-size: 0.9rem;
+                        }
+
+                        @media (max-width: 480px) {
+                            .students-grid {
+                                grid-template-columns: repeat(2, 1fr);
+                            }
+                        }
+                    </style>
+                    <?php
                 endif;
                 return ob_get_clean();
     }
