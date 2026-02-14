@@ -941,32 +941,60 @@ class Olama_School_Shortcodes
                                             <?php
                                             $json_material = json_decode($exam->exam_material_json, true);
                                             $material = is_array($json_material) ? $json_material : array();
-
                                             if (!empty($material['curriculum_items'])):
-                                                foreach ($material['curriculum_items'] as $item):
-                                                    $unit = !empty($item['unit_id']) ? Olama_School_Unit::get_unit($item['unit_id']) : null;
-                                                    $lesson = !empty($item['lesson_id']) ? Olama_School_Lesson::get_lesson($item['lesson_id']) : null;
-                                                    $unit_name = $unit ? $unit->unit_name : (isset($item['unit']) ? $item['unit'] : '');
-                                                    $lesson_name = $lesson ? $lesson->lesson_title : (isset($item['lesson']) ? $item['lesson'] : '');
+                                                $grouped_items = array();
+                                                foreach ($material['curriculum_items'] as $item) {
+                                                    $unit_id = !empty($item['unit_id']) ? $item['unit_id'] : 'other';
+                                                    if (!isset($grouped_items[$unit_id])) {
+                                                        $grouped_items[$unit_id] = array();
+                                                    }
+                                                    $grouped_items[$unit_id][] = $item;
+                                                }
 
-                                                    if (empty($unit_name) && empty($lesson_name))
-                                                        continue;
-                                                    ?>
-                                                    <div class="detail-item"
-                                                        style="padding: 5px; background: rgba(255,255,255,0.5); border-radius: 6px; margin-bottom: 4px;">
-                                                        <span class="dashicons dashicons-arrow-left-alt2 detail-icon"
-                                                            style="font-size: 12px;"></span>
-                                                        <span class="detail-value">
-                                                            <strong>
-                                                                <?php echo esc_html($unit_name . ($lesson_name ? ' - ' . $lesson_name : '')); ?>
-                                                            </strong>
-                                                            <?php if (!empty($item['material'])): ?>
-                                                                <div
-                                                                    style="font-size: 0.85rem; color: #475569; margin-top: 2px; padding-right: 20px;">
-                                                                    <?php echo esc_html($item['material']); ?>
+                                                foreach ($grouped_items as $unit_id => $items):
+                                                    $unit_name = '';
+                                                    if ($unit_id !== 'other') {
+                                                        $unit = Olama_School_Unit::get_unit($unit_id);
+                                                        $unit_name = $unit ? $unit->unit_name : '';
+                                                    }
+
+                                                    if ($unit_name): ?>
+                                                        <div class="unit-group-header"
+                                                            style="font-weight: 700; color: #4f46e5; margin: 15px 0 8px; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+                                                            <span class="dashicons dashicons-category"
+                                                                style="font-size: 18px; width: 18px; height: 18px; color: #818cf8;"></span>
+                                                            <?php echo esc_html($unit_name); ?>
+                                                        </div>
+                                                    <?php endif; ?>
+
+                                                    <div class="unit-lessons-list"
+                                                        style="padding-right: 15px; border-right: 2px solid #eef2ff; margin-right: 5px;">
+                                                        <?php foreach ($items as $item):
+                                                            $lesson = !empty($item['lesson_id']) ? Olama_School_Lesson::get_lesson($item['lesson_id']) : null;
+                                                            $lesson_name = $lesson ? $lesson->lesson_title : (isset($item['lesson']) ? $item['lesson'] : '');
+
+                                                            if (empty($lesson_name) && empty($item['material']))
+                                                                continue;
+                                                            ?>
+                                                            <div class="detail-item lesson-row-v2"
+                                                                style="padding: 6px 0; border-bottom: 1px solid #f8fafc; margin-bottom: 4px;">
+                                                                <div class="lesson-info" style="display: flex; align-items: flex-start; gap: 10px;">
+                                                                    <span class="dashicons dashicons-arrow-left-alt2"
+                                                                        style="font-size: 12px; width: 12px; height: 12px; margin-top: 4px; color: #cbd5e1;"></span>
+                                                                    <div style="flex: 1;">
+                                                                        <?php if ($lesson_name): ?>
+                                                                            <div style="font-weight: 600; color: #1e293b; font-size: 0.9rem;">
+                                                                                <?php echo esc_html($lesson_name); ?></div>
+                                                                        <?php endif; ?>
+                                                                        <?php if (!empty($item['material'])): ?>
+                                                                            <div style="font-size: 0.85rem; color: #64748b; margin-top: 2px;">
+                                                                                <?php echo esc_html($item['material']); ?>
+                                                                            </div>
+                                                                        <?php endif; ?>
+                                                                    </div>
                                                                 </div>
-                                                            <?php endif; ?>
-                                                        </span>
+                                                            </div>
+                                                        <?php endforeach; ?>
                                                     </div>
                                                 <?php endforeach;
                                             endif; ?>

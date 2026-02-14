@@ -310,25 +310,15 @@ if ($selected_semester_exam_id) {
                             style="margin: 0 0 15px; font-size: 14px; color: #475569; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
                             <?php echo Olama_School_Helpers::translate('Curriculum Material'); ?>
                         </h3>
-                        <table id="curriculum-material-table" class="widefat" style="margin-bottom: 10px;">
-                            <thead>
-                                <tr>
-                                    <th style="width: 30%;"><?php echo Olama_School_Helpers::translate('Unit'); ?></th>
-                                    <th style="width: 30%;"><?php echo Olama_School_Helpers::translate('Lesson'); ?>
-                                    </th>
-                                    <th style="width: 35%;">
-                                        <?php echo Olama_School_Helpers::translate('Required Material'); ?>
-                                    </th>
-                                    <th style="width: 5%;"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="curriculum-rows">
-                                <!-- Dynamic rows will be added here -->
-                            </tbody>
-                        </table>
-                        <button type="button" id="add-curriculum-row" class="button button-secondary">
+
+                        <div id="curriculum-blocks-container">
+                            <!-- Unit blocks will be added here dynamically -->
+                        </div>
+
+                        <button type="button" id="add-unit-btn" class="button button-secondary"
+                            style="margin-top: 15px;">
                             <span class="dashicons dashicons-plus-alt2" style="vertical-align: middle;"></span>
-                            <?php echo Olama_School_Helpers::translate('Add Row'); ?>
+                            <?php echo Olama_School_Helpers::translate('Add Unit'); ?>
                         </button>
                     </div>
 
@@ -604,7 +594,97 @@ if ($selected_semester_exam_id) {
             justify-content: flex-start;
         }
 
+        .unit-block {
+            border-right: 4px solid #6366f1;
+            border-left: 1px solid #e2e8f0;
+        }
+
+        .lesson-row {
+            border-right: 2px solid #e2e8f0;
+            border-left: none;
+            padding-right: 15px;
+            padding-left: 0;
+        }
+
+        .remove-unit,
+        .remove-lesson {
+            left: 10px;
+            right: auto;
+        }
+
+    <?php else: ?>
+        .unit-block {
+            border-left: 4px solid #6366f1;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .lesson-row {
+            border-left: 2px solid #e2e8f0;
+            border-right: none;
+            padding-left: 15px;
+            padding-right: 0;
+        }
+
+        .remove-unit,
+        .remove-lesson {
+            right: 10px;
+            left: auto;
+        }
+
     <?php endif; ?>
+
+    .unit-block {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    .unit-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px dashed #cbd5e1;
+    }
+
+    .lessons-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .lesson-row {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        background: #fff;
+        padding: 10px;
+        border-radius: 6px;
+        position: relative;
+    }
+
+    .remove-unit,
+    .remove-lesson {
+        position: absolute;
+        top: 10px;
+        cursor: pointer;
+        color: #ef4444;
+        background: none;
+        border: none;
+        padding: 0;
+    }
+
+    .remove-unit {
+        top: 15px;
+    }
+
+    .add-lesson-row-btn {
+        margin-top: 10px !important;
+        font-size: 11px !important;
+    }
 </style>
 
 <script>
@@ -724,53 +804,77 @@ if ($selected_semester_exam_id) {
             });
         });
 
-        // Material Modal - Curriculum Table Handling
+        // Material Modal - Hierarchical Handling
         var currentUnits = [];
         var unitLessonsCache = {};
 
-        function createCurriculumRow(unitId, lessonId, material) {
+        function addUnitBlock(unitId) {
             var gradeId = $('#material_grade_id').val();
             var subjectId = $('#material_subject_id').val();
             var semesterId = $('#material_semester_id').val();
 
-            var row = $('<tr class="curriculum-row">' +
-                '<td><select class="unit-select" style="width: 100%;"><option value="">-- <?php echo Olama_School_Helpers::translate('Select Unit'); ?> --</option></select></td>' +
-                '<td><select class="lesson-select" style="width: 100%;"><option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option></select></td>' +
-                '<td><input type="text" class="material-input" style="width: 100%;" placeholder="<?php echo Olama_School_Helpers::translate('e.g., Pages 10-15'); ?>"></td>' +
-                '<td><button type="button" class="button button-small remove-row" style="color: #dc2626;"><span class="dashicons dashicons-no"></span></button></td>' +
-                '</tr>');
+            var unitBlock = $('<div class="unit-block">' +
+                '<button type="button" class="remove-unit" title="<?php echo Olama_School_Helpers::translate('Remove Unit'); ?>"><span class="dashicons dashicons-no-alt"></span></button>' +
+                '<div class="unit-header">' +
+                '<label style="font-weight: 700; color: #1e293b; min-width: 100px;"><?php echo Olama_School_Helpers::translate('Unit'); ?>:</label>' +
+                '<select class="unit-select" style="max-width: 300px;"><option value="">-- <?php echo Olama_School_Helpers::translate('Select Unit'); ?> --</option></select>' +
+                '</div>' +
+                '<div class="lessons-container"></div>' +
+                '<button type="button" class="button button-small add-lesson-row-btn" style="background: #eef2ff; color: #4f46e5; border-color: #c7d2fe;">' +
+                '<span class="dashicons dashicons-plus-alt" style="vertical-align: middle;"></span> <?php echo Olama_School_Helpers::translate('Add Lesson'); ?>' +
+                '</button>' +
+                '</div>');
 
-            // Populate units if we have cached data
-            if (currentUnits.length > 0) {
-                var unitSelect = row.find('.unit-select');
-                currentUnits.forEach(function (unit) {
+            $('#curriculum-blocks-container').append(unitBlock);
+
+            var populateUnits = function (units) {
+                var unitSelect = unitBlock.find('.unit-select');
+                units.forEach(function (unit) {
                     unitSelect.append('<option value="' + unit.id + '">' + unit.unit_name + '</option>');
                 });
-                if (unitId) {
-                    unitSelect.val(unitId);
-                    loadLessonsForRow(row, unitId, lessonId);
-                }
+                if (unitId) unitSelect.val(unitId);
+            };
+
+            if (currentUnits.length > 0) {
+                populateUnits(currentUnits);
             } else {
                 loadUnits(gradeId, subjectId, semesterId, function (units) {
                     currentUnits = units;
-                    var unitSelect = row.find('.unit-select');
-                    units.forEach(function (unit) {
-                        unitSelect.append('<option value="' + unit.id + '">' + unit.unit_name + '</option>');
-                    });
-                    if (unitId) {
-                        unitSelect.val(unitId);
-                        loadLessonsForRow(row, unitId, lessonId);
-                    }
+                    populateUnits(units);
                 });
             }
 
-            if (material) row.find('.material-input').val(material);
+            return unitBlock;
+        }
 
-            return row;
+        function addLessonRow(unitBlock, lessonId, material, providedUnitId) {
+            var lessonsContainer = unitBlock.find('.lessons-container');
+            var unitId = providedUnitId || unitBlock.find('.unit-select').val();
+
+            var lessonRow = $('<div class="lesson-row">' +
+                '<button type="button" class="remove-lesson" title="<?php echo Olama_School_Helpers::translate('Remove Lesson'); ?>"><span class="dashicons dashicons-no"></span></button>' +
+                '<div style="flex: 1;">' +
+                '<label style="display:block; font-size: 11px; color: #64748b; margin-bottom: 4px;"><?php echo Olama_School_Helpers::translate('Lesson'); ?></label>' +
+                '<select class="lesson-select" style="width: 100%;"><option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option></select>' +
+                '</div>' +
+                '<div style="flex: 1.5;">' +
+                '<label style="display:block; font-size: 11px; color: #64748b; margin-bottom: 4px;"><?php echo Olama_School_Helpers::translate('Required Material'); ?></label>' +
+                '<input type="text" class="material-input" style="width: 100%;" placeholder="<?php echo Olama_School_Helpers::translate('e.g., Pages 10-15'); ?>">' +
+                '</div>' +
+                '</div>');
+
+            lessonsContainer.append(lessonRow);
+
+            if (unitId) {
+                loadLessonsForSelect(lessonRow.find('.lesson-select'), unitId, lessonId);
+            }
+
+            if (material) lessonRow.find('.material-input').val(material);
+
+            return lessonRow;
         }
 
         function loadUnits(gradeId, subjectId, semesterId, callback) {
-            console.log('Loading units for grade:', gradeId, 'subject:', subjectId, 'semester:', semesterId);
             $.post(ajaxurl, {
                 action: 'olama_get_units',
                 nonce: olama_admin_ajax.nonce,
@@ -778,22 +882,17 @@ if ($selected_semester_exam_id) {
                 subject_id: subjectId,
                 semester_id: semesterId
             }, function (response) {
-                console.log('Units response:', response);
                 if (response.success) {
                     callback(response.data);
                 } else {
-                    console.error('Failed to load units:', response);
                     callback([]);
                 }
-            }).fail(function (xhr, status, error) {
-                console.error('AJAX Error loading units:', error);
-                callback([]);
             });
         }
 
-        function loadLessonsForRow(row, unitId, selectedLessonId) {
+        function loadLessonsForSelect(selectElement, unitId, selectedLessonId) {
             if (unitLessonsCache[unitId]) {
-                populateLessons(row, unitLessonsCache[unitId], selectedLessonId);
+                populateLessonSelect(selectElement, unitLessonsCache[unitId], selectedLessonId);
             } else {
                 $.post(ajaxurl, {
                     action: 'olama_get_lessons',
@@ -802,35 +901,40 @@ if ($selected_semester_exam_id) {
                 }, function (response) {
                     if (response.success) {
                         unitLessonsCache[unitId] = response.data;
-                        populateLessons(row, response.data, selectedLessonId);
+                        populateLessonSelect(selectElement, response.data, selectedLessonId);
                     }
                 });
             }
         }
 
-        function populateLessons(row, lessons, selectedLessonId) {
-            var lessonSelect = row.find('.lesson-select');
-            lessonSelect.empty().append('<option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option>');
+        function populateLessonSelect(selectElement, lessons, selectedLessonId) {
+            selectElement.empty().append('<option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option>');
             lessons.forEach(function (lesson) {
-                lessonSelect.append('<option value="' + lesson.id + '">' + lesson.lesson_title + '</option>');
+                selectElement.append('<option value="' + lesson.id + '">' + lesson.lesson_title + '</option>');
             });
-            if (selectedLessonId) lessonSelect.val(selectedLessonId);
+            if (selectedLessonId) selectElement.val(selectedLessonId);
         }
 
         function serializeCurriculumData() {
             var items = [];
-            $('#curriculum-rows tr.curriculum-row').each(function () {
-                var unitId = $(this).find('.unit-select').val();
-                var lessonId = $(this).find('.lesson-select').val();
-                var material = $(this).find('.material-input').val();
-                if (unitId || lessonId || material) {
-                    items.push({
-                        unit_id: unitId ? parseInt(unitId) : null,
-                        lesson_id: lessonId ? parseInt(lessonId) : null,
-                        material: material
-                    });
-                }
+            $('.unit-block').each(function () {
+                var unitBlock = $(this);
+                var unitId = unitBlock.find('.unit-select').val();
+
+                unitBlock.find('.lesson-row').each(function () {
+                    var lessonId = $(this).find('.lesson-select').val();
+                    var material = $(this).find('.material-input').val();
+
+                    if (unitId || lessonId || material) {
+                        items.push({
+                            unit_id: unitId ? parseInt(unitId) : null,
+                            lesson_id: lessonId ? parseInt(lessonId) : null,
+                            material: material
+                        });
+                    }
+                });
             });
+
             return {
                 curriculum_items: items,
                 notebook_material: $('#material_notebook_material').val(),
@@ -838,22 +942,36 @@ if ($selected_semester_exam_id) {
             };
         }
 
-        $('#add-curriculum-row').on('click', function () {
-            $('#curriculum-rows').append(createCurriculumRow());
+        $('#add-unit-btn').on('click', function () {
+            var unitBlock = addUnitBlock();
+            addLessonRow(unitBlock);
+        });
+
+        $(document).on('click', '.add-lesson-row-btn', function () {
+            var unitBlock = $(this).closest('.unit-block');
+            addLessonRow(unitBlock);
         });
 
         $(document).on('change', '.unit-select', function () {
-            var row = $(this).closest('tr');
+            var unitBlock = $(this).closest('.unit-block');
             var unitId = $(this).val();
+            unitBlock.find('.lesson-select').empty().append('<option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option>');
+
             if (unitId) {
-                loadLessonsForRow(row, unitId);
-            } else {
-                row.find('.lesson-select').empty().append('<option value="">-- <?php echo Olama_School_Helpers::translate('Select Lesson'); ?> --</option>');
+                unitBlock.find('.lesson-row').each(function () {
+                    loadLessonsForSelect($(this).find('.lesson-select'), unitId);
+                });
             }
         });
 
-        $(document).on('click', '.remove-row ', function () {
-            $(this).closest('tr').remove();
+        $(document).on('click', '.remove-unit', function () {
+            if (confirm('<?php echo Olama_School_Helpers::translate('Remove this unit and all its lessons?'); ?>')) {
+                $(this).closest('.unit-block').remove();
+            }
+        });
+
+        $(document).on('click', '.remove-lesson', function () {
+            $(this).closest('.lesson-row').remove();
         });
 
         $(document).on('click', '.edit-exam-material', function () {
@@ -866,7 +984,7 @@ if ($selected_semester_exam_id) {
             $('#material_semester_exam_id').val(data.semester_exam_id);
 
             // Clear previous data
-            $('#curriculum-rows').empty();
+            $('#curriculum-blocks-container').empty();
             currentUnits = [];
             unitLessonsCache = {};
 
@@ -881,14 +999,28 @@ if ($selected_semester_exam_id) {
             }
 
             if (materialJson && materialJson.curriculum_items && materialJson.curriculum_items.length > 0) {
+                // Group items by unit_id to reconstruct hierarchy
+                var groupedByUnit = {};
                 materialJson.curriculum_items.forEach(function (item) {
-                    $('#curriculum-rows').append(createCurriculumRow(item.unit_id, item.lesson_id, item.material));
+                    var uId = item.unit_id || 'no-unit';
+                    if (!groupedByUnit[uId]) groupedByUnit[uId] = [];
+                    groupedByUnit[uId].push(item);
                 });
+
+                Object.keys(groupedByUnit).forEach(function (uId) {
+                    var unitIdValue = uId === 'no-unit' ? null : uId;
+                    var unitBlock = addUnitBlock(unitIdValue);
+                    groupedByUnit[uId].forEach(function (item) {
+                        addLessonRow(unitBlock, item.lesson_id, item.material, unitIdValue);
+                    });
+                });
+
                 $('#material_notebook_material').val(materialJson.notebook_material || materialJson.booklets_notebooks || '');
                 $('#material_teacher_notes').val(materialJson.teacher_notes || '');
             } else {
-                // Add one empty row for new entries
-                $('#curriculum-rows').append(createCurriculumRow());
+                // Add one empty unit block with one lesson row for new entries
+                var unitBlock = addUnitBlock();
+                addLessonRow(unitBlock);
                 $('#material_notebook_material').val(data.notebook_material || '');
                 $('#material_teacher_notes').val(data.teacher_notes || '');
             }
