@@ -569,16 +569,16 @@ $completed_plans = array_filter($all_plans, function ($p) {
 
 <!-- Simple View Plan Modal -->
 <div id="viewPlanOverlay"
-    style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999999;">
+    style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999999; align-items:center; justify-content:center;">
     <div
-        style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; width:90%; max-width:600px; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+        style="background:#fff; width:90%; max-width:600px; max-height:90vh; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.3); display:flex; flex-direction:column;">
         <div
-            style="padding:20px; background:#6366f1; color:#fff; border-radius:12px 12px 0 0; display:flex; justify-content:space-between; align-items:center;">
+            style="padding:20px; background:#6366f1; color:#fff; border-radius:12px 12px 0 0; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
             <h3 style="margin:0; font-size:18px;"><?php echo Olama_School_Helpers::translate('Plan Details'); ?></h3>
             <button onclick="closeViewPlanModal()"
                 style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer; line-height:1;">&times;</button>
         </div>
-        <div style="padding:20px;">
+        <div style="padding:20px; overflow-y:auto; flex:1;">
             <table style="width:100%; border-collapse:collapse;">
                 <tr>
                     <td style="padding:8px 0; font-weight:600; width:120px;">
@@ -661,7 +661,7 @@ $completed_plans = array_filter($all_plans, function ($p) {
             document.getElementById('vpNB').textContent = plan.homework_nb || '-';
             document.getElementById('vpWS').textContent = plan.homework_ws || '-';
             document.getElementById('vpNotes').textContent = plan.teacher_notes || '-';
-            document.getElementById('viewPlanOverlay').style.display = 'block';
+            document.getElementById('viewPlanOverlay').style.display = 'flex';
         } catch (e) {
             alert('Error loading plan data');
             console.error(e);
