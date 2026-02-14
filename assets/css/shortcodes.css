@@ -555,6 +555,49 @@
     .subject-card {
         padding: 15px;
     }
+
+    /* Stack detail-item label/value vertically on mobile */
+    .detail-item {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .detail-label {
+        white-space: normal;
+        font-size: 0.8rem;
+    }
+
+    .detail-value {
+        display: block;
+        width: 100%;
+        padding-right: 24px;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    /* Homework items: ensure value is on its own line */
+    .homework-item {
+        padding: 10px 12px;
+    }
+
+    .hw-label {
+        font-size: 0.82rem;
+    }
+
+    .hw-value {
+        font-size: 0.95rem;
+        padding-right: 24px;
+        line-height: 1.7;
+        word-break: break-word;
+    }
+
+    .section-block {
+        padding: 10px 12px;
+    }
+
+    .section-label {
+        font-size: 0.82rem;
+    }
 }
 
 /* Weekly Schedule Shortcode Styles */
