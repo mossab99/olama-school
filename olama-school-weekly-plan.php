@@ -62,6 +62,17 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-backup.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ajax-handlers.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-shortcodes.php';
 
+// Register custom cron schedules (WordPress only has hourly/twicedaily/daily)
+function olama_school_cron_schedules($schedules)
+{
+    $schedules['weekly'] = array(
+        'interval' => 604800, // 7 days in seconds
+        'display' => __('Once Weekly', 'olama-school'),
+    );
+    return $schedules;
+}
+add_filter('cron_schedules', 'olama_school_cron_schedules');
+
 // Register WP-CLI commands
 if (defined('WP_CLI') && WP_CLI) {
     require_once OLAMA_SCHOOL_PATH . 'includes/class-cli.php';
@@ -145,6 +156,14 @@ function olama_school_init()
 
     // Hook scheduled backup
     add_action('olama_scheduled_backup', array('Olama_School_Backup', 'run_scheduled_backup'));
+
+    // Self-healing: ensure cron event exists when backups are enabled
+    $frequency = get_option('olama_backup_frequency', 'disabled');
+    if ($frequency !== 'disabled' && !wp_next_scheduled('olama_scheduled_backup')) {
+        $recurrence = ($frequency === 'daily') ? 'daily' : 'weekly';
+        wp_schedule_event(time(), $recurrence, 'olama_scheduled_backup');
+        error_log('[OLAMA CRON] Self-healed: re-scheduled ' . $recurrence . ' backup event.');
+    }
 }
 add_action('plugins_loaded', 'olama_school_init');
 

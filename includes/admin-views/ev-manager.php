@@ -278,6 +278,10 @@ if (!defined('ABSPATH')) {
                             </h3>
                             <div class="ev-actions">
                                 <button type="button" class="button button-small"
+                                    onclick="jQuery('#edit-domain-<?php echo $domain->id; ?>').toggle();">
+                                    <span class="dashicons dashicons-edit" style="margin-top:2px;"></span>
+                                </button>
+                                <button type="button" class="button button-small"
                                     onclick="jQuery('#add-cat-<?php echo $domain->id; ?>').toggle();">
                                     <?php echo Olama_School_Helpers::translate('Add Category'); ?>
                                 </button>
@@ -292,6 +296,35 @@ if (!defined('ABSPATH')) {
                                     </button>
                                 </form>
                             </div>
+                        </div>
+
+                        <!-- Edit Domain Form -->
+                        <div id="edit-domain-<?php echo $domain->id; ?>"
+                            style="display: none; background: #fff; padding: 20px; border-bottom: 1px solid #cbd5e1;">
+                            <form method="post" action="">
+                                <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
+                                <input type="hidden" name="olama_ev_action" value="save_domain">
+                                <input type="hidden" name="template_id" value="<?php echo $selected_template_id; ?>">
+                                <input type="hidden" name="id" value="<?php echo $domain->id; ?>">
+                                <div style="display: flex; gap: 15px; align-items: flex-end;">
+                                    <div style="flex: 2;">
+                                        <label
+                                            class="olama-label"><?php echo Olama_School_Helpers::translate('Edit Domain Title'); ?></label>
+                                        <input type="text" name="title_ar" value="<?php echo esc_attr($domain->title_ar); ?>"
+                                            required style="width: 100%;">
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label
+                                            class="olama-label"><?php echo Olama_School_Helpers::translate('Sort Order'); ?></label>
+                                        <input type="number" name="sort_order" value="<?php echo esc_attr($domain->sort_order); ?>"
+                                            style="width: 100%;">
+                                    </div>
+                                    <button type="submit"
+                                        class="button button-primary"><?php echo Olama_School_Helpers::translate('Update'); ?></button>
+                                    <button type="button" class="button"
+                                        onclick="jQuery('#edit-domain-<?php echo $domain->id; ?>').hide();"><?php echo Olama_School_Helpers::translate('Cancel'); ?></button>
+                                </div>
+                            </form>
                         </div>
 
                         <div class="ev-domain-body" style="padding: 20px;">
