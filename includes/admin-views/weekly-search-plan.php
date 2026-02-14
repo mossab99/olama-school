@@ -35,7 +35,7 @@ if (!empty($sections)) {
 }
 
 // Get subjects for the selected grade
-$all_grade_subjects = Olama_School_Subject::get_by_grade($selected_grade_id);
+$all_grade_subjects = Olama_School_Subject::get_by_grade($selected_grade_id, true);
 $selected_subject_id = isset($_GET['subject_id']) ? intval($_GET['subject_id']) : (isset($all_grade_subjects[0]->id) ? intval($all_grade_subjects[0]->id) : 0);
 
 // $selected_year_id, $selected_semester_id and $all_weeks are already defined in class-admin.php

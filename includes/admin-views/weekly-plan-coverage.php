@@ -60,7 +60,7 @@ if (!$current_semester && !empty($semesters)) {
 $years = Olama_School_Academic::get_years();
 $grades = Olama_School_Grade::get_grades();
 // Getting subjects with limits
-$subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_grade_id) : [];
+$subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_grade_id, true) : [];
 
 // 3. Determine Effective Date Range for filtering plans (Sunday to Thursday alignment)
 $semester_weeks = Olama_School_Academic::get_academic_weeks($active_year->id, $selected_semester_id, true);

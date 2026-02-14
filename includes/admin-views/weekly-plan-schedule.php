@@ -92,7 +92,7 @@ if ($selected_section_id && $selected_semester_id) {
 }
 
 // Subjects for dropdown
-$subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_grade_id) : [];
+$subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_grade_id, true) : [];
 
 $scheduled_sections = Olama_School_Schedule::get_scheduled_sections($selected_schedule_type);
 ?>

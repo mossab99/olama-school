@@ -121,7 +121,7 @@ if ($selected_year_id) {
 
 $analysis_data = [];
 if ($current_semester_id && $selected_grade_id) {
-    $all_grade_subjects = Olama_School_Subject::get_by_grade($selected_grade_id);
+    $all_grade_subjects = Olama_School_Subject::get_by_grade($selected_grade_id, true);
 
     foreach ($all_grade_subjects as $sub) {
         // 1. Required Plans (from subject limits)

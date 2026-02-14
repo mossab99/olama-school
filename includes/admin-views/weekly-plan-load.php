@@ -12,7 +12,7 @@ $is_admin = Olama_School_Permissions::can('olama_manage_plans_load');
 
 $subjects = [];
 if ($selected_grade_id) {
-    $subjects = Olama_School_Subject::get_by_grade($selected_grade_id);
+    $subjects = Olama_School_Subject::get_by_grade($selected_grade_id, true);
 }
 
 if (isset($_GET['message'])) {
