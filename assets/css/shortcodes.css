@@ -24,8 +24,27 @@
 .olama-weekly-plan-v2.is-rtl .stacked-label,
 .olama-weekly-plan-v2.is-rtl .detail-value,
 .olama-weekly-plan-v2.is-rtl .unit-group-header,
-.olama-weekly-plan-v2.is-rtl .lesson-info div {
+.olama-weekly-plan-v2.is-rtl .lesson-info div,
+.olama-weekly-plan-v2.is-rtl .detail-item-stacked {
     text-align: right !important;
+    direction: rtl !important;
+}
+
+/* Detail Item Stacked base styles */
+.detail-item-stacked {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.stacked-label {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.stacked-value {
+    width: 100%;
 }
 
 /* =====================================================

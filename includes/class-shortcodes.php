@@ -960,7 +960,7 @@ class Olama_School_Shortcodes
 
                                                     if ($unit_name): ?>
                                                         <div class="unit-group-header"
-                                                            style="font-weight: 700; color: #4f46e5; margin: 15px 0 8px; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+                                                            style="font-weight: 700; color: #4f46e5; margin: 15px 0 8px; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; text-align: right; direction: rtl; justify-content: flex-start;">
                                                             <span class="dashicons dashicons-category"
                                                                 style="font-size: 18px; width: 18px; height: 18px; color: #818cf8;"></span>
                                                             <?php echo esc_html($unit_name); ?>
@@ -968,7 +968,7 @@ class Olama_School_Shortcodes
                                                     <?php endif; ?>
 
                                                     <div class="unit-lessons-list"
-                                                        style="padding-right: 15px; border-right: 2px solid #eef2ff; margin-right: 5px;">
+                                                        style="padding-inline-start: 15px; border-inline-start: 2px solid #eef2ff; margin-inline-start: 5px; text-align: right; direction: rtl;">
                                                         <?php foreach ($items as $item):
                                                             $lesson = !empty($item['lesson_id']) ? Olama_School_Lesson::get_lesson($item['lesson_id']) : null;
                                                             $lesson_name = $lesson ? $lesson->lesson_title : (isset($item['lesson']) ? $item['lesson'] : '');
@@ -977,18 +977,21 @@ class Olama_School_Shortcodes
                                                                 continue;
                                                             ?>
                                                             <div class="detail-item lesson-row-v2"
-                                                                style="padding: 6px 0; border-bottom: 1px solid #f8fafc; margin-bottom: 4px;">
-                                                                <div class="lesson-info" style="display: flex; align-items: flex-start; gap: 10px;">
+                                                                style="padding: 6px 0; border-bottom: 1px solid #f8fafc; margin-bottom: 4px; text-align: right; direction: rtl;">
+                                                                <div class="lesson-info"
+                                                                    style="display: flex; align-items: flex-start; gap: 10px; text-align: right; direction: rtl;">
                                                                     <span class="dashicons dashicons-arrow-left-alt2"
                                                                         style="font-size: 12px; width: 12px; height: 12px; margin-top: 4px; color: #cbd5e1;"></span>
-                                                                    <div style="flex: 1;">
+                                                                    <div style="flex: 1; text-align: right; direction: rtl;">
                                                                         <?php if ($lesson_name): ?>
-                                                                            <div style="font-weight: 600; color: #1e293b; font-size: 0.9rem;">
+                                                                            <div
+                                                                                style="font-weight: 600; color: #1e293b; font-size: 0.9rem; text-align: right; direction: rtl;">
                                                                                 <?php echo esc_html($lesson_name); ?>
                                                                             </div>
                                                                         <?php endif; ?>
                                                                         <?php if (!empty($item['material'])): ?>
-                                                                            <div style="font-size: 0.85rem; color: #64748b; margin-top: 2px;">
+                                                                            <div
+                                                                                style="font-size: 0.85rem; color: #64748b; margin-top: 2px; text-align: right; direction: rtl;">
                                                                                 <?php echo esc_html($item['material']); ?>
                                                                             </div>
                                                                         <?php endif; ?>
@@ -1001,32 +1004,32 @@ class Olama_School_Shortcodes
                                             endif; ?>
 
                                             <div class="material-details-v2 <?php echo Olama_School_Helpers::is_arabic() ? 'is-rtl' : ''; ?>"
-                                                style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px; display: flex; flex-direction: column; gap: 15px;">
+                                                style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px; display: flex; flex-direction: column; gap: 15px; text-align: right; direction: rtl;">
                                                 <?php if ($exam->student_book_material): ?>
-                                                    <div class="detail-item-stacked">
+                                                    <div class="detail-item-stacked" style="text-align: right; direction: rtl;">
                                                         <div class="stacked-label"
-                                                            style="display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; text-align: inherit;">
+                                                            style="display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; text-align: right; direction: rtl; justify-content: flex-start;">
                                                             <span class="dashicons dashicons-book"
                                                                 style="font-size: 16px; width: 16px; height: 16px; color: #94a3b8;"></span>
                                                             <?php echo Olama_School_Helpers::translate('Student Book'); ?>:
                                                         </div>
                                                         <div class="stacked-value"
-                                                            style="color: #1e293b; font-size: 0.95rem; padding-inline-start: 24px; line-height: 1.6; word-break: break-word; text-align: inherit;">
+                                                            style="color: #1e293b; font-size: 0.95rem; padding-inline-start: 24px; line-height: 1.6; word-break: break-word; text-align: right; direction: rtl;">
                                                             <?php echo esc_html($exam->student_book_material); ?>
                                                         </div>
                                                     </div>
                                                 <?php endif; ?>
 
                                                 <?php if ($exam->workbook_material): ?>
-                                                    <div class="detail-item-stacked">
+                                                    <div class="detail-item-stacked" style="text-align: right; direction: rtl;">
                                                         <div class="stacked-label"
-                                                            style="display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; text-align: inherit;">
+                                                            style="display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; text-align: right; direction: rtl; justify-content: flex-start;">
                                                             <span class="dashicons dashicons-edit"
                                                                 style="font-size: 16px; width: 16px; height: 16px; color: #94a3b8;"></span>
                                                             <?php echo Olama_School_Helpers::translate('Workbook'); ?>:
                                                         </div>
                                                         <div class="stacked-value"
-                                                            style="color: #1e293b; font-size: 0.95rem; padding-inline-start: 24px; line-height: 1.6; word-break: break-word; text-align: inherit;">
+                                                            style="color: #1e293b; font-size: 0.95rem; padding-inline-start: 24px; line-height: 1.6; word-break: break-word; text-align: right; direction: rtl;">
                                                             <?php echo esc_html($exam->workbook_material); ?>
                                                         </div>
                                                     </div>
@@ -1035,15 +1038,15 @@ class Olama_School_Shortcodes
                                                 <?php
                                                 $booklets_val = !empty($material['booklets_notebooks']) ? $material['booklets_notebooks'] : (!empty($exam->notebook_material) ? $exam->notebook_material : '');
                                                 if (!empty($booklets_val)): ?>
-                                                    <div class="detail-item-stacked">
+                                                    <div class="detail-item-stacked" style="text-align: right; direction: rtl;">
                                                         <div class="stacked-label"
-                                                            style="display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; text-align: inherit;">
+                                                            style="display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; text-align: right; direction: rtl; justify-content: flex-start;">
                                                             <span class="dashicons dashicons-media-text"
                                                                 style="font-size: 16px; width: 16px; height: 16px; color: #94a3b8;"></span>
                                                             <?php echo Olama_School_Helpers::translate('Booklets & Notebooks'); ?>:
                                                         </div>
                                                         <div class="stacked-value"
-                                                            style="color: #1e293b; font-size: 0.95rem; padding-inline-start: 24px; line-height: 1.6; word-break: break-word; text-align: inherit;">
+                                                            style="color: #1e293b; font-size: 0.95rem; padding-inline-start: 24px; line-height: 1.6; word-break: break-word; text-align: right; direction: rtl;">
                                                             <?php echo esc_html($booklets_val); ?>
                                                         </div>
                                                     </div>
