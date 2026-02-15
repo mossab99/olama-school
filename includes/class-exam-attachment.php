@@ -118,6 +118,7 @@ class Olama_School_Exam_Attachment
         }
 
         $user_id = get_current_user_id();
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
         // Get descriptive filename
         $details = Olama_School_Exam::get_full_exam_details($exam_id);
@@ -374,6 +375,11 @@ class Olama_School_Exam_Attachment
         }
 
         // 2. Delete DB record
-        return $wpdb->delete("{$wpdb->prefix}olama_exam_attachments", array('id' => $attachment->id));
+        $deleted = $wpdb->delete("{$wpdb->prefix}olama_exam_attachments", array('id' => $attachment->id));
+        if ($deleted === false) {
+            return new WP_Error('db_delete_failed', __('Failed to delete record from database.', 'olama-school'));
+        }
+
+        return true;
     }
 }

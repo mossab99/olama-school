@@ -1040,6 +1040,9 @@ if ($selected_semester_exam_id) {
             $('#attachment-filename').text('');
             $('#attachment-badge').text('').css('background', 'transparent');
 
+            // Reset delete button state
+            $('#delete-attachment-btn').prop('disabled', false).html('<span class="dashicons dashicons-trash" style="vertical-align: middle;"></span> <?php echo Olama_School_Helpers::translate('Delete File'); ?>');
+
             $.post(ajaxurl, {
                 action: 'olama_get_exam_attachment',
                 nonce: $('#olama_exam_nonce_field').val() || $('#olama_material_nonce_field').val(),
