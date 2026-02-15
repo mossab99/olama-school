@@ -271,7 +271,7 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                         style="margin-top: 20px; background: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px solid #bae6fd;">
                         <h3
                             style="margin: 0 0 10px; font-size: 14px; color: #0369a1; border-bottom: 2px solid #bae6fd; padding-bottom: 8px;">
-                            <?php echo Olama_School_Helpers::translate('Exam File (Word .docx)'); ?>
+                            <?php echo Olama_School_Helpers::translate('Exam File (Word docx and pdf)'); ?>
                         </h3>
                         <div id="exam-attachment-container">
                             <!-- Status Info -->

@@ -347,7 +347,7 @@ if ($selected_semester_exam_id) {
                         style="margin-top: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                         <h3
                             style="margin: 0 0 10px; font-size: 14px; color: #475569; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
-                            <?php echo Olama_School_Helpers::translate('Exam File (Word .docx / PDF)'); ?>
+                            <?php echo Olama_School_Helpers::translate('Exam File (Word docx and pdf)'); ?>
                         </h3>
                         <div id="exam-attachment-container">
                             <!-- Status Info -->
