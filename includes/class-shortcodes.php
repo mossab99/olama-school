@@ -1083,7 +1083,7 @@ class Olama_School_Shortcodes
 
     /**
      * Shortcode: [olama_weekly_schedule]
-     * Attributes: semester, section
+     * Attributes: semester, section, schedule_type
      */
     public function render_weekly_schedule_shortcode($atts)
     {
@@ -1091,6 +1091,7 @@ class Olama_School_Shortcodes
         $atts = shortcode_atts(array(
             'semester' => '',
             'section' => '',
+            'schedule_type' => 'normal',
         ), $atts, 'olama_weekly_schedule');
 
         $section_id = intval($atts['section']);
@@ -1109,7 +1110,12 @@ class Olama_School_Shortcodes
             return '<div class="olama-error">' . __('Please specify valid section and semester IDs in the shortcode.', 'olama-school') . '</div>';
         }
 
-        $schedule = Olama_School_Schedule::get_schedule($section_id, $semester_id);
+        $schedule_type = sanitize_text_field($atts['schedule_type']);
+        if (!in_array($schedule_type, array('normal', 'ramadan'))) {
+            $schedule_type = 'normal';
+        }
+
+        $schedule = Olama_School_Schedule::get_schedule($section_id, $semester_id, $schedule_type);
         $section = Olama_School_Section::get_section($section_id);
         $grade = $section ? Olama_School_Grade::get_grade($section->grade_id) : null;
         $semester = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_semesters WHERE id = %d", $semester_id));

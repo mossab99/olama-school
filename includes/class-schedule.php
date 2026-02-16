@@ -60,18 +60,24 @@ class Olama_School_Schedule
         global $wpdb;
         $table = "{$wpdb->prefix}olama_schedule";
 
-        $result = $wpdb->replace(
-            $table,
-            array(
-                'semester_id' => intval($data['semester_id']),
-                'section_id' => intval($data['section_id']),
-                'day_name' => sanitize_text_field($data['day_name']),
-                'period_number' => intval($data['period_number']),
-                'subject_id' => intval($data['subject_id']),
-                'schedule_type' => sanitize_text_field($data['schedule_type'] ?? 'normal'),
-            ),
-            array('%d', '%d', '%s', '%d', '%d', '%s')
-        );
+        $semester_id = intval($data['semester_id']);
+        $section_id = intval($data['section_id']);
+        $day_name = sanitize_text_field($data['day_name']);
+        $period_number = intval($data['period_number']);
+        $subject_id = intval($data['subject_id']);
+        $schedule_type = sanitize_text_field($data['schedule_type'] ?? 'normal');
+
+        $result = $wpdb->query($wpdb->prepare(
+            "INSERT INTO $table (semester_id, section_id, day_name, period_number, subject_id, schedule_type)
+            VALUES (%d, %d, %s, %d, %d, %s)
+            ON DUPLICATE KEY UPDATE subject_id = VALUES(subject_id)",
+            $semester_id,
+            $section_id,
+            $day_name,
+            $period_number,
+            $subject_id,
+            $schedule_type
+        ));
 
         return $result !== false;
     }
@@ -102,6 +108,9 @@ class Olama_School_Schedule
         global $wpdb;
         $table = "{$wpdb->prefix}olama_schedule";
 
+        // Ensure the unique index includes schedule_type to prevent cross-type overwrites
+        self::ensure_schedule_index();
+
         foreach ($data as $day => $periods) {
             foreach ($periods as $period_no => $subject_id) {
                 if (empty($subject_id)) {
@@ -113,18 +122,60 @@ class Olama_School_Schedule
                         'schedule_type' => $schedule_type
                     ));
                 } else {
-                    $wpdb->replace($table, array(
-                        'semester_id' => $semester_id,
-                        'section_id' => $section_id,
-                        'day_name' => $day,
-                        'period_number' => $period_no,
-                        'subject_id' => intval($subject_id),
-                        'schedule_type' => $schedule_type
+                    // Use INSERT ... ON DUPLICATE KEY UPDATE instead of REPLACE
+                    // to avoid deleting rows with a different schedule_type
+                    $wpdb->query($wpdb->prepare(
+                        "INSERT INTO $table (semester_id, section_id, day_name, period_number, subject_id, schedule_type)
+                        VALUES (%d, %d, %s, %d, %d, %s)
+                        ON DUPLICATE KEY UPDATE subject_id = VALUES(subject_id)",
+                        $semester_id,
+                        $section_id,
+                        $day,
+                        $period_no,
+                        intval($subject_id),
+                        $schedule_type
                     ));
                 }
             }
         }
         return true;
+    }
+
+    /**
+     * Ensure the schedule_slot unique index includes schedule_type.
+     * If the old 4-column index exists, drop it and recreate with 5 columns.
+     */
+    public static function ensure_schedule_index()
+    {
+        static $checked = false;
+        if ($checked)
+            return;
+        $checked = true;
+
+        global $wpdb;
+        $table = "{$wpdb->prefix}olama_schedule";
+
+        // Get all columns in the schedule_slot index
+        $index_cols = $wpdb->get_results(
+            "SHOW INDEX FROM $table WHERE Key_name = 'schedule_slot'"
+        );
+
+        $col_names = array();
+        foreach ($index_cols as $idx) {
+            $col_names[] = $idx->Column_name;
+        }
+
+        // If index is missing or doesn't include schedule_type, fix it
+        if (empty($col_names) || !in_array('schedule_type', $col_names)) {
+            // Drop old index if it exists
+            if (!empty($col_names)) {
+                $wpdb->query("ALTER TABLE $table DROP INDEX schedule_slot");
+            }
+            // Create correct 5-column index
+            $wpdb->query(
+                "ALTER TABLE $table ADD UNIQUE KEY schedule_slot (semester_id, section_id, day_name, period_number, schedule_type)"
+            );
+        }
     }
 
     /**

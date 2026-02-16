@@ -126,6 +126,20 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 </option>
             </select>
         </div>
+        <div id="gen-schedule-type-wrapper" style="display: none;">
+            <label style="display: block; font-weight: 600; color: #475569; margin-bottom: 8px; font-size: 0.9rem;">
+                <?php _e('Schedule Type', 'olama-school'); ?>
+            </label>
+            <select id="gen-schedule-type"
+                style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                <option value="normal">
+                    <?php _e('Normal Schedule', 'olama-school'); ?>
+                </option>
+                <option value="ramadan">
+                    <?php _e('Ramadan Schedule', 'olama-school'); ?>
+                </option>
+            </select>
+        </div>
     </div>
 
     <div
@@ -156,6 +170,7 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
             var section = $('#gen-section').val();
             var week = $('#gen-week').val();
             var exam = $('#gen-exam').val();
+            var scheduleType = $('#gen-schedule-type').val();
             var activeYearId = '<?php echo $active_year ? $active_year->id : 0; ?>';
             var selectedYearId = $('#academic_year_id').val();
 
@@ -173,18 +188,27 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 $('#gen-section').closest('div').hide();
                 $('#gen-week-wrapper').hide();
                 $('#gen-exam-wrapper').show();
-            } else if (type === 'weekly_schedule' || type === 'teachers_office_hours' || type === 'attendance') {
+            } else if (type === 'weekly_schedule') {
                 $('#gen-semester').closest('div').show();
                 $('#gen-grade').closest('div').show();
                 $('#gen-section').closest('div').show();
                 $('#gen-week-wrapper').hide();
                 $('#gen-exam-wrapper').hide();
+                $('#gen-schedule-type-wrapper').show();
+            } else if (type === 'teachers_office_hours' || type === 'attendance') {
+                $('#gen-semester').closest('div').show();
+                $('#gen-grade').closest('div').show();
+                $('#gen-section').closest('div').show();
+                $('#gen-week-wrapper').hide();
+                $('#gen-exam-wrapper').hide();
+                $('#gen-schedule-type-wrapper').hide();
             } else {
                 $('#gen-semester').closest('div').show();
                 $('#gen-grade').closest('div').show();
                 $('#gen-section').closest('div').show();
                 $('#gen-week-wrapper').show();
                 $('#gen-exam-wrapper').hide();
+                $('#gen-schedule-type-wrapper').hide();
             }
 
             // Generate shortcode based on type
@@ -205,6 +229,9 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 } else {
                     if (section) shortcode += ' section="' + section + '"';
                     if (type === 'weekly_plan' && week) shortcode += ' week="' + week + '"';
+                    if (type === 'weekly_schedule' && scheduleType && scheduleType !== 'normal') {
+                        shortcode += ' schedule_type="' + scheduleType + '"';
+                    }
                 }
             }
             shortcode += ']';
@@ -280,7 +307,7 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
             });
         });
 
-        $('#gen-section, #gen-week, #gen-exam').on('change', updateShortcode);
+        $('#gen-section, #gen-week, #gen-exam, #gen-schedule-type').on('change', updateShortcode);
 
         $('#copy-shortcode').on('click', function () {
             var text = $('#generated-shortcode').text().trim();

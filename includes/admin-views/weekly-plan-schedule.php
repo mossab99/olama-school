@@ -318,39 +318,39 @@ function olamaPrintSchedule() {
         </p>
     </div>
 
-    <form method="post">
+    <?php if ($is_admin): ?>
+        <div style="display: flex; justify-content: space-between; padding: 10px; align-items: center;">
+            <div>
+                <?php if ($selected_schedule_type === 'ramadan' && empty($schedule)): ?>
+                    <form method="post" style="display: inline;">
+                        <?php wp_nonce_field('olama_clone_schedule'); ?>
+                        <input type="hidden" name="olama_clone_schedule" value="1" />
+                        <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>" />
+                        <input type="hidden" name="section_id" value="<?php echo $selected_section_id; ?>" />
+                        <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>" />
+                        <input type="hidden" name="from_type" value="normal" />
+                        <input type="hidden" name="to_type" value="ramadan" />
+                        <button type="submit" class="button">
+                            <span class="dashicons dashicons-admin-page" style="margin-top: 4px;"></span>
+                            <?php echo Olama_School_Helpers::translate('Clone Normal to Ramadan'); ?>
+                        </button>
+                    </form>
+                <?php endif; ?>
+            </div>
+            <button type="submit" form="olama-schedule-main-form" name="olama_save_bulk_schedule" value="1" class="button button-primary" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
+                <span class="dashicons dashicons-saved" style="margin-top: 4px;"></span>
+                <?php _e('Save Master Schedule', 'olama-school'); ?>
+            </button>
+        </div>
+    <?php endif; ?>
+
+    <form method="post" id="olama-schedule-main-form">
         <?php wp_nonce_field('olama_save_bulk_schedule', 'olama_schedule_nonce'); ?>
 
         <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>" />
         <input type="hidden" name="section_id" value="<?php echo $selected_section_id; ?>" />
         <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>" />
         <input type="hidden" name="schedule_type" value="<?php echo $selected_schedule_type; ?>" />
-
-        <?php if ($is_admin): ?>
-            <div style="display: flex; justify-content: space-between; padding: 10px; align-items: center;">
-                <div>
-                    <?php if ($selected_schedule_type === 'ramadan' && empty($schedule)): ?>
-                        <form method="post" style="display: inline;">
-                            <?php wp_nonce_field('olama_clone_schedule'); ?>
-                            <input type="hidden" name="olama_clone_schedule" value="1" />
-                            <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>" />
-                            <input type="hidden" name="section_id" value="<?php echo $selected_section_id; ?>" />
-                            <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>" />
-                            <input type="hidden" name="from_type" value="normal" />
-                            <input type="hidden" name="to_type" value="ramadan" />
-                            <button type="submit" class="button">
-                                <span class="dashicons dashicons-admin-page" style="margin-top: 4px;"></span>
-                                <?php echo Olama_School_Helpers::translate('Clone Normal to Ramadan'); ?>
-                            </button>
-                        </form>
-                    <?php endif; ?>
-                </div>
-                <button type="submit" name="olama_save_bulk_schedule" value="1" class="button button-primary" <?php echo (!$selected_section_id || !$selected_semester_id) ? 'disabled' : ''; ?>>
-                    <span class="dashicons dashicons-saved" style="margin-top: 4px;"></span>
-                    <?php _e('Save Master Schedule', 'olama-school'); ?>
-                </button>
-            </div>
-        <?php endif; ?>
 
         <table class="wp-list-table widefat fixed striped" style="border: none;">
             <thead>
@@ -393,7 +393,7 @@ function olamaPrintSchedule() {
                                 </select>
                                 <?php if ($item): ?>
                                     <div style="margin-top: 5px; font-size: 11px; color: <?php echo esc_attr($item->color_code ?: '#2271b1'); ?>; font-weight: 600;">
-                                        â—ڈ <?php _e('Scheduled', 'olama-school'); ?>
+                                        ◈ <?php _e('Scheduled', 'olama-school'); ?>
                                     </div>
                                 <?php endif; ?>
                             </td>

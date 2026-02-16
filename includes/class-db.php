@@ -794,6 +794,16 @@ class Olama_School_DB
 		} else {
 			// Column exists, but let's ensure data integrity for existing rows
 			$wpdb->query("UPDATE {$wpdb->prefix}olama_schedule SET schedule_type = 'normal' WHERE schedule_type IS NULL OR schedule_type = '' OR schedule_type = '0'");
+
+			// Also ensure the unique index includes schedule_type (critical for preventing cross-type overwrites)
+			$index_cols = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}olama_schedule WHERE Key_name = 'schedule_slot'");
+			$idx_col_names = wp_list_pluck($index_cols, 'Column_name');
+			if (empty($idx_col_names) || !in_array('schedule_type', $idx_col_names)) {
+				if (!empty($idx_col_names)) {
+					$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_schedule DROP INDEX schedule_slot");
+				}
+				$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_schedule ADD UNIQUE KEY schedule_slot (semester_id, section_id, day_name, period_number, schedule_type)");
+			}
 		}
 
 		// New Performance Indexes Optimizations
