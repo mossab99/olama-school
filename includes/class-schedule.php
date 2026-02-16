@@ -13,18 +13,32 @@ class Olama_School_Schedule
     /**
      * Get all sections that have a schedule defined
      */
-    public static function get_scheduled_sections($schedule_type = 'normal')
+    public static function get_scheduled_sections($schedule_type = 'normal', $academic_year_id = 0, $semester_id = 0)
     {
         global $wpdb;
+
+        $where = "s.schedule_type = %s";
+        $params = array($schedule_type);
+
+        if ($academic_year_id) {
+            $where .= " AND sem.academic_year_id = %d";
+            $params[] = $academic_year_id;
+        }
+
+        if ($semester_id) {
+            $where .= " AND s.semester_id = %d";
+            $params[] = $semester_id;
+        }
+
         return $wpdb->get_results($wpdb->prepare(
             "SELECT DISTINCT s.section_id, s.semester_id, sec.section_name, sem.semester_name, g.grade_name, g.id as grade_id
             FROM {$wpdb->prefix}olama_schedule s
             JOIN {$wpdb->prefix}olama_sections sec ON s.section_id = sec.id
             JOIN {$wpdb->prefix}olama_semesters sem ON s.semester_id = sem.id
             JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id
-            WHERE s.schedule_type = %s
+            WHERE {$where}
             ORDER BY sem.semester_name ASC, g.grade_level ASC, sec.section_name ASC",
-            $schedule_type
+            ...$params
         ));
     }
 

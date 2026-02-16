@@ -19,20 +19,32 @@ if (!defined('ABSPATH')) {
             <input type="hidden" name="tab" value="creation" />
             <input type="hidden" name="active_day" id="active_day_input" value="<?php echo esc_attr($active_day); ?>" />
 
-            <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+            <div class="olama-filter-item">
+                <label><?php echo Olama_School_Helpers::translate('Academic Year'); ?></label>
+                <input type="hidden" name="academic_year_id" value="<?php echo esc_attr($selected_year_id); ?>" />
+                <div
+                    style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; color: #475569; cursor: not-allowed;">
+                    <?php echo esc_html($active_year ? $active_year->year_name : '—'); ?>
+                    <span
+                        style="font-size: 0.8em; color: #10b981; margin-right: 4px;">(<?php echo Olama_School_Helpers::translate('Active'); ?>)</span>
+                </div>
+            </div>
 
             <div class="olama-filter-item">
                 <label><?php _e('Semester', 'olama-school'); ?></label>
-                <select name="semester_id" class="olama-select" onchange="this.form.submit()">
-                    <option value="active" <?php selected($selected_semester_id, 'active'); ?>>
-                        <?php _e('Active Semester', 'olama-school'); ?>
-                    </option>
-                    <?php foreach ($current_semesters as $sem): ?>
-                        <option value="<?php echo $sem->id; ?>" <?php selected($selected_semester_id, $sem->id); ?>>
-                            <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <input type="hidden" name="semester_id" value="<?php echo esc_attr($selected_semester_id); ?>" />
+                <div
+                    style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; color: #475569; cursor: not-allowed;">
+                    <?php
+                    $semester_display = '—';
+                    if ($active_semester) {
+                        $semester_display = Olama_School_Helpers::translate($active_semester->semester_name);
+                    }
+                    echo esc_html($semester_display);
+                    ?>
+                    <span
+                        style="font-size: 0.8em; color: #10b981; margin-right: 4px;">(<?php echo Olama_School_Helpers::translate('Active'); ?>)</span>
+                </div>
             </div>
 
             <div class="olama-filter-item">
@@ -77,12 +89,6 @@ if (!defined('ABSPATH')) {
             <div class="olama-filter-item">
                 <label><?php _e('Week', 'olama-school'); ?></label>
                 <select name="week_start" class="olama-select" onchange="this.form.submit()">
-                    <option value="current" <?php selected($week_start, 'current'); ?>>
-                        <?php _e('-- Current Week --', 'olama-school'); ?>
-                    </option>
-                    <option value="previous" <?php selected($week_start, 'previous'); ?>>
-                        <?php _e('-- Previous Week --', 'olama-school'); ?>
-                    </option>
                     <?php
                     $w_count = 1;
                     foreach ($current_month_weeks as $w): ?>

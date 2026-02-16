@@ -2841,15 +2841,34 @@ class Olama_School_Admin
     {
         $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'list';
 
-        // Calculate pending review count
+        // Calculate pending review count — scoped to active year & semester
         global $wpdb;
         $review_count = 0;
+        $active_year = Olama_School_Academic::get_active_year();
+        $active_year_id = $active_year ? $active_year->id : 0;
+        $active_semester = $active_year_id ? Olama_School_Academic::get_active_semester($active_year_id) : null;
+        $active_semester_id = $active_semester ? intval($active_semester->id) : 0;
+
         if (Olama_School_Permissions::can('olama_approve_plans')) {
-            $review_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}olama_plans WHERE status IN ('submitted', 'needs_edit')");
+            $review_count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}olama_plans p
+                JOIN {$wpdb->prefix}olama_semesters sem ON p.semester_id = sem.id
+                WHERE p.status IN ('submitted', 'needs_edit')
+                AND sem.academic_year_id = %d
+                AND p.semester_id = %d",
+                $active_year_id,
+                $active_semester_id
+            ));
         } else {
             $review_count = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->prefix}olama_plans WHERE status = 'needs_edit' AND teacher_id = %d",
-                get_current_user_id()
+                "SELECT COUNT(*) FROM {$wpdb->prefix}olama_plans p
+                JOIN {$wpdb->prefix}olama_semesters sem ON p.semester_id = sem.id
+                WHERE p.status = 'needs_edit' AND p.teacher_id = %d
+                AND sem.academic_year_id = %d
+                AND p.semester_id = %d",
+                get_current_user_id(),
+                $active_year_id,
+                $active_semester_id
             ));
         }
 
@@ -3087,21 +3106,17 @@ class Olama_School_Admin
             }
         }
 
-        // Academic Infrastructure
+        // Academic Infrastructure — year and semester are always locked to active values
         $active_year = Olama_School_Academic::get_active_year();
-        $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+        $selected_year_id = $active_year ? $active_year->id : 0;
 
         $current_semesters = [];
+        $active_semester = null;
         if ($selected_year_id) {
             $current_semesters = Olama_School_Academic::get_semesters($selected_year_id);
             $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
         }
-        $selected_semester_id = isset($_GET['semester_id']) ? $_GET['semester_id'] : '';
-        if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
-            $selected_semester_id = $active_semester ? $active_semester->id : 0;
-        } else {
-            $selected_semester_id = intval($selected_semester_id);
-        }
+        $selected_semester_id = $active_semester ? intval($active_semester->id) : 0;
 
         // Validate that the selected semester belongs to the selected year
         $valid_semester = false;
@@ -3163,13 +3178,21 @@ class Olama_School_Admin
             }
         }
 
-        // If not valid, default to first week of the month
+        // If not valid, default to the week containing today (smart current-week detection)
         if (!$valid_week && !empty($current_month_weeks)) {
-            $week_start = $current_month_weeks[0]['val'];
-        } elseif (empty($week_start) || $week_start === 'current') {
-            $week_start = Olama_School_Helpers::get_active_week_start();
-        } elseif ($week_start === 'previous') {
-            $week_start = Olama_School_Helpers::get_previous_week_start();
+            $today = date('Y-m-d');
+            $found_current = false;
+            foreach ($current_month_weeks as $w) {
+                $w_range = Olama_School_Helpers::get_week_range($w['val']);
+                if ($today >= $w_range['start'] && $today <= $w_range['end']) {
+                    $week_start = $w['val'];
+                    $found_current = true;
+                    break;
+                }
+            }
+            if (!$found_current) {
+                $week_start = $current_month_weeks[0]['val'];
+            }
         }
 
         $school_days = Olama_School_Helpers::get_school_days();
@@ -3229,20 +3252,16 @@ class Olama_School_Admin
             }
         }
 
-        // Academic Infrastructure
+        // Academic Infrastructure — year and semester are always locked to active values
         $active_year = Olama_School_Academic::get_active_year();
-        $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
-        $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
-        $selected_semester_id = isset($_GET['semester_id']) ? $_GET['semester_id'] : '';
-        if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
-            $selected_semester_id = $active_semester ? $active_semester->id : 0;
-        } else {
-            $selected_semester_id = intval($selected_semester_id);
-        }
-
+        $selected_year_id = $active_year ? $active_year->id : 0;
+        $active_semester = null;
+        $current_semesters = [];
         if ($selected_year_id) {
             $current_semesters = Olama_School_Academic::get_semesters($selected_year_id);
+            $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
         }
+        $selected_semester_id = $active_semester ? intval($active_semester->id) : 0;
 
         // Reuse week selection logic
         $all_weeks = Olama_School_Academic::get_academic_weeks($selected_year_id, $selected_semester_id);
@@ -3252,30 +3271,48 @@ class Olama_School_Admin
             $months_weeks[$m_key][] = array('val' => $val, 'label' => $label);
         }
 
-        $initial_week = isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : 'current';
-        if ($initial_week === 'current') {
-            $initial_week = Olama_School_Helpers::get_active_week_start();
-        } elseif ($initial_week === 'previous') {
-            $initial_week = Olama_School_Helpers::get_previous_week_start();
-        }
-        $selected_month = isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : date('Y-m', strtotime($initial_week));
+        // Sort months chronologically
+        ksort($months_weeks);
 
-        if (!isset($months_weeks[$selected_month]) && !empty($months_weeks)) {
-            $m_keys = array_keys($months_weeks);
-            $selected_month = $m_keys[0];
+        // Determine the month to show — default to current month
+        $selected_month = isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : '';
+        if (empty($selected_month) || !isset($months_weeks[$selected_month])) {
+            $today_month = date('Y-m');
+            if (isset($months_weeks[$today_month])) {
+                $selected_month = $today_month;
+            } elseif (!empty($months_weeks)) {
+                $m_keys = array_keys($months_weeks);
+                $selected_month = $m_keys[0];
+            }
         }
 
         $current_month_weeks = $months_weeks[$selected_month] ?? array();
-        $week_start = $initial_week;
+
+        // Determine the week to show — smart current-week detection
+        $week_start = isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : '';
         $valid_week = false;
-        foreach ($current_month_weeks as $w) {
-            if ($w['val'] === $week_start) {
-                $valid_week = true;
-                break;
+        if (!empty($week_start)) {
+            foreach ($current_month_weeks as $w) {
+                if ($w['val'] === $week_start) {
+                    $valid_week = true;
+                    break;
+                }
             }
         }
         if (!$valid_week && !empty($current_month_weeks)) {
-            $week_start = $current_month_weeks[0]['val'] ?? '';
+            $today = date('Y-m-d');
+            $found_current = false;
+            foreach ($current_month_weeks as $w) {
+                $w_range = Olama_School_Helpers::get_week_range($w['val']);
+                if ($today >= $w_range['start'] && $today <= $w_range['end']) {
+                    $week_start = $w['val'];
+                    $found_current = true;
+                    break;
+                }
+            }
+            if (!$found_current) {
+                $week_start = $current_month_weeks[0]['val'] ?? '';
+            }
         }
 
         $school_days = Olama_School_Helpers::get_school_days();
@@ -3302,15 +3339,16 @@ class Olama_School_Admin
      */
     public function render_search_plan_page_content()
     {
+        // Year and semester are always locked to active values
         $active_year = Olama_School_Academic::get_active_year();
-        $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
-        $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
-        $selected_semester_id = isset($_GET['semester_id']) ? $_GET['semester_id'] : '';
-        if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
-            $selected_semester_id = $active_semester ? $active_semester->id : 0;
-        } else {
-            $selected_semester_id = intval($selected_semester_id);
+        $selected_year_id = $active_year ? $active_year->id : 0;
+        $active_semester = null;
+        $current_semesters = [];
+        if ($selected_year_id) {
+            $current_semesters = Olama_School_Academic::get_semesters($selected_year_id);
+            $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
         }
+        $selected_semester_id = $active_semester ? intval($active_semester->id) : 0;
 
         $all_weeks = Olama_School_Academic::get_academic_weeks($selected_year_id, $selected_semester_id);
 

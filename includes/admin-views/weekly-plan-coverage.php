@@ -7,13 +7,8 @@ if (!defined('ABSPATH'))
 
 global $wpdb;
 
-// 1. Get Academic Infrastructure
-$requested_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : 0;
-if ($requested_year_id) {
-    $active_year = Olama_School_Academic::get_year($requested_year_id);
-} else {
-    $active_year = Olama_School_Academic::get_active_year();
-}
+// 1. Get Academic Infrastructure (locked to active year)
+$active_year = Olama_School_Academic::get_active_year();
 
 if (!$active_year) {
     echo '<div class="error"><p>' . __('Please activate an academic year first.', 'olama-school') . '</p></div>';
@@ -28,16 +23,8 @@ if (!$semesters) {
     return;
 }
 
-// 2. Selection Handling
-$active_semester = Olama_School_Academic::get_active_semester($active_year->id);
-$default_semester_id = $active_semester ? intval($active_semester->id) : (isset($semesters[0]->id) ? intval($semesters[0]->id) : 0);
-
-$requested_semester_id = isset($_GET['coverage_semester']) ? $_GET['coverage_semester'] : 'active';
-if ($requested_semester_id === 'active' || empty($requested_semester_id)) {
-    $selected_semester_id = $default_semester_id;
-} else {
-    $selected_semester_id = intval($requested_semester_id);
-}
+// 2. Selection Handling (locked to active semester)
+$selected_semester_id = $active_semester ? intval($active_semester->id) : (isset($semesters[0]->id) ? intval($semesters[0]->id) : 0);
 $selected_grade_id = isset($_GET['coverage_grade']) ? intval($_GET['coverage_grade']) : 0;
 
 $sections = $selected_grade_id ? Olama_School_Section::get_by_grade($selected_grade_id, $active_year->id) : [];
@@ -124,14 +111,12 @@ $num_weeks = 1;
 
             <label
                 style="font-weight: 600; color: #64748b;"><?php echo Olama_School_Helpers::translate('Year:'); ?></label>
-            <select onchange="window.location.href=add_query_arg('academic_year_id', this.value)"
-                style="border-radius: 4px; border-color: #cbd5e1; font-weight: 600; color: #1e293b;">
-                <?php foreach ($years as $yr): ?>
-                    <option value="<?php echo $yr->id; ?>" <?php selected($active_year->id, $yr->id); ?>>
-                        <?php echo esc_html($yr->year_name); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <div
+                style="padding: 4px 10px; background: #e2e8f0; border-radius: 4px; font-weight: 600; color: #1e293b; cursor: not-allowed;">
+                <?php echo esc_html($active_year->year_name); ?>
+                <span
+                    style="font-size: 0.8em; color: #10b981;">(<?php echo Olama_School_Helpers::translate('Active'); ?>)</span>
+            </div>
 
             <div style="border-left: 1px solid #e2e8f0; height: 20px; margin: 0 5px;"></div>
 
@@ -153,17 +138,12 @@ $num_weeks = 1;
 
             <label
                 style="font-weight: 600; color: #64748b;"><?php echo Olama_School_Helpers::translate('Semester:'); ?></label>
-            <select onchange="window.location.href=add_query_arg('coverage_semester', this.value)"
-                style="border-radius: 4px; border-color: #cbd5e1; font-weight: 600; color: #1e293b;">
-                <option value="active" <?php selected($requested_semester_id, 'active'); ?>>
-                    <?php echo Olama_School_Helpers::translate('Active Semester'); ?>
-                </option>
-                <?php foreach ($semesters as $sem): ?>
-                    <option value="<?php echo $sem->id; ?>" <?php selected($selected_semester_id, $sem->id); ?>>
-                        <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <div
+                style="padding: 4px 10px; background: #e2e8f0; border-radius: 4px; font-weight: 600; color: #1e293b; cursor: not-allowed;">
+                <?php echo esc_html($active_semester ? Olama_School_Helpers::translate($active_semester->semester_name) : '—'); ?>
+                <span
+                    style="font-size: 0.8em; color: #10b981;">(<?php echo Olama_School_Helpers::translate('Active'); ?>)</span>
+            </div>
 
             <label
                 style="font-weight: 600; color: #64748b; margin-left: 10px;"><?php echo Olama_School_Helpers::translate('Week:'); ?></label>

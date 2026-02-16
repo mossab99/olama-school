@@ -5,19 +5,14 @@ if (!defined('ABSPATH')) {
 
 global $wpdb;
 
-// 1. Academic Scope
+// 1. Academic Scope (locked to active year and semester)
 $active_year = Olama_School_Academic::get_active_year();
-$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+$selected_year_id = $active_year ? $active_year->id : 0;
 
 $is_admin = Olama_School_Permissions::can('olama_approve_plans');
 $current_user_id = get_current_user_id();
 $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
-$selected_semester_id = isset($_GET['semester_id']) ? $_GET['semester_id'] : '';
-if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
-    $selected_semester_id = $active_semester ? $active_semester->id : 0;
-} else {
-    $selected_semester_id = intval($selected_semester_id);
-}
+$selected_semester_id = $active_semester ? intval($active_semester->id) : 0;
 
 // 2. Filters
 $grades = Olama_School_Grade::get_grades();
@@ -101,28 +96,35 @@ $completed_plans = array_filter($all_plans, function ($p) {
             <input type="hidden" name="page" value="olama-school-plans">
             <input type="hidden" name="tab" value="review">
 
-            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; align-items: end;">
-                <!-- Academic Year -->
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; align-items: end;">
+                <!-- Academic Year (locked) -->
                 <div>
                     <label
                         style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
                         <?php echo Olama_School_Helpers::translate('Academic Year'); ?>
                     </label>
-                    <select name="academic_year_id" class="olama-select"
-                        style="width: 100%; height: 42px; border-radius: 8px; border: 1px solid #d1d5db;">
-                        <?php
-                        $years = Olama_School_Academic::get_years();
-                        foreach ($years as $year):
-                            $year_label = esc_html($year->year_name);
-                            if ($active_year && $active_year->id == $year->id) {
-                                $year_label .= ' (' . Olama_School_Helpers::translate('Active') . ')';
-                            }
-                            ?>
-                            <option value="<?php echo $year->id; ?>" <?php selected($selected_year_id, $year->id); ?>>
-                                <?php echo $year_label; ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                    <input type="hidden" name="academic_year_id" value="<?php echo esc_attr($selected_year_id); ?>" />
+                    <div
+                        style="height: 42px; display: flex; align-items: center; padding: 0 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; color: #475569; cursor: not-allowed;">
+                        <?php echo esc_html($active_year ? $active_year->year_name : '—'); ?>
+                        <span
+                            style="font-size: 0.8em; color: #10b981; margin-right: 4px;">(<?php echo Olama_School_Helpers::translate('Active'); ?>)</span>
+                    </div>
+                </div>
+
+                <!-- Semester (locked) -->
+                <div>
+                    <label
+                        style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">
+                        <?php echo Olama_School_Helpers::translate('Semester'); ?>
+                    </label>
+                    <input type="hidden" name="semester_id" value="<?php echo esc_attr($selected_semester_id); ?>" />
+                    <div
+                        style="height: 42px; display: flex; align-items: center; padding: 0 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; color: #475569; cursor: not-allowed;">
+                        <?php echo esc_html($active_semester ? Olama_School_Helpers::translate($active_semester->semester_name) : '—'); ?>
+                        <span
+                            style="font-size: 0.8em; color: #10b981; margin-right: 4px;">(<?php echo Olama_School_Helpers::translate('Active'); ?>)</span>
+                    </div>
                 </div>
 
                 <!-- Grade -->

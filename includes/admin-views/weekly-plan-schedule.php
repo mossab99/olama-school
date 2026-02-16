@@ -11,7 +11,7 @@ $is_admin = Olama_School_Permissions::can('olama_manage_plans_schedule');
 $selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : ($grades[0]->id ?? 0);
 
 $active_year = Olama_School_Academic::get_active_year();
-$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+$selected_year_id = $active_year ? $active_year->id : 0;
 
 $sections = Olama_School_Section::get_by_grade($selected_grade_id, $selected_year_id);
 
@@ -41,13 +41,9 @@ $last_day_name = $settings['last_day'] ?? 'Thursday';
 
 $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
 
+// Locked to active semester
 $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
-$requested_semester_id = isset($_GET['semester_id']) ? $_GET['semester_id'] : 'active';
-if ($requested_semester_id === 'active' || empty($requested_semester_id)) {
-    $selected_semester_id = $active_semester ? $active_semester->id : ($semesters[0]->id ?? 0);
-} else {
-    $selected_semester_id = intval($requested_semester_id);
-}
+$selected_semester_id = $active_semester ? intval($active_semester->id) : ($semesters[0]->id ?? 0);
 
 $requested_schedule_type = isset($_GET['schedule_type']) ? sanitize_text_field($_GET['schedule_type']) : 'normal';
 $selected_schedule_type = ($requested_schedule_type === 'ramadan') ? 'ramadan' : 'normal';
@@ -94,7 +90,7 @@ if ($selected_section_id && $selected_semester_id) {
 // Subjects for dropdown
 $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_grade_id, true) : [];
 
-$scheduled_sections = Olama_School_Schedule::get_scheduled_sections($selected_schedule_type);
+$scheduled_sections = Olama_School_Schedule::get_scheduled_sections($selected_schedule_type, $selected_year_id, $selected_semester_id);
 ?>
 
 <?php if (isset($_GET['message'])): ?>
@@ -125,41 +121,6 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections($selected_sc
     <?php endif; ?>
 <?php endif; ?>
 
-<!-- Schedule List Section -->
-<div class="olama-card" style="margin-bottom: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-    <h2 style="margin-top: 0;"><?php _e('Saved Schedules', 'olama-school'); ?></h2>
-    <?php if ($scheduled_sections): ?>
-        <table class="wp-list-table widefat fixed striped">
-            <thead>
-                <tr>
-                    <th><?php _e('Semester', 'olama-school'); ?></th>
-                    <th><?php _e('Grade', 'olama-school'); ?></th>
-                    <th><?php _e('Section', 'olama-school'); ?></th>
-                    <th><?php _e('Actions', 'olama-school'); ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($scheduled_sections as $ss): ?>
-                    <tr>
-                        <td><?php echo esc_html(Olama_School_Helpers::translate($ss->semester_name)); ?></td>
-                        <td><?php echo esc_html(__($ss->grade_name, 'olama-school')); ?></td>
-                        <td><?php echo esc_html(__($ss->section_name, 'olama-school')); ?></td>
-                        <td>
-                            <a href="<?php echo admin_url('admin.php?page=olama-school-plans&tab=schedule&grade_id=' . $ss->grade_id . '&section_id=' . $ss->section_id . '&semester_id=' . $ss->semester_id . '&schedule_type=' . $selected_schedule_type); ?>" class="button button-small"><?php _e('View', 'olama-school'); ?></a>
-                            <?php if ($is_admin): ?>
-                                <a href="<?php echo wp_nonce_url(add_query_arg(['action' => 'delete_full_schedule', 'section_id' => $ss->section_id, 'semester_id' => $ss->semester_id, 'schedule_type' => $selected_schedule_type]), 'olama_delete_full_schedule'); ?>" class="button button-small button-link-delete" onclick="return confirm('<?php esc_attr_e('Delete this entire schedule?', 'olama-school'); ?>')"><?php _e('Delete', 'olama-school'); ?></a>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php else: ?>
-        <p style="color: #666; font-style: italic;">
-            <?php _e('No schedules defined yet. Use the filters below to create one.', 'olama-school'); ?>
-        </p>
-    <?php endif; ?>
-</div>
 
 <div class="olama-filter-section" style="margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
     <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
@@ -167,7 +128,23 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections($selected_sc
             <input type="hidden" name="page" value="olama-school-plans" />
             <input type="hidden" name="tab" value="schedule" />
 
-            <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+            <div class="olama-filter-item">
+                <label><?php echo Olama_School_Helpers::translate('Academic Year'); ?></label>
+                <input type="hidden" name="academic_year_id" value="<?php echo esc_attr($selected_year_id); ?>" />
+                <div style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; color: #475569; cursor: not-allowed;">
+                    <?php echo esc_html($active_year ? $active_year->year_name : '—'); ?>
+                    <span style="font-size: 0.8em; color: #10b981; margin-right: 4px;">(<?php echo Olama_School_Helpers::translate('Active'); ?>)</span>
+                </div>
+            </div>
+
+            <div class="olama-filter-item">
+                <label><?php _e('Semester', 'olama-school'); ?></label>
+                <input type="hidden" name="semester_id" value="<?php echo esc_attr($selected_semester_id); ?>" />
+                <div style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; color: #475569; cursor: not-allowed;">
+                    <?php echo esc_html($active_semester ? Olama_School_Helpers::translate($active_semester->semester_name) : '—'); ?>
+                    <span style="font-size: 0.8em; color: #10b981; margin-right: 4px;">(<?php echo Olama_School_Helpers::translate('Active'); ?>)</span>
+                </div>
+            </div>
 
             <div class="olama-filter-item">
                 <label><?php _e('Grade', 'olama-school'); ?></label>
@@ -191,18 +168,6 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections($selected_sc
                             </option>
                         <?php endforeach; ?>
                     <?php endif; ?>
-                </select>
-            </div>
-
-            <div class="olama-filter-item">
-                <label><?php _e('Semester', 'olama-school'); ?></label>
-                <select name="semester_id" onchange="this.form.submit()">
-                    <option value="active" <?php selected($requested_semester_id, 'active'); ?>><?php _e('Active Semester', 'olama-school'); ?></option>
-                    <?php foreach ($semesters as $s): ?>
-                        <option value="<?php echo $s->id; ?>" <?php selected($selected_semester_id, $s->id); ?>>
-                            <?php echo esc_html(Olama_School_Helpers::translate($s->semester_name)); ?>
-                        </option>
-                    <?php endforeach; ?>
                 </select>
             </div>
 
@@ -412,4 +377,40 @@ function olamaPrintSchedule() {
             </div>
         <?php endif; ?>
     </form>
+</div>
+
+<!-- Schedule List Section -->
+<div class="olama-card" style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+    <h2 style="margin-top: 0;"><?php _e('Saved Schedules', 'olama-school'); ?></h2>
+    <?php if ($scheduled_sections): ?>
+        <table class="wp-list-table widefat fixed striped">
+            <thead>
+                <tr>
+                    <th><?php _e('Semester', 'olama-school'); ?></th>
+                    <th><?php _e('Grade', 'olama-school'); ?></th>
+                    <th><?php _e('Section', 'olama-school'); ?></th>
+                    <th><?php _e('Actions', 'olama-school'); ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($scheduled_sections as $ss): ?>
+                    <tr>
+                        <td><?php echo esc_html(Olama_School_Helpers::translate($ss->semester_name)); ?></td>
+                        <td><?php echo esc_html(__($ss->grade_name, 'olama-school')); ?></td>
+                        <td><?php echo esc_html(__($ss->section_name, 'olama-school')); ?></td>
+                        <td>
+                            <a href="<?php echo admin_url('admin.php?page=olama-school-plans&tab=schedule&grade_id=' . $ss->grade_id . '&section_id=' . $ss->section_id . '&semester_id=' . $ss->semester_id . '&schedule_type=' . $selected_schedule_type); ?>" class="button button-small"><?php _e('View', 'olama-school'); ?></a>
+                            <?php if ($is_admin): ?>
+                                <a href="<?php echo wp_nonce_url(add_query_arg(['action' => 'delete_full_schedule', 'section_id' => $ss->section_id, 'semester_id' => $ss->semester_id, 'schedule_type' => $selected_schedule_type]), 'olama_delete_full_schedule'); ?>" class="button button-small button-link-delete" onclick="return confirm('<?php esc_attr_e('Delete this entire schedule?', 'olama-school'); ?>')"><?php _e('Delete', 'olama-school'); ?></a>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php else: ?>
+        <p style="color: #666; font-style: italic;">
+            <?php _e('No schedules defined yet. Use the filters above to create one.', 'olama-school'); ?>
+        </p>
+    <?php endif; ?>
 </div>

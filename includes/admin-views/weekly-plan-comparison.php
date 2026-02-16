@@ -33,18 +33,11 @@ $sec2_id = isset($_GET['sec2']) ? intval($_GET['sec2']) : ($sections[1]->id ?? 0
 // Fetch subjects for this grade
 $subjects = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_subjects WHERE grade_id = %d AND is_active = 1", $selected_grade_id));
 
-// Fetch active year and semester for filtering
+// Locked to active year and semester
 $active_year = Olama_School_Academic::get_active_year();
 $active_year_id = $active_year ? $active_year->id : 0;
-$semesters = $active_year_id ? Olama_School_Academic::get_semesters($active_year_id) : [];
-
-$selected_semester_id = isset($_GET['semester_id']) ? $_GET['semester_id'] : 'active';
-if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
-    $active_sem = $active_year_id ? Olama_School_Academic::get_active_semester($active_year_id) : null;
-    $active_semester_id = $active_sem ? $active_sem->id : 0;
-} else {
-    $active_semester_id = intval($selected_semester_id);
-}
+$active_sem = $active_year_id ? Olama_School_Academic::get_active_semester($active_year_id) : null;
+$active_semester_id = $active_sem ? intval($active_sem->id) : 0;
 ?>
 
 <div class="olama-comparison-container">
@@ -55,24 +48,31 @@ if ($selected_semester_id === 'active' || empty($selected_semester_id)) {
             <input type="hidden" name="page" value="olama-school-plans">
             <input type="hidden" name="tab" value="comparison">
             <div class="olama-filter-item">
+                <label><?php echo Olama_School_Helpers::translate('Academic Year'); ?></label>
+                <input type="hidden" name="academic_year_id" value="<?php echo esc_attr($active_year_id); ?>" />
+                <div
+                    style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; color: #475569; cursor: not-allowed;">
+                    <?php echo esc_html($active_year ? $active_year->year_name : '—'); ?>
+                    <span
+                        style="font-size: 0.8em; color: #10b981; margin-right: 4px;">(<?php echo Olama_School_Helpers::translate('Active'); ?>)</span>
+                </div>
+            </div>
+            <div class="olama-filter-item">
+                <label><?php _e('Semester', 'olama-school'); ?></label>
+                <input type="hidden" name="semester_id" value="<?php echo esc_attr($active_semester_id); ?>" />
+                <div
+                    style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; color: #475569; cursor: not-allowed;">
+                    <?php echo esc_html($active_sem ? Olama_School_Helpers::translate($active_sem->semester_name) : '—'); ?>
+                    <span
+                        style="font-size: 0.8em; color: #10b981; margin-right: 4px;">(<?php echo Olama_School_Helpers::translate('Active'); ?>)</span>
+                </div>
+            </div>
+            <div class="olama-filter-item">
                 <label><?php _e('Grade', 'olama-school'); ?></label>
                 <select name="compare_grade_id" onchange="this.form.submit()">
                     <?php foreach ($grades as $g): ?>
                         <option value="<?php echo $g->id; ?>" <?php selected($selected_grade_id, $g->id); ?>>
                             <?php echo esc_html($g->grade_name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="olama-filter-item">
-                <label><?php _e('Semester', 'olama-school'); ?></label>
-                <select name="semester_id" class="olama-select" onchange="this.form.submit()">
-                    <option value="active" <?php selected($selected_semester_id, 'active'); ?>>
-                        <?php _e('Active Semester', 'olama-school'); ?>
-                    </option>
-                    <?php foreach ($semesters as $sem): ?>
-                        <option value="<?php echo $sem->id; ?>" <?php selected($active_semester_id, $sem->id); ?>>
-                            <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>

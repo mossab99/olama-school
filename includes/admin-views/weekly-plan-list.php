@@ -36,7 +36,7 @@ if (!empty($sections)) {
 
 // Reuse week selection logic
 $active_year = Olama_School_Academic::get_active_year();
-$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+$selected_year_id = $active_year ? $active_year->id : 0;
 
 // $selected_semester_id, $current_semesters and $all_weeks are already defined in class-admin.php
 $months_weeks = array();
@@ -53,26 +53,48 @@ foreach ($all_weeks as $val => $label) {
     }
 }
 
-$week_start_dynamic = Olama_School_Helpers::get_active_week_start();
-$initial_week = isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : $week_start_dynamic;
-$selected_month = isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : date('Y-m', strtotime($initial_week));
+// Sort months chronologically
+ksort($months_weeks);
 
-if (!isset($months_weeks[$selected_month]) && !empty($months_weeks)) {
-    $m_keys = array_keys($months_weeks);
-    $selected_month = $m_keys[0];
+// Determine the month to show — default to current month
+$selected_month = isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : '';
+if (empty($selected_month) || !isset($months_weeks[$selected_month])) {
+    $today_month = date('Y-m');
+    if (isset($months_weeks[$today_month])) {
+        $selected_month = $today_month;
+    } elseif (!empty($months_weeks)) {
+        $m_keys = array_keys($months_weeks);
+        $selected_month = $m_keys[0];
+    }
 }
 
 $current_month_weeks = $months_weeks[$selected_month] ?? array();
-$week_start = $initial_week;
+
+// Determine the week to show — smart current-week detection
+$week_start = isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : '';
 $valid_week = false;
-foreach ($current_month_weeks as $w) {
-    if ($w['val'] === $week_start) {
-        $valid_week = true;
-        break;
+if (!empty($week_start)) {
+    foreach ($current_month_weeks as $w) {
+        if ($w['val'] === $week_start) {
+            $valid_week = true;
+            break;
+        }
     }
 }
 if (!$valid_week && !empty($current_month_weeks)) {
-    $week_start = $current_month_weeks[0]['val'] ?? '';
+    $today = date('Y-m-d');
+    $found_current = false;
+    foreach ($current_month_weeks as $w) {
+        $w_range = Olama_School_Helpers::get_week_range($w['val']);
+        if ($today >= $w_range['start'] && $today <= $w_range['end']) {
+            $week_start = $w['val'];
+            $found_current = true;
+            break;
+        }
+    }
+    if (!$found_current) {
+        $week_start = $current_month_weeks[0]['val'] ?? '';
+    }
 }
 
 $week_range = Olama_School_Helpers::get_week_range($week_start);
@@ -209,20 +231,32 @@ if ($current_semester_id && $selected_grade_id) {
             <input type="hidden" name="page" value="olama-school-plans" />
             <input type="hidden" name="tab" value="list" />
 
-            <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+            <div class="olama-filter-item">
+                <label><?php echo Olama_School_Helpers::translate('Academic Year'); ?></label>
+                <input type="hidden" name="academic_year_id" value="<?php echo esc_attr($selected_year_id); ?>" />
+                <div
+                    style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; color: #475569; cursor: not-allowed;">
+                    <?php echo esc_html($active_year ? $active_year->year_name : '—'); ?>
+                    <span
+                        style="font-size: 0.8em; color: #10b981; margin-right: 4px;">(<?php echo Olama_School_Helpers::translate('Active'); ?>)</span>
+                </div>
+            </div>
 
             <div class="olama-filter-item">
                 <label><?php _e('Semester', 'olama-school'); ?></label>
-                <select name="semester_id" class="olama-select" onchange="this.form.submit()">
-                    <option value="active" <?php selected($selected_semester_id, 'active'); ?>>
-                        <?php _e('Active Semester', 'olama-school'); ?>
-                    </option>
-                    <?php foreach ($current_semesters as $sem): ?>
-                        <option value="<?php echo $sem->id; ?>" <?php selected($selected_semester_id, $sem->id); ?>>
-                            <?php echo esc_html(Olama_School_Helpers::translate($sem->semester_name)); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <input type="hidden" name="semester_id" value="<?php echo esc_attr($selected_semester_id); ?>" />
+                <div
+                    style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; color: #475569; cursor: not-allowed;">
+                    <?php
+                    $semester_display = '—';
+                    if ($active_semester) {
+                        $semester_display = Olama_School_Helpers::translate($active_semester->semester_name);
+                    }
+                    echo esc_html($semester_display);
+                    ?>
+                    <span
+                        style="font-size: 0.8em; color: #10b981; margin-right: 4px;">(<?php echo Olama_School_Helpers::translate('Active'); ?>)</span>
+                </div>
             </div>
 
             <div class="olama-filter-item">
@@ -261,12 +295,6 @@ if ($current_semester_id && $selected_grade_id) {
             <div class="olama-filter-item">
                 <label><?php _e('Week Start', 'olama-school'); ?></label>
                 <select name="week_start" onchange="this.form.submit()">
-                    <option value="current" <?php selected($week_start, 'current'); ?>>
-                        <?php _e('-- Current Week --', 'olama-school'); ?>
-                    </option>
-                    <option value="previous" <?php selected($week_start, 'previous'); ?>>
-                        <?php _e('-- Previous Week --', 'olama-school'); ?>
-                    </option>
                     <?php
                     $w_count = 1;
                     foreach ($current_month_weeks as $w): ?>
