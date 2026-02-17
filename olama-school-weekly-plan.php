@@ -6,7 +6,7 @@
  * Version: 2.1.0
  * Author: د. مصعب الحنيطي
  * Author URI: https://olama.online
- * Text Domain: أكاديمية علماء المستقبل
+ * Text Domain: أكاديمية علماء المستقبل !
  */
 
 if (!defined('ABSPATH')) {
