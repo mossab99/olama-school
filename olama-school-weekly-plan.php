@@ -16,9 +16,10 @@ if (!defined('ABSPATH')) {
 
 
 // Define Constants
-define('OLAMA_SCHOOL_VERSION', '2.0.8');
+define('OLAMA_SCHOOL_VERSION', '2.1.0');
 define('OLAMA_SCHOOL_PATH', plugin_dir_path(__FILE__));
 define('OLAMA_SCHOOL_URL', plugin_dir_url(__FILE__));
+define('OLAMA_SCHOOL_FILE', __FILE__);
 
 // Load Composer autoloader for PHPSpreadsheet
 if (file_exists(OLAMA_SCHOOL_PATH . 'vendor/autoload.php')) {
@@ -210,3 +211,8 @@ function olama_school_translate_strings($translated, $text, $domain)
     return $translated;
 }
 add_filter('gettext', 'olama_school_translate_strings', 10, 3);
+
+// Media Library Module
+if (is_admin()) {
+    require_once OLAMA_SCHOOL_PATH . 'media-library/class-media-library.php';
+}

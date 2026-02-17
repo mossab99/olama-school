@@ -7,7 +7,7 @@ if (!defined('ABSPATH'))
     exit;
 
 $current_user_id = get_current_user_id();
-$is_admin = Olama_School_Permissions::can('olama_manage_evaluation_mgmt');
+$is_admin = Olama_School_Permissions::can('olama_manage_evaluation_mgmt') || Olama_School_Permissions::can('olama_manage_lesson_planner') || Olama_School_Permissions::can('olama_approve_plans');
 $academic = new Olama_School_Academic();
 $years = $academic->get_years();
 $active_year = $academic->get_active_year();

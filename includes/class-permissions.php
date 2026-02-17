@@ -117,6 +117,15 @@ class Olama_School_Permissions
                     'olama_manage_users_logs' => __('View Activity Logs', 'olama-school'),
                 )
             ),
+            'media' => array(
+                'label' => __('Media Library', 'olama-school'),
+                'caps' => array(
+                    'olama_access_media_library' => __('Access Media Library', 'olama-school'),
+                    'olama_media_upload_video' => __('Upload Video', 'olama-school'),
+                    'olama_media_drive_settings' => __('Drive Settings', 'olama-school'),
+                    'olama_media_view_logs' => __('Upload Log', 'olama-school'),
+                )
+            ),
             'settings' => array(
                 'label' => __('Settings', 'olama-school'),
                 'caps' => array(
@@ -153,7 +162,7 @@ class Olama_School_Permissions
         }
 
         $all_groups = self::get_all_capabilities();
-        $roles = array('administrator', 'editor', 'author', 'teacher', 'assistant');
+        $roles = array('administrator', 'editor', 'supervisor', 'author', 'teacher', 'assistant');
 
         foreach ($roles as $role_name) {
             $role = get_role($role_name);
@@ -169,8 +178,8 @@ class Olama_School_Permissions
                     } else {
                         // For other roles, we only add legacy defaults if it's the first time
                         // or they had the old general cap.
-                        if ($role_name === 'editor') {
-                            $role->add_cap($cap); // Editors also get most things by default
+                        if ($role_name === 'editor' || $role_name === 'supervisor') {
+                            $role->add_cap($cap); // Editors and Supervisors get most things by default
                         } elseif ($role_name === 'author' || $role_name === 'teacher' || $role_name === 'assistant') {
                             // Map teachers/authors to restricted set
                             $teacher_caps = array(
@@ -195,7 +204,9 @@ class Olama_School_Permissions
                                 'olama_view_plans_load',
                                 'olama_access_followup',
                                 'olama_manage_attendance',
-                                'olama_manage_lesson_planner'
+                                'olama_manage_lesson_planner',
+                                'olama_access_media_library',
+                                'olama_media_upload_video'
                             );
                             if (in_array($cap, $teacher_caps)) {
                                 $role->add_cap($cap);
@@ -208,7 +219,7 @@ class Olama_School_Permissions
             // Keep legacy caps for transition compatibility
             $role->add_cap('olama_view_plans');
             $role->add_cap('olama_view_reports');
-            if ($role_name === 'administrator' || $role_name === 'editor') {
+            if ($role_name === 'administrator' || $role_name === 'editor' || $role_name === 'supervisor') {
                 $role->add_cap('olama_access_settings_mgmt');
                 $role->add_cap('olama_manage_settings_general');
                 $role->add_cap('olama_manage_settings');
@@ -248,7 +259,7 @@ class Olama_School_Permissions
     public static function remove_capabilities()
     {
         $all_groups = self::get_all_capabilities();
-        $roles = array('administrator', 'editor', 'author', 'teacher');
+        $roles = array('administrator', 'editor', 'supervisor', 'author', 'teacher', 'assistant');
 
         foreach ($roles as $role_name) {
             $role = get_role($role_name);

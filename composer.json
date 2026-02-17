@@ -4,9 +4,26 @@
     "type": "wordpress-plugin",
     "require": {
         "php": ">=7.4",
-        "phpoffice/phpspreadsheet": "^1.29"
+        "phpoffice/phpspreadsheet": "^1.29",
+        "google/apiclient": "^2.15"
+    },
+    "scripts": {
+        "post-update-cmd": [
+            "Google\\Task\\ComposerInformation::cleanup"
+        ],
+        "post-install-cmd": [
+            "Google\\Task\\ComposerInformation::cleanup"
+        ]
+    },
+    "extra": {
+        "google/apiclient-services": [
+            "Drive",
+            "Oauth2"
+        ]
     },
     "autoload": {
-        "classmap": ["includes/"]
+        "classmap": [
+            "includes/"
+        ]
     }
 }

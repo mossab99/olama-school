@@ -1,0 +1,140 @@
+/* Media Library CSS */
+
+.academy-media-library-wrap {
+    margin-top: 20px;
+}
+
+.academy-media-library-wrap .card {
+    max-width: 100%;
+    margin-bottom: 20px;
+    padding: 20px;
+}
+
+.tab-content {
+    display: none;
+    padding: 20px 0;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Filter Bar */
+.media-filter-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 15px;
+    align-items: flex-end;
+    overflow-x: auto;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1 1 200px;
+    min-width: 150px;
+}
+
+.filter-group input,
+.filter-group select {
+    width: 100%;
+}
+
+.filter-group label {
+    font-weight: 600;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-completed {
+    background: #e7f6e7;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.status-pending {
+    background: #fff3e0;
+    color: #ef6c00;
+    border: 1px solid #ffe0b2;
+}
+
+.status-failed {
+    background: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+.status-none {
+    background: #f5f5f5;
+    color: #757575;
+    border: 1px solid #e0e0e0;
+}
+
+/* Curriculum List */
+.unit-card {
+    border-right: 4px solid #2271b1;
+}
+
+.unit-card h3 {
+    margin-top: 0;
+    color: #2271b1;
+}
+
+/* Progress Bar */
+.upload-progress-container {
+    width: 100%;
+    height: 8px;
+    background: #eee;
+    border-radius: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #2271b1;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* RTL Support */
+body.rtl .academy-media-library-wrap {
+    direction: rtl;
+}
+
+body.rtl .unit-card {
+    border-right: none;
+    border-left: 4px solid #2271b1;
+}
+
+/* Form Styling */
+#drive-settings-form textarea.code {
+    font-family: monospace;
+    font-size: 12px;
+}
+
+#settings-status {
+    margin-left: 10px;
+    font-weight: 600;
+}
+
+body.rtl #settings-status {
+    margin-left: 0;
+    margin-right: 10px;
+}
+
+.log-filter {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 10px !important;
+}

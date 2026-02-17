@@ -13,6 +13,7 @@ if (!Olama_School_Permissions::can('olama_manage_users_permissions')) {
 $roles = array(
     'administrator' => __('Administrator', 'olama-school'),
     'editor' => __('Supervisor', 'olama-school'),
+    'supervisor' => __('Supervisor (Custom)', 'olama-school'),
     'teacher' => __('Teacher', 'olama-school'),
     'author' => __('Assistant', 'olama-school'),
     'assistant' => __('Assistant (Custom)', 'olama-school'),
