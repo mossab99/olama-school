@@ -78,8 +78,8 @@ class Academy_Media_Library
     {
         add_submenu_page(
             'olama-school',
-            __('Media Library', 'olama-school'),
-            __('Media Library', 'olama-school'),
+            __('مكتبة الوسائط', 'olama-school'),
+            __('مكتبة الوسائط', 'olama-school'),
             'olama_access_media_library',
             'academy-media-library',
             [$this, 'render_page']
@@ -99,9 +99,9 @@ class Academy_Media_Library
             'ajaxurl' => admin_url('admin-ajax.php', 'relative'),
             'nonce' => wp_create_nonce('olama_admin_nonce'),
             'i18n' => [
-                'confirm_delete' => __('Are you sure you want to delete this log entry?', 'olama-school'),
-                'uploading' => __('Uploading...', 'olama-school'),
-                'error' => __('An error occurred', 'olama-school')
+                'confirm_delete' => __('هل أنت متأكد من حذف هذا السجل؟', 'olama-school'),
+                'uploading' => __('جاري الرفع...', 'olama-school'),
+                'error' => __('حدث خطأ ما', 'olama-school')
             ]
         ]);
     }

@@ -34,7 +34,7 @@ class Academy_Media_AJAX
         check_ajax_referer('olama_admin_nonce', 'nonce');
 
         if (!Olama_School_Permissions::can('olama_manage_curriculum_list')) {
-            wp_send_json_error(__('Unauthorized', 'olama-school'));
+            wp_send_json_error(__('غير مصرح لك بالوصول', 'olama-school'));
         }
 
         $year_id = intval($_GET['academic_year_id'] ?? 0);
@@ -43,7 +43,7 @@ class Academy_Media_AJAX
         $subject_id = intval($_GET['subject_id'] ?? 0);
 
         if (!$grade_id || !$subject_id || !$semester_id) {
-            wp_send_json_error(__('Missing parameters', 'olama-school'));
+            wp_send_json_error(__('معلومات ناقصة', 'olama-school'));
         }
 
         $db = new Academy_Media_DB();
@@ -95,7 +95,7 @@ class Academy_Media_AJAX
         check_ajax_referer('olama_admin_nonce', 'nonce');
 
         if (!Olama_School_Permissions::can('olama_manage_curriculum_upload')) {
-            wp_send_json_error(__('Unauthorized', 'olama-school'));
+            wp_send_json_error(__('غير مصرح لك بالوصول', 'olama-school'));
         }
 
         $lesson_id = intval($_POST['lesson_id'] ?? 0);
@@ -109,7 +109,7 @@ class Academy_Media_AJAX
         $academic_year = sanitize_text_field($_POST['academic_year_name'] ?? '');
 
         if (empty($_FILES['video_file'])) {
-            wp_send_json_error(__('No file uploaded', 'olama-school'));
+            wp_send_json_error(__('لم يتم رفع أي ملف', 'olama-school'));
         }
 
         $file = $_FILES['video_file'];
@@ -128,7 +128,7 @@ class Academy_Media_AJAX
                 'video/webm'
             ];
             if (!in_array($file['type'], $allowed_types)) {
-                throw new Exception(__('Only movie files are allowed.', 'olama-school'));
+                throw new Exception(__('مسموح بملفات الفيديو فقط.', 'olama-school'));
             }
 
             // 2. Rename File to: درس {number} {name}
@@ -144,7 +144,7 @@ class Academy_Media_AJAX
             $folder_id = $drive->get_or_create_nested_folder($path);
 
             if (!$folder_id) {
-                throw new Exception(__('Failed to create folder structure in Drive', 'olama-school'));
+                throw new Exception(__('فشل في إنشاء هيكل المجلدات على جوجل درايف', 'olama-school'));
             }
 
             // 4. Upload to Drive
@@ -170,7 +170,7 @@ class Academy_Media_AJAX
             $db->upsert_upload_record($db_data);
 
             wp_send_json_success([
-                'message' => __('Uploaded successfully', 'olama-school'),
+                'message' => __('تم الرفع بنجاح', 'olama-school'),
                 'url' => $result['web_view_link']
             ]);
 
@@ -187,7 +187,7 @@ class Academy_Media_AJAX
         check_ajax_referer('olama_admin_nonce', 'nonce');
 
         if (!Olama_School_Permissions::can('olama_manage_curriculum_upload')) {
-            wp_send_json_error(__('Unauthorized', 'olama-school'));
+            wp_send_json_error(__('غير مصرح لك بالوصول', 'olama-school'));
         }
 
         $year_id = intval($_POST['academic_year_id'] ?? 0);
@@ -201,7 +201,7 @@ class Academy_Media_AJAX
         $subject_name = trim(sanitize_text_field($_POST['subject_name'] ?? ''));
 
         if (!$grade_id || !$subject_id || !$semester_id) {
-            wp_send_json_error(__('Missing parameters', 'olama-school'));
+            wp_send_json_error(__('معلومات ناقصة', 'olama-school'));
         }
 
         try {
@@ -296,7 +296,7 @@ class Academy_Media_AJAX
                 }
             }
 
-            wp_send_json_success(sprintf(__('Sync completed. %d matches found out of %d lessons.', 'olama-school'), $match_count, $total_lessons));
+            wp_send_json_success(sprintf(__('اكتمل التزامن. تم العثور على %d تطابقاً من أصل %d درساً.', 'olama-school'), $match_count, $total_lessons));
 
         } catch (Exception $e) {
             wp_send_json_error($e->getMessage());
@@ -311,7 +311,7 @@ class Academy_Media_AJAX
         check_ajax_referer('olama_admin_nonce', 'nonce');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(__('Unauthorized', 'olama-school'));
+            wp_send_json_error(__('غير مصرح لك بالوصول', 'olama-school'));
         }
 
         $current_settings = get_option('academy_media_library_settings', []);
@@ -334,7 +334,7 @@ class Academy_Media_AJAX
         ];
 
         update_option('academy_media_library_settings', $settings);
-        wp_send_json_success(__('Settings saved', 'olama-school'));
+        wp_send_json_success(__('تم حفظ الإعدادات', 'olama-school'));
     }
 
     /**
@@ -348,7 +348,7 @@ class Academy_Media_AJAX
         $result = $drive->test_connection();
 
         if ($result['success']) {
-            wp_send_json_success(sprintf(__('Connected successfully! Root: %s', 'olama-school'), $result['folder_name']));
+            wp_send_json_success(sprintf(__('تم الاتصال بنجاح! المجلد الرئيسي: %s', 'olama-school'), $result['folder_name']));
         } else {
             wp_send_json_error($result['error']);
         }
