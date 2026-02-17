@@ -101,7 +101,31 @@ class Academy_Media_Library
             'i18n' => [
                 'confirm_delete' => __('هل أنت متأكد من حذف هذا السجل؟', 'olama-school'),
                 'uploading' => __('جاري الرفع...', 'olama-school'),
-                'error' => __('حدث خطأ ما', 'olama-school')
+                'error' => __('حدث خطأ ما', 'olama-school'),
+                'select' => __(' -- اختر -- ', 'olama-school'),
+                'select_all' => __('يرجى اختيار جميع الفلاتر أولاً.', 'olama-school'),
+                'load_curriculum' => __('تحميل المناهج', 'olama-school'),
+                'syncing' => __('جاري التزامن...', 'olama-school'),
+                'no_curriculum' => __('لم يتم العثور على مناهج لهذه الفلاتر.', 'olama-school'),
+                'unit' => __('الوحدة', 'olama-school'),
+                'lesson_title' => __('عنوان الدرس', 'olama-school'),
+                'status' => __('الحالة', 'olama-school'),
+                'actions' => __('إجراءات', 'olama-school'),
+                'no_video' => __('لا يوجد فيديو', 'olama-school'),
+                'view' => __('عرض', 'olama-school'),
+                'replace' => __('تبديل', 'olama-school'),
+                'upload' => __('رفع', 'olama-school'),
+                'no_lessons' => __('لم يتم العثور على دروس.', 'olama-school'),
+                'saving' => __('جاري الحفظ...', 'olama-school'),
+                'testing' => __('جاري الفحص...', 'olama-school'),
+                'loading' => __('جاري التحميل...', 'olama-school'),
+                'no_logs' => __('لم يتم العثور على سجلات.', 'olama-school'),
+                'view_on_drive' => __('عرض على الدرايف', 'olama-school'),
+                'delete' => __('حذف', 'olama-school'),
+                'status_completed' => __('مكتمل', 'olama-school'),
+                'status_none' => __('لا يوجد فيديو', 'olama-school'),
+                'status_pending' => __('قيد الانتظار', 'olama-school'),
+                'status_failed' => __('فشل', 'olama-school')
             ]
         ]);
     }

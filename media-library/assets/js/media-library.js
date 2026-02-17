@@ -8,6 +8,11 @@ jQuery(document).ready(function ($) {
         logPage: 1
     };
 
+    const getStatusLabel = (status) => {
+        if (!status || status === 'none') return academyMedia.i18n.status_none;
+        return academyMedia.i18n['status_' + status] || status.toUpperCase();
+    };
+
     // --- Tab Management ---
     $('.nav-tab').on('click', function (e) {
         e.preventDefault();
@@ -46,7 +51,7 @@ jQuery(document).ready(function ($) {
             },
             success: function (response) {
                 if (response.success) {
-                    let html = '<option value="">-- Select --</option>';
+                    let html = `<option value="">${academyMedia.i18n.select}</option>`;
                     response.data.forEach(sub => {
                         html += `<option value="${sub.id}" data-name="${sub.subject_name}">${sub.subject_name}</option>`;
                     });
@@ -66,7 +71,7 @@ jQuery(document).ready(function ($) {
         };
 
         if (!filters.grade_id || !filters.subject_id || !filters.semester_id) {
-            alert('Please select all filters first.');
+            alert(academyMedia.i18n.select_all);
             return;
         }
 
@@ -88,7 +93,7 @@ jQuery(document).ready(function ($) {
                 }
             },
             complete: function () {
-                $btn.prop('disabled', false).text('Load Curriculum');
+                $btn.prop('disabled', false).text(academyMedia.i18n.load_curriculum);
             }
         });
     });
@@ -107,13 +112,13 @@ jQuery(document).ready(function ($) {
         };
 
         if (!filters.grade_id || !filters.subject_id || !filters.semester_id) {
-            alert('Please select all filters first.');
+            alert(academyMedia.i18n.select_all);
             return;
         }
 
         const $btn = $(this);
         const originalText = $btn.text();
-        $btn.prop('disabled', true).text('Syncing...');
+        $btn.prop('disabled', true).text(academyMedia.i18n.syncing);
 
         $.ajax({
             url: academyMedia.ajaxurl,
@@ -143,21 +148,21 @@ jQuery(document).ready(function ($) {
     function renderCurriculum(units) {
         const $container = $('#curriculum-container');
         if (!units || units.length === 0) {
-            $container.html('<div class="notice notice-warning"><p>No curriculum found for these filters.</p></div>');
+            $container.html(`<div class="notice notice-warning"><p>${academyMedia.i18n.no_curriculum}</p></div>`);
             return;
         }
 
         let html = '';
         units.forEach(unit => {
             html += `<div class="unit-card card">
-                <h3>Unit ${unit.unit_number}: ${unit.unit_name}</h3>
+                <h3>${academyMedia.i18n.unit} ${unit.unit_number}: ${unit.unit_name}</h3>
                 <table class="wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
                             <th width="80">#</th>
-                            <th>Lesson Title</th>
-                            <th width="150">Status</th>
-                            <th width="120">Actions</th>
+                            <th>${academyMedia.i18n.lesson_title}</th>
+                            <th width="150">${academyMedia.i18n.status}</th>
+                            <th width="120">${academyMedia.i18n.actions}</th>
                         </tr>
                     </thead>
                     <tbody>`;
@@ -170,18 +175,18 @@ jQuery(document).ready(function ($) {
                         <td>${lesson.lesson_title}</td>
                         <td>
                             <span class="status-badge status-${lesson.upload_status || 'none'}">
-                                ${lesson.upload_status || 'No Video'}
+                                ${getStatusLabel(lesson.upload_status)}
                             </span>
                         </td>
                         <td>
-                            ${hasVideo ? `<a href="${lesson.drive_file_url}" target="_blank" class="button">View</a>` : ''}
+                            ${hasVideo ? `<button type="button" class="button btn-view-video" data-url="${lesson.drive_file_url}" data-title="${lesson.lesson_title}">${academyMedia.i18n.view}</button>` : ''}
                             <button type="button" class="button btn-trigger-upload" 
                                 data-lesson-id="${lesson.id}" 
                                 data-unit-id="${unit.id}"
                                 data-lesson-name="${lesson.lesson_title}"
                                 data-lesson-number="${lesson.lesson_number}"
                                 data-unit-name="${unit.unit_name}">
-                                ${hasVideo ? 'Replace' : 'Upload'}
+                                ${hasVideo ? academyMedia.i18n.replace : academyMedia.i18n.upload}
                             </button>
                             <div class="upload-progress-container" id="progress-${lesson.id}" style="display:none;">
                                 <div class="progress-bar"></div>
@@ -190,7 +195,7 @@ jQuery(document).ready(function ($) {
                     </tr>`;
                 });
             } else {
-                html += '<tr><td colspan="4">No lessons found.</td></tr>';
+                html += `<tr><td colspan="4">${academyMedia.i18n.no_lessons}</td></tr>`;
             }
 
             html += `</tbody></table></div>`;
@@ -284,7 +289,7 @@ jQuery(document).ready(function ($) {
         const $status = $('#settings-status');
 
         $btn.prop('disabled', true);
-        $status.text('Saving...').css('color', 'inherit');
+        $status.text(academyMedia.i18n.saving).css('color', 'inherit');
 
         $.ajax({
             url: academyMedia.ajaxurl,
@@ -308,7 +313,7 @@ jQuery(document).ready(function ($) {
         const $status = $('#settings-status');
 
         $btn.prop('disabled', true);
-        $status.text('Testing...').css('color', 'inherit');
+        $status.text(academyMedia.i18n.testing).css('color', 'inherit');
 
         $.ajax({
             url: academyMedia.ajaxurl,
@@ -334,7 +339,7 @@ jQuery(document).ready(function ($) {
         state.logPage = page;
         const $tbody = $('#log-table-body');
 
-        $tbody.html('<tr><td colspan="6" align="center">Loading...</td></tr>');
+        $tbody.html(`<tr><td colspan="6" align="center">${academyMedia.i18n.loading}</td></tr>`);
 
         $.ajax({
             url: academyMedia.ajaxurl,
@@ -355,7 +360,7 @@ jQuery(document).ready(function ($) {
     function renderLog(data) {
         const $tbody = $('#log-table-body');
         if (!data.items || data.items.length === 0) {
-            $tbody.html('<tr><td colspan="6" align="center">No uploads found.</td></tr>');
+            $tbody.html(`<tr><td colspan="6" align="center">${academyMedia.i18n.no_logs}</td></tr>`);
             return;
         }
 
@@ -365,10 +370,10 @@ jQuery(document).ready(function ($) {
                 <td>${item.created_at}</td>
                 <td>${item.lesson_name} <br><small>(${item.unit_name})</small></td>
                 <td>${item.grade} - ${item.subject}</td>
-                <td><span class="status-badge status-${item.upload_status}">${item.upload_status}</span></td>
-                <td>${item.drive_file_url ? `<a href="${item.drive_file_url}" target="_blank">View on Drive</a>` : '-'}</td>
+                <td><span class="status-badge status-${item.upload_status}">${getStatusLabel(item.upload_status)}</span></td>
+                <td>${item.drive_file_url ? `<a href="${item.drive_file_url}" target="_blank">${academyMedia.i18n.view_on_drive}</a>` : '-'}</td>
                 <td>
-                    <button type="button" class="button btn-delete-log" data-id="${item.id}">Delete</button>
+                    <button type="button" class="button btn-delete-log" data-id="${item.id}">${academyMedia.i18n.delete}</button>
                 </td>
             </tr>`;
         });
@@ -406,5 +411,35 @@ jQuery(document).ready(function ($) {
     });
 
     $('#btn-refresh-log').on('click', () => loadLog(1));
+
+    // --- Video Preview Modal ---
+    const $modal = $('#video-preview-modal');
+    const $iframe = $('#video-preview-iframe');
+    const $modalTitle = $('#modal-video-title');
+
+    $(document).on('click', '.btn-view-video', function () {
+        const url = $(this).data('url');
+        const title = $(this).data('title');
+
+        // Convert view link to preview link if needed
+        // Drive links usually end in /view, we want /preview for embedding
+        let previewUrl = url;
+        if (url.includes('/view')) {
+            previewUrl = url.replace('/view', '/preview');
+        }
+
+        $iframe.attr('src', previewUrl);
+        $modalTitle.text(title);
+        $modal.fadeIn(200);
+    });
+
+    // Close Modal
+    $('.academy-modal-close, .academy-modal-overlay').on('click', function (e) {
+        if (e.target !== this) return; // Prevent closing when clicking inside modal body
+
+        $modal.fadeOut(200, function () {
+            $iframe.attr('src', ''); // Stop video
+        });
+    });
 
 });

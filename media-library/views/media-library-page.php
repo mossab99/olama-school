@@ -289,5 +289,21 @@ $grades = Olama_School_Grade::get_grades();
     </div>
 </div>
 
+<!-- Video Preview Modal -->
+<div id="video-preview-modal" class="academy-modal-overlay" style="display: none;">
+    <div class="academy-modal">
+        <div class="academy-modal-header">
+            <h3 id="modal-video-title"></h3>
+            <button type="button" class="academy-modal-close">&times;</button>
+        </div>
+        <div class="academy-modal-body">
+            <div class="iframe-container">
+                <iframe id="video-preview-iframe" src="" width="100%" height="480" frameborder="0"
+                    allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Hidden common file input -->
 <input type="file" id="media-video-input" style="display:none;" accept="video/*">
