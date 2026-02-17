@@ -47,6 +47,8 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-record.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-manager.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-form.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-report.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/lesson-planner-config.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-lesson-planner.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-schedule.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-shifts.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-units.php';

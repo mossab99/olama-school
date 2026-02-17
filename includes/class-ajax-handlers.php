@@ -89,6 +89,11 @@ class Olama_School_Ajax_Handlers
         add_action('wp_ajax_olama_unassign_student_from_bus', array($this, 'unassign_student_from_bus'));
         add_action('wp_ajax_olama_get_bus_students', array($this, 'get_bus_students'));
         add_action('wp_ajax_olama_get_unassigned_students', array($this, 'get_unassigned_students'));
+
+        // Lesson Planner AJAX Handlers
+        add_action('wp_ajax_olama_lp_get_units', array($this, 'lp_get_units'));
+        add_action('wp_ajax_olama_lp_get_timeline_lessons', array($this, 'lp_get_timeline_lessons'));
+        add_action('wp_ajax_olama_lp_get_teacher_subjects', array($this, 'lp_get_teacher_subjects'));
     }
 
     // ==========================================
@@ -204,6 +209,93 @@ class Olama_School_Ajax_Handlers
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
         $lessons = Olama_School_Lesson::get_lessons(intval($_REQUEST['unit_id']));
         wp_send_json_success($lessons);
+    }
+
+    // ==========================================
+    // Lesson Planner Handlers
+    // ==========================================
+
+    /**
+     * Get units for lesson planner (filtered by subject, grade, semester)
+     */
+    public function lp_get_units()
+    {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        $subject_id = intval($_REQUEST['subject_id']);
+        $grade_id = intval($_REQUEST['grade_id']);
+        $semester_id = intval($_REQUEST['semester_id']);
+
+        if (!$subject_id || !$grade_id || !$semester_id) {
+            wp_send_json_error(__('Missing parameters.', 'olama-school'));
+        }
+
+        $units = Olama_School_Unit::get_units($subject_id, $grade_id, $semester_id);
+        wp_send_json_success($units);
+    }
+
+    /**
+     * Get timeline lessons for a unit (for lesson planner dropdown)
+     */
+    public function lp_get_timeline_lessons()
+    {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        $unit_id = intval($_REQUEST['unit_id']);
+        if (!$unit_id) {
+            wp_send_json_error(__('Missing unit ID.', 'olama-school'));
+        }
+
+        $lessons = Olama_School_Lesson::get_lessons($unit_id);
+        $result = array();
+        foreach ($lessons as $lesson) {
+            $result[] = array(
+                'id' => $lesson->id,
+                'lesson_number' => $lesson->lesson_number,
+                'lesson_title' => $lesson->lesson_title,
+                'periods' => intval($lesson->periods),
+                'start_date' => $lesson->start_date,
+                'end_date' => $lesson->end_date,
+            );
+        }
+        wp_send_json_success($result);
+    }
+
+    /**
+     * Get teacher-assigned subjects for lesson planner (for non-admin users)
+     */
+    public function lp_get_teacher_subjects()
+    {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        $grade_id = intval($_REQUEST['grade_id']);
+        $section_id = intval($_REQUEST['section_id']);
+
+        if (!$grade_id || !$section_id) {
+            wp_send_json_error(__('Missing parameters.', 'olama-school'));
+        }
+
+        global $wpdb;
+        $current_user_id = get_current_user_id();
+        $subjects = $wpdb->get_results($wpdb->prepare(
+            "SELECT DISTINCT s.* FROM {$wpdb->prefix}olama_subjects s 
+             INNER JOIN {$wpdb->prefix}olama_teacher_assignments ta ON s.id = ta.subject_id 
+             WHERE ta.teacher_id = %d AND ta.grade_id = %d AND ta.section_id = %d 
+             ORDER BY s.subject_name",
+            $current_user_id,
+            $grade_id,
+            $section_id
+        ));
+        wp_send_json_success($subjects);
     }
 
     public function delete_curriculum_lesson()

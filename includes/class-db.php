@@ -558,6 +558,40 @@ class Olama_School_DB
 				PRIMARY KEY  (id),
 				KEY shift_id (shift_id),
 				KEY teacher_id (teacher_id)
+			) $charset_collate;",
+
+			'olama_lesson_plans' => "CREATE TABLE {$wpdb->prefix}olama_lesson_plans (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL,
+				teacher_id bigint(20) UNSIGNED NOT NULL,
+				subject_id mediumint(9) NOT NULL,
+				grade_id mediumint(9) NOT NULL,
+				section_id mediumint(9) NOT NULL,
+				unit_id mediumint(9) DEFAULT NULL,
+				lesson_id mediumint(9) DEFAULT NULL,
+				lesson_title text NOT NULL,
+				start_date date DEFAULT NULL,
+				end_date date DEFAULT NULL,
+				number_of_classes tinyint(4) DEFAULT 1 NOT NULL,
+				period_duration tinyint(4) DEFAULT 45 NOT NULL,
+				learning_outcomes longtext DEFAULT NULL,
+				prior_learning text DEFAULT NULL,
+				stages longtext DEFAULT NULL,
+				teaching_strategies_used longtext DEFAULT NULL,
+				assessment_strategies_used longtext DEFAULT NULL,
+				assessment_tools_used longtext DEFAULT NULL,
+				resources text DEFAULT NULL,
+				self_reflection text DEFAULT NULL,
+				homework text DEFAULT NULL,
+				compliance_score tinyint(4) DEFAULT 0 NOT NULL,
+				status varchar(20) DEFAULT 'draft' NOT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				KEY year_semester (academic_year_id, semester_id),
+				KEY teacher_id (teacher_id),
+				KEY section_subject_date (section_id, subject_id, start_date)
 			) $charset_collate;"
 
 

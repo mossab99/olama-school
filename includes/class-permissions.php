@@ -103,6 +103,7 @@ class Olama_School_Permissions
                     'olama_access_evaluation' => __('Access Evaluation', 'olama-school'),
                     'olama_manage_evaluation_students' => __('Student Evaluation', 'olama-school'),
                     'olama_manage_evaluation_mgmt' => __('Evaluation Management', 'olama-school'),
+                    'olama_manage_lesson_planner' => __('Lesson Planner', 'olama-school'),
                 )
             ),
             'users' => array(
@@ -193,7 +194,8 @@ class Olama_School_Permissions
                                 'olama_view_reports_summary',
                                 'olama_view_plans_load',
                                 'olama_access_followup',
-                                'olama_manage_attendance'
+                                'olama_manage_attendance',
+                                'olama_manage_lesson_planner'
                             );
                             if (in_array($cap, $teacher_caps)) {
                                 $role->add_cap($cap);
