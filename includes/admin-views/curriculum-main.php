@@ -47,8 +47,8 @@ if ($import_error = get_transient('olama_import_error')) {
             }
         }
 
-        echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Academic Year'), $active_year_name, 'academic_year_id', $selected_year_id);
-        echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Semester'), $active_semester_name, 'semester_id', $default_semester_id);
+        echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Academic Year'), $active_year_name, 'academic_year_id', $selected_year_id, 'curriculum-year');
+        echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Semester'), $active_semester_name, 'semester_id', $default_semester_id, 'curriculum-semester');
         ?>
         <div class="olama-filter-item">
             <label><?php echo Olama_School_Helpers::translate('Grade'); ?></label>

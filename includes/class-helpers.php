@@ -1365,14 +1365,15 @@ class Olama_School_Helpers
     /**
      * Render Locked Filter (matches Weekly Plan style)
      */
-    public static function locked_filter_render($label, $value, $name = '', $hidden_value = '')
+    public static function locked_filter_render($label, $value, $name = '', $hidden_value = '', $id = '')
     {
         ob_start();
         ?>
         <div class="olama-filter-item" style="flex: 1; min-width: 150px;">
             <label style="display: block; font-weight: 600; margin-bottom: 5px;"><?php echo esc_html($label); ?></label>
             <?php if ($name && $hidden_value !== ''): ?>
-                <input type="hidden" name="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($hidden_value); ?>" />
+                <input type="hidden" name="<?php echo esc_attr($name); ?>" id="<?php echo esc_attr($id); ?>"
+                    value="<?php echo esc_attr($hidden_value); ?>" />
             <?php endif; ?>
             <div
                 style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; color: #475569; cursor: not-allowed; min-height: 18px;">

@@ -11,6 +11,24 @@ jQuery(document).ready(function ($) {
     let semesterStart = '';
     let semesterEnd = '';
 
+    function toIsoDate(dateStr) {
+        if (!dateStr || dateStr === 'undefined') return '';
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        // If YYYY-MM-DD
+        if (parts[0].length === 4) return dateStr;
+        // If DD-MM-YYYY
+        if (parts[2].length === 4) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        return dateStr;
+    }
+
+    // Initialize Semester dates on load
+    const $initialSemester = $semesterSelect.find('option:selected');
+    if ($initialSemester.length) {
+        semesterStart = toIsoDate($initialSemester.data('start'));
+        semesterEnd = toIsoDate($initialSemester.data('end'));
+    }
+
     // Handle Grade Selection
     $gradeSelect.on('change', function () {
         const gradeId = $(this).val();
@@ -51,8 +69,8 @@ jQuery(document).ready(function ($) {
     // Handle Semester Selection to get bounds
     $semesterSelect.on('change', function () {
         const $option = $(this).find('option:selected');
-        semesterStart = $option.data('start');
-        semesterEnd = $option.data('end');
+        semesterStart = toIsoDate($option.data('start'));
+        semesterEnd = toIsoDate($option.data('end'));
         validateLoadButton();
     });
 
@@ -178,6 +196,9 @@ jQuery(document).ready(function ($) {
                 $(this).attr('data-raw', `${year}-${month}-${day}`).trigger('change');
             }
         });
+
+        // Trigger validation on load
+        validateAll();
     }
 
     // Sync data-raw for manual input and validation
@@ -208,19 +229,7 @@ jQuery(document).ready(function ($) {
 
         if (!val) return '';
 
-        // Try to normalize d-m-Y to Y-m-d
-        const parts = val.split('-');
-        if (parts.length === 3) {
-            if (parts[2].length === 4) { // d-m-Y format
-                return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-            }
-            if (parts[0].length === 4) { // Y-m-d format
-                return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-            }
-        }
-
-        // Fallback to raw if val didn't match a pattern but raw exists
-        return raw || val;
+        return toIsoDate(raw || val);
     }
 
     function validateAll() {
@@ -249,11 +258,13 @@ jQuery(document).ready(function ($) {
                 }
 
                 // Semester range
-                if (unitStart < semesterStart || unitStart > semesterEnd) {
-                    showError($unitRow.find('.unit-start'), olamaTimeline.i18n.outsideSemester);
-                }
-                if (unitEnd < semesterStart || unitEnd > semesterEnd) {
-                    showError($unitRow.find('.unit-end'), olamaTimeline.i18n.outsideSemester);
+                if (semesterStart && semesterEnd) {
+                    if (unitStart < semesterStart || unitStart > semesterEnd) {
+                        showError($unitRow.find('.unit-start'), olamaTimeline.i18n.outsideSemester);
+                    }
+                    if (unitEnd < semesterStart || unitEnd > semesterEnd) {
+                        showError($unitRow.find('.unit-end'), olamaTimeline.i18n.outsideSemester);
+                    }
                 }
             }
 
@@ -270,7 +281,7 @@ jQuery(document).ready(function ($) {
                     if (unitEnd && lessonStart > unitEnd) {
                         showError($lessonRow.find('.lesson-start'), olamaTimeline.i18n.lessonOutsideUnit);
                     }
-                    if (lessonStart < semesterStart || lessonStart > semesterEnd) {
+                    if (semesterStart && semesterEnd && (lessonStart < semesterStart || lessonStart > semesterEnd)) {
                         showError($lessonRow.find('.lesson-start'), olamaTimeline.i18n.outsideSemester);
                     }
                 }
@@ -282,7 +293,7 @@ jQuery(document).ready(function ($) {
                     if (unitEnd && lessonEnd > unitEnd) {
                         showError($lessonRow.find('.lesson-end'), olamaTimeline.i18n.lessonOutsideUnit);
                     }
-                    if (lessonEnd < semesterStart || lessonEnd > semesterEnd) {
+                    if (semesterStart && semesterEnd && (lessonEnd < semesterStart || lessonEnd > semesterEnd)) {
                         showError($lessonRow.find('.lesson-end'), olamaTimeline.i18n.outsideSemester);
                     }
                 }
