@@ -93,17 +93,14 @@ if ($selected_semester_exam_id) {
             echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Active Semester'), $semester_name, 'semester_id', $selected_semester_id);
             ?>
 
-            <div class="olama-filter-item" style="flex: 1; min-width: 200px;">
-                <label class="olama-label"><?php echo Olama_School_Helpers::translate('Active Exam'); ?></label>
-                <select name="semester_exam_id" class="olama-select" onchange="this.form.submit();">
-                    <option value="0"><?php echo Olama_School_Helpers::translate('Choose Exam'); ?></option>
-                    <?php foreach ($semester_exams as $se): ?>
-                        <option value="<?php echo $se->id; ?>" <?php selected($selected_semester_exam_id, $se->id); ?>>
-                            <?php echo esc_html($se->exam_name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <?php
+            // Active Exam locked filter
+            $exam_name = Olama_School_Helpers::translate('Choose Exam');
+            if ($active_exam) {
+                $exam_name = $active_exam->exam_name;
+            }
+            echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Active Exam'), $exam_name, 'semester_exam_id', $selected_semester_exam_id);
+            ?>
 
             <div class="olama-filter-item" style="flex: 1; min-width: 150px;">
                 <label class="olama-label"><?php echo Olama_School_Helpers::translate('Grade'); ?></label>
@@ -296,10 +293,12 @@ if ($selected_semester_exam_id) {
                 <input type="hidden" id="upload_exam_id">
                 <div id="attachment-container">
                     <!-- Status Info -->
-                    <div id="attachment-status" style="margin-bottom: 20px; display: none; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div id="attachment-status"
+                        style="margin-bottom: 20px; display: none; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <span class="dashicons dashicons-media-document" style="color: #64748b;"></span>
-                            <span id="attachment-filename" style="font-weight: 500; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;"></span>
+                            <span id="attachment-filename"
+                                style="font-weight: 500; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;"></span>
                             <span id="attachment-badge" class="olama-badge" style="font-size: 11px;"></span>
                         </div>
                         <div style="margin-top: 15px; display: flex; gap: 10px;">
@@ -307,7 +306,8 @@ if ($selected_semester_exam_id) {
                                 <span class="dashicons dashicons-download" style="vertical-align: middle;"></span>
                                 <?php echo Olama_School_Helpers::translate('Download File'); ?>
                             </a>
-                            <button type="button" id="delete-attachment-btn" class="button button-link-delete" style="color: #ef4444;">
+                            <button type="button" id="delete-attachment-btn" class="button button-link-delete"
+                                style="color: #ef4444;">
                                 <span class="dashicons dashicons-trash" style="vertical-align: middle;"></span>
                                 <?php echo Olama_School_Helpers::translate('Delete File'); ?>
                             </button>
@@ -315,9 +315,12 @@ if ($selected_semester_exam_id) {
                     </div>
 
                     <!-- Upload Input -->
-                    <div id="attachment-upload-section" style="display: none; background: #f0f9ff; padding: 20px; border-radius: 8px; border: 1px solid #bae6fd;">
-                        <h4 style="margin-top: 0; color: #0369a1;"><?php echo Olama_School_Helpers::translate('Upload New File'); ?></h4>
-                        <input type="file" id="exam_file_input" accept=".docx,.pdf" style="margin-bottom: 15px; width: 100%;">
+                    <div id="attachment-upload-section"
+                        style="display: none; background: #f0f9ff; padding: 20px; border-radius: 8px; border: 1px solid #bae6fd;">
+                        <h4 style="margin-top: 0; color: #0369a1;">
+                            <?php echo Olama_School_Helpers::translate('Upload New File'); ?></h4>
+                        <input type="file" id="exam_file_input" accept=".docx,.pdf"
+                            style="margin-bottom: 15px; width: 100%;">
                         <button type="button" id="upload-exam-btn" class="button button-primary" style="width: 100%;">
                             <span class="dashicons dashicons-upload" style="vertical-align: middle;"></span>
                             <?php echo Olama_School_Helpers::translate('Upload File'); ?>
@@ -334,7 +337,8 @@ if ($selected_semester_exam_id) {
                 </div>
             </div>
             <div class="olama-modal-footer">
-                <button type="button" class="button" onclick="closeModal('upload-modal')"><?php echo Olama_School_Helpers::translate('Close'); ?></button>
+                <button type="button" class="button"
+                    onclick="closeModal('upload-modal')"><?php echo Olama_School_Helpers::translate('Close'); ?></button>
             </div>
         </div>
     </div>
@@ -1050,7 +1054,7 @@ if ($selected_semester_exam_id) {
         });
 
         // Open Upload Modal
-        $(document).on('click', '.open-upload-modal', function() {
+        $(document).on('click', '.open-upload-modal', function () {
             var examId = $(this).data('exam-id');
             $('#upload_exam_id').val(examId);
             $('#upload-modal').fadeIn(200);

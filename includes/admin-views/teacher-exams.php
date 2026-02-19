@@ -59,21 +59,14 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
             echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Semester'), $semester_name, 'semester_id', $selected_semester_id);
             ?>
 
-            <div class="olama-filter-item" style="flex: 1; min-width: 200px;">
-                <label class="olama-label">
-                    <?php echo Olama_School_Helpers::translate('Active Exam'); ?>
-                </label>
-                <select name="semester_exam_id" class="olama-select" onchange="this.form.submit();">
-                    <option value="0">
-                        <?php echo Olama_School_Helpers::translate('Choose Exam'); ?>
-                    </option>
-                    <?php foreach ($semester_exams as $se): ?>
-                        <option value="<?php echo $se->id; ?>" <?php selected($selected_exam_id, $se->id); ?>>
-                            <?php echo esc_html($se->exam_name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <?php
+            // Active Exam locked filter
+            $exam_name = Olama_School_Helpers::translate('Choose Exam');
+            if ($active_exam) {
+                $exam_name = $active_exam->exam_name;
+            }
+            echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Active Exam'), $exam_name, 'semester_exam_id', $selected_exam_id);
+            ?>
 
             <button type="submit" class="button button-secondary" style="height: 42px; padding: 0 20px;">
                 <?php echo Olama_School_Helpers::translate('Search'); ?>
@@ -325,7 +318,8 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                     <div id="attachment-upload-section"
                         style="display: none; background: #f0f9ff; padding: 20px; border-radius: 8px; border: 1px solid #bae6fd;">
                         <h4 style="margin-top: 0; color: #0369a1;">
-                            <?php echo Olama_School_Helpers::translate('Upload New File'); ?></h4>
+                            <?php echo Olama_School_Helpers::translate('Upload New File'); ?>
+                        </h4>
                         <input type="file" id="exam_file_input" accept=".docx,.pdf"
                             style="margin-bottom: 15px; width: 100%;">
                         <button type="button" id="upload-exam-btn" class="button button-primary" style="width: 100%;">
