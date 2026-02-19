@@ -159,10 +159,12 @@ jQuery(document).ready(function ($) {
                 <table class="wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
-                            <th width="80">#</th>
-                            <th>${academyMedia.i18n.lesson_title}</th>
-                            <th width="150">${academyMedia.i18n.status}</th>
-                            <th width="120">${academyMedia.i18n.actions}</th>
+                            <th width="30">#</th>
+                            <th width="20%">${academyMedia.i18n.lesson_title}</th>
+                            <th>${academyMedia.i18n.comments}</th>
+                            <th width="150">${academyMedia.i18n.uploader} / ${academyMedia.i18n.date}</th>
+                            <th width="140">${academyMedia.i18n.status}</th>
+                            <th width="220">${academyMedia.i18n.actions}</th>
                         </tr>
                     </thead>
                     <tbody>`;
@@ -170,32 +172,87 @@ jQuery(document).ready(function ($) {
             if (unit.lessons && unit.lessons.length > 0) {
                 unit.lessons.forEach(lesson => {
                     const hasVideo = lesson.upload_status === 'completed';
-                    html += `<tr>
-                        <td>${lesson.lesson_number}</td>
-                        <td>${lesson.lesson_title}</td>
-                        <td>
-                            <span class="status-badge status-${lesson.upload_status || 'none'}">
-                                ${getStatusLabel(lesson.upload_status)}
-                            </span>
-                        </td>
-                        <td>
-                            ${hasVideo ? `<button type="button" class="button btn-view-video" data-url="${lesson.drive_file_url}" data-title="${lesson.lesson_title}">${academyMedia.i18n.view}</button>` : ''}
-                            <button type="button" class="button btn-trigger-upload" 
+
+                    // Uploader Info
+                    let uploaderHtml = '-';
+                    if (hasVideo && lesson.uploader_name) {
+                        uploaderHtml = `<strong>${lesson.uploader_name}</strong><br><small>${lesson.uploaded_at}</small>`;
+                    }
+
+                    // Status Badges
+                    let statusHtml = `<span class="status-badge status-${lesson.upload_status || 'none'}">${getStatusLabel(lesson.upload_status)}</span>`;
+                    if (hasVideo && lesson.approval_status) {
+                        statusHtml += ` <span class="status-badge status-${lesson.approval_status}">${getStatusLabel(lesson.approval_status)}</span>`;
+                    }
+
+                    // Notes (Editable)
+                    // If permissions allow editing? Usually teachers can edit their own or supervisors. 
+                    // Let's assume anyone with access can edit notes for now or restrict it. 
+                    // User said "editable", assuming by the teacher/supervisor.
+                    const notesValue = lesson.comments || '';
+                    const notesHtml = `<textarea class="editable-note regular-text" rows="2" style="width:100%; font-size:12px;" 
+                                        data-id="${lesson.media_record_id || ''}" 
+                                        data-status="${lesson.approval_status || 'pending'}"
+                                        ${!hasVideo ? 'disabled' : ''} placeholder="${academyMedia.i18n.comments}...">${notesValue}</textarea>`;
+
+                    // Actions (Icons)
+                    let actionsHtml = '';
+                    if (hasVideo) {
+                        // View
+                        actionsHtml += `<button type="button" class="button-icon btn-view-video" title="${academyMedia.i18n.view}" data-url="${lesson.drive_file_url}" data-title="${lesson.lesson_title}">
+                                            <span class="dashicons dashicons-controls-play"></span>
+                                        </button> `;
+
+                        // Download
+                        if (lesson.drive_file_id) {
+                            actionsHtml += `<a href="https://drive.google.com/uc?export=download&id=${lesson.drive_file_id}" target="_blank" class="button-icon" title="Download">
+                                                <span class="dashicons dashicons-download"></span>
+                                            </a> `;
+                        }
+
+                        // Approval Actions
+                        if (academyMedia.can_approve && lesson.approval_status === 'pending') {
+                            actionsHtml += `<button type="button" class="button-icon btn-update-status text-success" title="${academyMedia.i18n.approve}" data-id="${lesson.media_record_id}" data-status="approved">
+                                                <span class="dashicons dashicons-yes-alt"></span>
+                                            </button> `;
+                            actionsHtml += `<button type="button" class="button-icon btn-update-status text-danger" title="${academyMedia.i18n.reject}" data-id="${lesson.media_record_id}" data-status="rejected">
+                                                <span class="dashicons dashicons-dismiss"></span>
+                                            </button> `;
+                        }
+                    }
+
+                    // Upload/Replace
+                    const uploadIcon = hasVideo ? 'dashicons-update' : 'dashicons-upload';
+                    const uploadTitle = hasVideo ? academyMedia.i18n.replace : academyMedia.i18n.upload;
+                    actionsHtml += ` <button type="button" class="button-icon btn-trigger-upload" title="${uploadTitle}"
                                 data-lesson-id="${lesson.id}" 
                                 data-unit-id="${unit.id}"
                                 data-lesson-name="${lesson.lesson_title}"
                                 data-lesson-number="${lesson.lesson_number}"
                                 data-unit-name="${unit.unit_name}">
-                                ${hasVideo ? academyMedia.i18n.replace : academyMedia.i18n.upload}
-                            </button>
-                            <div class="upload-progress-container" id="progress-${lesson.id}" style="display:none;">
+                                <span class="dashicons ${uploadIcon}"></span>
+                            </button>`;
+
+                    // Progress Bar
+                    actionsHtml += `<div class="upload-progress-container" id="progress-${lesson.id}" style="display:none;">
                                 <div class="progress-bar"></div>
+                            </div>`;
+
+                    html += `<tr>
+                        <td>${lesson.lesson_number}</td>
+                        <td>${lesson.lesson_title}</td>
+                        <td>${notesHtml}</td>
+                        <td>${uploaderHtml}</td>
+                        <td>${statusHtml}</td>
+                        <td>
+                            <div class="actions-wrapper icons-mode">
+                                ${actionsHtml}
                             </div>
                         </td>
                     </tr>`;
                 });
             } else {
-                html += `<tr><td colspan="4">${academyMedia.i18n.no_lessons}</td></tr>`;
+                html += `<tr><td colspan="6">${academyMedia.i18n.no_lessons}</td></tr>`;
             }
 
             html += `</tbody></table></div>`;
@@ -332,6 +389,115 @@ jQuery(document).ready(function ($) {
                 $btn.prop('disabled', false);
             }
         });
+    });
+
+    // --- Status Update & Comments ---
+    $(document).on('click', '.btn-update-status', function () {
+        const id = $(this).data('id');
+        const status = $(this).data('status');
+        let comment = null;
+
+        if (status === 'rejected') {
+            comment = prompt(academyMedia.i18n.comments + ':', '');
+            if (comment === null) return; // Cancelled
+        }
+
+        updateStatus(id, status, comment);
+    });
+
+    // --- Notes Auto-Save ---
+    $(document).on('change', '.editable-note', function () {
+        const id = $(this).data('id');
+        const status = $(this).data('status');
+        const comment = $(this).val();
+
+        // Visual feedback?
+        const $textarea = $(this);
+        $textarea.css('border-color', '#ffc107'); // Yellow indicating saving
+
+        $.ajax({
+            url: academyMedia.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'academy_update_media_status',
+                media_id: id,
+                status: status, // Maintain status
+                comment: comment,
+                nonce: academyMedia.nonce
+            },
+            success: function (response) {
+                if (response.success) {
+                    $textarea.css('border-color', '#28a745'); // Green success
+                    setTimeout(() => $textarea.css('border-color', ''), 1000);
+                } else {
+                    $textarea.css('border-color', '#dc3545'); // Red error
+                    alert(response.data);
+                }
+            },
+            error: function () {
+                $textarea.css('border-color', '#dc3545');
+            }
+        });
+    });
+
+    // --- Comment Modal Logic ---
+    $(document).on('click', '.btn-view-comments', function () {
+        const comments = decodeURIComponent($(this).data('comments'));
+        const id = $(this).data('id');
+        // If undefined (e.g. for pending), default to pending
+        const status = $(this).data('status') || 'pending';
+
+        $('#comment-modal-text').val(comments);
+        $('#comment-media-id').val(id);
+        // Store status in data attribute of the modal
+        $('#comment-modal').data('status', status);
+
+        if (academyMedia.can_approve) {
+            $('#comment-modal-text').prop('readonly', false);
+            $('#btn-save-comment').show();
+        } else {
+            $('#comment-modal-text').prop('readonly', true);
+            $('#btn-save-comment').hide();
+        }
+
+        $('#comment-modal').fadeIn(200);
+    });
+
+    // Save comment from modal
+    $('#btn-save-comment').on('click', function () {
+        const id = $('#comment-media-id').val();
+        const comment = $('#comment-modal-text').val();
+        const status = $('#comment-modal').data('status');
+
+        updateStatus(id, status, comment);
+        $('#comment-modal').fadeOut(200);
+    });
+
+    function updateStatus(id, status, comment) {
+        $.ajax({
+            url: academyMedia.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'academy_update_media_status',
+                media_id: id,
+                status: status,
+                comment: comment,
+                nonce: academyMedia.nonce
+            },
+            success: function (response) {
+                if (response.success) {
+                    $('#btn-load-curriculum').click(); // Refresh
+                } else {
+                    alert(response.data);
+                }
+            }
+        });
+    }
+
+    // Close Comment Modal
+    $('.academy-modal-close, .academy-modal-overlay').on('click', function (e) {
+        if (e.target !== this) return;
+        $('#comment-modal').fadeOut(200);
     });
 
     // --- Log Management ---

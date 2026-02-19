@@ -8,18 +8,18 @@ if (!defined('ABSPATH')) {
 
 $grades = Olama_School_Grade::get_grades();
 $active_year = Olama_School_Academic::get_active_year();
-$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+$selected_year_id = $active_year ? $active_year->id : 0;
 
 $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
-
-$selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : 0;
+$active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
+$selected_semester_id = $active_semester ? intval($active_semester->id) : 0;
 $selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : 0;
 
 // Validate semester belongs to year
 if ($selected_semester_id > 0 && !empty($semesters)) {
     $found = false;
     foreach ($semesters as $s) {
-        if (intval($s->id) === $selected_semester_id) {
+        if (intval($s->id) == $selected_semester_id) {
             $found = true;
             break;
         }
@@ -60,19 +60,26 @@ if ($selected_semester_id && $selected_grade_id) {
         <input type="hidden" name="tab" value="analysis">
 
         <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
-            <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
+            <?php
+            $active_year_name = '—';
+            $years = Olama_School_Academic::get_years();
+            foreach ($years as $year) {
+                if ($year->id == $selected_year_id) {
+                    $active_year_name = $year->year_name;
+                    break;
+                }
+            }
+            $active_semester_name = '—';
+            foreach ($semesters as $sem) {
+                if ($sem->id == $selected_semester_id) {
+                    $active_semester_name = $sem->semester_name;
+                    break;
+                }
+            }
 
-            <div style="flex: 1; min-width: 200px;">
-                <label class="olama-label"><?php echo Olama_School_Helpers::translate('Semester'); ?></label>
-                <select name="semester_id" class="olama-select" onchange="this.form.submit()">
-                    <option value=""><?php echo Olama_School_Helpers::translate('-- Select Semester --'); ?></option>
-                    <?php foreach ($semesters as $sem): ?>
-                        <option value="<?php echo $sem->id; ?>" <?php selected($selected_semester_id, $sem->id); ?>>
-                            <?php echo esc_html($sem->semester_name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Academic Year'), $active_year_name, 'academic_year_id', $selected_year_id);
+            echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Semester'), $active_semester_name, 'semester_id', $selected_semester_id);
+            ?>
             <div style="flex: 1; min-width: 200px;">
                 <label class="olama-label"><?php echo Olama_School_Helpers::translate('Grade'); ?></label>
                 <select name="grade_id" class="olama-select" onchange="this.form.submit()">

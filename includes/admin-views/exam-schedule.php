@@ -6,6 +6,16 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Force active year and semester
+$active_year = Olama_School_Academic::get_active_year();
+$selected_year_id = $active_year ? intval($active_year->id) : 0;
+
+$active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
+$selected_semester_id = $active_semester ? intval($active_semester->id) : 0;
+
+// Re-fetch semesters for the active year to ensure consistency
+$semesters = Olama_School_Academic::get_semesters($selected_year_id);
+
 // Get semester exams for the dropdown - filtered by grade if selected
 $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_id, $selected_grade_id);
 $active_exam = Olama_School_Academic::get_active_exam($selected_semester_id);
@@ -56,40 +66,36 @@ if ($selected_semester_exam_id) {
 
     <!-- Filter Bar -->
     <div class="olama-filter-bar"
-        style="background: #fff; padding: 15px; border: 1px solid #ccd0d4; margin-bottom: 20px; border-radius: 4px; overflow-x: auto;">
-        <form method="get" action=""
-            style="display: flex; flex-wrap: nowrap; gap: 15px; align-items: flex-end; min-width: max-content;">
+        style="background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 25px;">
+        <form method="get" action="" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
             <input type="hidden" name="page" value="olama-school-exams">
             <input type="hidden" name="tab" value="exam_schedule">
 
-            <div class="filter-group" style="flex: 0 1 auto; min-width: 150px;">
-                <label
-                    style="display:block; font-size:11px; color:#666; font-weight: 600; margin-bottom: 4px;"><?php echo Olama_School_Helpers::translate('Active Year'); ?></label>
-                <select name="academic_year_id" onchange="this.form.submit();">
-                    <?php foreach ($years as $y): ?>
-                        <option value="<?php echo $y->id; ?>" <?php selected($selected_year_id, $y->id); ?>>
-                            <?php echo esc_html($y->year_name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <?php
+            // Academic Year locked filter
+            $year_name = '—';
+            foreach ($years as $y) {
+                if (intval($y->id) === $selected_year_id) {
+                    $year_name = $y->year_name;
+                    break;
+                }
+            }
+            echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Active Year'), $year_name, 'academic_year_id', $selected_year_id);
 
-            <div class="filter-group" style="flex: 0 1 auto; min-width: 150px;">
-                <label
-                    style="display:block; font-size:11px; color:#666; font-weight: 600; margin-bottom: 4px;"><?php echo Olama_School_Helpers::translate('Active Semester'); ?></label>
-                <select name="semester_id" onchange="this.form.submit();">
-                    <?php foreach ($semesters as $s): ?>
-                        <option value="<?php echo $s->id; ?>" <?php selected($selected_semester_id, $s->id); ?>>
-                            <?php echo esc_html($s->semester_name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            // Semester locked filter
+            $semester_name = '—';
+            foreach ($semesters as $s) {
+                if (intval($s->id) === $selected_semester_id) {
+                    $semester_name = $s->semester_name;
+                    break;
+                }
+            }
+            echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Active Semester'), $semester_name, 'semester_id', $selected_semester_id);
+            ?>
 
-            <div class="filter-group" style="flex: 0 1 auto; min-width: 200px;">
-                <label
-                    style="display:block; font-size:11px; color:#666; font-weight: 600; margin-bottom: 4px;"><?php echo Olama_School_Helpers::translate('Active Exam'); ?></label>
-                <select name="semester_exam_id" onchange="this.form.submit();">
+            <div class="olama-filter-item" style="flex: 1; min-width: 200px;">
+                <label class="olama-label"><?php echo Olama_School_Helpers::translate('Active Exam'); ?></label>
+                <select name="semester_exam_id" class="olama-select" onchange="this.form.submit();">
                     <option value="0"><?php echo Olama_School_Helpers::translate('Choose Exam'); ?></option>
                     <?php foreach ($semester_exams as $se): ?>
                         <option value="<?php echo $se->id; ?>" <?php selected($selected_semester_exam_id, $se->id); ?>>
@@ -99,10 +105,9 @@ if ($selected_semester_exam_id) {
                 </select>
             </div>
 
-            <div class="filter-group" style="flex: 0 1 auto; min-width: 150px;">
-                <label
-                    style="display:block; font-size:11px; color:#666; font-weight: 600; margin-bottom: 4px;"><?php echo Olama_School_Helpers::translate('Grade'); ?></label>
-                <select name="grade_id" onchange="this.form.submit();">
+            <div class="olama-filter-item" style="flex: 1; min-width: 150px;">
+                <label class="olama-label"><?php echo Olama_School_Helpers::translate('Grade'); ?></label>
+                <select name="grade_id" class="olama-select" onchange="this.form.submit();">
                     <?php foreach ($grades as $g): ?>
                         <option value="<?php echo $g->id; ?>" <?php selected($selected_grade_id, $g->id); ?>>
                             <?php echo esc_html($g->grade_name); ?>
@@ -111,8 +116,9 @@ if ($selected_semester_exam_id) {
                 </select>
             </div>
 
-            <button type="submit"
-                class="button button-secondary"><?php echo Olama_School_Helpers::translate('Search'); ?></button>
+            <button type="submit" class="button button-secondary" style="height: 42px; padding: 0 20px;">
+                <?php echo Olama_School_Helpers::translate('Search'); ?>
+            </button>
         </form>
     </div>
 

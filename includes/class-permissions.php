@@ -124,6 +124,7 @@ class Olama_School_Permissions
                     'olama_media_upload_video' => __('Upload Video', 'olama-school'),
                     'olama_media_drive_settings' => __('Drive Settings', 'olama-school'),
                     'olama_media_view_logs' => __('Upload Log', 'olama-school'),
+                    'olama_media_approve_video' => __('Approve Video', 'olama-school'),
                 )
             ),
             'settings' => array(

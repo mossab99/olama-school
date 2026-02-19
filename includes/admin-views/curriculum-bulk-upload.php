@@ -8,8 +8,10 @@ if (!defined('ABSPATH')) {
 
 $grades = Olama_School_Grade::get_grades();
 $active_year = Olama_School_Academic::get_active_year();
-$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+$selected_year_id = $active_year ? intval($active_year->id) : 0;
 $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
+$active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
+$default_semester_id = $active_semester ? intval($active_semester->id) : 0;
 ?>
 
 <div class="olama-bulk-upload-wrapper">
@@ -38,42 +40,26 @@ $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_
             <div
                 style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 25px; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
 
-                <div style="flex: 1; min-width: 180px;">
-                    <?php
-                    $academic_years = Olama_School_Academic::get_years();
-                    ?>
-                    <form method="get" id="olama-bulk-upload-filters" style="margin: 0;">
-                        <input type="hidden" name="page" value="olama-school-curriculum" />
-                        <input type="hidden" name="tab" value="bulk_upload" />
-                        <label
-                            class="olama-label"><?php echo Olama_School_Helpers::translate('Academic Year'); ?></label>
-                        <select name="academic_year_id" id="bulk-year" class="olama-select"
-                            onchange="this.form.submit()">
-                            <?php foreach ($academic_years as $year): ?>
-                                <option value="<?php echo $year->id; ?>" <?php selected($selected_year_id, $year->id); ?>>
-                                    <?php echo esc_html($year->year_name); ?>
-                                    <?php echo !empty($year->is_active) ? ' (' . Olama_School_Helpers::translate('Active') . ')' : ''; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </form>
-                </div>
+                <?php
+                $active_year_name = '—';
+                $years = Olama_School_Academic::get_years();
+                foreach ($years as $year) {
+                    if ($year->id == $selected_year_id) {
+                        $active_year_name = $year->year_name;
+                        break;
+                    }
+                }
+                $active_semester_name = '—';
+                foreach ($semesters as $sem) {
+                    if ($sem->id == $default_semester_id) {
+                        $active_semester_name = $sem->semester_name;
+                        break;
+                    }
+                }
 
-                <div style="flex: 1; min-width: 180px;">
-                    <label class="olama-label">
-                        <?php echo Olama_School_Helpers::translate('Semester'); ?>
-                    </label>
-                    <select id="bulk-semester" class="olama-select">
-                        <option value="">
-                            <?php echo Olama_School_Helpers::translate('-- Select Semester --'); ?>
-                        </option>
-                        <?php foreach ($semesters as $sem): ?>
-                            <option value="<?php echo $sem->id; ?>">
-                                <?php echo esc_html($sem->semester_name); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+                echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Academic Year'), $active_year_name, 'academic_year_id', $selected_year_id);
+                echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Semester'), $active_semester_name, 'semester_id', $default_semester_id);
+                ?>
 
                 <div style="flex: 1; min-width: 180px;">
                     <label class="olama-label">

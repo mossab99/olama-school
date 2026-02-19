@@ -8,30 +8,41 @@ if (!defined('ABSPATH')) {
 
 $grades = Olama_School_Grade::get_grades();
 $active_year = Olama_School_Academic::get_active_year();
-$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+$selected_year_id = $active_year ? intval($active_year->id) : 0;
 $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
+$active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
+$default_semester_id = $active_semester ? intval($active_semester->id) : 0;
 ?>
 
 <div class="olama-timeline-container">
     <div class="olama-card" style="margin-bottom: 20px; padding: 20px;">
         <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
-            <form method="get" id="olama-timeline-filters" style="margin: 0; display: contents;">
-                <input type="hidden" name="page" value="olama-school-curriculum" />
-                <input type="hidden" name="tab" value="timeline" />
-                <?php echo Olama_School_Helpers::academic_year_selector($selected_year_id); ?>
-            </form>
-            <div style="flex: 1; min-width: 150px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                    <?php echo Olama_School_Helpers::translate('Semester'); ?>
-                </label>
-                <select id="timeline-semester" class="olama-select">
-                    <option value="">
-                        <?php echo Olama_School_Helpers::translate('Select Semester'); ?>
-                    </option>
+            <?php
+            $active_year_name = '—';
+            $years = Olama_School_Academic::get_years();
+            foreach ($years as $year) {
+                if ($year->id == $selected_year_id) {
+                    $active_year_name = $year->year_name;
+                    break;
+                }
+            }
+            $active_semester_name = '—';
+            foreach ($semesters as $sem) {
+                if ($sem->id == $default_semester_id) {
+                    $active_semester_name = $sem->semester_name;
+                    break;
+                }
+            }
+
+            echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Academic Year'), $active_year_name, 'academic_year_id', $selected_year_id);
+            echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Semester'), $active_semester_name, 'semester_id', $default_semester_id);
+            ?>
+            <div style="flex: 1; min-width: 150px; display: none;">
+                <select id="timeline-semester" class="olama-select" disabled>
                     <?php foreach ($semesters as $semester): ?>
                         <option value="<?php echo esc_attr($semester->id); ?>"
                             data-start="<?php echo esc_attr($semester->start_date); ?>"
-                            data-end="<?php echo esc_attr($semester->end_date); ?>">
+                            data-end="<?php echo esc_attr($semester->end_date); ?>" <?php selected($default_semester_id, $semester->id); ?>>
                             <?php echo esc_html($semester->semester_name); ?>
                         </option>
                     <?php endforeach; ?>

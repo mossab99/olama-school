@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
 $grades = Olama_School_Grade::get_grades();
 $academic_years = Olama_School_Academic::get_years();
 $active_year = Olama_School_Academic::get_active_year();
-$selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
+$selected_year_id = $active_year ? intval($active_year->id) : 0;
 $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
 ?>
 
@@ -27,16 +27,29 @@ if ($import_error = get_transient('olama_import_error')) {
 <!-- Filters Section -->
 <div class="olama-card" style="margin-bottom: 20px;">
     <div class="olama-filter-row">
-        <div class="olama-filter-item">
-            <label><?php echo Olama_School_Helpers::translate('Academic Year'); ?></label>
-            <select id="curriculum-year" class="olama-select">
-                <?php foreach ($academic_years as $year): ?>
-                    <option value="<?php echo $year->id; ?>" <?php selected($selected_year_id, $year->id); ?>>
-                        <?php echo esc_html($year->year_name); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
+        <?php
+        $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
+        $default_semester_id = $active_semester ? $active_semester->id : 0;
+
+        // Find names for locked display
+        $active_year_name = '—';
+        foreach ($academic_years as $year) {
+            if ($year->id == $selected_year_id) {
+                $active_year_name = $year->year_name;
+                break;
+            }
+        }
+        $active_semester_name = '—';
+        foreach ($semesters as $sem) {
+            if ($sem->id == $default_semester_id) {
+                $active_semester_name = $sem->semester_name;
+                break;
+            }
+        }
+
+        echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Academic Year'), $active_year_name, 'academic_year_id', $selected_year_id);
+        echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Semester'), $active_semester_name, 'semester_id', $default_semester_id);
+        ?>
         <div class="olama-filter-item">
             <label><?php echo Olama_School_Helpers::translate('Grade'); ?></label>
             <select id="curriculum-grade" class="olama-select">
@@ -46,23 +59,6 @@ if ($import_error = get_transient('olama_import_error')) {
                 <?php foreach ($grades as $grade): ?>
                     <option value="<?php echo $grade->id; ?>">
                         <?php echo esc_html($grade->grade_name); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="olama-filter-item">
-            <?php
-            $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
-            $default_semester_id = $active_semester ? $active_semester->id : 0;
-            ?>
-            <label><?php echo Olama_School_Helpers::translate('Semester'); ?></label>
-            <select id="curriculum-semester" class="olama-select">
-                <option value="">
-                    <?php echo Olama_School_Helpers::translate('-- Select Semester --'); ?>
-                </option>
-                <?php foreach ($semesters as $sem): ?>
-                    <option value="<?php echo $sem->id; ?>" <?php selected($default_semester_id, $sem->id); ?>>
-                        <?php echo esc_html($sem->semester_name); ?>
                     </option>
                 <?php endforeach; ?>
             </select>

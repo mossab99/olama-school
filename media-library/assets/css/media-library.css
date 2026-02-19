@@ -2,6 +2,7 @@
 
 .academy-media-library-wrap {
     margin-top: 20px;
+    /* Use standard WP fonts */
 }
 
 .academy-media-library-wrap .card {
@@ -79,6 +80,18 @@
     border: 1px solid #e0e0e0;
 }
 
+.status-approved {
+    background: #e3f2fd;
+    color: #1565c0;
+    border: 1px solid #bbdefb;
+}
+
+.status-rejected {
+    background: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
 /* Curriculum List */
 .unit-card {
     border-right: 4px solid #2271b1;
@@ -107,7 +120,7 @@
 }
 
 /* RTL Support */
-body.rtl .academy-media-library-wrap {
+.academy-media-library-wrap {
     direction: rtl;
 }
 
@@ -199,7 +212,8 @@ body.rtl #settings-status {
 
 .iframe-container {
     position: relative;
-    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    padding-bottom: 56.25%;
+    /* 16:9 Aspect Ratio */
     height: 0;
     overflow: hidden;
 }
@@ -217,14 +231,75 @@ body.rtl #settings-status {
         opacity: 0;
         transform: translateY(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-@media (max-width: 768px) {
+@media screen and (max-width: 782px) {
     .academy-modal {
         width: 95%;
     }
+}
+
+/* Icons & Actions */
+.button-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    color: #50575e;
+    transition: color 0.2s;
+    font-size: 16px;
+    /* Reset font size for button */
+}
+
+.button-icon .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.button-icon:hover {
+    color: #2271b1;
+    background-color: #f0f0f1;
+    border-radius: 4px;
+}
+
+.button-icon.text-success {
+    color: #46b450;
+}
+
+.button-icon.text-success:hover {
+    color: #2d7a31;
+}
+
+.button-icon.text-danger {
+    color: #dc3232;
+}
+
+.button-icon.text-danger:hover {
+    color: #a02222;
+}
+
+.actions-wrapper.icons-mode {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Editable Note */
+textarea.editable-note {
+    resize: vertical;
+    border: 1px solid #ddd;
+    background-color: #fafafa;
+    transition: border-color 0.3s;
+}
+
+textarea.editable-note:focus {
+    background-color: #fff;
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
 }

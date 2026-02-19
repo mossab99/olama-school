@@ -25,15 +25,15 @@ $grades = Olama_School_Grade::get_grades();
             </a>
         <?php endif; ?>
 
-        <?php if (Olama_School_Permissions::can('olama_media_drive_settings')): ?>
-            <a href="#settings" class="nav-tab" data-tab="settings">
-                <?php _e('إعدادات الدرايف', 'olama-school'); ?>
-            </a>
-        <?php endif; ?>
-
         <?php if (Olama_School_Permissions::can('olama_media_view_logs')): ?>
             <a href="#log" class="nav-tab" data-tab="log">
                 <?php _e('سجل الرفع', 'olama-school'); ?>
+            </a>
+        <?php endif; ?>
+
+        <?php if (Olama_School_Permissions::can('olama_media_drive_settings')): ?>
+            <a href="#settings" class="nav-tab" data-tab="settings">
+                <?php _e('إعدادات الدرايف', 'olama-school'); ?>
             </a>
         <?php endif; ?>
     </h2>
@@ -111,6 +111,63 @@ $grades = Olama_School_Grade::get_grades();
                         </p>
                     </div>
                 </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Log Tab -->
+        <?php if (Olama_School_Permissions::can('olama_media_view_logs')): ?>
+            <div id="tab-log" class="tab-content">
+                <div class="log-filter card">
+                    <select id="log-filter-status">
+                        <option value="">
+                            <?php _e('كل الحالات', 'olama-school'); ?>
+                        </option>
+                        <option value="completed">
+                            <?php _e('مكتمل', 'olama-school'); ?>
+                        </option>
+                        <option value="pending">
+                            <?php _e('قيد الانتظار', 'olama-school'); ?>
+                        </option>
+                        <option value="failed">
+                            <?php _e('فشل', 'olama-school'); ?>
+                        </option>
+                    </select>
+                    <button type="button" id="btn-refresh-log" class="button">
+                        <?php _e('تحديث', 'olama-school'); ?>
+                    </button>
+                </div>
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th>
+                                <?php _e('التاريخ', 'olama-school'); ?>
+                            </th>
+                            <th>
+                                <?php _e('الدرس', 'olama-school'); ?>
+                            </th>
+                            <th>
+                                <?php _e('الصف/المادة', 'olama-school'); ?>
+                            </th>
+                            <th>
+                                <?php _e('الحالة', 'olama-school'); ?>
+                            </th>
+                            <th>
+                                <?php _e('رابط الدرايف', 'olama-school'); ?>
+                            </th>
+                            <th>
+                                <?php _e('إجراءات', 'olama-school'); ?>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="log-table-body">
+                        <tr>
+                            <td colspan="6" align="center">
+                                <?php _e('جاري تحميل السجلات...', 'olama-school'); ?>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="log-pagination" class="tablenav-pages"></div>
             </div>
         <?php endif; ?>
 
@@ -229,63 +286,6 @@ $grades = Olama_School_Grade::get_grades();
                 </div>
             </div>
         <?php endif; ?>
-
-        <!-- Log Tab -->
-        <?php if (Olama_School_Permissions::can('olama_media_view_logs')): ?>
-            <div id="tab-log" class="tab-content">
-                <div class="log-filter card">
-                    <select id="log-filter-status">
-                        <option value="">
-                            <?php _e('كل الحالات', 'olama-school'); ?>
-                        </option>
-                        <option value="completed">
-                            <?php _e('مكتمل', 'olama-school'); ?>
-                        </option>
-                        <option value="pending">
-                            <?php _e('قيد الانتظار', 'olama-school'); ?>
-                        </option>
-                        <option value="failed">
-                            <?php _e('فشل', 'olama-school'); ?>
-                        </option>
-                    </select>
-                    <button type="button" id="btn-refresh-log" class="button">
-                        <?php _e('تحديث', 'olama-school'); ?>
-                    </button>
-                </div>
-                <table class="wp-list-table widefat fixed striped">
-                    <thead>
-                        <tr>
-                            <th>
-                                <?php _e('التاريخ', 'olama-school'); ?>
-                            </th>
-                            <th>
-                                <?php _e('الدرس', 'olama-school'); ?>
-                            </th>
-                            <th>
-                                <?php _e('الصف/المادة', 'olama-school'); ?>
-                            </th>
-                            <th>
-                                <?php _e('الحالة', 'olama-school'); ?>
-                            </th>
-                            <th>
-                                <?php _e('رابط الدرايف', 'olama-school'); ?>
-                            </th>
-                            <th>
-                                <?php _e('إجراءات', 'olama-school'); ?>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody id="log-table-body">
-                        <tr>
-                            <td colspan="6" align="center">
-                                <?php _e('جاري تحميل السجلات...', 'olama-school'); ?>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div id="log-pagination" class="tablenav-pages"></div>
-            </div>
-        <?php endif; ?>
     </div>
 </div>
 
@@ -301,6 +301,26 @@ $grades = Olama_School_Grade::get_grades();
                 <iframe id="video-preview-iframe" src="" width="100%" height="480" frameborder="0"
                     allow="autoplay; encrypted-media" allowfullscreen></iframe>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comment Modal -->
+<div id="comment-modal" class="academy-modal-overlay" style="display: none;">
+    <div class="academy-modal">
+        <div class="academy-modal-header">
+            <h3><?php _e('الملاحظات', 'olama-school'); ?></h3>
+            <button type="button" class="academy-modal-close">&times;</button>
+        </div>
+        <div class="academy-modal-body">
+            <textarea id="comment-modal-text" rows="5" style="width:100%;"
+                placeholder="<?php _e('اكتب ملاحظاتك هنا...', 'olama-school'); ?>"></textarea>
+            <input type="hidden" id="comment-media-id">
+        </div>
+        <div class="academy-modal-footer">
+            <button type="button" id="btn-save-comment"
+                class="button button-primary"><?php _e('حفظ', 'olama-school'); ?></button>
+            <button type="button" class="academy-modal-close button"><?php _e('إغلاق', 'olama-school'); ?></button>
         </div>
     </div>
 </div>

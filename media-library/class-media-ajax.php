@@ -24,6 +24,9 @@ class Academy_Media_AJAX
         // Log
         add_action('wp_ajax_academy_get_upload_log', [$this, 'get_log']);
         add_action('wp_ajax_academy_delete_log_entry', [$this, 'delete_log']);
+
+        // Approval & Comments
+        add_action('wp_ajax_academy_update_media_status', [$this, 'update_media_status']);
     }
 
     /**
@@ -73,11 +76,13 @@ class Academy_Media_AJAX
                         $lesson->upload_status = 'none';
                         $lesson->drive_file_url = null;
                         $lesson->drive_file_id = null;
+                        $lesson->approval_status = 'pending'; // Reset approval if file is gone
 
                         // Update DB to reflect deletion
                         $db->update_status($lesson->media_record_id, 'none', [
                             'drive_file_id' => null,
                             'drive_file_url' => null,
+                            'approval_status' => 'pending'
                         ]);
                     }
                 }
@@ -164,6 +169,8 @@ class Academy_Media_AJAX
                 'drive_file_url' => $result['web_view_link'],
                 'drive_folder_id' => $folder_id,
                 'upload_status' => 'completed',
+                'approval_status' => 'pending', // Default
+                'uploader_id' => get_current_user_id(),
                 'uploaded_at' => current_time('mysql')
             ];
 
@@ -177,6 +184,31 @@ class Academy_Media_AJAX
         } catch (Exception $e) {
             wp_send_json_error($e->getMessage());
         }
+    }
+
+    /**
+     * Update Media Status (Approve/Reject/Comment)
+     */
+    public function update_media_status()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_media_approve_video')) {
+            wp_send_json_error(__('غير مصرح لك باتخاذ هذا الإجراء', 'olama-school'));
+        }
+
+        $media_id = intval($_POST['media_id'] ?? 0);
+        $status = sanitize_text_field($_POST['status'] ?? '');
+        $comment = isset($_POST['comment']) ? sanitize_textarea_field($_POST['comment']) : null;
+
+        if (!$media_id || !in_array($status, ['approved', 'rejected', 'pending'])) {
+            wp_send_json_error(__('بيانات غير صالحة', 'olama-school'));
+        }
+
+        $db = new Academy_Media_DB();
+        $db->update_approval_status($media_id, $status, $comment);
+
+        wp_send_json_success(__('تم تحديث الحالة بنجاح', 'olama-school'));
     }
 
     /**
@@ -285,7 +317,8 @@ class Academy_Media_AJAX
                                 'upload_status' => 'none',
                                 'drive_file_id' => null,
                                 'drive_file_url' => null,
-                                'drive_folder_id' => $folder_id
+                                'drive_folder_id' => $folder_id,
+                                'approval_status' => 'pending' // Reset approval
                             ];
                             $db->upsert_upload_record($db_data);
                         }

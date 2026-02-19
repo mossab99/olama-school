@@ -45,9 +45,15 @@ class Olama_School_Unit
             'unit_number' => sanitize_text_field($data['unit_number']),
             'unit_name' => sanitize_text_field($data['unit_name']),
             'objectives' => sanitize_textarea_field($data['objectives'] ?? ''),
-            'start_date' => !empty($data['start_date']) ? sanitize_text_field($data['start_date']) : null,
-            'end_date' => !empty($data['end_date']) ? sanitize_text_field($data['end_date']) : null,
         );
+
+        // Only update dates if explicitly provided or if it's a new unit
+        if (isset($data['start_date']) || empty($data['id'])) {
+            $unit_data['start_date'] = !empty($data['start_date']) ? sanitize_text_field($data['start_date']) : null;
+        }
+        if (isset($data['end_date']) || empty($data['id'])) {
+            $unit_data['end_date'] = !empty($data['end_date']) ? sanitize_text_field($data['end_date']) : null;
+        }
 
         // Check for duplicate unit number
         $duplicate_check = $wpdb->get_var($wpdb->prepare(

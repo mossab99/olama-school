@@ -32,10 +32,11 @@ class Academy_Media_Library
 
     private function maybe_init_db()
     {
-        if (!get_option('academy_media_db_version')) {
+        $current_version = get_option('academy_media_db_version', '0');
+        if (version_compare($current_version, '1.0.1', '<')) {
             $db = new Academy_Media_DB();
             $db->init();
-            update_option('academy_media_db_version', '1.0.0');
+            update_option('academy_media_db_version', '1.0.1');
         }
     }
 
@@ -60,7 +61,7 @@ class Academy_Media_Library
     {
         register_activation_hook(OLAMA_SCHOOL_FILE, [$this, 'activate']);
 
-        add_action('admin_menu', [$this, 'add_submenu'], 20);
+        add_action('admin_menu', [$this, 'add_submenu'], 11);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_init', [$this, 'handle_oauth_callback']);
 
@@ -76,14 +77,38 @@ class Academy_Media_Library
 
     public function add_submenu()
     {
+        $is_arabic = Olama_School_Helpers::is_arabic();
+        $title = $is_arabic ? 'مكتبة الوسائط' : 'Multimedia';
+
         add_submenu_page(
             'olama-school',
-            __('مكتبة الوسائط', 'olama-school'),
-            __('مكتبة الوسائط', 'olama-school'),
+            $title,
+            $title,
             'olama_access_media_library',
             'academy-media-library',
             [$this, 'render_page']
         );
+
+        // Reorder menu items to ensure Settings is always last
+        global $submenu;
+        if (isset($submenu['olama-school'])) {
+            $items = $submenu['olama-school'];
+            $settings_index = false;
+
+            foreach ($items as $index => $item) {
+                if (isset($item[2]) && $item[2] === 'olama-school-settings') {
+                    $settings_index = $index;
+                    break;
+                }
+            }
+
+            if ($settings_index !== false) {
+                $settings_item = $items[$settings_index];
+                unset($items[$settings_index]);
+                $items[] = $settings_item; // Append to end
+                $submenu['olama-school'] = array_values($items);
+            }
+        }
     }
 
     public function enqueue_assets($hook)
@@ -92,12 +117,14 @@ class Academy_Media_Library
             return;
         }
 
-        wp_enqueue_style('academy-media-library-css', ACADEMY_MEDIA_URL . 'assets/css/media-library.css', [], '1.0.1');
-        wp_enqueue_script('academy-media-library-js', ACADEMY_MEDIA_URL . 'assets/js/media-library.js', ['jquery'], '1.0.1', true);
+        wp_enqueue_style('academy-media-library-css', ACADEMY_MEDIA_URL . 'assets/css/media-library.css', [], '1.0.3');
+        wp_enqueue_script('academy-media-library-js', ACADEMY_MEDIA_URL . 'assets/js/media-library.js', ['jquery'], '1.0.3', true);
 
         wp_localize_script('academy-media-library-js', 'academyMedia', [
             'ajaxurl' => admin_url('admin-ajax.php', 'relative'),
             'nonce' => wp_create_nonce('olama_admin_nonce'),
+            'can_approve' => Olama_School_Permissions::can('olama_media_approve_video'),
+            'current_user_id' => get_current_user_id(),
             'i18n' => [
                 'confirm_delete' => __('هل أنت متأكد من حذف هذا السجل؟', 'olama-school'),
                 'uploading' => __('جاري الرفع...', 'olama-school'),
@@ -125,7 +152,16 @@ class Academy_Media_Library
                 'status_completed' => __('مكتمل', 'olama-school'),
                 'status_none' => __('لا يوجد فيديو', 'olama-school'),
                 'status_pending' => __('قيد الانتظار', 'olama-school'),
-                'status_failed' => __('فشل', 'olama-school')
+                'status_failed' => __('فشل', 'olama-school'),
+                'status_approved' => __('معتمد', 'olama-school'),
+                'status_rejected' => __('مرفوض', 'olama-school'),
+                'uploader' => __('الرافع', 'olama-school'),
+                'date' => __('التاريخ', 'olama-school'),
+                'approve' => __('اعتماد', 'olama-school'),
+                'reject' => __('رفض', 'olama-school'),
+                'comments' => __('ملاحظات', 'olama-school'),
+                'save' => __('حفظ', 'olama-school'),
+                'cancel' => __('إلغاء', 'olama-school')
             ]
         ]);
     }

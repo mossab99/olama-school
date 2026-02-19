@@ -54,36 +54,44 @@ $days = array(
         style="margin-bottom: 25px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
         <div class="filter-item">
             <label
+                style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;"><?php _e('Academic Year', 'olama-school'); ?></label>
+            <div class="olama-readonly-field"
+                style="min-width: 180px; padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; color: #475569; font-weight: 500;">
+                <span class="dashicons dashicons-lock"
+                    style="font-size: 14px; width: 14px; height: 14px; margin-right: 5px; color: #94a3b8;"></span>
+                <?php
+                $active_year_obj = Olama_School_Academic::get_year($selected_year_id);
+                echo esc_html($active_year_obj ? $active_year_obj->year_name : '');
+                ?>
+                <input type="hidden" name="academic_year_id" id="olama-year-selector"
+                    value="<?php echo $selected_year_id; ?>">
+            </div>
+        </div>
+
+        <div class="filter-item">
+            <label
+                style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;"><?php _e('Semester', 'olama-school'); ?></label>
+            <div class="olama-readonly-field"
+                style="min-width: 180px; padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; color: #475569; font-weight: 500;">
+                <span class="dashicons dashicons-lock"
+                    style="font-size: 14px; width: 14px; height: 14px; margin-right: 5px; color: #94a3b8;"></span>
+                <?php
+                $active_semester_obj = Olama_School_Academic::get_semester($selected_semester_id);
+                echo esc_html($active_semester_obj ? $active_semester_obj->semester_name : '');
+                ?>
+                <input type="hidden" name="semester_id" id="olama-semester-selector"
+                    value="<?php echo $selected_semester_id; ?>">
+            </div>
+        </div>
+
+        <div class="filter-item">
+            <label
                 style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;"><?php _e('Select Teacher', 'olama-school'); ?></label>
             <select name="teacher_id" id="olama-teacher-selector" class="olama-select2" style="min-width: 280px;">
                 <option value=""><?php _e('-- Select Teacher --', 'olama-school'); ?></option>
                 <?php foreach ($teachers as $teacher): ?>
                     <option value="<?php echo $teacher->ID; ?>" <?php selected($teacher_id, $teacher->ID); ?>>
                         <?php echo esc_html($teacher->display_name); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="filter-item">
-            <label
-                style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;"><?php _e('Academic Year', 'olama-school'); ?></label>
-            <select name="academic_year_id" id="olama-year-selector" style="min-width: 180px;">
-                <?php foreach ($years as $y): ?>
-                    <option value="<?php echo $y->id; ?>" <?php selected($selected_year_id, $y->id); ?>>
-                        <?php echo esc_html($y->year_name); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="filter-item">
-            <label
-                style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;"><?php _e('Semester', 'olama-school'); ?></label>
-            <select name="semester_id" id="olama-semester-selector" style="min-width: 180px;">
-                <?php foreach ($semesters as $s): ?>
-                    <option value="<?php echo $s->id; ?>" <?php selected($selected_semester_id, $s->id); ?>>
-                        <?php echo esc_html($s->semester_name); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -238,35 +246,5 @@ $days = array(
             }
         });
 
-        // Academic Year change should update Semesters
-        $('#olama-year-selector').on('change', function () {
-            var yearId = $(this).val();
-            var semesterSelector = $('#olama-semester-selector');
-
-            semesterSelector.prop('disabled', true);
-
-            $.ajax({
-                url: ajaxurl,
-                data: {
-                    action: 'olama_get_semesters',
-                    academic_year_id: yearId,
-                    nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
-                },
-                success: function (response) {
-                    if (response.success) {
-                        semesterSelector.empty();
-                        $.each(response.data, function (i, sem) {
-                            semesterSelector.append($('<option>', {
-                                value: sem.id,
-                                text: sem.semester_name
-                            }));
-                        });
-                    }
-                },
-                complete: function () {
-                    semesterSelector.prop('disabled', false);
-                }
-            });
-        });
     });
 </script>

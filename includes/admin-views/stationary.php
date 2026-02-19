@@ -5,6 +5,9 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
+$active_year = Olama_School_Academic::get_active_year();
+$selected_year_id = $active_year ? intval($active_year->id) : 0;
 ?>
 
 <div class="olama-stationary-wrap">
@@ -32,18 +35,16 @@ if (!defined('ABSPATH')) {
             <input type="hidden" name="page" value="olama-school-academic">
             <input type="hidden" name="tab" value="stationary">
 
-            <div style="flex: 1; min-width: 200px;">
-                <label class="olama-label">
-                    <?php echo Olama_School_Helpers::translate('Academic Year'); ?>
-                </label>
-                <select name="academic_year_id" class="olama-select" onchange="this.form.submit()">
-                    <?php foreach ($years as $y): ?>
-                        <option value="<?php echo $y->id; ?>" <?php selected($selected_year_id, $y->id); ?>>
-                            <?php echo esc_html($y->year_name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <?php
+            $year_name = '—';
+            foreach ($years as $year) {
+                if ($year->id == $selected_year_id) {
+                    $year_name = $year->year_name;
+                    break;
+                }
+            }
+            echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Academic Year'), $year_name, 'academic_year_id', $selected_year_id);
+            ?>
 
             <div style="flex: 1; min-width: 200px;">
                 <label class="olama-label">
@@ -154,7 +155,8 @@ if (!defined('ABSPATH')) {
         outline: none;
     }
 
-    <?php if (Olama_School_Helpers::is_arabic()): ?>.olama-stationary-wrap {
+    <?php if (Olama_School_Helpers::is_arabic()): ?>
+        .olama-stationary-wrap {
             direction: rtl;
         }
 

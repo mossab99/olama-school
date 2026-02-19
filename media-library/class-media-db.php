@@ -39,7 +39,10 @@ class Academy_Media_DB
             drive_file_id VARCHAR(255) NULL,
             drive_file_url VARCHAR(500) NULL,
             drive_folder_id VARCHAR(255) NULL,
-            upload_status VARCHAR(20) DEFAULT 'pending',
+            upload_status VARCHAR(20) DEFAULT 'white',
+            approval_status VARCHAR(20) DEFAULT 'pending',
+            uploader_id BIGINT UNSIGNED NULL,
+            comments TEXT NULL,
             uploaded_at DATETIME NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             KEY lesson_id (lesson_id),
@@ -59,6 +62,7 @@ class Academy_Media_DB
 
         $units_table = $wpdb->prefix . 'olama_curriculum_units';
         $lessons_table = $wpdb->prefix . 'olama_curriculum_lessons';
+        $users_table = $wpdb->users;
 
         // Fetch units
         $units = $wpdb->get_results($wpdb->prepare(
@@ -78,9 +82,12 @@ class Academy_Media_DB
         foreach ($units as &$unit) {
             $unit->lessons = $wpdb->get_results($wpdb->prepare(
                 "SELECT l.id, l.lesson_number, l.lesson_title, 
-                        m.upload_status, m.drive_file_url, m.drive_file_id, m.id as media_record_id
+                        m.upload_status, m.drive_file_url, m.drive_file_id, m.id as media_record_id,
+                        m.approval_status, m.comments, m.uploader_id, m.uploaded_at,
+                        u.display_name as uploader_name
                 FROM $lessons_table l
                 LEFT JOIN $this->table_name m ON l.id = m.lesson_id
+                LEFT JOIN $users_table u ON m.uploader_id = u.ID
                 WHERE l.unit_id = %d
                 ORDER BY CAST(l.lesson_number AS UNSIGNED) ASC",
                 $unit->id
@@ -118,6 +125,22 @@ class Academy_Media_DB
     {
         global $wpdb;
         $data = array_merge(['upload_status' => $status], $extras);
+        return $wpdb->update($this->table_name, $data, ['id' => $id]);
+    }
+
+    /**
+     * Update approval status
+     */
+    public function update_approval_status($id, $status, $comment = null)
+    {
+        global $wpdb;
+        $data = ['approval_status' => $status];
+        if ($comment !== null) {
+            // Append comment if it exists, or set it
+            // Logic: For simplicity, we just overwrite comments for now, or append with newline
+            // Let's overwrite for this iteration or just update if provided
+            $data['comments'] = $comment;
+        }
         return $wpdb->update($this->table_name, $data, ['id' => $id]);
     }
 

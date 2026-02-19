@@ -1325,8 +1325,20 @@ class Olama_School_Helpers
     /**
      * Render Academic Year Selector
      */
-    public static function academic_year_selector($selected_year_id)
+    public static function academic_year_selector($selected_year_id, $disabled = false)
     {
+        if ($disabled) {
+            $years = Olama_School_Academic::get_years();
+            $year_name = '—';
+            foreach ($years as $year) {
+                if ($year->id == $selected_year_id) {
+                    $year_name = $year->year_name;
+                    break;
+                }
+            }
+            return self::locked_filter_render(self::translate('Academic Year'), $year_name, 'academic_year_id', $selected_year_id);
+        }
+
         $years = Olama_School_Academic::get_years();
         if (empty($years))
             return '';
@@ -1345,6 +1357,29 @@ class Olama_School_Helpers
                     </option>
                 <?php endforeach; ?>
             </select>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Render Locked Filter (matches Weekly Plan style)
+     */
+    public static function locked_filter_render($label, $value, $name = '', $hidden_value = '')
+    {
+        ob_start();
+        ?>
+        <div class="olama-filter-item" style="flex: 1; min-width: 150px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 5px;"><?php echo esc_html($label); ?></label>
+            <?php if ($name && $hidden_value !== ''): ?>
+                <input type="hidden" name="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($hidden_value); ?>" />
+            <?php endif; ?>
+            <div
+                style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; color: #475569; cursor: not-allowed; min-height: 18px;">
+                <?php echo esc_html($value); ?>
+                <span
+                    style="font-size: 0.8em; color: #10b981; margin-right: 4px;">(<?php echo self::translate('Active'); ?>)</span>
+            </div>
         </div>
         <?php
         return ob_get_clean();
