@@ -162,6 +162,12 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                                     data-exam='<?php echo esc_attr(json_encode($exam)); ?>'>
                                     <?php echo Olama_School_Helpers::translate('Enter Details'); ?>
                                 </button>
+                                <button type="button" class="button button-small open-teacher-upload-modal"
+                                    data-exam-id="<?php echo $exam->id; ?>"
+                                    title="<?php echo Olama_School_Helpers::translate('Upload Exam File'); ?>"
+                                    style="margin-left: 5px;">
+                                    <span class="dashicons dashicons-upload"></span>
+                                </button>
                                 <?php if ($exam->attachment_id): ?>
                                     <a href="<?php echo wp_nonce_url(admin_url('admin-ajax.php?action=olama_download_exam_file&exam_id=' . $exam->id), 'olama_download_file_' . $exam->id); ?>"
                                         class="button button-small"
@@ -271,54 +277,6 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                             style="width: 100%;"></textarea>
                     </div>
 
-                    <!-- Exam Attachment Section -->
-                    <div class="material-section"
-                        style="margin-top: 20px; background: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px solid #bae6fd;">
-                        <h3
-                            style="margin: 0 0 10px; font-size: 14px; color: #0369a1; border-bottom: 2px solid #bae6fd; padding-bottom: 8px;">
-                            <?php echo Olama_School_Helpers::translate('Exam File (Word docx and pdf)'); ?>
-                        </h3>
-                        <div id="exam-attachment-container">
-                            <!-- Status Info -->
-                            <div id="attachment-status" style="margin-bottom: 10px; display: none;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <span class="dashicons dashicons-media-document" style="color: #64748b;"></span>
-                                    <span id="attachment-filename" style="font-weight: 500; color: #1e293b;"></span>
-                                    <span id="attachment-badge" class="olama-badge" style="font-size: 11px;"></span>
-                                </div>
-                                <div style="margin-top: 10px;">
-                                    <a href="#" id="download-attachment-btn" class="button button-secondary">
-                                        <span class="dashicons dashicons-download"
-                                            style="vertical-align: middle;"></span>
-                                        <?php echo Olama_School_Helpers::translate('Download My File'); ?>
-                                    </a>
-                                    <button type="button" id="delete-attachment-btn" class="button button-link-delete"
-                                        style="color: #ef4444;">
-                                        <span class="dashicons dashicons-trash" style="vertical-align: middle;"></span>
-                                        <?php echo Olama_School_Helpers::translate('Delete File'); ?>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Upload Input -->
-                            <div id="attachment-upload-section" style="display: none;">
-                                <input type="file" id="exam_file_input" accept=".docx,.pdf"
-                                    style="margin-bottom: 10px; width: 100%;">
-                                <button type="button" id="upload-exam-btn" class="button button-primary">
-                                    <span class="dashicons dashicons-upload" style="vertical-align: middle;"></span>
-                                    <?php echo Olama_School_Helpers::translate('Upload Exam File'); ?>
-                                </button>
-                                <p class="description" style="margin-top: 5px;">
-                                    <?php echo Olama_School_Helpers::translate('Only .docx and .pdf files are accepted. Maximum size 10MB.'); ?>
-                                </p>
-                            </div>
-
-                            <div id="attachment-loading" style="text-align: center; display: none;">
-                                <span class="dashicons dashicons-update spin"></span>
-                                <?php echo Olama_School_Helpers::translate('Loading...'); ?>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="olama-modal-footer">
@@ -328,6 +286,67 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                         onclick="closeModal('teacher-exam-modal')"><?php echo Olama_School_Helpers::translate('Cancel'); ?></button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Teacher Upload Modal -->
+    <div id="teacher-upload-modal" class="olama-modal" style="display: none;">
+        <div class="olama-modal-content" style="max-width: 500px;">
+            <div class="olama-modal-header">
+                <h2><?php echo Olama_School_Helpers::translate('Upload Exam File'); ?></h2>
+                <span class="olama-modal-close" onclick="closeModal('teacher-upload-modal')">&times;</span>
+            </div>
+            <div style="padding: 20px;">
+                <input type="hidden" id="t_upload_exam_id">
+                <div id="attachment-container">
+                    <!-- Status Info -->
+                    <div id="attachment-status"
+                        style="margin-bottom: 20px; display: none; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="dashicons dashicons-media-document" style="color: #64748b;"></span>
+                            <span id="attachment-filename"
+                                style="font-weight: 500; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;"></span>
+                            <span id="attachment-badge" class="olama-badge" style="font-size: 11px;"></span>
+                        </div>
+                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                            <a href="#" id="download-attachment-btn" class="button button-secondary">
+                                <span class="dashicons dashicons-download" style="vertical-align: middle;"></span>
+                                <?php echo Olama_School_Helpers::translate('Download My File'); ?>
+                            </a>
+                            <button type="button" id="delete-attachment-btn" class="button button-link-delete"
+                                style="color: #ef4444;">
+                                <span class="dashicons dashicons-trash" style="vertical-align: middle;"></span>
+                                <?php echo Olama_School_Helpers::translate('Delete File'); ?>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Upload Input -->
+                    <div id="attachment-upload-section"
+                        style="display: none; background: #f0f9ff; padding: 20px; border-radius: 8px; border: 1px solid #bae6fd;">
+                        <h4 style="margin-top: 0; color: #0369a1;">
+                            <?php echo Olama_School_Helpers::translate('Upload New File'); ?></h4>
+                        <input type="file" id="exam_file_input" accept=".docx,.pdf"
+                            style="margin-bottom: 15px; width: 100%;">
+                        <button type="button" id="upload-exam-btn" class="button button-primary" style="width: 100%;">
+                            <span class="dashicons dashicons-upload" style="vertical-align: middle;"></span>
+                            <?php echo Olama_School_Helpers::translate('Upload File'); ?>
+                        </button>
+                        <p class="description" style="margin-top: 10px;">
+                            <?php echo Olama_School_Helpers::translate('Only .docx and .pdf files are accepted.'); ?>
+                        </p>
+                    </div>
+
+                    <div id="attachment-loading" style="text-align: center; padding: 20px; display: none;">
+                        <span class="dashicons dashicons-update spin"></span>
+                        <?php echo Olama_School_Helpers::translate('Loading...'); ?>
+                    </div>
+                </div>
+            </div>
+            <div class="olama-modal-footer">
+                <button type="button" class="button"
+                    onclick="closeModal('teacher-upload-modal')"><?php echo Olama_School_Helpers::translate('Close'); ?></button>
+            </div>
         </div>
     </div>
 </div>
@@ -538,7 +557,14 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                 $('#material_teacher_notes').val(data.teacher_notes || '');
             }
             $('#teacher-exam-modal').fadeIn(200);
-            loadAttachmentInfo(data.id);
+        });
+
+        // Open Teacher Upload Modal
+        $(document).on('click', '.open-teacher-upload-modal', function () {
+            var examId = $(this).data('exam-id');
+            $('#t_upload_exam_id').val(examId);
+            $('#teacher-upload-modal').fadeIn(200);
+            loadAttachmentInfo(examId);
         });
 
         function loadAttachmentInfo(examId) {
@@ -591,7 +617,7 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
 
         $('#upload-exam-btn').on('click', function () {
             var fileInput = $('#exam_file_input')[0];
-            var examId = $('#t_exam_id').val();
+            var examId = $('#t_upload_exam_id').val();
 
             if (fileInput.files.length === 0) {
                 alert('<?php echo Olama_School_Helpers::translate('Please select a file first.'); ?>');
@@ -631,7 +657,7 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
         });
 
         $(document).on('click', '#delete-attachment-btn', function () {
-            var examId = $('#t_exam_id').val();
+            var examId = $('#t_upload_exam_id').val();
             if (!confirm('<?php echo Olama_School_Helpers::translate('Are you sure you want to delete this file?'); ?>')) return;
 
             var btn = $(this);
