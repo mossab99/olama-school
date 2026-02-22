@@ -582,14 +582,10 @@ $semester_exams = Olama_School_Academic::get_semester_exams($selected_semester_i
                     $('#download-attachment-btn').attr('href', info.download_url);
                     $('#attachment-status').fadeIn(200);
 
-                    // Teachers can replace/delete if not approved
-                    if (info.file_status !== 'approved') {
-                        $('#attachment-upload-section').show();
-                        $('#upload-exam-btn').text('<?php echo Olama_School_Helpers::translate('Replace File'); ?>');
-                    } else {
-                        // If approved, hide delete button for teachers
-                        $('#delete-attachment-btn').hide();
-                    }
+                    // Teachers can always replace/delete their own file version
+                    $('#attachment-upload-section').show();
+                    $('#upload-exam-btn').text('<?php echo Olama_School_Helpers::translate('Replace File'); ?>');
+                    $('#delete-attachment-btn').show();
                 } else {
                     $('#attachment-upload-section').show();
                     $('#upload-exam-btn').html('<span class="dashicons dashicons-upload"></span> <?php echo Olama_School_Helpers::translate('Upload Exam File'); ?>');
