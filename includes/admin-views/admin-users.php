@@ -63,6 +63,11 @@ if (!defined('ABSPATH')) {
                             <span class="dashicons dashicons-plus-alt" style="margin-top: 4px;"></span>
                             <?php _e('Add New Family', 'olama-school'); ?>
                         </button>
+                        <button type="button" class="button" style="color: #d63638; border-color: #d63638;"
+                            onclick="olamaDeleteAllFamilies()">
+                            <span class="dashicons dashicons-trash" style="margin-top: 4px;"></span>
+                            <?php _e('Delete All Families', 'olama-school'); ?>
+                        </button>
                     </div>
                 </div>
 
@@ -205,6 +210,11 @@ if (!defined('ABSPATH')) {
                 <input type="hidden" name="delete_family" value="1" />
             </form>
 
+            <form id="olama-delete-all-families-form" method="post" action="" style="display: none;">
+                <?php wp_nonce_field('olama_delete_all_families'); ?>
+                <input type="hidden" name="delete_all_families" value="1" />
+            </form>
+
             <script>
                 function olamaOpenFamilyModal(family = null) {
                     const list = document.getElementById('family-students-list');
@@ -289,6 +299,17 @@ if (!defined('ABSPATH')) {
                         document.getElementById('olama-delete-family-form').submit();
                     }
                 }
+
+                function olamaDeleteAllFamilies() {
+                    if (confirm('<?php _e('CRITICAL WARNING: Are you sure you want to delete ALL families? This action is IRREVERSIBLE!', 'olama-school'); ?>')) {
+                        const confirmText = prompt('<?php _e('FINAL CONFIRMATION: To proceed, please type "DELETE" in the box below:', 'olama-school'); ?>');
+                        if (confirmText === 'DELETE') {
+                            document.getElementById('olama-delete-all-families-form').submit();
+                        } else {
+                            alert('<?php _e('Wipe cancelled. Final confirmation mismatched.', 'olama-school'); ?>');
+                        }
+                    }
+                }
             </script>
 
             <!-- Import Families Modal -->
@@ -341,6 +362,11 @@ if (!defined('ABSPATH')) {
                             onclick="document.getElementById('olama-import-students-enrollment-modal').style.display='block'">
                             <span class="dashicons dashicons-upload" style="margin-top: 4px;"></span>
                             <?php _e('Import Students & Enroll', 'olama-school'); ?>
+                        </button>
+                        <button type="button" class="button" style="color: #d63638; border-color: #d63638;"
+                            onclick="olamaDeleteAllStudents()">
+                            <span class="dashicons dashicons-trash" style="margin-top: 4px;"></span>
+                            <?php _e('Delete All Students & Enrollments', 'olama-school'); ?>
                         </button>
                     </div>
                 </div>
@@ -549,6 +575,11 @@ if (!defined('ABSPATH')) {
                 <input type="hidden" name="delete_student" value="1" />
             </form>
 
+            <form id="olama-delete-all-students-form" method="post" action="" style="display: none;">
+                <?php wp_nonce_field('olama_delete_all_students'); ?>
+                <input type="hidden" name="delete_all_students" value="1" />
+            </form>
+
             <!-- Unenroll Student Form (Hidden) -->
             <form id="olama-unenroll-student-form" method="post" action="" style="display: none;">
                 <?php wp_nonce_field('olama_unenroll_student'); ?>
@@ -607,6 +638,17 @@ if (!defined('ABSPATH')) {
                     if (confirm('<?php _e('Are you sure you want to delete student: ', 'olama-school'); ?>' + name + '? <?php _e('This will also delete ALL their enrollment history.', 'olama-school'); ?>')) {
                         document.getElementById('delete-student-id').value = id;
                         document.getElementById('olama-delete-student-form').submit();
+                    }
+                }
+
+                function olamaDeleteAllStudents() {
+                    if (confirm('<?php _e('CRITICAL WARNING: Are you sure you want to delete ALL students and their enrollment history? This action is IRREVERSIBLE!', 'olama-school'); ?>')) {
+                        const confirmText = prompt('<?php _e('FINAL CONFIRMATION: To proceed, please type "DELETE" in the box below:', 'olama-school'); ?>');
+                        if (confirmText === 'DELETE') {
+                            document.getElementById('olama-delete-all-students-form').submit();
+                        } else {
+                            alert('<?php _e('Wipe cancelled. Final confirmation mismatched.', 'olama-school'); ?>');
+                        }
                     }
                 }
 

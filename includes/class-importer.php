@@ -96,7 +96,29 @@ class Olama_School_Importer
                 $status = !empty($plan_row['status']) ? $plan_row['status'] : 'draft';
 
                 if ($section_id && $subject_id) {
-                    $wpdb->insert($wpdb->prefix . 'olama_plans', array(
+                    // Get active IDs for the plan
+                    $academic_year_id = 0;
+                    $semester_id = 0;
+                    if (class_exists('Olama_School_Academic')) {
+                        $active_year = Olama_School_Academic::get_active_year();
+                        $active_semester = Olama_School_Academic::get_active_semester();
+                        $academic_year_id = $active_year ? $active_year->id : 0;
+                        $semester_id = $active_semester ? $active_semester->id : 0;
+                    }
+
+                    // Check if plan already exists for this slot
+                    $existing_plan_id = $wpdb->get_var($wpdb->prepare(
+                        "SELECT id FROM {$wpdb->prefix}olama_plans 
+                         WHERE section_id = %d AND subject_id = %d AND plan_date = %s AND period_number = %d",
+                        $section_id,
+                        $subject_id,
+                        $plan_date,
+                        $period_number
+                    ));
+
+                    $plan_data = array(
+                        'academic_year_id' => $academic_year_id,
+                        'semester_id' => $semester_id,
                         'section_id' => $section_id,
                         'subject_id' => $subject_id,
                         'teacher_id' => $teacher_id,
@@ -104,8 +126,15 @@ class Olama_School_Importer
                         'period_number' => $period_number,
                         'custom_topic' => $custom_topic,
                         'status' => $status,
-                        'created_at' => current_time('mysql'),
-                    ));
+                        'updated_at' => current_time('mysql'),
+                    );
+
+                    if ($existing_plan_id) {
+                        $wpdb->update($wpdb->prefix . 'olama_plans', $plan_data, array('id' => $existing_plan_id));
+                    } else {
+                        $plan_data['created_at'] = current_time('mysql');
+                        $wpdb->insert($wpdb->prefix . 'olama_plans', $plan_data);
+                    }
                     $imported_count++;
                 }
             }
@@ -395,7 +424,18 @@ class Olama_School_Importer
     private static function get_id_by_name($table, $column, $name)
     {
         global $wpdb;
-        return $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE $column = %s", $name));
+        $name_normalized = Olama_School_Helpers::normalize_for_match($name);
+        if (empty($name_normalized))
+            return 0;
+
+        $results = $wpdb->get_results("SELECT id, $column FROM $table");
+
+        foreach ($results as $res) {
+            if (Olama_School_Helpers::normalize_for_match($res->$column) === $name_normalized) {
+                return intval($res->id);
+            }
+        }
+        return 0;
     }
 
     /**
@@ -1330,20 +1370,12 @@ class Olama_School_Importer
                     continue;
                 }
 
-                // 1. Get or Create Student
-                $student_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}olama_students WHERE student_uid = %s", $row['student_uid']));
-                $student_payload = array(
+                // 1. Get or Create Student (Handles Upsert)
+                $student_id = Olama_School_Student::register_student(array(
                     'student_name' => $row['student_name'],
                     'student_uid' => $row['student_uid'],
                     'family_id' => $row['family_id']
-                );
-
-                if ($student_id) {
-                    $wpdb->update("{$wpdb->prefix}olama_students", $student_payload, array('id' => $student_id));
-                } else {
-                    $wpdb->insert("{$wpdb->prefix}olama_students", $student_payload);
-                    $student_id = $wpdb->insert_id;
-                }
+                ));
 
                 // 2. Handle Enrollment
                 $year_name = !empty($row['year_name']) ? $row['year_name'] : '';
@@ -1352,44 +1384,109 @@ class Olama_School_Importer
 
                 if (!empty($grade_name) && !empty($section_name)) {
                     $year_id = !empty($year_name) ? self::get_id_by_name($wpdb->prefix . 'olama_academic_years', 'year_name', $year_name) : $active_year_id;
-                    $grade_id = self::get_id_by_name($wpdb->prefix . 'olama_grades', 'grade_name', $grade_name);
 
-                    if (!$grade_id) {
-                        // Grade not found - skip enrollment for this row
+                    // Fallback to active year if year_name provided but not found
+                    if (!$year_id && !empty($year_name)) {
+                        error_log('Student Import: Year "' . $year_name . '" not found for UID=' . $row['student_uid'] . '. Falling back to active year: ' . $active_year_id);
+                        $year_id = $active_year_id;
+                    }
+
+                    if (!$year_id) {
+                        error_log('Student Import [SKIP] UID=' . $row['student_uid'] . ': No year_id resolved (active year is also 0). Grade="' . $grade_name . '"');
                         $count++;
                         continue;
                     }
 
-                    if ($year_id && $grade_id) {
-                        $section_id = $wpdb->get_var($wpdb->prepare(
-                            "SELECT id FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d AND section_name = %s AND academic_year_id = %d",
-                            $grade_id,
-                            $section_name,
-                            $year_id
+                    $grade_id = self::get_id_by_name($wpdb->prefix . 'olama_grades', 'grade_name', $grade_name);
+
+                    if (!$grade_id) {
+                        error_log('Student Import [SKIP] UID=' . $row['student_uid'] . ': Grade "' . $grade_name . '" not found in DB.');
+                        $count++;
+                        continue;
+                    }
+
+                    // Section matching - fetch all sections for grade/year and normalize for comparison
+                    $section_id = 0;
+                    $section_norm = Olama_School_Helpers::normalize_for_match($section_name);
+                    $available_sections = $wpdb->get_results($wpdb->prepare(
+                        "SELECT id, section_name FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d AND academic_year_id = %d",
+                        $grade_id,
+                        $year_id
+                    ));
+
+                    if (empty($available_sections)) {
+                        error_log('Student Import [SKIP] UID=' . $row['student_uid'] . ': No sections found for grade_id=' . $grade_id . ' year_id=' . $year_id . ' (Grade="' . $grade_name . '" Year="' . $year_name . '")');
+                    }
+
+                    foreach ($available_sections as $sec) {
+                        $db_norm = Olama_School_Helpers::normalize_for_match($sec->section_name);
+                        // Debug: log hex of both sides to catch invisible character mismatches
+                        if (mb_strlen($section_name, 'UTF-8') <= 3 || mb_strlen($sec->section_name, 'UTF-8') <= 3) {
+                            error_log('Student Import [DEBUG] UID=' . $row['student_uid'] . ': CSV section hex=[' . bin2hex($section_norm) . '] DB section "' . $sec->section_name . '" hex=[' . bin2hex($db_norm) . ']');
+                        }
+                        if ($db_norm === $section_norm) {
+                            $section_id = intval($sec->id);
+                            break;
+                        }
+                    }
+
+                    if ($section_id) {
+                        $effective_year_id = $year_id;
+                    } else {
+                        // Fallback: look for section in ANY year for this grade
+                        $all_sections_for_grade = $wpdb->get_results($wpdb->prepare(
+                            "SELECT id, section_name, academic_year_id FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d",
+                            $grade_id
                         ));
 
-                        if ($section_id) {
-                            $exists = $wpdb->get_var($wpdb->prepare(
-                                "SELECT id FROM {$wpdb->prefix}olama_student_enrollment WHERE student_id = %d AND academic_year_id = %d",
-                                $student_id,
-                                $year_id
-                            ));
-
-                            $enroll_data = array(
-                                'student_id' => $student_id,
-                                'academic_year_id' => $year_id,
-                                'section_id' => $section_id,
-                                'status' => 'active',
-                                'enrollment_date' => current_time('mysql', 1)
-                            );
-
-                            if ($exists) {
-                                $wpdb->update("{$wpdb->prefix}olama_student_enrollment", $enroll_data, array('id' => $exists));
-                            } else {
-                                $wpdb->insert("{$wpdb->prefix}olama_student_enrollment", $enroll_data);
+                        $fallback_section = null;
+                        foreach ($all_sections_for_grade as $sec) {
+                            if (Olama_School_Helpers::normalize_for_match($sec->section_name) === $section_norm) {
+                                $fallback_section = $sec;
+                                break;
                             }
-                            $enrolled_count++;
                         }
+
+                        if ($fallback_section) {
+                            $section_id = intval($fallback_section->id);
+                            $effective_year_id = intval($fallback_section->academic_year_id);
+                            error_log('Student Import [FALLBACK] UID=' . $row['student_uid'] . ': Section "' . $section_name . '" found under year_id=' . $effective_year_id . ' instead of ' . $year_id);
+                        } else {
+                            $available_names = implode(', ', array_map(function ($s) {
+                                return $s->section_name;
+                            }, $available_sections));
+                            error_log('Student Import [SKIP] UID=' . $row['student_uid'] . ': Section "' . $section_name . '" (normalized: "' . $section_norm . '") not matched. Available for year: [' . $available_names . '] for grade_id=' . $grade_id . ' year_id=' . $year_id);
+                        }
+                    }
+
+                    if ($section_id) {
+                        $exists = $wpdb->get_var($wpdb->prepare(
+                            "SELECT id FROM {$wpdb->prefix}olama_student_enrollment WHERE student_id = %d AND academic_year_id = %d",
+                            $student_id,
+                            $effective_year_id
+                        ));
+
+                        $enroll_data = array(
+                            'student_id' => $student_id,
+                            'academic_year_id' => $effective_year_id,
+                            'section_id' => $section_id,
+                            'status' => 'active',
+                            'enrollment_date' => current_time('mysql', 1)
+                        );
+
+                        if ($exists) {
+                            $wpdb->update("{$wpdb->prefix}olama_student_enrollment", $enroll_data, array('id' => $exists));
+                        } else {
+                            $wpdb->insert("{$wpdb->prefix}olama_student_enrollment", $enroll_data);
+                        }
+                        $enrolled_count++;
+                    }
+                } else {
+                    if (empty($grade_name)) {
+                        error_log('Student Import [SKIP] UID=' . $row['student_uid'] . ': grade_name is empty in CSV.');
+                    }
+                    if (empty($section_name)) {
+                        error_log('Student Import [SKIP] UID=' . $row['student_uid'] . ': section_name is empty in CSV.');
                     }
                 }
                 $count++;
@@ -1399,7 +1496,12 @@ class Olama_School_Importer
             if (class_exists('Olama_School_Student'))
                 Olama_School_Student::clear_cache();
 
-            set_transient('olama_import_message', sprintf(__('%d students processed. %d enrolled.', 'olama-school'), $count, $enrolled_count), 30);
+            $failed_enrollments = $count - $enrolled_count;
+            $msg = sprintf(__('Import successful! %d students processed, %d enrollments created.', 'olama-school'), $count, $enrolled_count);
+            if ($failed_enrollments > 0) {
+                $msg .= ' ' . sprintf(__('%d enrollments skipped due to missing grade/section.', 'olama-school'), $failed_enrollments);
+            }
+            set_transient('olama_import_message', $msg, 30);
             error_log('Student Import: FINISHED. Count: ' . $count);
         } else {
             error_log('Student Import: FAILED to open handle.');

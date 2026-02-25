@@ -95,6 +95,22 @@ class Olama_School_Family
     }
 
     /**
+     * Delete ALL families
+     */
+    public static function delete_all_families()
+    {
+        global $wpdb;
+
+        // Check for ANY students first as a safety measure
+        $student_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}olama_students");
+        if ($student_count > 0) {
+            return new WP_Error('linked_students_exist', __('Cannot delete all families while students exist. Delete all students first.', 'olama-school'));
+        }
+
+        return $wpdb->query("DELETE FROM {$wpdb->prefix}olama_families");
+    }
+
+    /**
      * Get students belonging to a family
      */
     public static function get_family_students($family_uid)

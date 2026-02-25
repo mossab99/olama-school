@@ -2212,6 +2212,17 @@ class Olama_School_Admin
             }
         }
 
+        // Handle Delete All Students
+        if (isset($_POST['delete_all_students']) && check_admin_referer('olama_delete_all_students')) {
+            if (!Olama_School_Permissions::can('olama_manage_users_students')) {
+                wp_die(__('Unauthorized', 'olama-school'));
+            }
+            $result = Olama_School_Student::delete_all_students();
+            if ($result !== false) {
+                echo '<div class="updated"><p>' . __('All students and enrollments deleted successfully.', 'olama-school') . '</p></div>';
+            }
+        }
+
         // Handle Student Unenrollment
         if (isset($_POST['unenroll_student']) && check_admin_referer('olama_unenroll_student')) {
             $result = Olama_School_Student::unenroll_student(
@@ -2292,6 +2303,19 @@ class Olama_School_Admin
                 echo '<div class="error"><p>' . $result->get_error_message() . '</p></div>';
             } elseif ($result) {
                 echo '<div class="updated"><p>' . __('Family deleted successfully.', 'olama-school') . '</p></div>';
+            }
+        }
+
+        // Handle Delete All Families
+        if (isset($_POST['delete_all_families']) && check_admin_referer('olama_delete_all_families')) {
+            if (!Olama_School_Permissions::can('olama_manage_users_families')) {
+                wp_die(__('Unauthorized', 'olama-school'));
+            }
+            $result = Olama_School_Family::delete_all_families();
+            if (is_wp_error($result)) {
+                echo '<div class="error"><p>' . $result->get_error_message() . '</p></div>';
+            } elseif ($result !== false) {
+                echo '<div class="updated"><p>' . __('All families deleted successfully.', 'olama-school') . '</p></div>';
             }
         }
 

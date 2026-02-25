@@ -73,22 +73,41 @@ class Olama_School_Student
     {
         global $wpdb;
 
-        $result = $wpdb->insert(
-            "{$wpdb->prefix}olama_students",
-            array(
-                'student_name' => $data['student_name'],
-                'student_uid' => $data['student_uid'] ?? $data['student_id_number'],
-                'family_id' => $data['family_id'] ?? null,
-                'dob' => !empty($data['dob']) ? $data['dob'] : null,
-                'national_id' => $data['national_id'] ?? null,
-                'gender' => $data['gender'] ?? null,
-                'is_active' => 1
-            )
+        $student_uid = $data['student_uid'] ?? $data['student_id_number'];
+        $existing_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}olama_students WHERE student_uid = %s",
+            $student_uid
+        ));
+
+        $student_payload = array(
+            'student_name' => $data['student_name'],
+            'student_uid' => $student_uid,
+            'family_id' => $data['family_id'] ?? null,
+            'dob' => !empty($data['dob']) ? $data['dob'] : null,
+            'national_id' => $data['national_id'] ?? null,
+            'gender' => $data['gender'] ?? null,
+            'is_active' => isset($data['is_active']) ? intval($data['is_active']) : 1
         );
 
-        if ($result) {
-            self::clear_cache();
-            return $wpdb->insert_id;
+        if ($existing_id) {
+            $result = $wpdb->update(
+                "{$wpdb->prefix}olama_students",
+                $student_payload,
+                array('id' => $existing_id)
+            );
+            if ($result !== false) {
+                self::clear_cache();
+                return $existing_id;
+            }
+        } else {
+            $result = $wpdb->insert(
+                "{$wpdb->prefix}olama_students",
+                $student_payload
+            );
+            if ($result) {
+                self::clear_cache();
+                return $wpdb->insert_id;
+            }
         }
 
         return false;
@@ -260,6 +279,21 @@ class Olama_School_Student
 
         // Delete student
         $result = $wpdb->delete("{$wpdb->prefix}olama_students", array('id' => $id));
+
+        self::clear_cache();
+        return $result;
+    }
+
+    /**
+     * Delete ALL students and ALL enrollments
+     */
+    public static function delete_all_students()
+    {
+        global $wpdb;
+
+        // Delete all records from enrollment and student tables
+        $wpdb->query("DELETE FROM {$wpdb->prefix}olama_student_enrollment");
+        $result = $wpdb->query("DELETE FROM {$wpdb->prefix}olama_students");
 
         self::clear_cache();
         return $result;
