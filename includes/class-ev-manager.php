@@ -97,24 +97,45 @@ class Olama_School_EV_Manager
             case 'fix_orphaned_data':
                 global $wpdb;
 
-                // Step 1: Backfill student_uid for records that still have it NULL
-                // but whose student_id points to an existing student
+                // Step 0: Ensure student_uid column exists
+                $col_exists = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_ev_records LIKE 'student_uid'");
+                if (empty($col_exists)) {
+                    $wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_records ADD COLUMN student_uid varchar(50) DEFAULT NULL AFTER student_id");
+                }
+
+                // Step 1: If backup table exists, use it to restore lost UIDs in ev_records
+                $backup_table = $wpdb->prefix . 'olama_students_backup';
+                $backup_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $backup_table));
+
+                $mapped_count = 0;
+                if ($backup_exists) {
+                    $mapped_count = (int) $wpdb->query(
+                        "UPDATE {$wpdb->prefix}olama_ev_records r 
+                         INNER JOIN {$backup_table} s_old ON r.student_id = s_old.id 
+                         SET r.student_uid = TRIM(s_old.student_uid) 
+                         WHERE (r.student_uid IS NULL OR r.student_uid = '')"
+                    );
+                }
+
+                // Step 2: Backfill from CURRENT students for any records that have valid (non-orphaned) student_id but NULL student_uid
                 $wpdb->query(
                     "UPDATE {$wpdb->prefix}olama_ev_records r 
-                    INNER JOIN {$wpdb->prefix}olama_students s ON r.student_id = s.id 
-                    SET r.student_uid = s.student_uid 
-                    WHERE r.student_uid IS NULL"
+                     INNER JOIN {$wpdb->prefix}olama_students s ON r.student_id = s.id 
+                     SET r.student_uid = s.student_uid 
+                     WHERE (r.student_uid IS NULL OR r.student_uid = '')"
                 );
 
-                // Step 2: Find orphaned records where student_id no longer exists
-                // and re-link using student_uid to the new student with the same UID
-                $result = $wpdb->query(
+                // Step 3: Re-link orphaned records to NEW student IDs using student_uid
+                // Using LEFT JOIN instead of NOT IN for better MySQL/MariaDB compatibility on Linux
+                $relinked_count = (int) $wpdb->query(
                     "UPDATE {$wpdb->prefix}olama_ev_records r 
-                    INNER JOIN {$wpdb->prefix}olama_students s ON r.student_uid = s.student_uid 
-                    SET r.student_id = s.id 
-                    WHERE r.student_uid IS NOT NULL 
-                    AND r.student_id NOT IN (SELECT id FROM {$wpdb->prefix}olama_students)"
+                     INNER JOIN {$wpdb->prefix}olama_students s ON TRIM(LOWER(r.student_uid)) = TRIM(LOWER(s.student_uid)) 
+                     LEFT JOIN {$wpdb->prefix}olama_students s_check ON r.student_id = s_check.id
+                     SET r.student_id = s.id 
+                     WHERE s_check.id IS NULL AND r.student_uid IS NOT NULL AND TRIM(r.student_uid) != ''"
                 );
+
+                $result = array('mapped' => $mapped_count, 'relinked' => $relinked_count);
                 break;
         }
 
@@ -125,6 +146,9 @@ class Olama_School_EV_Manager
             if ($action === 'fix_old_data' || $action === 'fix_orphaned_data') {
                 $msg = ($action === 'fix_orphaned_data') ? 'orphaned_fix_complete' : 'fix_complete';
                 $url = admin_url('admin.php?page=olama-school-evaluation&tab=evaluation_mgmt&message=' . $msg);
+                if (is_array($result)) {
+                    $url = add_query_arg($result, $url);
+                }
             } else {
                 // Ensure we stay on the management tab
                 if (strpos($url, 'tab=evaluation_mgmt') === false) {

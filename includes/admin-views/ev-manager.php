@@ -16,7 +16,13 @@ if (!defined('ABSPATH')) {
                 if ($msg === 'fix_complete') {
                     echo Olama_School_Helpers::translate('Old evaluation data fixed successfully.');
                 } elseif ($msg === 'orphaned_fix_complete') {
-                    echo Olama_School_Helpers::translate('Orphaned evaluation data fixed successfully.');
+                    $mapped = isset($_GET['mapped']) ? intval($_GET['mapped']) : 0;
+                    $relinked = isset($_GET['relinked']) ? intval($_GET['relinked']) : 0;
+                    echo sprintf(
+                        Olama_School_Helpers::translate('Orphaned evaluation data fixed successfully. (%d mapped, %d relinked)'),
+                        $mapped,
+                        $relinked
+                    );
                 } else {
                     echo Olama_School_Helpers::translate($msg);
                 }
