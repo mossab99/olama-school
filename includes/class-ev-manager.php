@@ -97,27 +97,37 @@ class Olama_School_EV_Manager
             case 'fix_orphaned_data':
                 global $wpdb;
 
-                // Step 0: Ensure student_uid column exists
+                // Step 0: Initial Count of Orphans
+                $total_orphans = (int) $wpdb->get_var(
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}olama_ev_records r 
+                     LEFT JOIN {$wpdb->prefix}olama_students s ON r.student_id = s.id 
+                     WHERE s.id IS NULL"
+                );
+
+                // Step 1: Ensure student_uid column exists
                 $col_exists = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_ev_records LIKE 'student_uid'");
                 if (empty($col_exists)) {
                     $wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_records ADD COLUMN student_uid varchar(50) DEFAULT NULL AFTER student_id");
                 }
 
-                // Step 1: If backup table exists, use it to restore lost UIDs in ev_records
+                // Step 2: Check Backup Table
                 $backup_table = $wpdb->prefix . 'olama_students_backup';
                 $backup_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $backup_table));
-
+                $backup_count = 0;
                 $mapped_count = 0;
+
                 if ($backup_exists) {
+                    $backup_count = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$backup_table}");
+
+                    // Force map even if student_uid is not null (in case it was wrong before)
                     $mapped_count = (int) $wpdb->query(
                         "UPDATE {$wpdb->prefix}olama_ev_records r 
                          INNER JOIN {$backup_table} s_old ON r.student_id = s_old.id 
-                         SET r.student_uid = TRIM(s_old.student_uid) 
-                         WHERE (r.student_uid IS NULL OR r.student_uid = '')"
+                         SET r.student_uid = TRIM(s_old.student_uid)"
                     );
                 }
 
-                // Step 2: Backfill from CURRENT students for any records that have valid (non-orphaned) student_id but NULL student_uid
+                // Step 3: Backfill from existing students for valid records missing UID
                 $wpdb->query(
                     "UPDATE {$wpdb->prefix}olama_ev_records r 
                      INNER JOIN {$wpdb->prefix}olama_students s ON r.student_id = s.id 
@@ -125,8 +135,7 @@ class Olama_School_EV_Manager
                      WHERE (r.student_uid IS NULL OR r.student_uid = '')"
                 );
 
-                // Step 3: Re-link orphaned records to NEW student IDs using student_uid
-                // Using LEFT JOIN instead of NOT IN for better MySQL/MariaDB compatibility on Linux
+                // Step 4: Re-link orphaned records using student_uid
                 $relinked_count = (int) $wpdb->query(
                     "UPDATE {$wpdb->prefix}olama_ev_records r 
                      INNER JOIN {$wpdb->prefix}olama_students s ON TRIM(LOWER(r.student_uid)) = TRIM(LOWER(s.student_uid)) 
@@ -135,7 +144,13 @@ class Olama_School_EV_Manager
                      WHERE s_check.id IS NULL AND r.student_uid IS NOT NULL AND TRIM(r.student_uid) != ''"
                 );
 
-                $result = array('mapped' => $mapped_count, 'relinked' => $relinked_count);
+                $result = array(
+                    'total_orphans' => $total_orphans,
+                    'backup_found' => ($backup_exists ? 1 : 0),
+                    'backup_count' => $backup_count,
+                    'mapped' => $mapped_count,
+                    'relinked' => $relinked_count
+                );
                 break;
         }
 
