@@ -23,14 +23,29 @@ if (!defined('ABSPATH')) {
                         if ($bk_created) {
                             echo "<strong>✅ " . Olama_School_Helpers::translate('Backup table created successfully!') . "</strong><br>";
                         }
-                        echo Olama_School_Helpers::translate('The backup table exists but it is EMPTY. Please import your old students data into the backup table first.');
+                        echo "<div style='background:#fff5f5; border:1px solid #ffcccc; padding:20px; border-radius:8px; margin-top:15px;'>";
+                        echo "<h3 style='margin-top:0; color:#c53030;'>" . Olama_School_Helpers::translate('Final Step: Import Old Student Data') . "</h3>";
+                        echo "<p>" . Olama_School_Helpers::translate('To fix the 408 orphans, the system needs to know who those students were. Please paste the <strong>INSERT INTO</strong> statements from your old database backup below:') . "</p>";
+
+                        echo "<form method='post' action=''>";
+                        wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action');
+                        echo "<input type='hidden' name='olama_ev_action' value='import_backup_data'>";
+                        echo "<textarea name='import_sql' style='width:100%; height:200px; font-family:monospace; font-size:12px; margin-bottom:15px;' placeholder='INSERT INTO `wp_olama_students` VALUES ...'></textarea>";
+                        echo "<div style='text-align:right;'>";
+                        echo "<button type='submit' class='button button-primary' style='height:40px; padding:0 30px;'>" . Olama_School_Helpers::translate('Import & Fix Orphaned Data') . "</button>";
+                        echo "</div>";
+                        echo "</form>";
+
+                        echo "<p style='font-size:0.9em; color:#666; margin-top:15px;'><i>" . Olama_School_Helpers::translate('Note: The script will automatically rename the table in your SQL to the correct backup table.') . "</i></p>";
+                        echo "</div>";
                     } elseif ($status === 'success') {
                         $total = isset($_GET['total_orphans']) ? intval($_GET['total_orphans']) : 0;
+                        $imported = isset($_GET['imported']) ? intval($_GET['imported']) : 0;
                         $mapped = isset($_GET['mapped']) ? intval($_GET['mapped']) : 0;
                         $relinked = isset($_GET['relinked']) ? intval($_GET['relinked']) : 0;
                         echo sprintf(
-                            Olama_School_Helpers::translate('Orphaned data fix: %d orphans initially. Result: %d mapped, %d relinked.'),
-                            $total,
+                            Olama_School_Helpers::translate('Success! Imported %d students. Mapped %d records and re-linked %dorphans.'),
+                            $imported,
                             $mapped,
                             $relinked
                         );
@@ -585,9 +600,9 @@ if (!defined('ABSPATH')) {
     }
 
     <?php if (Olama_School_Helpers::is_arabic()): ?>
-        .olama-ev-mgmt-wrap {
-            direction: rtl;
-        }
+            .olama-ev-mgmt-wrap {
+                direction: rtl;
+            }
 
     <?php endif; ?>
 </style>

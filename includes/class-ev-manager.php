@@ -94,6 +94,64 @@ class Olama_School_EV_Manager
                     ));
                 }
                 break;
+            case 'import_backup_data':
+                global $wpdb;
+                $sql = isset($_POST['import_sql']) ? stripslashes($_POST['import_sql']) : '';
+                $import_count = 0;
+
+                if (!empty($sql)) {
+                    $backup_table = $wpdb->prefix . 'olama_students_backup';
+
+                    // 1. Clean up the SQL: Replace any variant of olama_students with our backup table
+                    // Matches: `wp_olama_students`, "wp_olama_students", wp_olama_students, etc.
+                    $processed_sql = preg_replace('/INSERT INTO\s+[`"]?(\w*olama_students)[`"]?/i', "INSERT INTO `{$backup_table}`", $sql);
+
+                    // 2. Clear existing backup data
+                    $wpdb->query("TRUNCATE TABLE {$backup_table}");
+
+                    // 3. Split by semicolon and run each statement (simple parser)
+                    $queries = explode(';', $processed_sql);
+                    foreach ($queries as $q) {
+                        $q = trim($q);
+                        if (!empty($q)) {
+                            $res = $wpdb->query($q);
+                            if ($res !== false && strpos(strtoupper($q), 'INSERT') !== false) {
+                                $import_count += $wpdb->rows_affected;
+                            }
+                        }
+                    }
+                }
+
+                // 4. Immediately run the mapping/linking logic if we imported something
+                $mapped_count = 0;
+                $relinked_count = 0;
+                if ($import_count > 0) {
+                    $backup_table = $wpdb->prefix . 'olama_students_backup';
+
+                    // Map IDs
+                    $mapped_count = (int) $wpdb->query(
+                        "UPDATE {$wpdb->prefix}olama_ev_records r 
+                         INNER JOIN {$backup_table} s_old ON r.student_id = s_old.id 
+                         SET r.student_uid = TRIM(s_old.student_uid)"
+                    );
+
+                    // Re-link
+                    $relinked_count = (int) $wpdb->query(
+                        "UPDATE {$wpdb->prefix}olama_ev_records r 
+                         INNER JOIN {$wpdb->prefix}olama_students s ON TRIM(LOWER(r.student_uid)) = TRIM(LOWER(s.student_uid)) 
+                         LEFT JOIN {$wpdb->prefix}olama_students s_check ON r.student_id = s_check.id
+                         SET r.student_id = s.id 
+                         WHERE s_check.id IS NULL AND r.student_uid IS NOT NULL AND TRIM(r.student_uid) != ''"
+                    );
+                }
+
+                $result = array(
+                    'status' => 'success',
+                    'imported' => $import_count,
+                    'mapped' => $mapped_count,
+                    'relinked' => $relinked_count
+                );
+                break;
             case 'fix_orphaned_data':
                 global $wpdb;
 
