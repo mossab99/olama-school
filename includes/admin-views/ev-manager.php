@@ -16,10 +16,18 @@ if (!defined('ABSPATH')) {
                 if ($msg === 'fix_complete') {
                     echo Olama_School_Helpers::translate('Old evaluation data fixed successfully.');
                 } elseif ($msg === 'orphaned_fix_complete') {
+                    $total = isset($_GET['total_orphans']) ? intval($_GET['total_orphans']) : 0;
                     $mapped = isset($_GET['mapped']) ? intval($_GET['mapped']) : 0;
                     $relinked = isset($_GET['relinked']) ? intval($_GET['relinked']) : 0;
+                    $bk_found = isset($_GET['backup_found']) ? intval($_GET['backup_found']) : 0;
+                    $bk_count = isset($_GET['backup_count']) ? intval($_GET['backup_count']) : 0;
+                    
+                    $status = $bk_found ? sprintf(Olama_School_Helpers::translate('Backup table found with %d students.'), $bk_count) : Olama_School_Helpers::translate('Backup table NOT found.');
+                    
                     echo sprintf(
-                        Olama_School_Helpers::translate('Orphaned evaluation data fixed successfully. (%d mapped, %d relinked)'),
+                        Olama_School_Helpers::translate('Orphaned data fix: %d orphans initially. %s Result: %d mapped, %d relinked.'),
+                        $total,
+                        $status,
                         $mapped,
                         $relinked
                     );
