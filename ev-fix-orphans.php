@@ -35,22 +35,31 @@ if ($phase === 2 && $temp_exists) {
     echo "<p>Found <strong>$old_students_count</strong> students in backup table.</p>";
 
     // Step 1: Map old student_id → student_uid using the backup table
+    $wpdb->suppress_errors(false); // Make sure errors are caught
     $mapped = $wpdb->query(
         "UPDATE {$prefix}olama_ev_records r 
         INNER JOIN {$prefix}olama_students_backup s_old ON r.student_id = s_old.id 
-        SET r.student_uid = s_old.student_uid 
-        WHERE r.student_uid IS NULL"
+        SET r.student_uid = TRIM(s_old.student_uid) 
+        WHERE r.student_uid IS NULL OR TRIM(r.student_uid) = ''"
     );
-    echo "<p>✅ Mapped <strong>$mapped</strong> evaluation records to their student_uid (ID Number).</p>";
+    if ($wpdb->last_error) {
+        echo "<p style='color:red;'>MySQL Error in Step 1: " . esc_html($wpdb->last_error) . "</p>";
+    }
+    echo "<p>✅ Mapped <strong>" . (int) $mapped . "</strong> evaluation records to their student_uid (ID Number).</p>";
 
     // Step 2: Re-link to new students using student_uid
+    // Using LEFT JOIN instead of NOT IN for better MariaDB compatibility
     $relinked = $wpdb->query(
         "UPDATE {$prefix}olama_ev_records r 
-        INNER JOIN {$prefix}olama_students s_new ON r.student_uid = s_new.student_uid 
+        INNER JOIN {$prefix}olama_students s_new ON TRIM(LOWER(r.student_uid)) = TRIM(LOWER(s_new.student_uid)) 
+        LEFT JOIN {$prefix}olama_students s_check ON r.student_id = s_check.id
         SET r.student_id = s_new.id 
-        WHERE r.student_id NOT IN (SELECT id FROM {$prefix}olama_students)"
+        WHERE s_check.id IS NULL AND r.student_uid IS NOT NULL AND TRIM(r.student_uid) != ''"
     );
-    echo "<p>✅ Re-linked <strong>$relinked</strong> evaluation records to new student IDs.</p>";
+    if ($wpdb->last_error) {
+        echo "<p style='color:red;'>MySQL Error in Step 2: " . esc_html($wpdb->last_error) . "</p>";
+    }
+    echo "<p>✅ Re-linked <strong>" . (int) $relinked . "</strong> evaluation records to new student IDs.</p>";
 
     // Step 3: Show results
     $still_orphaned = $wpdb->get_var(
