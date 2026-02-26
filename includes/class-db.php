@@ -408,6 +408,7 @@ class Olama_School_DB
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				template_id mediumint(9) NOT NULL,
 				student_id mediumint(9) NOT NULL,
+				student_uid varchar(50) DEFAULT NULL,
 				teacher_id bigint(20) UNSIGNED NOT NULL,
 				academic_year_id mediumint(9) NOT NULL,
 				semester_id mediumint(9) NOT NULL,
@@ -417,6 +418,7 @@ class Olama_School_DB
 				PRIMARY KEY  (id),
 				KEY template_id (template_id),
 				KEY student_id (student_id),
+				KEY student_uid (student_uid),
 				KEY teacher_id (teacher_id),
 				KEY year_semester (academic_year_id, semester_id)
 			) $charset_collate;",
@@ -719,6 +721,25 @@ class Olama_School_DB
 			$wpdb->query(
 				"ALTER TABLE {$wpdb->prefix}olama_ev_templates 
 				ADD COLUMN score_config longtext DEFAULT NULL AFTER template_name"
+			);
+		}
+
+		// Ensure student_uid column exists in olama_ev_records
+		$ev_records_uid_exists = $wpdb->get_results(
+			"SHOW COLUMNS FROM {$wpdb->prefix}olama_ev_records LIKE 'student_uid'"
+		);
+
+		if (empty($ev_records_uid_exists)) {
+			$wpdb->query(
+				"ALTER TABLE {$wpdb->prefix}olama_ev_records 
+				ADD COLUMN student_uid varchar(50) DEFAULT NULL AFTER student_id"
+			);
+			// Backfill student_uid from olama_students
+			$wpdb->query(
+				"UPDATE {$wpdb->prefix}olama_ev_records r 
+				INNER JOIN {$wpdb->prefix}olama_students s ON r.student_id = s.id 
+				SET r.student_uid = s.student_uid 
+				WHERE r.student_uid IS NULL"
 			);
 		}
 

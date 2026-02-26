@@ -32,9 +32,22 @@ class Olama_School_EV_Record
     {
         global $wpdb;
 
+        $student_id = intval($data['student_id']);
+
+        // Look up the student's stable UID (ID Number) for future-proofing
+        $student_uid = null;
+        $student = $wpdb->get_row($wpdb->prepare(
+            "SELECT student_uid FROM {$wpdb->prefix}olama_students WHERE id = %d",
+            $student_id
+        ));
+        if ($student) {
+            $student_uid = $student->student_uid;
+        }
+
         $fields = array(
             'template_id' => intval($data['template_id']),
-            'student_id' => intval($data['student_id']),
+            'student_id' => $student_id,
+            'student_uid' => $student_uid,
             'teacher_id' => get_current_user_id(),
             'academic_year_id' => intval($data['academic_year_id']),
             'semester_id' => intval($data['semester_id']),

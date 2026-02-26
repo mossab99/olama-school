@@ -9,16 +9,21 @@ if (!defined('ABSPATH')) {
 
 class Olama_School_EV_Template
 {
-    public static function get_templates($grade_id, $academic_year_id)
+    public static function get_templates($grade_id, $academic_year_id, $semester_id = 0)
     {
         global $wpdb;
-        return $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_ev_templates 
-             WHERE grade_id = %d AND academic_year_id = %d 
-             ORDER BY created_at DESC",
-            $grade_id,
-            $academic_year_id
-        ));
+        $query = "SELECT * FROM {$wpdb->prefix}olama_ev_templates 
+                  WHERE grade_id = %d AND academic_year_id = %d";
+        $params = array($grade_id, $academic_year_id);
+
+        if ($semester_id) {
+            $query .= " AND semester_id = %d";
+            $params[] = $semester_id;
+        }
+
+        $query .= " ORDER BY created_at DESC";
+
+        return $wpdb->get_results($wpdb->prepare($query, $params));
     }
 
     public static function get_template($id)

@@ -1407,28 +1407,22 @@ class Olama_School_Helpers
         // Replace Alif Maksura with Yaa
         $string = str_replace('ى', 'ي', $string);
 
-        // Remove Harakat (vowels/diacritics) U+064B–U+0652
+        // Remove Harakat (vowels/diacritics)
         $string = preg_replace('/[\x{064B}-\x{0652}]/u', '', $string);
-
-        // Remove Tatweel / Kashida (U+0640) — commonly appended to Arabic letters
-        $string = str_replace("\u{0640}", '', $string);
-
-        // Remove zero-width and invisible Unicode characters
-        $string = preg_replace('/[\x{200B}-\x{200F}\x{FEFF}\x{00AD}]/u', '', $string);
 
         return $string;
     }
 
     /**
-     * Aggressive normalization for matching (removes all spaces and punctuation)
+     * Aggressive normalization for matching (removes all spaces)
      */
     public static function normalize_for_match($string)
     {
         $string = self::normalize_arabic($string);
-        // Remove all whitespace (including Arabic whitespace)
-        $string = preg_replace('/\s+/u', '', $string);
+        // Remove all whitespace
+        $string = preg_replace('/\s+/', '', $string);
         // Remove common punctuation/specials that might vary
-        $string = str_replace(array('-', '_', '.', '(', ')', '[', ']', '/', '\\', '،', '،'), '', $string);
+        $string = str_replace(array('-', '_', '.', '(', ')', '[', ']'), '', $string);
         return $string;
     }
 

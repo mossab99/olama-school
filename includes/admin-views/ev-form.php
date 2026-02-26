@@ -32,31 +32,21 @@ if (!defined('ABSPATH')) {
             <input type="hidden" name="tab" value="student_evaluation">
 
             <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
-                <div style="flex: 1; min-width: 150px;">
-                    <label class="olama-label">
-                        <?php echo Olama_School_Helpers::translate('Academic Year'); ?>
-                    </label>
-                    <select name="academic_year_id" onchange="this.form.submit()" style="width: 100%;">
-                        <?php foreach ($years as $y): ?>
-                            <option value="<?php echo $y->id; ?>" <?php selected($selected_year_id, $y->id); ?>>
-                                <?php echo esc_html(Olama_School_Helpers::translate($y->year_name)); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+                <?php 
+                echo Olama_School_Helpers::locked_filter_render(
+                    Olama_School_Helpers::translate('Academic Year'), 
+                    Olama_School_Helpers::translate($selected_year_name), 
+                    'academic_year_id', 
+                    $selected_year_id
+                ); 
 
-                <div style="flex: 1; min-width: 150px;">
-                    <label class="olama-label">
-                        <?php echo Olama_School_Helpers::translate('Semester'); ?>
-                    </label>
-                    <select name="semester_id" onchange="this.form.submit()" style="width: 100%;">
-                        <?php foreach ($semesters as $s): ?>
-                            <option value="<?php echo $s->id; ?>" <?php selected($selected_semester_id, $s->id); ?>>
-                                <?php echo esc_html(Olama_School_Helpers::translate($s->semester_name)); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+                echo Olama_School_Helpers::locked_filter_render(
+                    Olama_School_Helpers::translate('Semester'), 
+                    Olama_School_Helpers::translate($selected_semester_name), 
+                    'semester_id', 
+                    $selected_semester_id
+                ); 
+                ?>
 
                 <div style="flex: 1; min-width: 150px;">
                     <label class="olama-label">
@@ -114,6 +104,18 @@ if (!defined('ABSPATH')) {
                 </div>
             </div>
         </form>
+        <!-- Fix Orphaned Data (outside filter form) -->
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
+            <form method="post" action="" style="margin: 0;">
+                <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
+                <input type="hidden" name="olama_ev_action" value="fix_orphaned_data">
+                <button type="submit" class="button button-secondary"
+                    onclick="return confirm('<?php echo esc_js(Olama_School_Helpers::translate('Are you sure? This will re-link orphaned evaluations to re-imported students using their ID Number.')); ?>')">
+                    <span class="dashicons dashicons-database-import" style="margin-top: 4px;"></span>
+                    <?php echo Olama_School_Helpers::translate('Fix Orphaned Data'); ?>
+                </button>
+            </form>
+        </div>
     </div>
 
     <?php if ($selected_student_id && $selected_template_id && empty($curriculum)): ?>

@@ -1,27 +1,27 @@
 === IMPORT STARTED ===
-2026-02-25 09:50:33 - Function called!
-2026-02-25 09:50:33 - POST: {"_wpnonce":"6db31c827a","_wp_http_referer":"\/wp-admin\/admin.php?page=olama-school-users&tab=students&import=success","olama_import_type":"students_enrollment","olama_import_students_enrollment":""}
-2026-02-25 09:50:33 - FILES: {"olama_import_file":{"name":"Enrollments - enrollments (2).csv","full_path":"Enrollments - enrollments (2).csv","type":"text\/csv","tmp_name":"C:\\Windows\\Temp\\php1B05.tmp","error":0,"size":68461}}
-2026-02-25 09:50:33 - File path: C:\Windows\Temp\php1B05.tmp
-2026-02-25 09:50:33 - Raw headers from CSV: ["Name","ID Number","Family ID","Year","Grade","Section","Status"]
-2026-02-25 09:50:33 - Header[0] = "name"
-2026-02-25 09:50:33 -   -> Mapped "name" to field "student_name" (index 0)
-2026-02-25 09:50:33 - Header[1] = "id number"
-2026-02-25 09:50:33 -   -> Mapped "id number" to field "student_uid" (index 1)
-2026-02-25 09:50:33 - Header[2] = "family id"
-2026-02-25 09:50:33 -   -> Mapped "family id" to field "family_id" (index 2)
-2026-02-25 09:50:33 - Header[3] = "year"
-2026-02-25 09:50:33 -   -> Mapped "year" to field "year_name" (index 3)
-2026-02-25 09:50:33 - Header[4] = "grade"
-2026-02-25 09:50:33 -   -> Mapped "grade" to field "grade_name" (index 4)
-2026-02-25 09:50:33 - Header[5] = "section"
-2026-02-25 09:50:33 -   -> Mapped "section" to field "section_name" (index 5)
-2026-02-25 09:50:33 - Header[6] = "status"
-2026-02-25 09:50:33 - Final column map: {"student_name":0,"student_uid":1,"family_id":2,"year_name":3,"grade_name":4,"section_name":5}
-2026-02-25 09:50:35 - Processing row 100...
-2026-02-25 09:50:36 - Processing row 200...
-2026-02-25 09:50:38 - Processing row 300...
-2026-02-25 09:50:39 - Processing row 400...
-2026-02-25 09:50:41 - Processing row 500...
-2026-02-25 09:50:42 - Processing row 600...
-2026-02-25 09:50:44 - Processing row 700...
+2026-02-26 21:20:12 - Function called!
+2026-02-26 21:20:12 - POST: {"_wpnonce":"ec01ae712c","_wp_http_referer":"\/wp-admin\/admin.php?page=olama-school-users&tab=students","olama_import_type":"students_enrollment","olama_import_students_enrollment":""}
+2026-02-26 21:20:12 - FILES: {"olama_import_file":{"name":"Enrollments - enrollments.csv","full_path":"Enrollments - enrollments.csv","type":"text\/csv","tmp_name":"C:\\Windows\\Temp\\phpDA22.tmp","error":0,"size":68461}}
+2026-02-26 21:20:12 - File path: C:\Windows\Temp\phpDA22.tmp
+2026-02-26 21:20:12 - Raw headers from CSV: ["Name","ID Number","Family ID","Year","Grade","Section","Status"]
+2026-02-26 21:20:12 - Header[0] = "name"
+2026-02-26 21:20:12 -   -> Mapped "name" to field "student_name" (index 0)
+2026-02-26 21:20:12 - Header[1] = "id number"
+2026-02-26 21:20:12 -   -> Mapped "id number" to field "student_uid" (index 1)
+2026-02-26 21:20:12 - Header[2] = "family id"
+2026-02-26 21:20:12 -   -> Mapped "family id" to field "family_id" (index 2)
+2026-02-26 21:20:12 - Header[3] = "year"
+2026-02-26 21:20:12 -   -> Mapped "year" to field "year_name" (index 3)
+2026-02-26 21:20:12 - Header[4] = "grade"
+2026-02-26 21:20:12 -   -> Mapped "grade" to field "grade_name" (index 4)
+2026-02-26 21:20:12 - Header[5] = "section"
+2026-02-26 21:20:12 -   -> Mapped "section" to field "section_name" (index 5)
+2026-02-26 21:20:12 - Header[6] = "status"
+2026-02-26 21:20:12 - Final column map: {"student_name":0,"student_uid":1,"family_id":2,"year_name":3,"grade_name":4,"section_name":5}
+2026-02-26 21:20:12 - Processing row 100...
+2026-02-26 21:20:13 - Processing row 200...
+2026-02-26 21:20:13 - Processing row 300...
+2026-02-26 21:20:13 - Processing row 400...
+2026-02-26 21:20:14 - Processing row 500...
+2026-02-26 21:20:14 - Processing row 600...
+2026-02-26 21:20:14 - Processing row 700...

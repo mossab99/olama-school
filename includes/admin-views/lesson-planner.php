@@ -187,18 +187,23 @@ if ($edit_plan) {
             <form method="get"><input type="hidden" name="page" value="olama-school-evaluation"><input type="hidden"
                     name="tab" value="lesson_planner">
                 <div style="display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;">
-                    <div style="flex:1;min-width:140px;"><label
-                            class="olama-label"><?php echo $t('Academic Year'); ?></label>
-                        <input type="text" value="<?php echo esc_attr($t($active_year ? $active_year->year_name : '')); ?>"
-                            style="width:100%;background:#f1f5f9;" readonly>
-                        <input type="hidden" name="academic_year_id" value="<?php echo $selected_year_id; ?>">
-                    </div>
-                    <div style="flex:1;min-width:140px;"><label class="olama-label"><?php echo $t('Semester'); ?></label>
-                        <input type="text"
-                            value="<?php echo esc_attr($t($active_semester ? $active_semester->semester_name : '')); ?>"
-                            style="width:100%;background:#f1f5f9;" readonly>
-                        <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>">
-                    </div>
+                    <?php
+                    $y_name = $active_year ? $active_year->year_name : '';
+                    echo Olama_School_Helpers::locked_filter_render(
+                        $t('Academic Year'),
+                        $t($y_name),
+                        'academic_year_id',
+                        $selected_year_id
+                    );
+
+                    $s_name = $active_semester ? $active_semester->semester_name : '';
+                    echo Olama_School_Helpers::locked_filter_render(
+                        $t('Semester'),
+                        $t($s_name),
+                        'semester_id',
+                        $selected_semester_id
+                    );
+                    ?>
                     <div style="flex:1;min-width:140px;"><label class="olama-label"><?php echo $t('Grade'); ?></label>
                         <select name="grade_id" onchange="this.form.submit()" style="width:100%;">
                             <option value=""><?php echo $t('-- Select Grade --'); ?></option>
@@ -323,17 +328,23 @@ if ($edit_plan) {
                         style="margin-right:8px;color:#6366f1;"></span><?php echo $t('Basic Information'); ?>
                 </h3>
                 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;">
-                    <div><label class="olama-label"><?php echo $t('Academic Year'); ?></label>
-                        <input type="text" value="<?php echo esc_attr($t($active_year ? $active_year->year_name : '')); ?>"
-                            style="width:100%;background:#f1f5f9;" readonly>
-                        <input type="hidden" name="academic_year_id" value="<?php echo $selected_year_id; ?>">
-                    </div>
-                    <div><label class="olama-label"><?php echo $t('Semester'); ?></label>
-                        <input type="text"
-                            value="<?php echo esc_attr($t($active_semester ? $active_semester->semester_name : '')); ?>"
-                            style="width:100%;background:#f1f5f9;" readonly>
-                        <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>">
-                    </div>
+                    <?php
+                    $y_name = $active_year ? $active_year->year_name : '';
+                    echo Olama_School_Helpers::locked_filter_render(
+                        $t('Academic Year'),
+                        $t($y_name),
+                        'academic_year_id',
+                        $selected_year_id
+                    );
+
+                    $s_name = $active_semester ? $active_semester->semester_name : '';
+                    echo Olama_School_Helpers::locked_filter_render(
+                        $t('Semester'),
+                        $t($s_name),
+                        'semester_id',
+                        $selected_semester_id
+                    );
+                    ?>
                     <div><label class="olama-label"><?php echo $t('Grade'); ?></label>
                         <select name="grade_id" id="lp-grade" style="width:100%;" required>
                             <option value=""><?php echo $t('-- Select Grade --'); ?></option>

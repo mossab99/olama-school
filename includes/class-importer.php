@@ -1419,12 +1419,7 @@ class Olama_School_Importer
                     }
 
                     foreach ($available_sections as $sec) {
-                        $db_norm = Olama_School_Helpers::normalize_for_match($sec->section_name);
-                        // Debug: log hex of both sides to catch invisible character mismatches
-                        if (mb_strlen($section_name, 'UTF-8') <= 3 || mb_strlen($sec->section_name, 'UTF-8') <= 3) {
-                            error_log('Student Import [DEBUG] UID=' . $row['student_uid'] . ': CSV section hex=[' . bin2hex($section_norm) . '] DB section "' . $sec->section_name . '" hex=[' . bin2hex($db_norm) . ']');
-                        }
-                        if ($db_norm === $section_norm) {
+                        if (Olama_School_Helpers::normalize_for_match($sec->section_name) === $section_norm) {
                             $section_id = intval($sec->id);
                             break;
                         }

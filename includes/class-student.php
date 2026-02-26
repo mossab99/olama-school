@@ -269,12 +269,14 @@ class Olama_School_Student
 
     /**
      * Delete student and their enrollments
+     * NOTE: Evaluation records are intentionally preserved for data integrity.
+     * They can be re-linked to re-imported students via student_uid.
      */
     public static function delete_student($id)
     {
         global $wpdb;
 
-        // Delete enrollments first
+        // Delete enrollments
         $wpdb->delete("{$wpdb->prefix}olama_student_enrollment", array('student_id' => $id));
 
         // Delete student
@@ -286,12 +288,14 @@ class Olama_School_Student
 
     /**
      * Delete ALL students and ALL enrollments
+     * NOTE: Evaluation records are intentionally preserved for data integrity.
+     * They can be re-linked to re-imported students via student_uid.
      */
     public static function delete_all_students()
     {
         global $wpdb;
 
-        // Delete all records from enrollment and student tables
+        // Delete all enrollment and student records (evaluation data is preserved)
         $wpdb->query("DELETE FROM {$wpdb->prefix}olama_student_enrollment");
         $result = $wpdb->query("DELETE FROM {$wpdb->prefix}olama_students");
 

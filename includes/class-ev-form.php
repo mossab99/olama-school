@@ -16,8 +16,14 @@ class Olama_School_EV_Form
         $active_year_id = $active_year ? $active_year->id : 0;
 
         $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : $active_year_id;
+        $selected_year = Olama_School_Academic::get_year($selected_year_id);
+        $selected_year_name = $selected_year ? $selected_year->year_name : '';
+
         $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
-        $selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : (!empty($semesters) ? $semesters[0]->id : 0);
+        $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
+        $selected_semester_id = isset($_GET['semester_id']) ? intval($_GET['semester_id']) : ($active_semester ? $active_semester->id : (!empty($semesters) ? $semesters[0]->id : 0));
+        $selected_semester = Olama_School_Academic::get_semester($selected_semester_id);
+        $selected_semester_name = $selected_semester ? $selected_semester->semester_name : '';
 
         // Get sections ONLY for the selected academic year
         $sections = Olama_School_Section::get_sections_by_year($selected_year_id);
