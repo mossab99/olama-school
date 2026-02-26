@@ -16,21 +16,27 @@ if (!defined('ABSPATH')) {
                 if ($msg === 'fix_complete') {
                     echo Olama_School_Helpers::translate('Old evaluation data fixed successfully.');
                 } elseif ($msg === 'orphaned_fix_complete') {
-                    $total = isset($_GET['total_orphans']) ? intval($_GET['total_orphans']) : 0;
-                    $mapped = isset($_GET['mapped']) ? intval($_GET['mapped']) : 0;
-                    $relinked = isset($_GET['relinked']) ? intval($_GET['relinked']) : 0;
-                    $bk_found = isset($_GET['backup_found']) ? intval($_GET['backup_found']) : 0;
-                    $bk_count = isset($_GET['backup_count']) ? intval($_GET['backup_count']) : 0;
-                    
-                    $status = $bk_found ? sprintf(Olama_School_Helpers::translate('Backup table found with %d students.'), $bk_count) : Olama_School_Helpers::translate('Backup table NOT found.');
-                    
-                    echo sprintf(
-                        Olama_School_Helpers::translate('Orphaned data fix: %d orphans initially. %s Result: %d mapped, %d relinked.'),
-                        $total,
-                        $status,
-                        $mapped,
-                        $relinked
-                    );
+                    $status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
+                    $bk_created = isset($_GET['backup_created']) ? intval($_GET['backup_created']) : 0;
+
+                    if ($status === 'backup_empty') {
+                        if ($bk_created) {
+                            echo "<strong>✅ " . Olama_School_Helpers::translate('Backup table created successfully!') . "</strong><br>";
+                        }
+                        echo Olama_School_Helpers::translate('The backup table exists but it is EMPTY. Please import your old students data into the backup table first.');
+                    } elseif ($status === 'success') {
+                        $total = isset($_GET['total_orphans']) ? intval($_GET['total_orphans']) : 0;
+                        $mapped = isset($_GET['mapped']) ? intval($_GET['mapped']) : 0;
+                        $relinked = isset($_GET['relinked']) ? intval($_GET['relinked']) : 0;
+                        echo sprintf(
+                            Olama_School_Helpers::translate('Orphaned data fix: %d orphans initially. Result: %d mapped, %d relinked.'),
+                            $total,
+                            $mapped,
+                            $relinked
+                        );
+                    } else {
+                        echo Olama_School_Helpers::translate('Orphaned evaluation data fixed successfully.');
+                    }
                 } else {
                     echo Olama_School_Helpers::translate($msg);
                 }
