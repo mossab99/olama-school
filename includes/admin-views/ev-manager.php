@@ -25,12 +25,12 @@ if (!defined('ABSPATH')) {
                         }
                         echo "<div style='background:#fff5f5; border:1px solid #ffcccc; padding:20px; border-radius:8px; margin-top:15px;'>";
                         echo "<h3 style='margin-top:0; color:#c53030;'>" . Olama_School_Helpers::translate('Final Step: Import Old Student Data') . "</h3>";
-                        echo "<p>" . Olama_School_Helpers::translate('To fix the 408 orphans, the system needs to know who those students were. Please paste the <strong>INSERT INTO</strong> statements from your old database backup below:') . "</p>";
+                        echo "<p>" . Olama_School_Helpers::translate('To fix the 408 orphans, the system needs to know who those students were. Please paste the <strong>INSERT INTO</strong> statements OR the <strong>JSON array</strong> from your old database backup below:') . "</p>";
 
                         echo "<form method='post' action=''>";
                         wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action');
                         echo "<input type='hidden' name='olama_ev_action' value='import_backup_data'>";
-                        echo "<textarea name='import_sql' style='width:100%; height:200px; font-family:monospace; font-size:12px; margin-bottom:15px;' placeholder='INSERT INTO `wp_olama_students` VALUES ...'></textarea>";
+                        echo "<textarea name='import_sql' style='width:100%; height:200px; font-family:monospace; font-size:12px; margin-bottom:15px;' placeholder='[ {\"id\": 405, \"student_name\": \"...\", \"student_uid\": \"...\"}, ... ]'></textarea>";
                         echo "<div style='text-align:right;'>";
                         echo "<button type='submit' class='button button-primary' style='height:40px; padding:0 30px;'>" . Olama_School_Helpers::translate('Import & Fix Orphaned Data') . "</button>";
                         echo "</div>";
@@ -600,9 +600,9 @@ if (!defined('ABSPATH')) {
     }
 
     <?php if (Olama_School_Helpers::is_arabic()): ?>
-            .olama-ev-mgmt-wrap {
-                direction: rtl;
-            }
+        .olama-ev-mgmt-wrap {
+            direction: rtl;
+        }
 
     <?php endif; ?>
 </style>
