@@ -108,8 +108,16 @@ class Olama_School_EV_Manager
                         // Handle JSON Import
                         $wpdb->query("TRUNCATE TABLE {$backup_table}");
 
-                        // If it's a single object, wrap it in an array
-                        $rows = isset($json_data[0]) ? $json_data : array($json_data);
+                        // Detect specific export format (from user's file)
+                        // This handles both [{...}, {...}] and {"tables": {"olama_students": [...]}}
+                        $rows = array();
+                        if (isset($json_data['tables']['olama_students'])) {
+                            $rows = $json_data['tables']['olama_students'];
+                        } elseif (isset($json_data[0])) {
+                            $rows = $json_data;
+                        } else {
+                            $rows = array($json_data);
+                        }
 
                         foreach ($rows as $row) {
                             $res = $wpdb->insert($backup_table, $row);
@@ -118,15 +126,17 @@ class Olama_School_EV_Manager
                             }
                         }
                     } else {
-                        // Handle SQL Import (Legacy INSERT logic)
-                        $processed_sql = preg_replace('/INSERT INTO\s+[`"]?(\w*olama_students)[`"]?/i', "INSERT INTO `{$backup_table}`", $input);
-                        $wpdb->query("TRUNCATE TABLE {$backup_table}");
-                        $queries = explode(';', $processed_sql);
-                        foreach ($queries as $q) {
-                            $q = trim($q);
-                            if (!empty($q)) {
-                                $res = $wpdb->query($q);
-                                if ($res !== false && strpos(strtoupper($q), 'INSERT') !== false) {
+                        // Handle SQL Import (Safe INSERT Extract)
+                        // Only extract INSERT statements targeting the students table
+                        preg_match_all('/INSERT INTO\s+[`"]?(\w*olama_students)[`"]?.*?;/is', $input, $matches);
+
+                        if (!empty($matches[0])) {
+                            $wpdb->query("TRUNCATE TABLE {$backup_table}");
+                            foreach ($matches[0] as $stmt) {
+                                // Double check it only writes to our backup table
+                                $rewritten = preg_replace('/INSERT INTO\s+[`"]?(\w*olama_students)[`"]?/i', "INSERT INTO `{$backup_table}`", $stmt);
+                                $res = $wpdb->query($rewritten);
+                                if ($res !== false) {
                                     $import_count += $wpdb->rows_affected;
                                 }
                             }
