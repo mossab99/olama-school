@@ -2393,7 +2393,10 @@ class Olama_School_Shortcodes
             global $wpdb;
             $table = $wpdb->prefix . "olama_attendance";
             $results = $wpdb->get_results($wpdb->prepare(
-                "SELECT student_id, status FROM $table WHERE section_id = %d AND attendance_date = %s",
+                "SELECT s.id as student_id, a.status 
+                 FROM $table a
+                 JOIN {$wpdb->prefix}olama_students s ON a.student_uid = s.student_uid
+                 WHERE a.section_id = %d AND a.attendance_date = %s",
                 $section_id,
                 $attendance_date
             ));

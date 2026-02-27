@@ -124,12 +124,14 @@ class Olama_School_DB
 			'olama_student_enrollment' => "CREATE TABLE {$wpdb->prefix}olama_student_enrollment (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				student_id mediumint(9) NOT NULL,
+				student_uid varchar(50) DEFAULT NULL,
 				academic_year_id mediumint(9) NOT NULL,
 				section_id mediumint(9) NOT NULL,
 				enrollment_date date DEFAULT NULL,
 				status varchar(20) DEFAULT 'active' NOT NULL,
 				PRIMARY KEY  (id),
 				KEY student_id (student_id),
+				KEY student_uid (student_uid),
 				KEY academic_year_id (academic_year_id),
 				KEY section_id (section_id)
 			) $charset_collate;",
@@ -268,6 +270,7 @@ class Olama_School_DB
 			'olama_student_bus_assignments' => "CREATE TABLE {$wpdb->prefix}olama_student_bus_assignments (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				student_id mediumint(9) NOT NULL,
+				student_uid varchar(50) DEFAULT NULL,
 				bus_id mediumint(9) NOT NULL,
 				academic_year_id mediumint(9) NOT NULL,
 				pickup_location varchar(255) DEFAULT NULL,
@@ -276,7 +279,8 @@ class Olama_School_DB
 				assigned_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				assigned_by bigint(20) UNSIGNED NOT NULL,
 				PRIMARY KEY  (id),
-				UNIQUE KEY student_year (student_id, academic_year_id),
+				UNIQUE KEY student_uid_year (student_uid, academic_year_id),
+				KEY student_uid (student_uid),
 				KEY bus_id (bus_id),
 				KEY academic_year_id (academic_year_id)
 			) $charset_collate;",
@@ -479,6 +483,7 @@ class Olama_School_DB
 			'olama_attendance' => "CREATE TABLE {$wpdb->prefix}olama_attendance (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				student_id mediumint(9) NOT NULL,
+				student_uid varchar(50) DEFAULT NULL,
 				academic_year_id mediumint(9) NOT NULL,
 				semester_id mediumint(9) NOT NULL,
 				section_id mediumint(9) NOT NULL,
@@ -488,8 +493,9 @@ class Olama_School_DB
 				recorded_by bigint(20) UNSIGNED DEFAULT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
-				UNIQUE KEY student_date (student_id, attendance_date),
+				UNIQUE KEY student_uid_date (student_uid, attendance_date),
 				KEY student_id (student_id),
+				KEY student_uid (student_uid),
 				KEY academic_year_id (academic_year_id),
 				KEY semester_id (semester_id),
 				KEY section_id (section_id),
@@ -734,6 +740,9 @@ class Olama_School_DB
 				"ALTER TABLE {$wpdb->prefix}olama_ev_records 
 				ADD COLUMN student_uid varchar(50) DEFAULT NULL AFTER student_id"
 			);
+			// Add key
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_records ADD KEY student_uid (student_uid)");
+
 			// Backfill student_uid from olama_students
 			$wpdb->query(
 				"UPDATE {$wpdb->prefix}olama_ev_records r 
@@ -741,6 +750,64 @@ class Olama_School_DB
 				SET r.student_uid = s.student_uid 
 				WHERE r.student_uid IS NULL"
 			);
+		}
+
+		// Ensure student_uid exists in other student tables
+		$student_link_tables = array(
+			'olama_student_enrollment',
+			'olama_attendance',
+			'olama_student_bus_assignments'
+		);
+
+		foreach ($student_link_tables as $table_base) {
+			$table_name = $wpdb->prefix . $table_base;
+			$uid_exists = $wpdb->get_results("SHOW COLUMNS FROM $table_name LIKE 'student_uid'");
+
+			if (empty($uid_exists)) {
+				// Add column
+				$wpdb->query("ALTER TABLE $table_name ADD COLUMN student_uid varchar(50) DEFAULT NULL AFTER student_id");
+				// Add key
+				$wpdb->query("ALTER TABLE $table_name ADD KEY student_uid (student_uid)");
+			}
+
+			// Always backfill NULL student_uid values (column may exist but be empty)
+			$wpdb->query(
+				"UPDATE $table_name t 
+				INNER JOIN {$wpdb->prefix}olama_students s ON t.student_id = s.id 
+				SET t.student_uid = s.student_uid 
+				WHERE t.student_uid IS NULL"
+			);
+		}
+
+		// Migrate UNIQUE KEY constraints from student_id to student_uid
+		// dbDelta cannot alter existing UNIQUE keys, so we do it explicitly
+		$unique_key_migrations = array(
+			'olama_attendance' => array(
+				'old_key' => 'student_date',
+				'new_key' => 'student_uid_date',
+				'new_columns' => 'student_uid, attendance_date'
+			),
+			'olama_student_bus_assignments' => array(
+				'old_key' => 'student_year',
+				'new_key' => 'student_uid_year',
+				'new_columns' => 'student_uid, academic_year_id'
+			)
+		);
+
+		foreach ($unique_key_migrations as $table_base => $key_info) {
+			$table_name = $wpdb->prefix . $table_base;
+			// Check if old key still exists
+			$old_key_exists = $wpdb->get_row($wpdb->prepare(
+				"SELECT 1 FROM information_schema.STATISTICS WHERE table_schema = %s AND table_name = %s AND index_name = %s LIMIT 1",
+				DB_NAME,
+				$table_name,
+				$key_info['old_key']
+			));
+
+			if ($old_key_exists) {
+				$wpdb->query("ALTER TABLE $table_name DROP INDEX {$key_info['old_key']}");
+				$wpdb->query("ALTER TABLE $table_name ADD UNIQUE KEY {$key_info['new_key']} ({$key_info['new_columns']})");
+			}
 		}
 
 		// Check if plan_type column exists in olama_plans

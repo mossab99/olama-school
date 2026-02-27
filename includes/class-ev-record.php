@@ -16,8 +16,9 @@ class Olama_School_EV_Record
     {
         global $wpdb;
         return $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_ev_records 
-             WHERE student_id = %d AND academic_year_id = %d AND semester_id = %d AND template_id = %d",
+            "SELECT r.* FROM {$wpdb->prefix}olama_ev_records r
+             JOIN {$wpdb->prefix}olama_students s ON r.student_uid = s.student_uid
+             WHERE s.id = %d AND r.academic_year_id = %d AND r.semester_id = %d AND r.template_id = %d",
             $student_id,
             $year_id,
             $semester_id,
@@ -118,8 +119,10 @@ class Olama_School_EV_Record
     {
         global $wpdb;
         $results = $wpdb->get_results($wpdb->prepare(
-            "SELECT student_id, status FROM {$wpdb->prefix}olama_ev_records 
-             WHERE academic_year_id = %d AND semester_id = %d AND template_id = %d",
+            "SELECT s.id as student_id, r.status 
+             FROM {$wpdb->prefix}olama_ev_records r
+             JOIN {$wpdb->prefix}olama_students s ON r.student_uid = s.student_uid
+             WHERE r.academic_year_id = %d AND r.semester_id = %d AND r.template_id = %d",
             $year_id,
             $semester_id,
             $template_id
@@ -130,5 +133,45 @@ class Olama_School_EV_Record
             $statuses[$row->student_id] = $row->status;
         }
         return $statuses;
+    }
+
+    /**
+     * Delete orphaned evaluation records and their scores
+     */
+    public static function delete_orphaned_records()
+    {
+        global $wpdb;
+        $count = 0;
+
+        // 1. Delete scores with no matching evaluation record
+        $wpdb->query("DELETE s FROM {$wpdb->prefix}olama_ev_scores s 
+                      LEFT JOIN {$wpdb->prefix}olama_ev_records r ON s.evaluation_id = r.id 
+                      WHERE r.id IS NULL");
+
+        // 2. Identify and delete orphaned evaluation records
+        // Orphaned if student, template, year, or semester is missing
+        $orphaned_ids = $wpdb->get_col(
+            "SELECT r.id FROM {$wpdb->prefix}olama_ev_records r
+             LEFT JOIN {$wpdb->prefix}olama_students s ON r.student_id = s.id
+             LEFT JOIN {$wpdb->prefix}olama_ev_templates t ON r.template_id = t.id
+             LEFT JOIN {$wpdb->prefix}olama_academic_years y ON r.academic_year_id = y.id
+             LEFT JOIN {$wpdb->prefix}olama_semesters sem ON r.semester_id = sem.id
+             WHERE s.id IS NULL 
+                OR t.id IS NULL 
+                OR y.id IS NULL 
+                OR (r.semester_id IS NOT NULL AND sem.id IS NULL)"
+        );
+
+        if (!empty($orphaned_ids)) {
+            $ids_str = implode(',', array_map('intval', $orphaned_ids));
+
+            // Delete associated scores first
+            $wpdb->query("DELETE FROM {$wpdb->prefix}olama_ev_scores WHERE evaluation_id IN ($ids_str)");
+
+            // Delete records
+            $count = (int) $wpdb->query("DELETE FROM {$wpdb->prefix}olama_ev_records WHERE id IN ($ids_str)");
+        }
+
+        return $count;
     }
 }

@@ -203,7 +203,7 @@ if (!defined('ABSPATH')) {
 
             <script>
                 function olamaOpenFamilyModal(family = null) {
-                    const container = document.getElementById('family-students-con                          tainer');
+                    const container = document.getElementById('family-students-container');
                         container.innerHTML = '';
 
                         if (family) {

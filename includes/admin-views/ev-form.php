@@ -104,18 +104,6 @@ if (!defined('ABSPATH')) {
                 </div>
             </div>
         </form>
-        <!-- Fix Orphaned Data (outside filter form) -->
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
-            <form method="post" action="" style="margin: 0;">
-                <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
-                <input type="hidden" name="olama_ev_action" value="fix_orphaned_data">
-                <button type="submit" class="button button-secondary"
-                    onclick="return confirm('<?php echo esc_js(Olama_School_Helpers::translate('Are you sure? This will re-link orphaned evaluations to re-imported students using their ID Number.')); ?>')">
-                    <span class="dashicons dashicons-database-import" style="margin-top: 4px;"></span>
-                    <?php echo Olama_School_Helpers::translate('Fix Orphaned Data'); ?>
-                </button>
-            </form>
-        </div>
     </div>
 
     <?php if ($selected_student_id && $selected_template_id && empty($curriculum)): ?>

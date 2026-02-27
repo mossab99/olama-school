@@ -4469,11 +4469,18 @@ class Olama_School_Admin
                 $status = sanitize_text_field($data['status'] ?? 'present');
                 $reason = sanitize_text_field($data['reason'] ?? '');
 
+                // Fetch student_uid for stable linkage
+                $student_uid = $wpdb->get_var($wpdb->prepare(
+                    "SELECT student_uid FROM {$wpdb->prefix}olama_students WHERE id = %d",
+                    $student_id
+                ));
+
                 $res = $wpdb->query($wpdb->prepare(
-                    "INSERT INTO $table (student_id, academic_year_id, semester_id, section_id, attendance_date, status, reason, recorded_by)
-                    VALUES (%d, %d, %d, %d, %s, %s, %s, %d)
-                    ON DUPLICATE KEY UPDATE status = %s, reason = %s, recorded_by = %d",
+                    "INSERT INTO $table (student_id, student_uid, academic_year_id, semester_id, section_id, attendance_date, status, reason, recorded_by)
+                    VALUES (%d, %s, %d, %d, %d, %s, %s, %s, %d)
+                    ON DUPLICATE KEY UPDATE status = %s, student_uid = %s, reason = %s, recorded_by = %d",
                     $student_id,
+                    $student_uid,
                     $academic_year_id,
                     $semester_id,
                     $section_id,
@@ -4482,6 +4489,7 @@ class Olama_School_Admin
                     $reason,
                     get_current_user_id(),
                     $status,
+                    $student_uid,
                     $reason,
                     get_current_user_id()
                 ));
@@ -4540,11 +4548,18 @@ class Olama_School_Admin
             $olama_db->create_tables();
         }
 
+        // Fetch student_uid for stable linkage
+        $student_uid = $wpdb->get_var($wpdb->prepare(
+            "SELECT student_uid FROM {$wpdb->prefix}olama_students WHERE id = %d",
+            $student_id
+        ));
+
         $result = $wpdb->query($wpdb->prepare(
-            "INSERT INTO $table (student_id, academic_year_id, semester_id, section_id, attendance_date, status, recorded_by)
-            VALUES (%d, %d, %d, %d, %s, %s, %d)
-            ON DUPLICATE KEY UPDATE status = %s, recorded_by = %d",
+            "INSERT INTO $table (student_id, student_uid, academic_year_id, semester_id, section_id, attendance_date, status, recorded_by)
+            VALUES (%d, %s, %d, %d, %d, %s, %s, %d)
+            ON DUPLICATE KEY UPDATE status = %s, student_uid = %s, recorded_by = %d",
             $student_id,
+            $student_uid,
             $academic_year_id,
             $semester_id,
             $section_id,
@@ -4552,6 +4567,7 @@ class Olama_School_Admin
             $status,
             get_current_user_id(),
             $status,
+            $student_uid,
             get_current_user_id()
         ));
 
@@ -4588,7 +4604,7 @@ class Olama_School_Admin
         $absentees = $wpdb->get_results($wpdb->prepare(
             "SELECT a.*, s.student_name, s.student_uid, sec.section_name, g.grade_name 
             FROM $table a
-            JOIN $students_table s ON a.student_id = s.id
+            JOIN $students_table s ON a.student_uid = s.student_uid
             JOIN $sections_table sec ON a.section_id = sec.id
             JOIN $grades_table g ON sec.grade_id = g.id
             WHERE a.attendance_date = %s AND a.status = 'absent'
@@ -4612,8 +4628,12 @@ class Olama_School_Admin
         if ($student_id) {
             global $wpdb;
             $table = $wpdb->prefix . 'olama_attendance';
+            $students_table = $wpdb->prefix . 'olama_students';
             $attendance = $wpdb->get_results($wpdb->prepare(
-                "SELECT * FROM $table WHERE student_id = %d AND attendance_date BETWEEN %s AND %s ORDER BY attendance_date DESC",
+                "SELECT a.* FROM $table a 
+                 JOIN $students_table s ON a.student_uid = s.student_uid
+                 WHERE s.id = %d AND a.attendance_date BETWEEN %s AND %s 
+                 ORDER BY a.attendance_date DESC",
                 $student_id,
                 $start_date,
                 $end_date

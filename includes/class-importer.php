@@ -1456,13 +1456,14 @@ class Olama_School_Importer
 
                     if ($section_id) {
                         $exists = $wpdb->get_var($wpdb->prepare(
-                            "SELECT id FROM {$wpdb->prefix}olama_student_enrollment WHERE student_id = %d AND academic_year_id = %d",
-                            $student_id,
+                            "SELECT id FROM {$wpdb->prefix}olama_student_enrollment WHERE student_uid = %s AND academic_year_id = %d",
+                            $row['student_uid'],
                             $effective_year_id
                         ));
 
                         $enroll_data = array(
                             'student_id' => $student_id,
+                            'student_uid' => $row['student_uid'],
                             'academic_year_id' => $effective_year_id,
                             'section_id' => $section_id,
                             'status' => 'active',

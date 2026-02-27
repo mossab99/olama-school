@@ -13,45 +13,9 @@ if (!defined('ABSPATH')) {
             <p>
                 <?php
                 $msg = sanitize_text_field($_GET['message']);
-                if ($msg === 'fix_complete') {
-                    echo Olama_School_Helpers::translate('Old evaluation data fixed successfully.');
-                } elseif ($msg === 'orphaned_fix_complete') {
-                    $status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
-                    $bk_created = isset($_GET['backup_created']) ? intval($_GET['backup_created']) : 0;
-
-                    if ($status === 'backup_empty') {
-                        if ($bk_created) {
-                            echo "<strong>✅ " . Olama_School_Helpers::translate('Backup table created successfully!') . "</strong><br>";
-                        }
-                        echo "<div style='background:#fff5f5; border:1px solid #ffcccc; padding:20px; border-radius:8px; margin-top:15px;'>";
-                        echo "<h3 style='margin-top:0; color:#c53030;'>" . Olama_School_Helpers::translate('Final Step: Import Old Student Data') . "</h3>";
-                        echo "<p>" . Olama_School_Helpers::translate('To fix the 408 orphans, the system needs to know who those students were. Please paste the <strong>INSERT INTO</strong> statements OR the <strong>JSON array</strong> from your old database backup below:') . "</p>";
-
-                        echo "<form method='post' action=''>";
-                        wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action');
-                        echo "<input type='hidden' name='olama_ev_action' value='import_backup_data'>";
-                        echo "<textarea name='import_sql' style='width:100%; height:200px; font-family:monospace; font-size:12px; margin-bottom:15px;' placeholder='[ {\"id\": 405, \"student_name\": \"...\", \"student_uid\": \"...\"}, ... ]'></textarea>";
-                        echo "<div style='text-align:right;'>";
-                        echo "<button type='submit' class='button button-primary' style='height:40px; padding:0 30px;'>" . Olama_School_Helpers::translate('Import & Fix Orphaned Data') . "</button>";
-                        echo "</div>";
-                        echo "</form>";
-
-                        echo "<p style='font-size:0.9em; color:#666; margin-top:15px;'><i>" . Olama_School_Helpers::translate('Note: The script will automatically rename the table in your SQL to the correct backup table.') . "</i></p>";
-                        echo "</div>";
-                    } elseif ($status === 'success') {
-                        $total = isset($_GET['total_orphans']) ? intval($_GET['total_orphans']) : 0;
-                        $imported = isset($_GET['imported']) ? intval($_GET['imported']) : 0;
-                        $mapped = isset($_GET['mapped']) ? intval($_GET['mapped']) : 0;
-                        $relinked = isset($_GET['relinked']) ? intval($_GET['relinked']) : 0;
-                        echo sprintf(
-                            Olama_School_Helpers::translate('Success! Imported %d students. Mapped %d records and re-linked %dorphans.'),
-                            $imported,
-                            $mapped,
-                            $relinked
-                        );
-                    } else {
-                        echo Olama_School_Helpers::translate('Orphaned evaluation data fixed successfully.');
-                    }
+                if ($msg === 'orphans_removed') {
+                    $count = isset($_GET['count']) ? intval($_GET['count']) : 0;
+                    echo sprintf(Olama_School_Helpers::translate('%d orphaned evaluation records were removed successfully.'), $count);
                 } else {
                     echo Olama_School_Helpers::translate($msg);
                 }
@@ -109,20 +73,11 @@ if (!defined('ABSPATH')) {
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
             <form method="post" action="" style="margin: 0;">
                 <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
-                <input type="hidden" name="olama_ev_action" value="fix_old_data">
-                <button type="submit" class="button button-secondary"
-                    onclick="return confirm('<?php echo esc_js(Olama_School_Helpers::translate('Are you sure you want to fix old data? This will assign the active semester to all evaluation templates that are missing one.')); ?>')">
-                    <span class="dashicons dashicons-update" style="margin-top: 4px;"></span>
-                    <?php echo Olama_School_Helpers::translate('Fix Old Data'); ?>
-                </button>
-            </form>
-            <form method="post" action="" style="margin: 0;">
-                <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
-                <input type="hidden" name="olama_ev_action" value="fix_orphaned_data">
-                <button type="submit" class="button button-secondary"
-                    onclick="return confirm('<?php echo esc_js(Olama_School_Helpers::translate('Are you sure? This will re-link orphaned evaluations to re-imported students using their ID Number.')); ?>')">
-                    <span class="dashicons dashicons-database-import" style="margin-top: 4px;"></span>
-                    <?php echo Olama_School_Helpers::translate('Fix Orphaned Data'); ?>
+                <input type="hidden" name="olama_ev_action" value="remove_all_orphans">
+                <button type="submit" class="button button-link-delete" style="color: #ef4444;"
+                    onclick="return confirm('<?php echo esc_js(Olama_School_Helpers::translate('Are you sure you want to remove ALL orphaned evaluation records? This action cannot be undone.')); ?>')">
+                    <span class="dashicons dashicons-trash" style="margin-top: 4px;"></span>
+                    <?php echo Olama_School_Helpers::translate('Remove All Orphaned Records'); ?>
                 </button>
             </form>
             <button type="button" class="button button-primary" onclick="jQuery('#add-template-form').toggle();">

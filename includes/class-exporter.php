@@ -390,8 +390,8 @@ class Olama_School_Exporter
                   LEFT JOIN {$wpdb->prefix}olama_families f ON s.family_id = f.family_uid
                   LEFT JOIN (
                       SELECT e1.* FROM {$wpdb->prefix}olama_student_enrollment e1
-                      WHERE e1.id = (SELECT MAX(id) FROM {$wpdb->prefix}olama_student_enrollment e2 WHERE e2.student_id = e1.student_id)
-                  ) e ON s.id = e.student_id 
+                      WHERE e1.id = (SELECT MAX(id) FROM {$wpdb->prefix}olama_student_enrollment e2 WHERE e2.student_uid = e1.student_uid)
+                  ) e ON s.student_uid = e.student_uid 
                   LEFT JOIN {$wpdb->prefix}olama_sections sec ON e.section_id = sec.id 
                   LEFT JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id 
                   LEFT JOIN {$wpdb->prefix}olama_academic_years ay ON e.academic_year_id = ay.id

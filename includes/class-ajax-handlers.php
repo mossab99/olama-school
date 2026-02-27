@@ -1560,11 +1560,11 @@ class Olama_School_Ajax_Handlers
         $students = $wpdb->get_results($wpdb->prepare("
             SELECT s.*, sec.section_name, g.grade_name
             FROM {$wpdb->prefix}olama_students s
-            JOIN {$wpdb->prefix}olama_student_enrollment e ON s.id = e.student_id
+            JOIN {$wpdb->prefix}olama_student_enrollment e ON s.student_uid = e.student_uid
             JOIN {$wpdb->prefix}olama_sections sec ON e.section_id = sec.id
             JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id
             LEFT JOIN {$wpdb->prefix}olama_student_bus_assignments a 
-                ON s.id = a.student_id AND a.academic_year_id = %d
+                ON s.student_uid = a.student_uid AND a.academic_year_id = %d
             WHERE e.academic_year_id = %d AND a.id IS NULL
             ORDER BY g.id, sec.id, s.student_name
         ", $academic_year_id, $academic_year_id));

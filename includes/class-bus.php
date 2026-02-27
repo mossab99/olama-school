@@ -146,10 +146,16 @@ class Olama_School_Bus
         foreach ($student_ids as $student_id) {
             $student_id = intval($student_id);
 
+            // Fetch student_uid for stable linkage
+            $student_uid = $wpdb->get_var($wpdb->prepare(
+                "SELECT student_uid FROM {$wpdb->prefix}olama_students WHERE id = %d",
+                $student_id
+            ));
+
             // Check if student already has a bus assignment for this year
             $existing = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM $table WHERE student_id = %d AND academic_year_id = %d",
-                $student_id,
+                "SELECT id FROM $table WHERE student_uid = %s AND academic_year_id = %d",
+                $student_uid,
                 $academic_year_id
             ));
 
@@ -159,6 +165,7 @@ class Olama_School_Bus
                     $table,
                     array(
                         'bus_id' => $bus_id,
+                        'student_uid' => $student_uid,
                         'assigned_at' => current_time('mysql'),
                         'assigned_by' => $current_user_id
                     ),
@@ -170,6 +177,7 @@ class Olama_School_Bus
                     $table,
                     array(
                         'student_id' => $student_id,
+                        'student_uid' => $student_uid,
                         'bus_id' => $bus_id,
                         'academic_year_id' => $academic_year_id,
                         'assigned_at' => current_time('mysql'),
@@ -205,13 +213,30 @@ class Olama_School_Bus
         global $wpdb;
         $table = "{$wpdb->prefix}olama_student_bus_assignments";
 
-        $result = $wpdb->delete(
-            $table,
-            array(
-                'student_id' => $student_id,
-                'academic_year_id' => $academic_year_id
-            )
-        );
+        // Look up the stable UID from the current student record
+        $student_uid = $wpdb->get_var($wpdb->prepare(
+            "SELECT student_uid FROM {$wpdb->prefix}olama_students WHERE id = %d",
+            $student_id
+        ));
+
+        if ($student_uid) {
+            $result = $wpdb->delete(
+                $table,
+                array(
+                    'student_uid' => $student_uid,
+                    'academic_year_id' => $academic_year_id
+                )
+            );
+        } else {
+            // Fallback to student_id if UID not found (shouldn't happen)
+            $result = $wpdb->delete(
+                $table,
+                array(
+                    'student_id' => $student_id,
+                    'academic_year_id' => $academic_year_id
+                )
+            );
+        }
 
         return $result !== false;
     }
@@ -231,8 +256,8 @@ class Olama_School_Bus
             SELECT s.*, a.id as assignment_id, a.pickup_location, a.dropoff_location, 
                    a.notes, a.assigned_at, sec.section_name, g.grade_name
             FROM {$wpdb->prefix}olama_student_bus_assignments a
-            JOIN {$wpdb->prefix}olama_students s ON a.student_id = s.id
-            LEFT JOIN {$wpdb->prefix}olama_student_enrollment e ON s.id = e.student_id AND e.academic_year_id = %d
+            JOIN {$wpdb->prefix}olama_students s ON a.student_uid = s.student_uid
+            LEFT JOIN {$wpdb->prefix}olama_student_enrollment e ON s.student_uid = e.student_uid AND e.academic_year_id = %d
             LEFT JOIN {$wpdb->prefix}olama_sections sec ON e.section_id = sec.id
             LEFT JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id
             WHERE a.bus_id = %d AND a.academic_year_id = %d
@@ -255,7 +280,8 @@ class Olama_School_Bus
             SELECT a.*, b.bus_number, b.plate_number, b.passenger_capacity
             FROM {$wpdb->prefix}olama_student_bus_assignments a
             JOIN {$wpdb->prefix}olama_transport_buses b ON a.bus_id = b.id
-            WHERE a.student_id = %d AND a.academic_year_id = %d
+            JOIN {$wpdb->prefix}olama_students s ON a.student_uid = s.student_uid
+            WHERE s.id = %d AND a.academic_year_id = %d
         ", $student_id, $academic_year_id));
     }
 
