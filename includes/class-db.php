@@ -417,6 +417,7 @@ class Olama_School_DB
 				academic_year_id mediumint(9) NOT NULL,
 				semester_id mediumint(9) NOT NULL,
 				status varchar(20) DEFAULT 'draft' NOT NULL,
+				supervisor_comments text DEFAULT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
@@ -749,6 +750,18 @@ class Olama_School_DB
 				INNER JOIN {$wpdb->prefix}olama_students s ON r.student_id = s.id 
 				SET r.student_uid = s.student_uid 
 				WHERE r.student_uid IS NULL"
+			);
+		}
+
+		// Ensure supervisor_comments column exists in olama_ev_records
+		$ev_records_comments_exists = $wpdb->get_results(
+			"SHOW COLUMNS FROM {$wpdb->prefix}olama_ev_records LIKE 'supervisor_comments'"
+		);
+
+		if (empty($ev_records_comments_exists)) {
+			$wpdb->query(
+				"ALTER TABLE {$wpdb->prefix}olama_ev_records 
+				ADD COLUMN supervisor_comments text DEFAULT NULL AFTER status"
 			);
 		}
 

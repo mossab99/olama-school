@@ -115,4 +115,92 @@ class Olama_School_EV_Manager
             exit;
         }
     }
+
+    /**
+     * Get evaluation progress data for a section
+     */
+    public function get_progress_data($grade_id, $section_id, $year_id, $semester_id)
+    {
+        global $wpdb;
+
+        // 1. Get total students in section
+        $students = Olama_School_Student::get_students(array(
+            'academic_year_id' => $year_id,
+            'section_id' => $section_id
+        ));
+        $total_students = count($students);
+
+        // 2. Get templates for grade & semester
+        $templates = Olama_School_EV_Template::get_templates($grade_id, $year_id, $semester_id);
+
+        $progress = array();
+        foreach ($templates as $template) {
+            // Count filled evaluations for this template and section students
+            $filled_count = 0;
+            if ($total_students > 0) {
+                $student_uids = wp_list_pluck($students, 'student_uid');
+                $placeholders = implode(',', array_fill(0, count($student_uids), '%s'));
+
+                $filled_count = $wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(DISTINCT student_uid) FROM {$wpdb->prefix}olama_ev_records 
+                     WHERE template_id = %d AND academic_year_id = %d AND semester_id = %d 
+                     AND student_uid IN ($placeholders) AND status = 'published'",
+                    array_merge(array($template->id, $year_id, $semester_id), $student_uids)
+                ));
+            }
+
+            $progress[] = array(
+                'template_id' => $template->id,
+                'title' => $template->template_name,
+                'created_at' => $template->created_at,
+                'total_students' => $total_students,
+                'filled_count' => $filled_count,
+                'ratio' => $total_students > 0 ? ($filled_count / $total_students) : 0
+            );
+        }
+
+        return $progress;
+    }
+
+    /**
+     * Get students by evaluation status
+     */
+    public function get_students_by_status($template_id, $section_id, $year_id, $semester_id, $status = 'complete')
+    {
+        global $wpdb;
+
+        // Get all students in section
+        $students = Olama_School_Student::get_students(array(
+            'academic_year_id' => $year_id,
+            'section_id' => $section_id
+        ));
+
+        if (empty($students)) {
+            return array();
+        }
+
+        $student_uids = wp_list_pluck($students, 'student_uid');
+        $placeholders = implode(',', array_fill(0, count($student_uids), '%s'));
+
+        // Get student UIDs who have completed evaluations
+        $completed_uids = $wpdb->get_col($wpdb->prepare(
+            "SELECT DISTINCT student_uid FROM {$wpdb->prefix}olama_ev_records 
+             WHERE template_id = %d AND academic_year_id = %d AND semester_id = %d 
+             AND student_uid IN ($placeholders) AND status = 'published'",
+            array_merge(array($template_id, $year_id, $semester_id), $student_uids)
+        ));
+
+        $result = array();
+        foreach ($students as $student) {
+            $is_completed = in_array($student->student_uid, $completed_uids);
+
+            if ($status === 'complete' && $is_completed) {
+                $result[] = $student;
+            } elseif ($status === 'none' && !$is_completed) {
+                $result[] = $student;
+            }
+        }
+
+        return $result;
+    }
 }

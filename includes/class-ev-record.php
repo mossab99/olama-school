@@ -16,9 +16,8 @@ class Olama_School_EV_Record
     {
         global $wpdb;
         return $wpdb->get_row($wpdb->prepare(
-            "SELECT r.* FROM {$wpdb->prefix}olama_ev_records r
-             JOIN {$wpdb->prefix}olama_students s ON r.student_uid = s.student_uid
-             WHERE s.id = %d AND r.academic_year_id = %d AND r.semester_id = %d AND r.template_id = %d",
+            "SELECT * FROM {$wpdb->prefix}olama_ev_records 
+             WHERE student_id = %d AND academic_year_id = %d AND semester_id = %d AND template_id = %d",
             $student_id,
             $year_id,
             $semester_id,
@@ -52,7 +51,8 @@ class Olama_School_EV_Record
             'teacher_id' => get_current_user_id(),
             'academic_year_id' => intval($data['academic_year_id']),
             'semester_id' => intval($data['semester_id']),
-            'status' => sanitize_text_field($data['status'] ?? 'draft')
+            'status' => sanitize_text_field($data['status'] ?? 'draft'),
+            'supervisor_comments' => isset($data['supervisor_comments']) ? sanitize_textarea_field($data['supervisor_comments']) : null
         );
 
         $existing = self::get_evaluation($fields['student_id'], $fields['academic_year_id'], $fields['semester_id'], $fields['template_id']);
@@ -119,7 +119,7 @@ class Olama_School_EV_Record
     {
         global $wpdb;
         $results = $wpdb->get_results($wpdb->prepare(
-            "SELECT s.id as student_id, r.status 
+            "SELECT s.id as student_id, r.status, r.supervisor_comments
              FROM {$wpdb->prefix}olama_ev_records r
              JOIN {$wpdb->prefix}olama_students s ON r.student_uid = s.student_uid
              WHERE r.academic_year_id = %d AND r.semester_id = %d AND r.template_id = %d",
@@ -130,7 +130,10 @@ class Olama_School_EV_Record
 
         $statuses = array();
         foreach ($results as $row) {
-            $statuses[$row->student_id] = $row->status;
+            $statuses[$row->student_id] = array(
+                'status' => $row->status,
+                'has_comments' => !empty($row->supervisor_comments)
+            );
         }
         return $statuses;
     }
