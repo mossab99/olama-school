@@ -149,6 +149,15 @@ class Olama_School_Permissions
                     'olama_manage_transport_buses' => __('Manage Buses', 'olama-school'),
                 )
             ),
+            'supervision' => array(
+                'label' => __('Academic Supervision', 'olama-school'),
+                'caps' => array(
+                    'olama_access_supervision' => __('Access Supervision', 'olama-school'),
+                    'olama_manage_supervision_plan' => __('Plan Visit', 'olama-school'),
+                    'olama_view_supervision_reports' => __('Reports', 'olama-school'),
+                    'olama_view_supervision_analytics' => __('Analytics', 'olama-school'),
+                )
+            ),
         );
     }
 

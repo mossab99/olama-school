@@ -3,7 +3,7 @@
  * Plugin Name: Olama School System
  * Plugin URI: https://olama.online/olama-school-weekly-plan
  * Description: A comprehensive WordPress plugin for managing school weekly plans, including hierarchical structures (Grades, Sections), subject management, and teacher/student assignments.
- * Version: 2.2.2
+ * Version: 2.3.0
  * Author: د. مصعب الحنيطي
  * Author URI: https://olama.online
  * Text Domain: أكاديمية علماء المستقبل 
@@ -64,7 +64,13 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-permissions.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-helpers.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-backup.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ajax-handlers.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-supervision-ajax-handlers.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-shortcodes.php';
+
+// Service Layer
+require_once OLAMA_SCHOOL_PATH . 'includes/Services/ScheduleValidatorService.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/Services/EvaluationScoringService.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/Services/SupervisorVisitService.php';
 
 // Register custom cron schedules (WordPress only has hourly/twicedaily/daily)
 function olama_school_cron_schedules($schedules)
@@ -153,6 +159,7 @@ function olama_school_init()
     if (is_admin()) {
         new Olama_School_Admin();
         new Olama_School_Ajax_Handlers();
+        new Olama_School_Supervision_Ajax_Handlers();
     }
 
     // Initialize Shortcodes

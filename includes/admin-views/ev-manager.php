@@ -66,6 +66,18 @@ if (!defined('ABSPATH')) {
                         <?php endforeach; ?>
                     </select>
                 </div>
+
+                <div style="flex: 1; min-width: 200px;">
+                    <label class="olama-label"><?php echo Olama_School_Helpers::translate('Context'); ?></label>
+                    <select name="context_type" onchange="this.form.submit()" style="width: 100%;">
+                        <option value="student" <?php selected($selected_context, 'student'); ?>>
+                            <?php echo Olama_School_Helpers::translate('Student'); ?>
+                        </option>
+                        <option value="supervisor" <?php selected($selected_context, 'supervisor'); ?>>
+                            <?php echo Olama_School_Helpers::translate('Supervisor'); ?>
+                        </option>
+                    </select>
+                </div>
             </div>
         </form>
 
@@ -97,6 +109,7 @@ if (!defined('ABSPATH')) {
             <input type="hidden" name="academic_year_id" value="<?php echo $selected_year_id; ?>">
             <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>">
             <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>">
+            <input type="hidden" name="context_type" value="<?php echo $selected_context; ?>">
 
             <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">
                 <div style="flex: 2; min-width: 300px;">
@@ -171,17 +184,26 @@ if (!defined('ABSPATH')) {
                                     <?php echo date_i18n(get_option('date_format'), strtotime($t->created_at)); ?>
                                 </td>
                                 <td style="padding: 15px; text-align: right;">
-                                    <a href="<?php echo add_query_arg('template_id', $t->id); ?>" class="button button-secondary">
+                                    <a href="<?php echo add_query_arg(array('template_id' => $t->id, 'context_type' => $selected_context)); ?>"
+                                        class="button button-secondary"
+                                        title="<?php echo esc_attr(Olama_School_Helpers::translate('Manage Structure')); ?>">
                                         <span class="dashicons dashicons-layout" style="margin-top: 4px;"></span>
-                                        <?php echo Olama_School_Helpers::translate('Manage Structure'); ?>
                                     </a>
+                                    <button type="button" class="button button-secondary"
+                                        title="<?php echo esc_attr(Olama_School_Helpers::translate('Copy To')); ?>"
+                                        onclick="openCopyTemplateModal(<?php echo $t->id; ?>, '<?php echo esc_js($t->template_name); ?>')">
+                                        <span class="dashicons dashicons-admin-page" style="margin-top: 4px;"></span>
+                                    </button>
                                     <form method="post" action="" style="display: inline;"
                                         onsubmit="return confirm('<?php echo Olama_School_Helpers::translate('Delete this evaluation?'); ?>')">
                                         <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
                                         <input type="hidden" name="olama_ev_action" value="delete_template">
                                         <input type="hidden" name="id" value="<?php echo $t->id; ?>">
+                                        <input type="hidden" name="context_type" value="<?php echo $selected_context; ?>">
                                         <button type="submit" class="button button-link-delete"
-                                            style="color: #ef4444;"><?php echo Olama_School_Helpers::translate('Delete'); ?></button>
+                                            title="<?php echo esc_attr(Olama_School_Helpers::translate('Delete')); ?>"
+                                            style="color: #ef4444;"><span class="dashicons dashicons-trash"
+                                                style="margin-top: 4px;"></span></button>
                                     </form>
                                 </td>
                             </tr>
@@ -237,6 +259,7 @@ if (!defined('ABSPATH')) {
                 <input type="hidden" name="id" value="<?php echo $current_template->id; ?>">
                 <input type="hidden" name="academic_year_id" value="<?php echo $current_template->academic_year_id; ?>">
                 <input type="hidden" name="grade_id" value="<?php echo $current_template->grade_id; ?>">
+                <input type="hidden" name="context_type" value="<?php echo $selected_context; ?>">
 
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">
                     <div style="flex: 2; min-width: 300px;">
@@ -536,6 +559,63 @@ if (!defined('ABSPATH')) {
         </div>
     <?php endif; ?>
 </div>
+
+<!-- Copy Template Modal -->
+<div id="copy-template-modal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="olama-card"
+        style="background: #fff; padding: 25px; border-radius: 8px; width: 100%; max-width: 500px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h3 style="margin-top: 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
+            <?php echo Olama_School_Helpers::translate('Copy Evaluation Template'); ?>
+        </h3>
+        <form method="post" action="">
+            <?php wp_nonce_field('olama_ev_curriculum_action', 'olama_ev_curriculum_action'); ?>
+            <input type="hidden" name="olama_ev_action" value="copy_template">
+            <input type="hidden" name="source_template_id" id="copy_source_template_id" value="">
+            <input type="hidden" name="academic_year_id" value="<?php echo $selected_year_id; ?>">
+            <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>">
+            <input type="hidden" name="context_type" value="<?php echo esc_attr($selected_context); ?>">
+
+            <div style="margin-bottom: 15px;">
+                <label class="olama-label"><?php echo Olama_School_Helpers::translate('New Template Title'); ?></label>
+                <input type="text" name="new_template_name" id="copy_new_template_name" required style="width: 100%;">
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label class="olama-label"><?php echo Olama_School_Helpers::translate('Destination Grade'); ?></label>
+                <select name="destination_grade_id" required style="width: 100%;">
+                    <option value=""><?php echo Olama_School_Helpers::translate('-- Select Grade --'); ?></option>
+                    <?php foreach ($grades as $g): ?>
+                        <option value="<?php echo $g->id; ?>">
+                            <?php echo esc_html(Olama_School_Helpers::translate($g->grade_name)); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="button button-secondary" onclick="closeCopyTemplateModal()">
+                    <?php echo Olama_School_Helpers::translate('Cancel'); ?>
+                </button>
+                <button type="submit" class="button button-primary">
+                    <?php echo Olama_School_Helpers::translate('Copy Template'); ?>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openCopyTemplateModal(templateId, templateName) {
+        document.getElementById('copy_source_template_id').value = templateId;
+        document.getElementById('copy_new_template_name').value = templateName + ' - <?php echo esc_js(Olama_School_Helpers::translate('Copy')); ?>';
+        document.getElementById('copy-template-modal').style.display = 'flex';
+    }
+
+    function closeCopyTemplateModal() {
+        document.getElementById('copy-template-modal').style.display = 'none';
+    }
+</script>
 
 <style>
     .olama-ev-mgmt-wrap {

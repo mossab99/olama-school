@@ -17,159 +17,216 @@ if (!defined('ABSPATH')) {
     <?php endif; ?>
     <div class="olama-header-section" style="margin-bottom: 25px;">
         <h2 style="margin: 0; font-size: 1.5em;">
-            <?php echo Olama_School_Helpers::translate('Student Evaluation'); ?>
+            <?php 
+            if ($context_type === 'supervisor') {
+                _e('Supervisor Visit Evaluation', 'olama-school');
+            } else {
+                echo Olama_School_Helpers::translate('Student Evaluation'); 
+            }
+            ?>
         </h2>
         <p class="description">
-            <?php echo Olama_School_Helpers::translate('Fill the evaluation form for the selected student.'); ?>
+            <?php 
+            if ($context_type === 'supervisor') {
+                _e('Evaluate the teacher performance during the scheduled visit.', 'olama-school');
+            } else {
+                echo Olama_School_Helpers::translate('Fill the evaluation form for the selected student.'); 
+            }
+            ?>
         </p>
     </div>
 
-    <!-- Action Required Summary Notice -->
-    <?php 
-    $students_with_comments = array();
-    if ($selected_section_id && $selected_template_id) {
-        foreach ($students as $stu) {
-            $ev_data = $evaluation_statuses[$stu->id] ?? null;
-            if ($ev_data && $ev_data['status'] === 'draft' && $ev_data['has_comments']) {
-                $students_with_comments[] = $stu;
-            }
-        }
-    }
-    ?>
-
-    <?php if (!empty($students_with_comments)): ?>
-        <div class="ev-action-required-summary" style="background: #fef2f2; border: 1px solid #fee2e2; border-right: 4px solid #ef4444; padding: 20px; border-radius: 12px; margin-bottom: 25px;">
-            <h3 style="margin: 0 0 15px 0; color: #991b1b; font-size: 1.1em; display: flex; align-items: center; gap: 8px;">
-                <span class="dashicons dashicons-warning" style="color: #ef4444;"></span>
-                <?php echo Olama_School_Helpers::translate('Action Required: Supervisor Feedback'); ?>
-            </h3>
-            
-            <table class="wp-list-table widefat fixed striped" style="border: none; background: transparent; box-shadow: none;">
-                <thead>
-                    <tr>
-                        <th style="background: transparent; border-bottom: 2px solid #fee2e2; font-weight: 700; color: #1e293b; width: 25%;"><?php echo Olama_School_Helpers::translate('Student Name'); ?></th>
-                        <th style="background: transparent; border-bottom: 2px solid #fee2e2; font-weight: 700; color: #1e293b;"><?php echo Olama_School_Helpers::translate('Supervisor Comments'); ?></th>
-                        <th style="background: transparent; border-bottom: 2px solid #fee2e2; font-weight: 700; color: #1e293b; width: 120px; text-align: center;"><?php echo Olama_School_Helpers::translate('Actions'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($students_with_comments as $stu): 
-                        $stu_ev = Olama_School_EV_Record::get_evaluation($stu->id, $selected_year_id, $selected_semester_id, $selected_template_id);
-                    ?>
-                        <tr>
-                            <td style="background: transparent; font-weight: 600; color: #1e293b;"><?php echo esc_html($stu->student_name); ?></td>
-                            <td style="background: transparent;">
-                                <div style="color: #991b1b; font-size: 13px; line-height: 1.4; font-style: italic;">
-                                    "<?php echo nl2br(esc_html($stu_ev->supervisor_comments)); ?>"
-                                </div>
-                            </td>
-                            <td style="background: transparent; text-align: center;">
-                                <a href="<?php echo add_query_arg('student_id', $stu->id, $_SERVER['REQUEST_URI']); ?>" 
-                                   class="button button-small" 
-                                   style="background: #ef4444; border-color: #ef4444; color: #fff;">
-                                    <?php echo Olama_School_Helpers::translate('Open Form'); ?>
-                                </a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+    <?php if ($context_type === 'supervisor' && $visit): ?>
+        <div class="olama-visit-info-card olama-card" style="background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 25px; border-right: 4px solid #6366f1;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">
+                        <?php _e('Teacher', 'olama-school'); ?>
+                    </label>
+                    <div style="font-size: 16px; font-weight: 700; color: #1e293b;">
+                        <?php echo esc_html(get_the_author_meta('display_name', $visit->teacher_id)); ?>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">
+                        <?php _e('Visit Date', 'olama-school'); ?>
+                    </label>
+                    <div style="font-size: 16px; font-weight: 700; color: #1e293b;">
+                        <?php echo date_i18n(get_option('date_format'), strtotime($visit->visit_date)); ?>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">
+                        <?php _e('Template', 'olama-school'); ?>
+                    </label>
+                    <div style="font-size: 16px; font-weight: 700; color: #1e293b;">
+                        <?php echo esc_html($visit->template_name); ?>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">
+                        <?php _e('Status', 'olama-school'); ?>
+                    </label>
+                    <div style="font-size: 16px; font-weight: 700; color: <?php echo $visit->status === 'completed' ? '#10b981' : '#f59e0b'; ?>;">
+                        <?php echo ucfirst($visit->status); ?>
+                    </div>
+                </div>
+            </div>
         </div>
     <?php endif; ?>
 
-    <!-- Filter Bar -->
-    <div class="olama-filter-bar olama-card"
-        style="background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 25px;">
-        <form method="get" action="">
-            <input type="hidden" name="page" value="olama-school-evaluation">
-            <input type="hidden" name="tab" value="student_evaluation">
+    <?php if ($context_type === 'student'): ?>
+        <!-- Action Required Summary Notice -->
+        <?php 
+        $students_with_comments = array();
+        if ($selected_section_id && $selected_template_id) {
+            foreach ($students as $stu) {
+                $ev_data = $evaluation_statuses[$stu->id] ?? null;
+                if ($ev_data && $ev_data['status'] === 'draft' && $ev_data['has_comments']) {
+                    $students_with_comments[] = $stu;
+                }
+            }
+        }
+        ?>
 
-            <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
-                <?php 
-                echo Olama_School_Helpers::locked_filter_render(
-                    Olama_School_Helpers::translate('Academic Year'), 
-                    Olama_School_Helpers::translate($selected_year_name), 
-                    'academic_year_id', 
-                    $selected_year_id
-                ); 
-
-                echo Olama_School_Helpers::locked_filter_render(
-                    Olama_School_Helpers::translate('Semester'), 
-                    Olama_School_Helpers::translate($selected_semester_name), 
-                    'semester_id', 
-                    $selected_semester_id
-                ); 
-                ?>
-
-                <div style="flex: 1; min-width: 150px;">
-                    <label class="olama-label">
-                        <?php echo Olama_School_Helpers::translate('Section'); ?>
-                    </label>
-                    <select name="section_id" onchange="this.form.submit()" style="width: 100%;">
-                        <option value="">
-                            <?php echo Olama_School_Helpers::translate('Select Section'); ?>
-                        </option>
-                        <?php foreach ($sections as $sec): ?>
-                            <option value="<?php echo $sec->id; ?>" <?php selected($selected_section_id, $sec->id); ?>>
-                                <?php echo esc_html(Olama_School_Helpers::translate($sec->section_name)); ?>
-                                (<?php echo esc_html(Olama_School_Helpers::translate($sec->grade_name)); ?>)
-                            </option>
+        <?php if (!empty($students_with_comments)): ?>
+            <div class="ev-action-required-summary" style="background: #fef2f2; border: 1px solid #fee2e2; border-right: 4px solid #ef4444; padding: 20px; border-radius: 12px; margin-bottom: 25px;">
+                <h3 style="margin: 0 0 15px 0; color: #991b1b; font-size: 1.1em; display: flex; align-items: center; gap: 8px;">
+                    <span class="dashicons dashicons-warning" style="color: #ef4444;"></span>
+                    <?php echo Olama_School_Helpers::translate('Action Required: Supervisor Feedback'); ?>
+                </h3>
+                
+                <table class="wp-list-table widefat fixed striped" style="border: none; background: transparent; box-shadow: none;">
+                    <thead>
+                        <tr>
+                            <th style="background: transparent; border-bottom: 2px solid #fee2e2; font-weight: 700; color: #1e293b; width: 25%;"><?php echo Olama_School_Helpers::translate('Student Name'); ?></th>
+                            <th style="background: transparent; border-bottom: 2px solid #fee2e2; font-weight: 700; color: #1e293b;"><?php echo Olama_School_Helpers::translate('Supervisor Comments'); ?></th>
+                            <th style="background: transparent; border-bottom: 2px solid #fee2e2; font-weight: 700; color: #1e293b; width: 120px; text-align: center;"><?php echo Olama_School_Helpers::translate('Actions'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($students_with_comments as $stu): 
+                            $stu_ev = Olama_School_EV_Record::get_evaluation($stu->id, $selected_year_id, $selected_semester_id, $selected_template_id);
+                        ?>
+                            <tr>
+                                <td style="background: transparent; font-weight: 600; color: #1e293b;"><?php echo esc_html($stu->student_name); ?></td>
+                                <td style="background: transparent;">
+                                    <div style="color: #991b1b; font-size: 13px; line-height: 1.4; font-style: italic;">
+                                        "<?php echo nl2br(esc_html($stu_ev->supervisor_comments)); ?>"
+                                    </div>
+                                </td>
+                                <td style="background: transparent; text-align: center;">
+                                    <a href="<?php echo add_query_arg('student_id', $stu->id, $_SERVER['REQUEST_URI']); ?>" 
+                                    class="button button-small" 
+                                    style="background: #ef4444; border-color: #ef4444; color: #fff;">
+                                        <?php echo Olama_School_Helpers::translate('Open Form'); ?>
+                                    </a>
+                                </td>
+                            </tr>
                         <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div style="flex: 1; min-width: 150px;">
-                    <label class="olama-label">
-                        <?php echo Olama_School_Helpers::translate('Select Evaluation (Title)'); ?>
-                    </label>
-                    <select name="template_id" onchange="this.form.submit()" style="width: 100%;">
-                        <option value=""><?php echo Olama_School_Helpers::translate('-- Select --'); ?></option>
-                        <?php foreach ($templates as $t): ?>
-                            <option value="<?php echo $t->id; ?>" <?php selected($selected_template_id, $t->id); ?>>
-                                <?php echo esc_html($t->template_name); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div style="flex: 1; min-width: 150px;">
-                    <label class="olama-label">
-                        <?php echo Olama_School_Helpers::translate('Select Student'); ?>
-                    </label>
-                    <select name="student_id" onchange="this.form.submit()" style="width: 100%;">
-                        <option value="">
-                            <?php echo Olama_School_Helpers::translate('Choose a Student...'); ?>
-                        </option>
-                        <?php foreach ($students as $stu):
-                            $ev_data = isset($evaluation_statuses[$stu->id]) ? $evaluation_statuses[$stu->id] : array('status' => '', 'has_comments' => false);
-                            $status = $ev_data['status'];
-                            $has_comments = $ev_data['has_comments'];
-                            $tag = '';
-                            if ($status === 'published') {
-                                $tag = ' - ' . Olama_School_Helpers::translate('Evaluated');
-                            } elseif ($status === 'draft') {
-                                if ($has_comments) {
-                                    $tag = ' - ' . Olama_School_Helpers::translate('Action required');
-                                } else {
-                                    $tag = ' - ' . Olama_School_Helpers::translate('In Progress');
-                                }
-                            }
-                            ?>
-                            <option value="<?php echo $stu->id; ?>" <?php selected($selected_student_id, $stu->id); ?> <?php echo $has_comments && $status === 'draft' ? 'style="color: #ef4444; font-weight: bold;"' : ''; ?>>
-                                <?php echo esc_html($stu->student_name . $tag); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+                    </tbody>
+                </table>
             </div>
-        </form>
-    </div>
+        <?php endif; ?>
+    <?php endif; ?> <!-- Close student context if -->
 
-    <?php if ($selected_student_id && $selected_template_id && empty($curriculum)): ?>
+    <!-- Filter Bar -->
+        <div class="olama-filter-bar olama-card"
+            style="background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 25px;">
+            <form method="get" action="">
+                <input type="hidden" name="page" value="<?php echo esc_attr($_GET['page'] ?? 'olama-school-evaluation'); ?>">
+                <input type="hidden" name="tab" value="<?php echo esc_attr($_GET['tab'] ?? 'student_evaluation'); ?>">
+                <input type="hidden" name="context" value="<?php echo esc_attr($context_type); ?>">
+                <?php if ($visit_id): ?>
+                    <input type="hidden" name="visit_id" value="<?php echo $visit_id; ?>">
+                <?php endif; ?>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+                    <?php 
+                    echo Olama_School_Helpers::locked_filter_render(
+                        Olama_School_Helpers::translate('Academic Year'), 
+                        Olama_School_Helpers::translate($selected_year_name), 
+                        'academic_year_id', 
+                        $selected_year_id
+                    ); 
+
+                    echo Olama_School_Helpers::locked_filter_render(
+                        Olama_School_Helpers::translate('Semester'), 
+                        Olama_School_Helpers::translate($selected_semester_name), 
+                        'semester_id', 
+                        $selected_semester_id
+                    ); 
+                    ?>
+
+                    <div style="flex: 1; min-width: 150px;">
+                        <label class="olama-label">
+                            <?php echo Olama_School_Helpers::translate('Section'); ?>
+                        </label>
+                        <select name="section_id" onchange="this.form.submit()" style="width: 100%;">
+                            <option value="">
+                                <?php echo Olama_School_Helpers::translate('Select Section'); ?>
+                            </option>
+                            <?php foreach ($sections as $sec): ?>
+                                <option value="<?php echo $sec->id; ?>" <?php selected($selected_section_id, $sec->id); ?>>
+                                    <?php echo esc_html(Olama_School_Helpers::translate($sec->section_name)); ?>
+                                    (<?php echo esc_html(Olama_School_Helpers::translate($sec->grade_name)); ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div style="flex: 1; min-width: 150px;">
+                        <label class="olama-label">
+                            <?php echo Olama_School_Helpers::translate('Select Evaluation (Title)'); ?>
+                        </label>
+                        <select name="template_id" onchange="this.form.submit()" style="width: 100%;">
+                            <option value=""><?php echo Olama_School_Helpers::translate('-- Select --'); ?></option>
+                            <?php foreach ($templates as $t): ?>
+                                <option value="<?php echo $t->id; ?>" <?php selected($selected_template_id, $t->id); ?>>
+                                    <?php echo esc_html($t->template_name); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div style="flex: 1; min-width: 150px; <?php echo $context_type === 'supervisor' ? 'display: none;' : ''; ?>">
+                        <label class="olama-label">
+                            <?php echo Olama_School_Helpers::translate('Select Student'); ?>
+                        </label>
+                        <select name="student_id" onchange="this.form.submit()" style="width: 100%;">
+                            <option value="">
+                                <?php echo Olama_School_Helpers::translate('Choose a Student...'); ?>
+                            </option>
+                            <?php foreach ($students as $stu):
+                                $ev_data = isset($evaluation_statuses[$stu->id]) ? $evaluation_statuses[$stu->id] : array('status' => '', 'has_comments' => false);
+                                $status = $ev_data['status'];
+                                $has_comments = $ev_data['has_comments'];
+                                $tag = '';
+                                if ($status === 'published') {
+                                    $tag = ' - ' . Olama_School_Helpers::translate('Evaluated');
+                                } elseif ($status === 'draft') {
+                                    if ($has_comments) {
+                                        $tag = ' - ' . Olama_School_Helpers::translate('Action required');
+                                    } else {
+                                        $tag = ' - ' . Olama_School_Helpers::translate('In Progress');
+                                    }
+                                }
+                                ?>
+                                <option value="<?php echo $stu->id; ?>" <?php selected($selected_student_id, $stu->id); ?> <?php echo $has_comments && $status === 'draft' ? 'style="color: #ef4444; font-weight: bold;"' : ''; ?>>
+                                    <?php echo esc_html($stu->student_name . $tag); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    <?php if (($selected_student_id && $selected_template_id && empty($curriculum)) || ($context_type === 'supervisor' && $visit_id && empty($curriculum))): ?>
         <div class="notice notice-warning">
             <p><?php echo Olama_School_Helpers::translate('No evaluation structure defined for this template yet.'); ?></p>
         </div>
-    <?php elseif ($selected_student_id && $selected_template_id): ?>
+    <?php elseif (($selected_student_id && $selected_template_id) || ($context_type === 'supervisor' && $visit_id)): ?>
 
         <!-- Progress Bar -->
         <div id="ev-progress-container"
@@ -189,6 +246,11 @@ if (!defined('ABSPATH')) {
             <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>">
             <input type="hidden" name="status" id="eval-status" value="draft">
             <input type="hidden" name="template_id" value="<?php echo $selected_template_id; ?>">
+            <input type="hidden" name="context_type" value="<?php echo esc_attr($context_type); ?>">
+            <?php if ($context_type === 'supervisor' && $visit_id): ?>
+                <input type="hidden" name="related_entity_type" value="supervisor_visit">
+                <input type="hidden" name="related_entity_id" value="<?php echo intval($visit_id); ?>">
+            <?php endif; ?>
 
             <?php foreach ($curriculum as $domain): ?>
                 <div class="ev-domain-section" style="margin-bottom: 40px;">
@@ -449,7 +511,45 @@ if (!defined('ABSPATH')) {
         });
 
         function performAutosave() {
-            $('#autosave-status').text('<?php echo Olama_School_Helpers::translate('Draft saved locally.'); ?>');
+            const formData = $('#ev-evaluation-form').serializeArray();
+            const evaluation_data = {};
+            const scores = {};
+
+            formData.forEach(item => {
+                if (item.name.startsWith('scores[')) {
+                    const match = item.name.match(/scores\[(\d+)\]\[(score|notes)\]/);
+                    if (match) {
+                        const id = match[1];
+                        const key = match[2];
+                        if (!scores[id]) scores[id] = { indicator_id: id };
+                        scores[id][key] = item.value;
+                    }
+                } else {
+                    evaluation_data[item.name] = item.value;
+                }
+            });
+
+            evaluation_data.scores = Object.values(scores);
+
+            $.ajax({
+                url: ajaxurl,
+                method: 'POST',
+                data: {
+                    action: 'olama_kg_evaluation_autosave',
+                    nonce: '<?php echo wp_create_nonce("olama_kg_evaluation_nonce"); ?>',
+                    evaluation_data: evaluation_data
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#autosave-status').text('<?php echo Olama_School_Helpers::translate('Draft saved automatically.'); ?>');
+                    } else {
+                        $('#autosave-status').text('<?php echo Olama_School_Helpers::translate('Error saving draft.'); ?>');
+                    }
+                },
+                error: function() {
+                    $('#autosave-status').text('<?php echo Olama_School_Helpers::translate('Connection error.'); ?>');
+                }
+            });
         }
     });
 </script>

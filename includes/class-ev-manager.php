@@ -26,7 +26,8 @@ class Olama_School_EV_Manager
         $selected_semester = Olama_School_Academic::get_semester($selected_semester_id);
         $selected_semester_name = $selected_semester ? $selected_semester->semester_name : '';
 
-        $templates = Olama_School_EV_Template::get_templates($selected_grade_id, $selected_year_id, $selected_semester_id);
+        $selected_context = isset($_GET['context_type']) ? sanitize_text_field($_GET['context_type']) : 'student';
+        $templates = Olama_School_EV_Template::get_templates($selected_grade_id, $selected_year_id, $selected_semester_id, $selected_context);
         $selected_template_id = isset($_GET['template_id']) ? intval($_GET['template_id']) : 0;
 
         $current_template = null;
@@ -56,6 +57,9 @@ class Olama_School_EV_Manager
         switch ($action) {
             case 'save_template':
                 $result = Olama_School_EV_Template::save_template($_POST);
+                break;
+            case 'copy_template':
+                $result = Olama_School_EV_Template::copy_template($_POST);
                 break;
             case 'delete_template':
                 $result = Olama_School_EV_Template::delete_template($_POST['id']);
@@ -97,6 +101,10 @@ class Olama_School_EV_Manager
                 // Ensure we stay on the management tab
                 if (strpos($url, 'tab=evaluation_mgmt') === false) {
                     $url = add_query_arg('tab', 'evaluation_mgmt', $url);
+                }
+
+                if (!empty($_POST['context_type'])) {
+                    $url = add_query_arg('context_type', sanitize_text_field($_POST['context_type']), $url);
                 }
 
                 if ($action === 'save_template' && is_numeric($result)) {

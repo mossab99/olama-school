@@ -12,16 +12,27 @@ class Olama_School_EV_Record
     /**
      * Get evaluation record
      */
-    public static function get_evaluation($student_id, $year_id, $semester_id, $template_id)
+    public static function get_evaluation($student_id, $year_id, $semester_id, $template_id, $context_type = 'student', $related_id = null)
     {
         global $wpdb;
+
+        if ($context_type === 'supervisor' && $related_id) {
+            return $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}olama_ev_records 
+                 WHERE related_entity_id = %d AND context_type = 'supervisor' AND template_id = %d",
+                $related_id,
+                $template_id
+            ));
+        }
+
         return $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}olama_ev_records 
-             WHERE student_id = %d AND academic_year_id = %d AND semester_id = %d AND template_id = %d",
+             WHERE student_id = %d AND academic_year_id = %d AND semester_id = %d AND template_id = %d AND context_type = %s",
             $student_id,
             $year_id,
             $semester_id,
-            $template_id
+            $template_id,
+            $context_type
         ));
     }
 
@@ -32,16 +43,18 @@ class Olama_School_EV_Record
     {
         global $wpdb;
 
-        $student_id = intval($data['student_id']);
-
-        // Look up the student's stable UID (ID Number) for future-proofing
+        $context_type = sanitize_text_field($data['context_type'] ?? 'student');
+        $student_id = isset($data['student_id']) ? intval($data['student_id']) : null;
         $student_uid = null;
-        $student = $wpdb->get_row($wpdb->prepare(
-            "SELECT student_uid FROM {$wpdb->prefix}olama_students WHERE id = %d",
-            $student_id
-        ));
-        if ($student) {
-            $student_uid = $student->student_uid;
+
+        if ($student_id) {
+            $student = $wpdb->get_row($wpdb->prepare(
+                "SELECT student_uid FROM {$wpdb->prefix}olama_students WHERE id = %d",
+                $student_id
+            ));
+            if ($student) {
+                $student_uid = $student->student_uid;
+            }
         }
 
         $fields = array(
@@ -51,11 +64,21 @@ class Olama_School_EV_Record
             'teacher_id' => get_current_user_id(),
             'academic_year_id' => intval($data['academic_year_id']),
             'semester_id' => intval($data['semester_id']),
+            'context_type' => $context_type,
+            'related_entity_type' => sanitize_text_field($data['related_entity_type'] ?? null),
+            'related_entity_id' => isset($data['related_entity_id']) ? intval($data['related_entity_id']) : null,
             'status' => sanitize_text_field($data['status'] ?? 'draft'),
             'supervisor_comments' => isset($data['supervisor_comments']) ? sanitize_textarea_field($data['supervisor_comments']) : null
         );
 
-        $existing = self::get_evaluation($fields['student_id'], $fields['academic_year_id'], $fields['semester_id'], $fields['template_id']);
+        $existing = self::get_evaluation(
+            $fields['student_id'],
+            $fields['academic_year_id'],
+            $fields['semester_id'],
+            $fields['template_id'],
+            $fields['context_type'],
+            $fields['related_entity_id']
+        );
 
         if ($existing) {
             $wpdb->update("{$wpdb->prefix}olama_ev_records", $fields, array('id' => $existing->id));
@@ -91,10 +114,24 @@ class Olama_School_EV_Record
     {
         global $wpdb;
 
+        // Fetch indicator weight and critical status for accurate scoring
+        $indicator = $wpdb->get_row($wpdb->prepare(
+            "SELECT weight, is_critical FROM {$wpdb->prefix}olama_ev_indicators WHERE id = %d",
+            $indicator_id
+        ));
+
+        $calculated_score = null;
+        if ($indicator && !is_null($score)) {
+            $weight = (float) $indicator->weight;
+            $multiplier = (bool) $indicator->is_critical ? 2.0 : 1.0;
+            $calculated_score = (float) $score * $weight * $multiplier;
+        }
+
         $fields = array(
             'evaluation_id' => intval($evaluation_id),
             'indicator_id' => intval($indicator_id),
             'score' => !is_null($score) ? intval($score) : null,
+            'calculated_score' => $calculated_score,
             'notes' => sanitize_textarea_field($notes)
         );
 
@@ -106,10 +143,50 @@ class Olama_School_EV_Record
         ));
 
         if ($existing) {
-            return $wpdb->update("{$wpdb->prefix}olama_ev_scores", $fields, array('id' => $existing->id));
+            $wpdb->update("{$wpdb->prefix}olama_ev_scores", $fields, array('id' => $existing->id));
         } else {
-            return $wpdb->insert("{$wpdb->prefix}olama_ev_scores", $fields);
+            $wpdb->insert("{$wpdb->prefix}olama_ev_scores", $fields);
         }
+
+        // After saving individual score, update the total if it's a supervisor visit
+        self::sync_total_score($evaluation_id);
+
+        return true;
+    }
+
+    /**
+     * Syncs total weighted score to the related entity (e.g., Supervisor Visit)
+     */
+    public static function sync_total_score($evaluation_id)
+    {
+        global $wpdb;
+
+        $evaluation = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}olama_ev_records WHERE id = %d",
+            $evaluation_id
+        ));
+
+        if (!$evaluation || $evaluation->context_type !== 'supervisor' || !$evaluation->related_entity_id) {
+            return;
+        }
+
+        // Calculate total using Service
+        $scores = $wpdb->get_results($wpdb->prepare(
+            "SELECT s.score as rating, i.weight, i.is_critical 
+             FROM {$wpdb->prefix}olama_ev_scores s
+             JOIN {$wpdb->prefix}olama_ev_indicators i ON s.indicator_id = i.id
+             WHERE s.evaluation_id = %d AND s.score IS NOT NULL",
+            $evaluation_id
+        ), ARRAY_A);
+
+        $result = \Olama\Services\EvaluationScoringService::calculate_score($scores);
+
+        // Update supervisor_visits table
+        \Olama\Services\SupervisorVisitService::update_visit_completion(
+            $evaluation->related_entity_id,
+            $evaluation->status === 'published' ? 'completed' : 'planned',
+            $result['percentage']
+        );
     }
 
     /**

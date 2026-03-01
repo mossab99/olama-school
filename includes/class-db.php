@@ -374,10 +374,12 @@ class Olama_School_DB
 				grade_id mediumint(9) NOT NULL,
 				semester_id mediumint(9) DEFAULT NULL,
 				template_name varchar(255) NOT NULL,
+				context_type varchar(50) DEFAULT 'student' NOT NULL,
 				score_config longtext DEFAULT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
-				KEY year_grade (academic_year_id, grade_id)
+				KEY year_grade (academic_year_id, grade_id),
+				KEY context_type (context_type)
 			) $charset_collate;",
 
 			'olama_ev_domains' => "CREATE TABLE {$wpdb->prefix}olama_ev_domains (
@@ -385,9 +387,11 @@ class Olama_School_DB
 				template_id mediumint(9) NOT NULL,
 				grade_id mediumint(9) DEFAULT NULL,
 				title_ar varchar(255) NOT NULL,
+				context_type varchar(50) DEFAULT 'student' NOT NULL,
 				sort_order int(11) DEFAULT 0 NOT NULL,
 				PRIMARY KEY  (id),
-				KEY template_id (template_id)
+				KEY template_id (template_id),
+				KEY context_type (context_type)
 			) $charset_collate;",
 
 			'olama_ev_categories' => "CREATE TABLE {$wpdb->prefix}olama_ev_categories (
@@ -403,19 +407,27 @@ class Olama_School_DB
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				category_id mediumint(9) NOT NULL,
 				indicator_text text NOT NULL,
+				max_score int(11) DEFAULT 5 NOT NULL,
+				weight decimal(5,2) DEFAULT 1.00 NOT NULL,
+				is_critical boolean DEFAULT 0 NOT NULL,
+				context_type varchar(50) DEFAULT 'student' NOT NULL,
 				sort_order int(11) DEFAULT 0 NOT NULL,
 				PRIMARY KEY  (id),
-				KEY category_id (category_id)
+				KEY category_id (category_id),
+				KEY context_type (context_type)
 			) $charset_collate;",
 
 			'olama_ev_records' => "CREATE TABLE {$wpdb->prefix}olama_ev_records (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				template_id mediumint(9) NOT NULL,
-				student_id mediumint(9) NOT NULL,
+				student_id mediumint(9) DEFAULT NULL,
 				student_uid varchar(50) DEFAULT NULL,
 				teacher_id bigint(20) UNSIGNED NOT NULL,
 				academic_year_id mediumint(9) NOT NULL,
 				semester_id mediumint(9) NOT NULL,
+				context_type varchar(50) DEFAULT 'student' NOT NULL,
+				related_entity_type varchar(50) DEFAULT NULL,
+				related_entity_id bigint(20) DEFAULT NULL,
 				status varchar(20) DEFAULT 'draft' NOT NULL,
 				supervisor_comments text DEFAULT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -425,7 +437,8 @@ class Olama_School_DB
 				KEY student_id (student_id),
 				KEY student_uid (student_uid),
 				KEY teacher_id (teacher_id),
-				KEY year_semester (academic_year_id, semester_id)
+				KEY year_semester (academic_year_id, semester_id),
+				KEY context_type (context_type)
 			) $charset_collate;",
 
 			'olama_ev_scores' => "CREATE TABLE {$wpdb->prefix}olama_ev_scores (
@@ -433,6 +446,7 @@ class Olama_School_DB
 				evaluation_id mediumint(9) NOT NULL,
 				indicator_id mediumint(9) NOT NULL,
 				score tinyint(1) DEFAULT NULL,
+				calculated_score decimal(5,2) DEFAULT NULL,
 				notes text DEFAULT NULL,
 				PRIMARY KEY  (id),
 				KEY evaluation_id (evaluation_id),
@@ -601,6 +615,23 @@ class Olama_School_DB
 				KEY year_semester (academic_year_id, semester_id),
 				KEY teacher_id (teacher_id),
 				KEY section_subject_date (section_id, subject_id, start_date)
+			) $charset_collate;",
+
+			'olama_supervisor_visits' => "CREATE TABLE {$wpdb->prefix}olama_supervisor_visits (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				schedule_id mediumint(9) NOT NULL,
+				supervisor_id bigint(20) UNSIGNED NOT NULL,
+				unit_id mediumint(9) DEFAULT NULL,
+				lesson_id mediumint(9) DEFAULT NULL,
+				visit_date date NOT NULL,
+				status enum('planned','completed','approved') DEFAULT 'planned' NOT NULL,
+				final_score decimal(5,2) DEFAULT NULL,
+				notes text DEFAULT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				KEY schedule_id (schedule_id),
+				KEY visit_date (visit_date),
+				KEY supervisor_id (supervisor_id)
 			) $charset_collate;"
 
 
@@ -989,6 +1020,84 @@ class Olama_School_DB
 				$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_shifts_locations ADD COLUMN gender varchar(20) DEFAULT 'mixed' NOT NULL AFTER area_floor");
 			}
 		}
+
+		// --- Generic Evaluation Framework & Supervisor Visit Updates ---
+
+		// 1. olama_ev_templates
+		$template_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_ev_templates");
+		$template_col_names = wp_list_pluck($template_cols, 'Field');
+		if (!in_array('context_type', $template_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_templates ADD COLUMN context_type varchar(50) DEFAULT 'student' NOT NULL AFTER template_name");
+			$this->ensure_index_exists('olama_ev_templates', 'context_type', '(context_type)');
+		}
+
+		// 2. olama_ev_domains
+		$domain_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_ev_domains");
+		$domain_col_names = wp_list_pluck($domain_cols, 'Field');
+		if (!in_array('context_type', $domain_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_domains ADD COLUMN context_type varchar(50) DEFAULT 'student' NOT NULL AFTER title_ar");
+			$this->ensure_index_exists('olama_ev_domains', 'context_type', '(context_type)');
+		}
+
+		// 3. olama_ev_indicators
+		$indicator_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_ev_indicators");
+		$indicator_col_names = wp_list_pluck($indicator_cols, 'Field');
+		if (!in_array('max_score', $indicator_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_indicators ADD COLUMN max_score int(11) DEFAULT 5 NOT NULL AFTER indicator_text");
+		}
+		if (!in_array('weight', $indicator_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_indicators ADD COLUMN weight decimal(5,2) DEFAULT 1.00 NOT NULL AFTER max_score");
+		}
+		if (!in_array('is_critical', $indicator_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_indicators ADD COLUMN is_critical boolean DEFAULT 0 NOT NULL AFTER weight");
+		}
+		if (!in_array('context_type', $indicator_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_indicators ADD COLUMN context_type varchar(50) DEFAULT 'student' NOT NULL AFTER is_critical");
+			$this->ensure_index_exists('olama_ev_indicators', 'context_type', '(context_type)');
+		}
+
+		// 4. olama_ev_records
+		$record_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_ev_records");
+		$record_col_names = wp_list_pluck($record_cols, 'Field');
+		if (!in_array('context_type', $record_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_records ADD COLUMN context_type varchar(50) DEFAULT 'student' NOT NULL AFTER semester_id");
+			$this->ensure_index_exists('olama_ev_records', 'context_type', '(context_type)');
+		}
+		if (!in_array('related_entity_type', $record_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_records ADD COLUMN related_entity_type varchar(50) DEFAULT NULL AFTER context_type");
+		}
+		if (!in_array('related_entity_id', $record_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_records ADD COLUMN related_entity_id bigint(20) DEFAULT NULL AFTER related_entity_type");
+		}
+
+		// Adjust student_id to be nullable
+		if (in_array('student_id', $record_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_records MODIFY COLUMN student_id mediumint(9) DEFAULT NULL");
+		}
+
+		// 5. olama_ev_scores
+		$score_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_ev_scores");
+		$score_col_names = wp_list_pluck($score_cols, 'Field');
+		if (!in_array('calculated_score', $score_col_names)) {
+			$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_ev_scores ADD COLUMN calculated_score decimal(5,2) DEFAULT NULL AFTER score");
+		}
+
+		// 6. supervisor_visits 
+		if ($wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}olama_supervisor_visits'") === "{$wpdb->prefix}olama_supervisor_visits") {
+			$sv_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_supervisor_visits");
+			$sv_col_names = wp_list_pluck($sv_cols, 'Field');
+
+			if (!in_array('unit_id', $sv_col_names)) {
+				$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_supervisor_visits ADD COLUMN unit_id mediumint(9) DEFAULT NULL AFTER supervisor_id");
+			}
+			if (!in_array('lesson_id', $sv_col_names)) {
+				$wpdb->query("ALTER TABLE {$wpdb->prefix}olama_supervisor_visits ADD COLUMN lesson_id mediumint(9) DEFAULT NULL AFTER unit_id");
+			}
+
+			$this->ensure_index_exists('olama_supervisor_visits', 'schedule_id', '(schedule_id)');
+			$this->ensure_index_exists('olama_supervisor_visits', 'visit_date', '(visit_date)');
+			$this->ensure_index_exists('olama_supervisor_visits', 'supervisor_id', '(supervisor_id)');
+		}
 	}
 
 	/**
@@ -1013,6 +1122,7 @@ class Olama_School_DB
 		global $wpdb;
 
 		$tables = array(
+			'olama_supervisor_visits',
 			'olama_attendance',
 			'olama_ev_scores',
 			'olama_ev_records',

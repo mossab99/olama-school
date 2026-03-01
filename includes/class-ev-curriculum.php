@@ -27,6 +27,7 @@ class Olama_School_EV_Curriculum
         $fields = array(
             'template_id' => intval($data['template_id']),
             'title_ar' => sanitize_text_field($data['title_ar']),
+            'context_type' => sanitize_text_field($data['context_type'] ?? 'student'),
             'sort_order' => intval($data['sort_order'] ?? 0)
         );
 
@@ -100,6 +101,10 @@ class Olama_School_EV_Curriculum
         $fields = array(
             'category_id' => intval($data['category_id']),
             'indicator_text' => sanitize_textarea_field($data['indicator_text']),
+            'max_score' => intval($data['max_score'] ?? 5),
+            'weight' => floatval($data['weight'] ?? 1.00),
+            'is_critical' => !empty($data['is_critical']) ? 1 : 0,
+            'context_type' => sanitize_text_field($data['context_type'] ?? 'student'),
             'sort_order' => intval($data['sort_order'] ?? 0)
         );
 
