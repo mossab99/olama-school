@@ -102,6 +102,7 @@ class Olama_School_Permissions
                 'caps' => array(
                     'olama_access_evaluation' => __('Access Evaluation', 'olama-school'),
                     'olama_manage_evaluation_students' => __('Student Evaluation', 'olama-school'),
+                    'olama_manage_evaluation_progress' => __('Evaluation Progress', 'olama-school'),
                     'olama_manage_evaluation_mgmt' => __('Evaluation Management', 'olama-school'),
                     'olama_manage_lesson_planner' => __('Lesson Planner', 'olama-school'),
                 )
@@ -206,6 +207,7 @@ class Olama_School_Permissions
                                 'olama_manage_curriculum_analysis',
                                 'olama_access_evaluation',
                                 'olama_manage_evaluation_students',
+                                'olama_manage_evaluation_progress',
                                 'olama_access_exams_mgmt',
                                 'olama_fill_exam_details',
                                 'olama_upload_exam_files',
