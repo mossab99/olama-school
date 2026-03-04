@@ -20,7 +20,8 @@ $selected_semester_id = $active_semester ? intval($active_semester->id) : ($seme
 // Fetch schedule
 $schedule = [];
 if ($selected_section_id && $selected_semester_id) {
-    $schedule = Olama_School_Schedule::get_schedule($selected_section_id, $selected_semester_id, 'normal');
+    $schedule_type = Olama_School_Schedule::is_ramadan() ? 'ramadan' : 'normal';
+    $schedule = Olama_School_Schedule::get_schedule($selected_section_id, $selected_semester_id, $schedule_type);
 }
 
 // Fetch existing visits for this section/semester to display in grid
