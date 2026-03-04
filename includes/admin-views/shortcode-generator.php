@@ -55,6 +55,9 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 <option value="attendance">
                     <?php _e('Daily Attendance', 'olama-school'); ?>
                 </option>
+                <option value="family_performance">
+                    <?php _e('Family Performance', 'olama-school'); ?>
+                </option>
             </select>
         </div>
         <div>
@@ -202,6 +205,13 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 $('#gen-week-wrapper').hide();
                 $('#gen-exam-wrapper').hide();
                 $('#gen-schedule-type-wrapper').hide();
+            } else if (type === 'family_performance') {
+                $('#gen-semester').closest('div').show();
+                $('#gen-grade').closest('div').hide();
+                $('#gen-section').closest('div').hide();
+                $('#gen-week-wrapper').hide();
+                $('#gen-exam-wrapper').hide();
+                $('#gen-schedule-type-wrapper').hide();
             } else {
                 $('#gen-semester').closest('div').show();
                 $('#gen-grade').closest('div').show();
@@ -221,16 +231,20 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
             }
 
             if (type !== 'stationary') {
-                if (semester) shortcode += ' semester="' + semester + '"';
-                if (grade) shortcode += ' grade="' + grade + '"';
-
-                if (type === 'exam_report') {
-                    if (exam) shortcode += ' exam="' + exam + '"';
+                if (type === 'family_performance') {
+                    if (semester) shortcode += ' semester="' + semester + '"';
                 } else {
-                    if (section) shortcode += ' section="' + section + '"';
-                    if (type === 'weekly_plan' && week) shortcode += ' week="' + week + '"';
-                    if (type === 'weekly_schedule' && scheduleType && scheduleType !== 'normal') {
-                        shortcode += ' schedule_type="' + scheduleType + '"';
+                    if (semester) shortcode += ' semester="' + semester + '"';
+                    if (grade) shortcode += ' grade="' + grade + '"';
+
+                    if (type === 'exam_report') {
+                        if (exam) shortcode += ' exam="' + exam + '"';
+                    } else {
+                        if (section) shortcode += ' section="' + section + '"';
+                        if (type === 'weekly_plan' && week) shortcode += ' week="' + week + '"';
+                        if (type === 'weekly_schedule' && scheduleType && scheduleType !== 'normal') {
+                            shortcode += ' schedule_type="' + scheduleType + '"';
+                        }
                     }
                 }
             }

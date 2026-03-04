@@ -20,6 +20,7 @@ class Olama_School_Shortcodes
         add_shortcode('olama_stationary', array($this, 'render_stationary_shortcode'));
         add_shortcode('olama_exam_report', array($this, 'render_exam_report_shortcode'));
         add_shortcode('olama_attendance', array($this, 'render_attendance_shortcode'));
+        add_shortcode('olama_family_performance', array($this, 'render_family_performance_shortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_shortcode_assets'));
     }
 
@@ -2738,6 +2739,383 @@ class Olama_School_Shortcodes
                     </style>
                     <?php
                 endif;
+                return ob_get_clean();
+    }
+
+    /**
+     * Shortcode: [olama_family_performance]
+     * Displays evaluation results for a logged-in parent's children.
+     * Attributes: semester (default: active)
+     */
+    public function render_family_performance_shortcode($atts)
+    {
+        $atts = shortcode_atts(array(
+            'semester' => '',
+        ), $atts, 'olama_family_performance');
+
+        // Must be logged in
+        if (!is_user_logged_in()) {
+            return '<div class="olama-fp-login-msg" dir="rtl" style="text-align:center;padding:40px 20px;background:#fff1f2;border-radius:16px;color:#b91c1c;font-weight:700;font-size:1.1rem;font-family:Tajawal,sans-serif;">' .
+                '<span class="material-icons" style="font-size:48px;display:block;margin:0 auto 12px;opacity:.6;">lock</span>' .
+                Olama_School_Helpers::translate('Please log in to view your children\'s performance.') .
+                '</div>';
+        }
+
+        $user_id = get_current_user_id();
+        $user = get_userdata($user_id);
+        $family_uid = $user ? $user->user_login : '';
+
+        if (empty($family_uid)) {
+            return '<div class="olama-fp-login-msg" dir="rtl" style="text-align:center;padding:40px 20px;background:#fefce8;border-radius:16px;color:#854d0e;font-weight:700;font-size:1.1rem;font-family:Tajawal,sans-serif;">' .
+                '<span class="material-icons" style="font-size:48px;display:block;margin:0 auto 12px;opacity:.6;">family_restroom</span>' .
+                Olama_School_Helpers::translate('Your account is not linked to a family. Please contact the school administration.') .
+                '</div>';
+        }
+
+        // Get family record
+        $family = Olama_School_Family::get_family($family_uid);
+        if (!$family) {
+            return '<div class="olama-fp-login-msg" dir="rtl" style="text-align:center;padding:40px 20px;background:#fff1f2;border-radius:16px;color:#b91c1c;font-weight:700;">' .
+                Olama_School_Helpers::translate('Family record not found.') . '</div>';
+        }
+
+        // Get active year & semester
+        $active_year = Olama_School_Academic::get_active_year();
+        $academic_year_id = $active_year ? $active_year->id : 0;
+        $year_name = $active_year ? $active_year->year_name : '';
+
+        $semester_id = $atts['semester'];
+        if ($semester_id === 'active' || empty($semester_id)) {
+            $active_semester = $academic_year_id ? Olama_School_Academic::get_active_semester($academic_year_id) : null;
+            $semester_id = $active_semester ? $active_semester->id : 0;
+        } else {
+            $semester_id = intval($semester_id);
+        }
+        $semester_obj = $semester_id ? Olama_School_Academic::get_semester($semester_id) : null;
+        $semester_name = $semester_obj ? $semester_obj->semester_name : '';
+
+        // Get family's students
+        $students = Olama_School_Family::get_family_students($family_uid);
+        if (empty($students)) {
+            return '<div class="olama-fp-login-msg" dir="rtl" style="text-align:center;padding:40px 20px;background:#fefce8;border-radius:16px;color:#854d0e;font-weight:700;font-family:Tajawal,sans-serif;">' .
+                '<span class="material-icons" style="font-size:48px;display:block;margin:0 auto 12px;opacity:.6;">school</span>' .
+                Olama_School_Helpers::translate('No students found for this family.') . '</div>';
+        }
+
+        // Build data for each student
+        $students_data = array();
+        foreach ($students as $student) {
+            $enrollment = Olama_School_Student::get_student_enrollment($student->id, $academic_year_id);
+            if (!$enrollment)
+                continue;
+
+            $section = Olama_School_Section::get_section($enrollment->section_id);
+            $grade = $section ? Olama_School_Grade::get_grade($section->grade_id) : null;
+            if (!$grade)
+                continue;
+
+            // Get evaluation templates for this grade/year/semester
+            $templates = Olama_School_EV_Template::get_templates($grade->id, $academic_year_id, $semester_id, 'student');
+            // Also try templates with semester_id=0 (semester-agnostic)
+            if (empty($templates)) {
+                $templates = Olama_School_EV_Template::get_templates($grade->id, $academic_year_id, 0, 'student');
+            }
+
+            $evals = array();
+            $overall_scores = array();
+
+            foreach ($templates as $template) {
+                $evaluation = Olama_School_EV_Record::get_evaluation(
+                    $student->id,
+                    $academic_year_id,
+                    $semester_id,
+                    $template->id,
+                    'student'
+                );
+
+                if (!$evaluation)
+                    continue;
+
+                $scores = Olama_School_EV_Record::get_scores($evaluation->id);
+                $curriculum = Olama_School_EV_Curriculum::get_full_curriculum($template->id);
+                $score_config = Olama_School_EV_Template::get_score_config($template->id);
+
+                // Build responses for scoring service
+                $responses = array();
+                foreach ($curriculum as $domain) {
+                    foreach ($domain->categories as $category) {
+                        foreach ($category->indicators as $indicator) {
+                            if (isset($scores[$indicator->id]) && !is_null($scores[$indicator->id]->score)) {
+                                $responses[] = array(
+                                    'rating' => (int) $scores[$indicator->id]->score,
+                                    'weight' => (float) $indicator->weight,
+                                    'is_critical' => (bool) $indicator->is_critical
+                                );
+                            }
+                        }
+                    }
+                }
+
+                $result = \Olama\Services\EvaluationScoringService::calculate_score($responses);
+                $percentage = $result['percentage'];
+                $overall_scores[] = $percentage;
+
+                // Get teacher name
+                $teacher_name = '';
+                if ($evaluation->teacher_id) {
+                    $teacher_user = get_userdata($evaluation->teacher_id);
+                    $teacher_name = $teacher_user ? $teacher_user->display_name : '';
+                }
+
+                $evals[] = array(
+                    'template_name' => $template->template_name,
+                    'template_id' => $template->id,
+                    'percentage' => $percentage,
+                    'status' => $evaluation->status,
+                    'date' => $evaluation->updated_at ?? $evaluation->created_at,
+                    'teacher_name' => $teacher_name,
+                    'curriculum' => $curriculum,
+                    'scores' => $scores,
+                    'score_config' => $score_config,
+                );
+            }
+
+            if (empty($evals))
+                continue;
+
+            // Compute average mastery
+            $avg_mastery = count($overall_scores) > 0 ? round(array_sum($overall_scores) / count($overall_scores)) : 0;
+
+            // Calculate age from dob
+            $age = '';
+            if (!empty($student->dob)) {
+                $dob = new DateTime($student->dob);
+                $now = new DateTime();
+                $age = $now->diff($dob)->y;
+            }
+
+            $students_data[] = array(
+                'student' => $student,
+                'grade_name' => $grade->grade_name,
+                'section_name' => $section->section_name,
+                'age' => $age,
+                'avg_mastery' => $avg_mastery,
+                'evaluations' => $evals,
+            );
+        }
+
+        if (empty($students_data)) {
+            return '<div class="olama-fp-login-msg" dir="rtl" style="text-align:center;padding:40px 20px;background:#fefce8;border-radius:16px;color:#854d0e;font-weight:700;font-family:Tajawal,sans-serif;">' .
+                '<span class="material-icons" style="font-size:48px;display:block;margin:0 auto 12px;opacity:.6;">assignment</span>' .
+                Olama_School_Helpers::translate('No evaluations found for this semester yet.') . '</div>';
+        }
+
+        // Helper: get mastery color and label
+        $get_mastery_class = function ($pct) {
+            if ($pct >= 85)
+                return 'fp-excellent';
+            if ($pct >= 70)
+                return 'fp-good';
+            if ($pct >= 50)
+                return 'fp-fair';
+            return 'fp-weak';
+        };
+        $get_mastery_label = function ($pct) {
+            if ($pct >= 85)
+                return 'ممتاز';
+            if ($pct >= 70)
+                return 'جيد';
+            if ($pct >= 50)
+                return 'مقبول';
+            return 'يحتاج تحسين';
+        };
+
+        // Get score label from config
+        $get_score_label = function ($score, $config) {
+            if (is_null($score) || $score === '')
+                return '—';
+            return isset($config[(int) $score]) ? $config[(int) $score] : $score;
+        };
+        $get_score_class = function ($score, $max_score) {
+            if (is_null($score) || $score === '')
+                return 'fp-score-na';
+            $ratio = $max_score > 0 ? ($score / $max_score) : 0;
+            if ($ratio >= 0.8)
+                return 'fp-score-high';
+            if ($ratio >= 0.5)
+                return 'fp-score-mid';
+            return 'fp-score-low';
+        };
+
+        ob_start();
+        ?>
+                <div class="olama-family-perf" dir="rtl">
+                    <!-- Hero Header -->
+                    <div class="fp-hero">
+                        <div class="fp-hero-content">
+                            <div class="fp-hero-icon">
+                                <span class="material-icons">family_restroom</span>
+                            </div>
+                            <div class="fp-hero-text">
+                                <h1 class="fp-hero-title">أداء الطلاب</h1>
+                                <p class="fp-hero-subtitle">Family Students Performance</p>
+                            </div>
+                        </div>
+                        <div class="fp-hero-meta">
+                            <div class="fp-meta-item">
+                                <span class="material-icons">badge</span>
+                                <span><?php echo esc_html($family->family_name); ?></span>
+                            </div>
+                            <div class="fp-meta-item">
+                                <span class="material-icons">calendar_today</span>
+                                <span><?php echo esc_html($year_name . ' — ' . $semester_name); ?></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Students Accordion -->
+                    <div class="fp-students-list">
+                        <?php foreach ($students_data as $si => $sdata):
+                            $s = $sdata['student'];
+                            $mastery_class = $get_mastery_class($sdata['avg_mastery']);
+                            $mastery_label = $get_mastery_label($sdata['avg_mastery']);
+                            // Find weakest evaluation index
+                            $weakest_idx = 0;
+                            $weakest_pct = 999;
+                            foreach ($sdata['evaluations'] as $ei => $ev) {
+                                if ($ev['percentage'] < $weakest_pct) {
+                                    $weakest_pct = $ev['percentage'];
+                                    $weakest_idx = $ei;
+                                }
+                            }
+                            ?>
+                            <div class="fp-student-card" data-student-index="<?php echo $si; ?>">
+                                <!-- Student Header (always visible) -->
+                                <div class="fp-student-header">
+                                    <div class="fp-student-avatar <?php echo $mastery_class; ?>">
+                                        <?php echo mb_substr($s->student_name, 0, 1, 'UTF-8'); ?>
+                                    </div>
+                                    <div class="fp-student-info">
+                                        <div class="fp-student-name"><?php echo esc_html($s->student_name); ?></div>
+                                        <div class="fp-student-detail">
+                                            <?php echo esc_html($sdata['grade_name'] . ' — ' . $sdata['section_name']); ?>
+                                            <?php if ($sdata['age']): ?>
+                                                <span class="fp-age-badge"><?php echo $sdata['age']; ?> سنة</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <div class="fp-student-summary">
+                                        <div class="fp-mastery-ring <?php echo $mastery_class; ?>">
+                                            <svg viewBox="0 0 36 36">
+                                                <path class="fp-ring-bg"
+                                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                                <path class="fp-ring-fill"
+                                                    stroke-dasharray="<?php echo $sdata['avg_mastery']; ?>, 100"
+                                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                            </svg>
+                                            <span class="fp-ring-text"><?php echo $sdata['avg_mastery']; ?>%</span>
+                                        </div>
+                                        <span
+                                            class="fp-mastery-badge <?php echo $mastery_class; ?>"><?php echo $mastery_label; ?></span>
+                                    </div>
+                                    <span class="material-icons fp-chevron">expand_more</span>
+                                </div>
+
+                                <!-- Expanded Content -->
+                                <div class="fp-student-body">
+                                    <!-- Evaluation mini summary pills -->
+                                    <div class="fp-eval-pills">
+                                        <?php foreach ($sdata['evaluations'] as $ei => $ev):
+                                            $ev_class = $get_mastery_class($ev['percentage']);
+                                            ?>
+                                            <div class="fp-eval-pill <?php echo $ev_class; ?>" data-tab-index="<?php echo $ei; ?>">
+                                                <span class="fp-pill-name"><?php echo esc_html($ev['template_name']); ?></span>
+                                                <span class="fp-pill-pct"><?php echo round($ev['percentage']); ?>%</span>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+
+                                    <!-- Evaluation Tabs -->
+                                    <div class="fp-eval-tabs">
+                                        <?php foreach ($sdata['evaluations'] as $ei => $ev): ?>
+                                            <button class="fp-eval-tab <?php echo ($ei === $weakest_idx) ? 'active' : ''; ?>"
+                                                data-tab-index="<?php echo $ei; ?>">
+                                                <?php echo esc_html($ev['template_name']); ?>
+                                            </button>
+                                        <?php endforeach; ?>
+                                    </div>
+
+                                    <!-- Tab Panels -->
+                                    <?php foreach ($sdata['evaluations'] as $ei => $ev): ?>
+                                        <div class="fp-eval-panel <?php echo ($ei === $weakest_idx) ? 'active' : ''; ?>"
+                                            data-panel-index="<?php echo $ei; ?>">
+
+                                            <!-- Evaluation meta -->
+                                            <div class="fp-eval-meta">
+                                                <?php if ($ev['teacher_name']): ?>
+                                                    <div class="fp-meta-chip">
+                                                        <span class="material-icons">person</span>
+                                                        <?php echo esc_html($ev['teacher_name']); ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <div class="fp-meta-chip">
+                                                    <span class="material-icons">event</span>
+                                                    <?php echo date_i18n('j F Y', strtotime($ev['date'])); ?>
+                                                </div>
+                                                <div class="fp-meta-chip <?php echo $get_mastery_class($ev['percentage']); ?>">
+                                                    <span class="material-icons">insights</span>
+                                                    <?php echo round($ev['percentage']); ?>%
+                                                </div>
+                                            </div>
+
+                                            <!-- Domains -->
+                                            <?php foreach ($ev['curriculum'] as $domain): ?>
+                                                <div class="fp-domain-block">
+                                                    <div class="fp-domain-title">
+                                                        <span class="material-icons">folder_open</span>
+                                                        <?php echo esc_html($domain->title_ar); ?>
+                                                    </div>
+                                                    <?php foreach ($domain->categories as $category): ?>
+                                                        <div class="fp-category-block">
+                                                            <div class="fp-category-title"><?php echo esc_html($category->title_ar); ?></div>
+                                                            <div class="fp-indicators">
+                                                                <?php foreach ($category->indicators as $indicator):
+                                                                    $score_obj = isset($ev['scores'][$indicator->id]) ? $ev['scores'][$indicator->id] : null;
+                                                                    $raw_score = $score_obj ? $score_obj->score : null;
+                                                                    $label = $get_score_label($raw_score, $ev['score_config']);
+                                                                    $max_keys = array_keys($ev['score_config']);
+                                                                    $max_score_val = !empty($max_keys) ? max($max_keys) : 5;
+                                                                    $score_cls = $get_score_class($raw_score, $max_score_val);
+                                                                    ?>
+                                                                    <div class="fp-indicator-row">
+                                                                        <div class="fp-indicator-text">
+                                                                            <?php echo esc_html($indicator->indicator_text); ?>
+                                                                        </div>
+                                                                        <div class="fp-indicator-score <?php echo $score_cls; ?>">
+                                                                            <?php echo esc_html($label); ?>
+                                                                        </div>
+                                                                    </div>
+                                                                <?php endforeach; ?>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="fp-footer">
+                        <span class="material-icons">verified</span>
+                        <?php echo Olama_School_Helpers::translate('Last updated'); ?>:
+                        <?php echo date_i18n('j F Y — H:i'); ?>
+                    </div>
+                </div>
+                <?php
                 return ob_get_clean();
     }
 }
