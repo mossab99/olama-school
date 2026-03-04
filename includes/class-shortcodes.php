@@ -2772,8 +2772,13 @@ class Olama_School_Shortcodes
                 '</div>';
         }
 
-        // Get family record
-        $family = Olama_School_Family::get_family($family_uid);
+        // Get family record — query by family_uid directly
+        // (get_family() treats numeric strings as 'id' which causes mismatches)
+        global $wpdb;
+        $family = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}olama_families WHERE family_uid = %s",
+            $family_uid
+        ));
         if (!$family) {
             return '<div class="olama-fp-login-msg" dir="rtl" style="text-align:center;padding:40px 20px;background:#fff1f2;border-radius:16px;color:#b91c1c;font-weight:700;">' .
                 Olama_School_Helpers::translate('Family record not found.') . '</div>';
