@@ -3269,16 +3269,13 @@ class Olama_School_Shortcodes
                     }
 
                     .fp-student-body {
-                        max-height: 0;
-                        overflow: hidden;
-                        transition: max-height .4s cubic-bezier(.4, 0, .2, 1);
+                        display: none !important;
                         padding: 0 18px
                     }
 
                     .fp-student-card.active .fp-student-body {
-                        max-height: 50000px;
-                        padding: 0 18px 20px;
-                        overflow: visible
+                        display: block !important;
+                        padding: 0 18px 20px
                     }
 
                     .fp-eval-pills {
@@ -3623,6 +3620,7 @@ class Olama_School_Shortcodes
                         }
 
                         .fp-student-card.active .fp-student-body {
+                            display: block !important;
                             padding: 0 14px 16px
                         }
 
@@ -3842,37 +3840,8 @@ class Olama_School_Shortcodes
                         <?php echo Olama_School_Helpers::translate('Last updated'); ?>:
                         <?php echo date_i18n('j F Y — H:i'); ?>
                     </div>
-                <script>
-                            jQuery(document).ready(function($){
-                                // Student Accordion (single-open)
-                                $(document).on('click','.olama-family-perf .fp-student-header',function(){
-                                    var card=$(this).closest('.fp-student-card');
-                                    var wasActive=card.hasClass('active');
-                                    $('.olama-family-perf .fp-student-card').removeClass('active');
-                                    if(!wasActive) card.addClass('active');
-                                });
-                                // Tab switching
-                                $(document).on('click','.olama-family-perf .fp-eval-tab',function(){
-                                    var card=$(this).closest('.fp-student-card');
-                                    var idx=$(this).data('tab-index');
-                                    card.find('.fp-eval-tab').removeClass('active');
-                                    $(this).addClass('active');
-                                    card.find('.fp-eval-panel').removeClass('active');
-                                    card.find('.fp-eval-panel[data-panel-index="'+idx+'"]').addClass('active');
-                                });
-                                // Pill click → switch tab
-                                $(document).on('click','.olama-family-perf .fp-eval-pill',function(){
-                                    var card=$(this).closest('.fp-student-card');
-                                    var idx=$(this).data('tab-index');
-                                    card.find('.fp-eval-tab').removeClass('active');
-                                    card.find('.fp-eval-tab[data-tab-index="'+idx+'"]').addClass('active');
-                                    card.find('.fp-eval-panel').removeClass('active');
-                                    card.find('.fp-eval-panel[data-panel-index="'+idx+'"]').addClass('active');
-                                });
-                            });
-                            </script>
-                        </div>
-                        <?php
-                        return ob_get_clean();
+                </div>
+                <?php
+                return ob_get_clean();
     }
 }
