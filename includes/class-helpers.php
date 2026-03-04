@@ -297,7 +297,7 @@ class Olama_School_Helpers
         'Exam Management' => 'إدارة الامتحانات',
         'Evaluation' => 'التقييم',
         'Evaluation Management' => 'إدارة التقييمات',
-        'Evaluation Progress' => 'تقدم التقييم',
+        'Evaluation Progress' => 'متابعة التقييمات',
         'Track evaluation completion by grade and section.' => 'تتبع إنجاز التقييم حسب الصف والشعبة.',
         'Completion Ratio' => 'نسبة الإنجاز',
         'List Student' => 'عرض الطلاب',
