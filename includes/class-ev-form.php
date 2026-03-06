@@ -96,8 +96,11 @@ class Olama_School_EV_Form
         $scores = array();
 
         if ($selected_template_id && ($selected_student_id || ($context_type === 'supervisor' && $visit_id))) {
+            $current_template = Olama_School_EV_Template::get_template($selected_template_id);
+            $template_subject_id = $current_template ? $current_template->subject_id : null;
+
             $curriculum = Olama_School_EV_Curriculum::get_full_curriculum($selected_template_id);
-            $evaluation = Olama_School_EV_Record::get_evaluation($selected_student_id, $selected_year_id, $selected_semester_id, $selected_template_id, $context_type, $visit_id);
+            $evaluation = Olama_School_EV_Record::get_evaluation($selected_student_id, $selected_year_id, $selected_semester_id, $selected_template_id, $context_type, $visit_id, $template_subject_id);
             if ($evaluation) {
                 $scores = Olama_School_EV_Record::get_scores($evaluation->id);
             }

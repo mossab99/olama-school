@@ -37,15 +37,17 @@ class EvaluationScoringService
             $weight = (float) ($response['weight'] ?? 1.00);
             $is_critical = (bool) ($response['is_critical'] ?? false);
 
-            // Apply critical multiplier if needed (e.g., critical items count double)
-            // Or if weight is already adjusted, just use it.
-            // Following Master Prompt rule: "If is_critical = true → apply weight multiplier"
             $effective_weight = $weight;
             if ($is_critical) {
-                $effective_weight *= 2.0; // Let's assume double weight for critical items by default
+                $effective_weight *= 2.0;
             }
 
-            $total_weighted_score += ($rating * $effective_weight);
+            // Non-linear formula: (Rating^2 / Max_Rating) * Effective_Weight
+            // This ensures Rating 3/5 gives 1.8 points instead of 3.0
+            $safe_rating = min($max_rating, max(0, $rating));
+            $points = ($safe_rating * $safe_rating) / $max_rating;
+
+            $total_weighted_score += ($points * $effective_weight);
             $max_weighted_score += ($max_rating * $effective_weight);
         }
 

@@ -27,6 +27,7 @@ class Olama_School_EV_Manager
         $selected_semester_name = $selected_semester ? $selected_semester->semester_name : '';
 
         $selected_context = isset($_GET['context_type']) ? sanitize_text_field($_GET['context_type']) : 'student';
+        $subjects = Olama_School_Subject::get_by_grade($selected_grade_id, true);
         $templates = Olama_School_EV_Template::get_templates($selected_grade_id, $selected_year_id, $selected_semester_id, $selected_context);
         $selected_template_id = isset($_GET['template_id']) ? intval($_GET['template_id']) : 0;
 

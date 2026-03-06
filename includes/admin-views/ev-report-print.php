@@ -128,6 +128,12 @@ if (!defined('ABSPATH')) {
             <?php echo Olama_School_Helpers::translate('Grade'); ?>:
             <?php echo esc_html(Olama_School_Helpers::translate($evaluation->grade_name)); ?>
         </div>
+        <?php if (!empty($evaluation->subject_name)): ?>
+            <div>
+                <?php echo Olama_School_Helpers::translate('Subject'); ?>:
+                <?php echo esc_html(Olama_School_Helpers::translate($evaluation->subject_name)); ?>
+            </div>
+        <?php endif; ?>
         <div>
             <?php echo Olama_School_Helpers::translate('ID'); ?>:
             <?php echo esc_html($evaluation->student_uid); ?>

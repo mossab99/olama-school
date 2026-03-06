@@ -13,7 +13,7 @@ class Olama_School_EV_Report
     {
         global $wpdb;
         $evaluation = $wpdb->get_row($wpdb->prepare(
-            "SELECT e.*, s.student_name, s.student_uid, y.year_name, sem.semester_name, g.grade_name, sec.grade_id
+            "SELECT e.*, s.student_name, s.student_uid, y.year_name, sem.semester_name, g.grade_name, sec.grade_id, sub.subject_name
              FROM {$wpdb->prefix}olama_ev_records e
              JOIN {$wpdb->prefix}olama_students s ON e.student_uid = s.student_uid
              JOIN {$wpdb->prefix}olama_student_enrollment en ON s.student_uid = en.student_uid AND e.academic_year_id = en.academic_year_id
@@ -21,6 +21,7 @@ class Olama_School_EV_Report
              JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id
              JOIN {$wpdb->prefix}olama_academic_years y ON e.academic_year_id = y.id
              JOIN {$wpdb->prefix}olama_semesters sem ON e.semester_id = sem.id
+             LEFT JOIN {$wpdb->prefix}olama_subjects sub ON e.subject_id = sub.id
              WHERE e.id = %d",
             $evaluation_id
         ));

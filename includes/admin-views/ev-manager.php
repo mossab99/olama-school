@@ -118,6 +118,17 @@ if (!defined('ABSPATH')) {
                     <input type="text" name="template_name" required
                         style="width: 100%; height: 40px; border-radius: 6px; font-size: 1.1em;">
                 </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label class="olama-label"><?php echo Olama_School_Helpers::translate('Subject'); ?></label>
+                    <select name="subject_id" style="width: 100%; height: 40px; border-radius: 6px;">
+                        <option value=""><?php echo Olama_School_Helpers::translate('General / No Subject'); ?></option>
+                        <?php foreach ($subjects as $s): ?>
+                            <option value="<?php echo $s->id; ?>">
+                                <?php echo esc_html(Olama_School_Helpers::translate($s->subject_name)); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
                 <div style="flex: 1; min-width: 250px;">
                     <label
                         class="olama-label"><?php echo Olama_School_Helpers::translate('Score Labels (Max 5, Highest to Lowest)'); ?></label>
@@ -156,6 +167,7 @@ if (!defined('ABSPATH')) {
                 <thead>
                     <tr>
                         <th style="padding: 15px;"><?php echo Olama_School_Helpers::translate('Evaluation Title'); ?></th>
+                        <th style="padding: 15px;"><?php echo Olama_School_Helpers::translate('Subject'); ?></th>
                         <th style="padding: 15px;"><?php echo Olama_School_Helpers::translate('Semester'); ?></th>
                         <th style="padding: 15px;"><?php echo Olama_School_Helpers::translate('Created Date'); ?></th>
                         <th style="padding: 15px; text-align: right;">
@@ -174,6 +186,12 @@ if (!defined('ABSPATH')) {
                         foreach ($templates as $t): ?>
                             <tr>
                                 <td style="padding: 15px;"><strong><?php echo esc_html($t->template_name); ?></strong></td>
+                                <td style="padding: 15px;">
+                                    <?php
+                                    $subj = $t->subject_id ? Olama_School_Subject::get_subject($t->subject_id) : null;
+                                    echo $subj ? esc_html(Olama_School_Helpers::translate($subj->subject_name)) : '<em>' . Olama_School_Helpers::translate('General') . '</em>';
+                                    ?>
+                                </td>
                                 <td style="padding: 15px;">
                                     <?php
                                     $sem = Olama_School_Academic::get_semester($t->semester_id);
@@ -258,6 +276,7 @@ if (!defined('ABSPATH')) {
                 <input type="hidden" name="olama_ev_action" value="save_template">
                 <input type="hidden" name="id" value="<?php echo $current_template->id; ?>">
                 <input type="hidden" name="academic_year_id" value="<?php echo $current_template->academic_year_id; ?>">
+                <input type="hidden" name="semester_id" value="<?php echo $current_template->semester_id; ?>">
                 <input type="hidden" name="grade_id" value="<?php echo $current_template->grade_id; ?>">
                 <input type="hidden" name="context_type" value="<?php echo $selected_context; ?>">
 
@@ -267,6 +286,17 @@ if (!defined('ABSPATH')) {
                         <input type="text" name="template_name"
                             value="<?php echo esc_attr($current_template->template_name); ?>" required
                             style="width: 100%; height: 40px; border-radius: 6px;">
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label class="olama-label"><?php echo Olama_School_Helpers::translate('Subject'); ?></label>
+                        <select name="subject_id" style="width: 100%; height: 40px; border-radius: 6px;">
+                            <option value=""><?php echo Olama_School_Helpers::translate('General / No Subject'); ?></option>
+                            <?php foreach ($subjects as $s): ?>
+                                <option value="<?php echo $s->id; ?>" <?php selected($current_template->subject_id, $s->id); ?>>
+                                    <?php echo esc_html(Olama_School_Helpers::translate($s->subject_name)); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <?php
                     $current_config = Olama_School_EV_Template::get_score_config($current_template->id);

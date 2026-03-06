@@ -12,7 +12,7 @@ class Olama_School_EV_Record
     /**
      * Get evaluation record
      */
-    public static function get_evaluation($student_id, $year_id, $semester_id, $template_id, $context_type = 'student', $related_id = null)
+    public static function get_evaluation($student_id, $year_id, $semester_id, $template_id, $context_type = 'student', $related_id = null, $subject_id = null)
     {
         global $wpdb;
 
@@ -25,15 +25,16 @@ class Olama_School_EV_Record
             ));
         }
 
-        return $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_ev_records 
-             WHERE student_id = %d AND academic_year_id = %d AND semester_id = %d AND template_id = %d AND context_type = %s",
-            $student_id,
-            $year_id,
-            $semester_id,
-            $template_id,
-            $context_type
-        ));
+        $query = "SELECT * FROM {$wpdb->prefix}olama_ev_records 
+                  WHERE student_id = %d AND academic_year_id = %d AND semester_id = %d AND template_id = %d AND context_type = %s";
+        $params = array($student_id, $year_id, $semester_id, $template_id, $context_type);
+
+        if ($subject_id) {
+            $query .= " AND subject_id = %d";
+            $params[] = $subject_id;
+        }
+
+        return $wpdb->get_row($wpdb->prepare($query, $params));
     }
 
     /**
@@ -61,6 +62,7 @@ class Olama_School_EV_Record
             'template_id' => intval($data['template_id']),
             'student_id' => $student_id,
             'student_uid' => $student_uid,
+            'subject_id' => isset($data['subject_id']) ? intval($data['subject_id']) : null,
             'teacher_id' => get_current_user_id(),
             'academic_year_id' => intval($data['academic_year_id']),
             'semester_id' => intval($data['semester_id']),
@@ -124,7 +126,10 @@ class Olama_School_EV_Record
         if ($indicator && !is_null($score)) {
             $weight = (float) $indicator->weight;
             $multiplier = (bool) $indicator->is_critical ? 2.0 : 1.0;
-            $calculated_score = (float) $score * $weight * $multiplier;
+            // Non-linear points calculation: (Rating^2 / 5) * Weight * Crit_Multiplier
+            $clamped_score = min(5.0, (float) $score);
+            $points = ($clamped_score * $clamped_score) / 5.0;
+            $calculated_score = $points * $weight * $multiplier;
         }
 
         $fields = array(

@@ -246,6 +246,7 @@ if (!defined('ABSPATH')) {
             <input type="hidden" name="semester_id" value="<?php echo $selected_semester_id; ?>">
             <input type="hidden" name="status" id="eval-status" value="draft">
             <input type="hidden" name="template_id" value="<?php echo $selected_template_id; ?>">
+            <input type="hidden" name="subject_id" value="<?php echo $template_subject_id ?? ''; ?>">
             <input type="hidden" name="context_type" value="<?php echo esc_attr($context_type); ?>">
             <?php if ($context_type === 'supervisor' && $visit_id): ?>
                 <input type="hidden" name="related_entity_type" value="supervisor_visit">

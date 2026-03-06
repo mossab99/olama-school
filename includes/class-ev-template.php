@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
 
 class Olama_School_EV_Template
 {
-    public static function get_templates($grade_id, $academic_year_id, $semester_id = 0, $context_type = 'student')
+    public static function get_templates($grade_id, $academic_year_id, $semester_id = 0, $context_type = 'student', $subject_id = 0)
     {
         global $wpdb;
         $query = "SELECT * FROM {$wpdb->prefix}olama_ev_templates 
@@ -19,6 +19,11 @@ class Olama_School_EV_Template
         if ($semester_id) {
             $query .= " AND semester_id = %d";
             $params[] = $semester_id;
+        }
+
+        if ($subject_id) {
+            $query .= " AND subject_id = %d";
+            $params[] = $subject_id;
         }
 
         $query .= " ORDER BY created_at DESC";
@@ -49,16 +54,18 @@ class Olama_School_EV_Template
         $score_filtered = array_slice($score_filtered, 0, 5);
 
         $final_config = array();
-        $total = count($score_filtered);
         foreach ($score_filtered as $index => $label) {
-            // Highest label gets highest numeric value (starts from 1 up to N)
-            $final_config[$total - $index] = $label;
+            // Mapping: First label -> 5, Second -> 4, etc.
+            // This ensures "Mtopn" is always 5 points regardless of total levels.
+            $rating_key = 5 - $index;
+            $final_config[$rating_key] = $label;
         }
 
         $fields = array(
             'academic_year_id' => intval($data['academic_year_id']),
             'grade_id' => intval($data['grade_id']),
-            'semester_id' => intval($data['semester_id'] ?? 0),
+            'subject_id' => !empty($data['subject_id']) ? intval($data['subject_id']) : null,
+            'semester_id' => !empty($data['semester_id']) ? intval($data['semester_id']) : 0,
             'template_name' => sanitize_text_field($data['template_name']),
             'context_type' => sanitize_text_field($data['context_type'] ?? 'student'),
             'score_config' => !empty($final_config) ? maybe_serialize($final_config) : null,
@@ -122,6 +129,7 @@ class Olama_School_EV_Template
             'academic_year_id' => intval($data['academic_year_id']),
             'semester_id' => intval($data['semester_id']),
             'grade_id' => intval($data['destination_grade_id']),
+            'subject_id' => $source_template->subject_id, // Copy existing subject
             'template_name' => sanitize_text_field($data['new_template_name']),
             'context_type' => sanitize_text_field($data['context_type'] ?? 'student'),
             'score_config' => $source_template->score_config // Copy existing config

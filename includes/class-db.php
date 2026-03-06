@@ -372,6 +372,7 @@ class Olama_School_DB
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				academic_year_id mediumint(9) NOT NULL,
 				grade_id mediumint(9) NOT NULL,
+				subject_id mediumint(9) DEFAULT NULL,
 				semester_id mediumint(9) DEFAULT NULL,
 				template_name varchar(255) NOT NULL,
 				context_type varchar(50) DEFAULT 'student' NOT NULL,
@@ -379,6 +380,7 @@ class Olama_School_DB
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
 				KEY year_grade (academic_year_id, grade_id),
+				KEY subject_id (subject_id),
 				KEY context_type (context_type)
 			) $charset_collate;",
 
@@ -422,6 +424,7 @@ class Olama_School_DB
 				template_id mediumint(9) NOT NULL,
 				student_id mediumint(9) DEFAULT NULL,
 				student_uid varchar(50) DEFAULT NULL,
+				subject_id mediumint(9) DEFAULT NULL,
 				teacher_id bigint(20) UNSIGNED NOT NULL,
 				academic_year_id mediumint(9) NOT NULL,
 				semester_id mediumint(9) NOT NULL,
@@ -436,6 +439,7 @@ class Olama_School_DB
 				KEY template_id (template_id),
 				KEY student_id (student_id),
 				KEY student_uid (student_uid),
+				KEY subject_id (subject_id),
 				KEY teacher_id (teacher_id),
 				KEY year_semester (academic_year_id, semester_id),
 				KEY context_type (context_type)
@@ -1097,6 +1101,98 @@ class Olama_School_DB
 			$this->ensure_index_exists('olama_supervisor_visits', 'schedule_id', '(schedule_id)');
 			$this->ensure_index_exists('olama_supervisor_visits', 'visit_date', '(visit_date)');
 			$this->ensure_index_exists('olama_supervisor_visits', 'supervisor_id', '(supervisor_id)');
+		}
+
+		// 7. Ensure subject_id for evaluations
+		$this->ensure_column_exists('olama_ev_templates', 'subject_id', 'mediumint(9) DEFAULT NULL AFTER grade_id');
+		$this->ensure_index_exists('olama_ev_templates', 'subject_id', '(subject_id)');
+
+		$this->ensure_column_exists('olama_ev_records', 'subject_id', 'mediumint(9) DEFAULT NULL AFTER student_uid');
+		$this->ensure_index_exists('olama_ev_records', 'subject_id', '(subject_id)');
+
+		// 8. One-time Migration: Shift rating mapping and scores
+		$this->migrate_evaluation_ratings();
+	}
+
+	/**
+	 * Migrates evaluation ratings to ensure the highest label is always 5.
+	 * Also updates associated scores and percentages.
+	 */
+	private function migrate_evaluation_ratings()
+	{
+		global $wpdb;
+
+		$templates = $wpdb->get_results("SELECT id, score_config FROM {$wpdb->prefix}olama_ev_templates");
+
+		foreach ($templates as $template) {
+			$config = maybe_unserialize($template->score_config);
+			if (!is_array($config) || empty($config))
+				continue;
+
+			$keys = array_keys($config);
+			$max_key = !empty($keys) ? max($keys) : 0;
+
+			// If max key is less than 5, we need to shift (e.g., if it's 3, delta is 2)
+			if ($max_key > 0 && $max_key < 5) {
+				$delta = 5 - $max_key;
+
+				// 1. Shift Template Config
+				$new_config = array();
+				foreach ($config as $k => $v) {
+					$new_config[$k + $delta] = $v;
+				}
+				$wpdb->update(
+					"{$wpdb->prefix}olama_ev_templates",
+					array('score_config' => maybe_serialize($new_config)),
+					array('id' => $template->id)
+				);
+
+				// 2. Shift Scores in olama_ev_scores
+				$score_rows = $wpdb->get_results($wpdb->prepare(
+					"SELECT s.id, s.score, i.weight, i.is_critical 
+					 FROM {$wpdb->prefix}olama_ev_scores s
+					 JOIN {$wpdb->prefix}olama_ev_records r ON s.evaluation_id = r.id
+					 JOIN {$wpdb->prefix}olama_ev_indicators i ON s.indicator_id = i.id
+					 WHERE r.template_id = %d AND s.score IS NOT NULL",
+					$template->id
+				));
+
+				foreach ($score_rows as $row) {
+					$new_score = min(5, (int) $row->score + $delta);
+
+					// Recalculate calculated_score using the non-linear formula
+					$weight = (float) $row->weight;
+					$multiplier = (bool) $row->is_critical ? 2.0 : 1.0;
+					$points = ($new_score * $new_score) / 5.0;
+					$new_calculated = $points * $weight * $multiplier;
+
+					$wpdb->update(
+						"{$wpdb->prefix}olama_ev_scores",
+						array(
+							'score' => $new_score,
+							'calculated_score' => $new_calculated
+						),
+						array('id' => $row->id)
+					);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Helper to ensure a column exists
+	 */
+	private function ensure_column_exists($table_name, $column_name, $column_def)
+	{
+		global $wpdb;
+		$table_full = $wpdb->prefix . $table_name;
+		$column_exists = $wpdb->get_results($wpdb->prepare(
+			"SHOW COLUMNS FROM $table_full LIKE %s",
+			$column_name
+		));
+
+		if (empty($column_exists)) {
+			$wpdb->query("ALTER TABLE $table_full ADD COLUMN $column_name $column_def");
 		}
 	}
 
