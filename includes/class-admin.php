@@ -4487,7 +4487,24 @@ class Olama_School_Admin
             FROM {$wpdb->prefix}olama_sections s
             JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id
             WHERE s.academic_year_id = %d
-            ORDER BY g.grade_level ASC, s.section_name ASC
+            ORDER BY 
+                CASE 
+                    WHEN g.grade_name LIKE '%%البستان%%' THEN 1
+                    WHEN g.grade_name LIKE '%%التمهيدي%%' THEN 2
+                    WHEN g.grade_name LIKE '%%الأول%%' OR g.grade_name LIKE '%%اول%%' THEN 3
+                    WHEN g.grade_name LIKE '%%الثاني%%' OR g.grade_name LIKE '%%ثاني%%' THEN 4
+                    WHEN g.grade_name LIKE '%%الثالث%%' OR g.grade_name LIKE '%%ثالث%%' THEN 5
+                    WHEN g.grade_name LIKE '%%الرابع%%' OR g.grade_name LIKE '%%رابع%%' THEN 6
+                    WHEN g.grade_name LIKE '%%الخامس%%' OR g.grade_name LIKE '%%خامس%%' THEN 7
+                    WHEN g.grade_name LIKE '%%السادس%%' OR g.grade_name LIKE '%%سادس%%' THEN 8
+                    WHEN g.grade_name LIKE '%%السابع%%' OR g.grade_name LIKE '%%سابع%%' THEN 9
+                    WHEN g.grade_name LIKE '%%الثامن%%' OR g.grade_name LIKE '%%ثامن%%' THEN 10
+                    WHEN g.grade_name LIKE '%%التاسع%%' OR g.grade_name LIKE '%%تاسع%%' THEN 11
+                    WHEN g.grade_name LIKE '%%العاشر%%' OR g.grade_name LIKE '%%عاشر%%' THEN 12
+                    WHEN g.grade_name LIKE '%%الحادي عشر%%' THEN 13
+                    ELSE 99
+                END ASC,
+                s.section_name ASC
         ", $active_year_id));
 
         // Get plan statuses for the week
