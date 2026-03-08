@@ -4566,10 +4566,13 @@ class Olama_School_Admin
         foreach ($enrollments as $en) {
             $is_kg = (stripos($en->grade_name, 'KG') !== false || stripos($en->grade_name, 'التمهيدي') !== false || stripos($en->grade_name, 'البستان') !== false);
             $stats['total']['enrolled'] += $en->count;
+            $stats['total']['present'] += $en->count; // Default to all present
             if ($is_kg) {
                 $stats['kg']['enrolled'] += $en->count;
+                $stats['kg']['present'] += $en->count; // Default to all present
             } else {
                 $stats['school']['enrolled'] += $en->count;
+                $stats['school']['present'] += $en->count; // Default to all present
             }
         }
 
@@ -4586,19 +4589,15 @@ class Olama_School_Admin
         foreach ($attendance as $att) {
             $is_kg = (stripos($att->grade_name, 'KG') !== false || stripos($att->grade_name, 'التمهيدي') !== false || stripos($att->grade_name, 'البستان') !== false);
 
-            if ($att->status == 'present') {
-                $stats['total']['present'] += $att->count;
-                if ($is_kg) {
-                    $stats['kg']['present'] += $att->count;
-                } else {
-                    $stats['school']['present'] += $att->count;
-                }
-            } else {
+            if ($att->status == 'absent') {
                 $stats['total']['absent'] += $att->count;
+                $stats['total']['present'] -= $att->count;
                 if ($is_kg) {
                     $stats['kg']['absent'] += $att->count;
+                    $stats['kg']['present'] -= $att->count;
                 } else {
                     $stats['school']['absent'] += $att->count;
+                    $stats['school']['present'] -= $att->count;
                 }
             }
         }
