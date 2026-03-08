@@ -21,6 +21,7 @@ class Olama_School_Shortcodes
         add_shortcode('olama_exam_report', array($this, 'render_exam_report_shortcode'));
         add_shortcode('olama_attendance', array($this, 'render_attendance_shortcode'));
         add_shortcode('olama_family_performance', array($this, 'render_family_performance_shortcode'));
+        add_shortcode('force_login', array($this, 'render_force_login_shortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_shortcode_assets'));
     }
 
@@ -38,6 +39,19 @@ class Olama_School_Shortcodes
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('olama_admin_nonce'),
         ));
+    }
+
+    /**
+     * Shortcode: [force_login]
+     * Forces guest users to log in.
+     */
+    public function render_force_login_shortcode($atts)
+    {
+        if (!is_user_logged_in()) {
+            auth_redirect();
+            exit;
+        }
+        return '';
     }
 
 
@@ -2964,901 +2978,902 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-                        <style>
-                            /* Family Performance Dashboard - Inline Styles */
-                            .olama-family-perf {
-                                font-family: 'Tajawal', 'Inter', sans-serif;
-                                max-width: 900px;
-                                margin: 0 auto;
-                                padding: 16px;
-                                direction: rtl;
-                                background: #f0f4f8;
-                                min-height: 100vh;
-                                -webkit-font-smoothing: antialiased
-                            }
-
-                            .fp-hero {
-                                background: linear-gradient(135deg, #0f766e 0%, #0d9488 30%, #14b8a6 60%, #2dd4bf 100%);
-                                border-radius: 24px;
-                                padding: 36px 28px 28px;
-                                position: relative;
-                                overflow: hidden;
-                                margin-bottom: 20px;
-                                box-shadow: 0 8px 32px rgba(13, 148, 136, .25)
-                            }
-
-                            .fp-hero::before {
-                                content: '';
-                                position: absolute;
-                                top: -40px;
-                                left: -40px;
-                                width: 180px;
-                                height: 180px;
-                                border-radius: 50%;
-                                background: rgba(255, 255, 255, .08)
-                            }
-
-                            .fp-hero::after {
-                                content: '';
-                                position: absolute;
-                                bottom: -30px;
-                                right: -30px;
-                                width: 140px;
-                                height: 140px;
-                                border-radius: 50%;
-                                background: rgba(255, 255, 255, .06)
-                            }
-
-                            .fp-hero-content {
-                                display: flex;
-                                align-items: center;
-                                gap: 16px;
-                                position: relative;
-                                z-index: 2;
-                                margin-bottom: 20px
-                            }
-
-                            .fp-hero-icon {
-                                width: 56px;
-                                height: 56px;
-                                border-radius: 16px;
-                                background: rgba(255, 255, 255, .2);
-                                backdrop-filter: blur(10px);
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                flex-shrink: 0
-                            }
-
-                            .fp-hero-icon .material-icons {
-                                font-size: 30px;
-                                color: #fff
-                            }
-
-                            .fp-hero-title {
-                                font-size: 1.9rem;
-                                font-weight: 900;
-                                color: #fff;
-                                margin: 0;
-                                line-height: 1.2;
-                                text-shadow: 0 2px 8px rgba(0, 0, 0, .1)
-                            }
-
-                            .fp-hero-subtitle {
-                                font-family: 'Inter', sans-serif;
-                                font-size: .85rem;
-                                color: rgba(255, 255, 255, .75);
-                                margin: 4px 0 0;
-                                font-weight: 500;
-                                letter-spacing: .5px
-                            }
-
-                            .fp-hero-meta {
-                                display: flex;
-                                flex-wrap: wrap;
-                                gap: 10px;
-                                position: relative;
-                                z-index: 2
-                            }
-
-                            .fp-meta-item {
-                                display: inline-flex;
-                                align-items: center;
-                                gap: 6px;
-                                background: rgba(255, 255, 255, .18);
-                                backdrop-filter: blur(8px);
-                                padding: 6px 14px;
-                                border-radius: 30px;
-                                color: #fff;
-                                font-size: .85rem;
-                                font-weight: 600
-                            }
-
-                            .fp-meta-item .material-icons {
-                                font-size: 16px;
-                                opacity: .8
-                            }
-
-                            .fp-students-list {
-                                display: flex;
-                                flex-direction: column;
-                                gap: 14px
-                            }
-
-                            .fp-student-card {
-                                background: #fff;
-                                border-radius: 20px;
-                                overflow: hidden;
-                                box-shadow: 0 2px 12px rgba(0, 0, 0, .04);
-                                border: 1px solid #e5e9ef;
-                                transition: box-shadow .3s ease, border-color .3s ease
-                            }
-
-                            .fp-student-card.active {
-                                box-shadow: 0 8px 30px rgba(0, 0, 0, .08);
-                                border-color: #d1d5db
-                            }
-
-                            .fp-student-header {
-                                display: flex;
-                                align-items: center;
-                                gap: 12px;
-                                padding: 16px 18px;
-                                cursor: pointer;
-                                transition: background .2s ease;
-                                user-select: none
-                            }
-
-                            .fp-student-header:hover {
-                                background: #f9fafb
-                            }
-
-                            .fp-student-avatar {
-                                width: 46px;
-                                height: 46px;
-                                border-radius: 14px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                font-size: 1.3rem;
-                                font-weight: 800;
-                                color: #fff;
-                                flex-shrink: 0;
-                                line-height: 1
-                            }
-
-                            .fp-student-avatar.fp-excellent {
-                                background: linear-gradient(135deg, #059669, #10b981)
-                            }
-
-                            .fp-student-avatar.fp-good {
-                                background: linear-gradient(135deg, #0284c7, #38bdf8)
-                            }
-
-                            .fp-student-avatar.fp-fair {
-                                background: linear-gradient(135deg, #d97706, #fbbf24)
-                            }
-
-                            .fp-student-avatar.fp-weak {
-                                background: linear-gradient(135deg, #dc2626, #f87171)
-                            }
-
-                            .fp-student-info {
-                                flex: 1;
-                                min-width: 0
-                            }
-
-                            .fp-student-name {
-                                font-size: 1.05rem;
-                                font-weight: 800;
-                                color: #1e293b;
-                                line-height: 1.3;
-                                white-space: nowrap;
-                                overflow: hidden;
-                                text-overflow: ellipsis
-                            }
-
-                            .fp-student-detail {
-                                font-size: .8rem;
-                                color: #64748b;
-                                font-weight: 500;
-                                display: flex;
-                                align-items: center;
-                                gap: 6px;
-                                flex-wrap: wrap;
-                                margin-top: 2px
-                            }
-
-                            .fp-age-badge {
-                                background: #f1f5f9;
-                                color: #475569;
-                                padding: 1px 8px;
-                                border-radius: 10px;
-                                font-size: .72rem;
-                                font-weight: 700
-                            }
-
-                            .fp-student-summary {
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-                                gap: 4px;
-                                flex-shrink: 0
-                            }
-
-                            .fp-mastery-ring {
-                                width: 46px;
-                                height: 46px;
-                                position: relative
-                            }
-
-                            .fp-mastery-ring svg {
-                                width: 100%;
-                                height: 100%;
-                                transform: rotate(-90deg)
-                            }
-
-                            .fp-ring-bg {
-                                fill: none;
-                                stroke: #e5e7eb;
-                                stroke-width: 3
-                            }
-
-                            .fp-ring-fill {
-                                fill: none;
-                                stroke-width: 3;
-                                stroke-linecap: round;
-                                transition: stroke-dasharray .6s ease
-                            }
-
-                            .fp-mastery-ring.fp-excellent .fp-ring-fill {
-                                stroke: #10b981
-                            }
-
-                            .fp-mastery-ring.fp-good .fp-ring-fill {
-                                stroke: #38bdf8
-                            }
-
-                            .fp-mastery-ring.fp-fair .fp-ring-fill {
-                                stroke: #fbbf24
-                            }
-
-                            .fp-mastery-ring.fp-weak .fp-ring-fill {
-                                stroke: #f87171
-                            }
-
-                            .fp-ring-text {
-                                position: absolute;
-                                top: 50%;
-                                left: 50%;
-                                transform: translate(-50%, -50%);
-                                font-size: .7rem;
-                                font-weight: 800;
-                                color: #334155;
-                                font-family: 'Inter', sans-serif
-                            }
-
-                            .fp-mastery-badge {
-                                font-size: .65rem;
-                                font-weight: 700;
-                                padding: 2px 8px;
-                                border-radius: 8px;
-                                white-space: nowrap
-                            }
-
-                            .fp-mastery-badge.fp-excellent {
-                                background: #d1fae5;
-                                color: #065f46
-                            }
-
-                            .fp-mastery-badge.fp-good {
-                                background: #dbeafe;
-                                color: #1e40af
-                            }
-
-                            .fp-mastery-badge.fp-fair {
-                                background: #fef3c7;
-                                color: #92400e
-                            }
-
-                            .fp-mastery-badge.fp-weak {
-                                background: #fee2e2;
-                                color: #991b1b
-                            }
-
-                            .fp-chevron {
-                                color: #94a3b8;
-                                font-size: 24px !important;
-                                transition: transform .3s ease;
-                                flex-shrink: 0
-                            }
-
-                            .fp-student-card.active .fp-chevron {
-                                transform: rotate(180deg);
-                                color: #0d9488
-                            }
-
-                            .fp-student-body {
-                                display: none !important;
-                                padding: 0 18px
-                            }
-
-                            .fp-student-card.active .fp-student-body {
-                                display: block !important;
-                                padding: 0 18px 20px
-                            }
-
-                            .fp-eval-pills {
-                                display: flex;
-                                flex-wrap: wrap;
-                                gap: 8px;
-                                margin-bottom: 16px;
-                                padding-top: 4px
-                            }
-
-                            .fp-eval-pill {
-                                display: flex;
-                                align-items: center;
-                                gap: 6px;
-                                padding: 6px 12px;
-                                border-radius: 12px;
-                                font-size: .78rem;
-                                font-weight: 600;
-                                cursor: pointer;
-                                transition: transform .15s ease, box-shadow .15s ease
-                            }
-
-                            .fp-eval-pill:hover {
-                                transform: translateY(-1px);
-                                box-shadow: 0 3px 8px rgba(0, 0, 0, .08)
-                            }
-
-                            .fp-eval-pill.fp-excellent {
-                                background: #d1fae5;
-                                color: #065f46
-                            }
-
-                            .fp-eval-pill.fp-good {
-                                background: #dbeafe;
-                                color: #1e40af
-                            }
-
-                            .fp-eval-pill.fp-fair {
-                                background: #fef3c7;
-                                color: #92400e
-                            }
-
-                            .fp-eval-pill.fp-weak {
-                                background: #fee2e2;
-                                color: #991b1b
-                            }
-
-                            .fp-pill-name {
-                                white-space: nowrap
-                            }
-
-                            .fp-pill-pct {
-                                font-family: 'Inter', sans-serif;
-                                font-weight: 800;
-                                font-size: .82rem
-                            }
-
-                            .fp-eval-tabs {
-                                display: flex;
-                                gap: 4px;
-                                border-bottom: 2px solid #e5e7eb;
-                                margin-bottom: 16px;
-                                overflow-x: auto;
-                                -webkit-overflow-scrolling: touch;
-                                scrollbar-width: none;
-                                padding-bottom: 0
-                            }
-
-                            .fp-eval-tabs::-webkit-scrollbar {
-                                display: none
-                            }
-
-                            .fp-eval-tab {
-                                padding: 10px 16px;
-                                font-size: .82rem;
-                                font-weight: 700;
-                                font-family: 'Tajawal', sans-serif;
-                                color: #64748b;
-                                background: none;
-                                border: none;
-                                border-bottom: 3px solid transparent;
-                                cursor: pointer;
-                                white-space: nowrap;
-                                transition: all .2s ease;
-                                margin-bottom: -2px
-                            }
-
-                            .fp-eval-tab:hover {
-                                color: #0d9488;
-                                background: #f0fdfa;
-                                border-radius: 8px 8px 0 0
-                            }
-
-                            .fp-eval-tab.active {
-                                color: #0f766e;
-                                border-bottom-color: #0d9488;
-                                background: #f0fdfa;
-                                border-radius: 8px 8px 0 0
-                            }
-
-                            .fp-eval-panel {
-                                display: none
-                            }
-
-                            .fp-eval-panel.active {
-                                display: block;
-                                animation: fpFadeIn .3s ease
-                            }
-
-                            @keyframes fpFadeIn {
-                                from {
-                                    opacity: 0;
-                                    transform: translateY(8px)
-                                }
-
-                                to {
-                                    opacity: 1;
-                                    transform: translateY(0)
-                                }
-                            }
-
-                            .fp-eval-meta {
-                                display: flex;
-                                flex-wrap: wrap;
-                                gap: 8px;
-                                margin-bottom: 16px
-                            }
-
-                            .fp-meta-chip {
-                                display: inline-flex;
-                                align-items: center;
-                                gap: 5px;
-                                padding: 5px 12px;
-                                border-radius: 10px;
-                                font-size: .78rem;
-                                font-weight: 600;
-                                background: #f1f5f9;
-                                color: #475569
-                            }
-
-                            .fp-meta-chip .material-icons {
-                                font-size: 15px;
-                                opacity: .7
-                            }
-
-                            .fp-meta-chip.fp-excellent {
-                                background: #d1fae5;
-                                color: #065f46
-                            }
-
-                            .fp-meta-chip.fp-good {
-                                background: #dbeafe;
-                                color: #1e40af
-                            }
-
-                            .fp-meta-chip.fp-fair {
-                                background: #fef3c7;
-                                color: #92400e
-                            }
-
-                            .fp-meta-chip.fp-weak {
-                                background: #fee2e2;
-                                color: #991b1b
-                            }
-
-                            .fp-domain-block {
-                                margin-bottom: 16px;
-                                background: #f8fafb;
-                                border-radius: 16px;
-                                border: 1px solid #e8ecf0;
-                                overflow: hidden
-                            }
-
-                            .fp-domain-title {
-                                display: flex;
-                                align-items: center;
-                                gap: 8px;
-                                padding: 12px 16px;
-                                background: linear-gradient(135deg, #0f766e, #14b8a6);
-                                color: #fff;
-                                font-size: .88rem;
-                                font-weight: 700
-                            }
-
-                            .fp-domain-title .material-icons {
-                                font-size: 18px;
-                                opacity: .85
-                            }
-
-                            .fp-category-block {
-                                border-bottom: 1px solid #e8ecf0;
-                                padding: 0
-                            }
-
-                            .fp-category-block:last-child {
-                                border-bottom: none
-                            }
-
-                            .fp-category-title {
-                                padding: 10px 16px;
-                                font-size: .82rem;
-                                font-weight: 700;
-                                color: #0f766e;
-                                background: #eef7f6;
-                                border-bottom: 1px dashed #d1e3e0
-                            }
-
-                            .fp-indicators {
-                                padding: 0
-                            }
-
-                            .fp-indicator-row {
-                                display: flex;
-                                align-items: center;
-                                justify-content: space-between;
-                                gap: 12px;
-                                padding: 10px 16px;
-                                border-bottom: 1px solid #f1f4f6;
-                                transition: background .15s ease
-                            }
-
-                            .fp-indicator-row:last-child {
-                                border-bottom: none
-                            }
-
-                            .fp-indicator-row:hover {
-                                background: #f0fdfa
-                            }
-
-                            .fp-indicator-text {
-                                flex: 1;
-                                font-size: .82rem;
-                                color: #334155;
-                                line-height: 1.5;
-                                text-align: right
-                            }
-
-                            .fp-indicator-score {
-                                flex-shrink: 0;
-                                padding: 4px 12px;
-                                border-radius: 10px;
-                                font-size: .75rem;
-                                font-weight: 700;
-                                white-space: nowrap;
-                                text-align: center;
-                                min-width: 60px
-                            }
-
-                            .fp-indicator-score.fp-score-high {
-                                background: #d1fae5;
-                                color: #065f46
-                            }
-
-                            .fp-indicator-score.fp-score-mid {
-                                background: #fef3c7;
-                                color: #92400e
-                            }
-
-                            .fp-indicator-score.fp-score-low {
-                                background: #fee2e2;
-                                color: #991b1b
-                            }
-
-                            .fp-indicator-score.fp-score-na {
-                                background: #f1f5f9;
-                                color: #94a3b8
-                            }
-
-                            .fp-footer {
-                                text-align: center;
-                                padding: 24px 16px;
-                                color: #94a3b8;
-                                font-size: .8rem;
-                                font-weight: 500;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                gap: 6px
-                            }
-
-                            .fp-footer .material-icons {
-                                font-size: 16px;
-                                color: #0d9488
-                            }
-
-                            @media(max-width:600px) {
-                                .olama-family-perf {
-                                    padding: 10px
-                                }
-
-                                .fp-hero {
-                                    padding: 24px 18px 20px;
-                                    border-radius: 18px
-                                }
-
-                                .fp-hero-title {
-                                    font-size: 1.5rem
-                                }
-
-                                .fp-hero-icon {
-                                    width: 44px;
-                                    height: 44px;
-                                    border-radius: 12px
-                                }
-
-                                .fp-hero-icon .material-icons {
-                                    font-size: 24px
-                                }
-
-                                .fp-student-header {
-                                    padding: 12px 14px;
-                                    gap: 10px
-                                }
-
-                                .fp-student-avatar {
-                                    width: 40px;
-                                    height: 40px;
-                                    border-radius: 12px;
-                                    font-size: 1.1rem
-                                }
-
-                                .fp-student-name {
-                                    font-size: .95rem
-                                }
-
-                                .fp-mastery-ring {
-                                    width: 40px;
-                                    height: 40px
-                                }
-
-                                .fp-ring-text {
-                                    font-size: .62rem
-                                }
-
-                                .fp-mastery-badge {
-                                    font-size: .6rem;
-                                    padding: 1px 6px
-                                }
-
-                                .fp-student-body {
-                                    padding: 0 14px
-                                }
-
-                                .fp-student-card.active .fp-student-body {
-                                    display: block !important;
-                                    padding: 0 14px 16px
-                                }
-
-                                .fp-eval-pills {
-                                    gap: 6px
-                                }
-
-                                .fp-eval-pill {
-                                    padding: 5px 10px;
-                                    font-size: .72rem
-                                }
-
-                                .fp-eval-tab {
-                                    padding: 8px 12px;
-                                    font-size: .76rem
-                                }
-
-                                .fp-domain-title {
-                                    padding: 10px 12px;
-                                    font-size: .82rem
-                                }
-
-                                .fp-category-title {
-                                    padding: 8px 12px;
-                                    font-size: .78rem
-                                }
-
-                                .fp-indicator-row {
-                                    padding: 8px 12px;
-                                    flex-direction: column;
-                                    align-items: flex-start;
-                                    gap: 6px
-                                }
-
-                                .fp-indicator-text {
-                                    font-size: .78rem
-                                }
-
-                                .fp-indicator-score {
-                                    align-self: flex-start;
-                                    min-width: auto;
-                                    font-size: .7rem
-                                }
-
-                                .fp-eval-meta {
-                                    gap: 6px
-                                }
-
-                                .fp-meta-chip {
-                                    font-size: .72rem;
-                                    padding: 4px 10px
-                                }
-                            }
-                        </style>
-                        <div class="olama-family-perf" dir="rtl">
-                            <!-- Hero Header -->
-                            <div class="fp-hero">
-                                <div class="fp-hero-content">
-                                    <div class="fp-hero-icon">
-                                        <span class="material-icons">family_restroom</span>
-                                    </div>
-                                    <div class="fp-hero-text">
-                                        <h1 class="fp-hero-title">أداء الطلاب</h1>
-                                        <p class="fp-hero-subtitle">Family Students Performance</p>
-                                    </div>
-                                </div>
-                                <div class="fp-hero-meta">
-                                    <div class="fp-meta-item">
-                                        <span class="material-icons">badge</span>
-                                        <span><?php echo esc_html($family->family_name); ?></span>
-                                    </div>
-                                    <div class="fp-meta-item">
-                                        <span class="material-icons">calendar_today</span>
-                                        <span><?php echo esc_html($year_name . ' — ' . $semester_name); ?></span>
-                                    </div>
-                                </div>
+                <style>
+                    /* Family Performance Dashboard - Inline Styles */
+                    .olama-family-perf {
+                        font-family: 'Tajawal', 'Inter', sans-serif;
+                        max-width: 900px;
+                        margin: 0 auto;
+                        padding: 16px;
+                        direction: rtl;
+                        background: #f0f4f8;
+                        min-height: 100vh;
+                        -webkit-font-smoothing: antialiased
+                    }
+
+                    .fp-hero {
+                        background: linear-gradient(135deg, #0f766e 0%, #0d9488 30%, #14b8a6 60%, #2dd4bf 100%);
+                        border-radius: 24px;
+                        padding: 36px 28px 28px;
+                        position: relative;
+                        overflow: hidden;
+                        margin-bottom: 20px;
+                        box-shadow: 0 8px 32px rgba(13, 148, 136, .25)
+                    }
+
+                    .fp-hero::before {
+                        content: '';
+                        position: absolute;
+                        top: -40px;
+                        left: -40px;
+                        width: 180px;
+                        height: 180px;
+                        border-radius: 50%;
+                        background: rgba(255, 255, 255, .08)
+                    }
+
+                    .fp-hero::after {
+                        content: '';
+                        position: absolute;
+                        bottom: -30px;
+                        right: -30px;
+                        width: 140px;
+                        height: 140px;
+                        border-radius: 50%;
+                        background: rgba(255, 255, 255, .06)
+                    }
+
+                    .fp-hero-content {
+                        display: flex;
+                        align-items: center;
+                        gap: 16px;
+                        position: relative;
+                        z-index: 2;
+                        margin-bottom: 20px
+                    }
+
+                    .fp-hero-icon {
+                        width: 56px;
+                        height: 56px;
+                        border-radius: 16px;
+                        background: rgba(255, 255, 255, .2);
+                        backdrop-filter: blur(10px);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0
+                    }
+
+                    .fp-hero-icon .material-icons {
+                        font-size: 30px;
+                        color: #fff
+                    }
+
+                    .fp-hero-title {
+                        font-size: 1.9rem;
+                        font-weight: 900;
+                        color: #fff;
+                        margin: 0;
+                        line-height: 1.2;
+                        text-shadow: 0 2px 8px rgba(0, 0, 0, .1)
+                    }
+
+                    .fp-hero-subtitle {
+                        font-family: 'Inter', sans-serif;
+                        font-size: .85rem;
+                        color: rgba(255, 255, 255, .75);
+                        margin: 4px 0 0;
+                        font-weight: 500;
+                        letter-spacing: .5px
+                    }
+
+                    .fp-hero-meta {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                        position: relative;
+                        z-index: 2
+                    }
+
+                    .fp-meta-item {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                        background: rgba(255, 255, 255, .18);
+                        backdrop-filter: blur(8px);
+                        padding: 6px 14px;
+                        border-radius: 30px;
+                        color: #fff;
+                        font-size: .85rem;
+                        font-weight: 600
+                    }
+
+                    .fp-meta-item .material-icons {
+                        font-size: 16px;
+                        opacity: .8
+                    }
+
+                    .fp-students-list {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 14px
+                    }
+
+                    .fp-student-card {
+                        background: #fff;
+                        border-radius: 20px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 12px rgba(0, 0, 0, .04);
+                        border: 1px solid #e5e9ef;
+                        transition: box-shadow .3s ease, border-color .3s ease
+                    }
+
+                    .fp-student-card.active {
+                        box-shadow: 0 8px 30px rgba(0, 0, 0, .08);
+                        border-color: #d1d5db
+                    }
+
+                    .fp-student-header {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        padding: 16px 18px;
+                        cursor: pointer;
+                        transition: background .2s ease;
+                        user-select: none
+                    }
+
+                    .fp-student-header:hover {
+                        background: #f9fafb
+                    }
+
+                    .fp-student-avatar {
+                        width: 46px;
+                        height: 46px;
+                        border-radius: 14px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 1.3rem;
+                        font-weight: 800;
+                        color: #fff;
+                        flex-shrink: 0;
+                        line-height: 1
+                    }
+
+                    .fp-student-avatar.fp-excellent {
+                        background: linear-gradient(135deg, #059669, #10b981)
+                    }
+
+                    .fp-student-avatar.fp-good {
+                        background: linear-gradient(135deg, #0284c7, #38bdf8)
+                    }
+
+                    .fp-student-avatar.fp-fair {
+                        background: linear-gradient(135deg, #d97706, #fbbf24)
+                    }
+
+                    .fp-student-avatar.fp-weak {
+                        background: linear-gradient(135deg, #dc2626, #f87171)
+                    }
+
+                    .fp-student-info {
+                        flex: 1;
+                        min-width: 0
+                    }
+
+                    .fp-student-name {
+                        font-size: 1.05rem;
+                        font-weight: 800;
+                        color: #1e293b;
+                        line-height: 1.3;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis
+                    }
+
+                    .fp-student-detail {
+                        font-size: .8rem;
+                        color: #64748b;
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        margin-top: 2px
+                    }
+
+                    .fp-age-badge {
+                        background: #f1f5f9;
+                        color: #475569;
+                        padding: 1px 8px;
+                        border-radius: 10px;
+                        font-size: .72rem;
+                        font-weight: 700
+                    }
+
+                    .fp-student-summary {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 4px;
+                        flex-shrink: 0
+                    }
+
+                    .fp-mastery-ring {
+                        width: 46px;
+                        height: 46px;
+                        position: relative
+                    }
+
+                    .fp-mastery-ring svg {
+                        width: 100%;
+                        height: 100%;
+                        transform: rotate(-90deg)
+                    }
+
+                    .fp-ring-bg {
+                        fill: none;
+                        stroke: #e5e7eb;
+                        stroke-width: 3
+                    }
+
+                    .fp-ring-fill {
+                        fill: none;
+                        stroke-width: 3;
+                        stroke-linecap: round;
+                        transition: stroke-dasharray .6s ease
+                    }
+
+                    .fp-mastery-ring.fp-excellent .fp-ring-fill {
+                        stroke: #10b981
+                    }
+
+                    .fp-mastery-ring.fp-good .fp-ring-fill {
+                        stroke: #38bdf8
+                    }
+
+                    .fp-mastery-ring.fp-fair .fp-ring-fill {
+                        stroke: #fbbf24
+                    }
+
+                    .fp-mastery-ring.fp-weak .fp-ring-fill {
+                        stroke: #f87171
+                    }
+
+                    .fp-ring-text {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        font-size: .7rem;
+                        font-weight: 800;
+                        color: #334155;
+                        font-family: 'Inter', sans-serif
+                    }
+
+                    .fp-mastery-badge {
+                        font-size: .65rem;
+                        font-weight: 700;
+                        padding: 2px 8px;
+                        border-radius: 8px;
+                        white-space: nowrap
+                    }
+
+                    .fp-mastery-badge.fp-excellent {
+                        background: #d1fae5;
+                        color: #065f46
+                    }
+
+                    .fp-mastery-badge.fp-good {
+                        background: #dbeafe;
+                        color: #1e40af
+                    }
+
+                    .fp-mastery-badge.fp-fair {
+                        background: #fef3c7;
+                        color: #92400e
+                    }
+
+                    .fp-mastery-badge.fp-weak {
+                        background: #fee2e2;
+                        color: #991b1b
+                    }
+
+                    .fp-chevron {
+                        color: #94a3b8;
+                        font-size: 24px !important;
+                        transition: transform .3s ease;
+                        flex-shrink: 0
+                    }
+
+                    .fp-student-card.active .fp-chevron {
+                        transform: rotate(180deg);
+                        color: #0d9488
+                    }
+
+                    .fp-student-body {
+                        display: none !important;
+                        padding: 0 18px
+                    }
+
+                    .fp-student-card.active .fp-student-body {
+                        display: block !important;
+                        padding: 0 18px 20px
+                    }
+
+                    .fp-eval-pills {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 8px;
+                        margin-bottom: 16px;
+                        padding-top: 4px
+                    }
+
+                    .fp-eval-pill {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        padding: 6px 12px;
+                        border-radius: 12px;
+                        font-size: .78rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform .15s ease, box-shadow .15s ease
+                    }
+
+                    .fp-eval-pill:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 3px 8px rgba(0, 0, 0, .08)
+                    }
+
+                    .fp-eval-pill.fp-excellent {
+                        background: #d1fae5;
+                        color: #065f46
+                    }
+
+                    .fp-eval-pill.fp-good {
+                        background: #dbeafe;
+                        color: #1e40af
+                    }
+
+                    .fp-eval-pill.fp-fair {
+                        background: #fef3c7;
+                        color: #92400e
+                    }
+
+                    .fp-eval-pill.fp-weak {
+                        background: #fee2e2;
+                        color: #991b1b
+                    }
+
+                    .fp-pill-name {
+                        white-space: nowrap
+                    }
+
+                    .fp-pill-pct {
+                        font-family: 'Inter', sans-serif;
+                        font-weight: 800;
+                        font-size: .82rem
+                    }
+
+                    .fp-eval-tabs {
+                        display: flex;
+                        gap: 4px;
+                        border-bottom: 2px solid #e5e7eb;
+                        margin-bottom: 16px;
+                        overflow-x: auto;
+                        -webkit-overflow-scrolling: touch;
+                        scrollbar-width: none;
+                        padding-bottom: 0
+                    }
+
+                    .fp-eval-tabs::-webkit-scrollbar {
+                        display: none
+                    }
+
+                    .fp-eval-tab {
+                        padding: 10px 16px;
+                        font-size: .82rem;
+                        font-weight: 700;
+                        font-family: 'Tajawal', sans-serif;
+                        color: #64748b;
+                        background: none;
+                        border: none;
+                        border-bottom: 3px solid transparent;
+                        cursor: pointer;
+                        white-space: nowrap;
+                        transition: all .2s ease;
+                        margin-bottom: -2px
+                    }
+
+                    .fp-eval-tab:hover {
+                        color: #0d9488;
+                        background: #f0fdfa;
+                        border-radius: 8px 8px 0 0
+                    }
+
+                    .fp-eval-tab.active {
+                        color: #0f766e;
+                        border-bottom-color: #0d9488;
+                        background: #f0fdfa;
+                        border-radius: 8px 8px 0 0
+                    }
+
+                    .fp-eval-panel {
+                        display: none
+                    }
+
+                    .fp-eval-panel.active {
+                        display: block;
+                        animation: fpFadeIn .3s ease
+                    }
+
+                    @keyframes fpFadeIn {
+                        from {
+                            opacity: 0;
+                            transform: translateY(8px)
+                        }
+
+                        to {
+                            opacity: 1;
+                            transform: translateY(0)
+                        }
+                    }
+
+                    .fp-eval-meta {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 8px;
+                        margin-bottom: 16px
+                    }
+
+                    .fp-meta-chip {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 5px;
+                        padding: 5px 12px;
+                        border-radius: 10px;
+                        font-size: .78rem;
+                        font-weight: 600;
+                        background: #f1f5f9;
+                        color: #475569
+                    }
+
+                    .fp-meta-chip .material-icons {
+                        font-size: 15px;
+                        opacity: .7
+                    }
+
+                    .fp-meta-chip.fp-excellent {
+                        background: #d1fae5;
+                        color: #065f46
+                    }
+
+                    .fp-meta-chip.fp-good {
+                        background: #dbeafe;
+                        color: #1e40af
+                    }
+
+                    .fp-meta-chip.fp-fair {
+                        background: #fef3c7;
+                        color: #92400e
+                    }
+
+                    .fp-meta-chip.fp-weak {
+                        background: #fee2e2;
+                        color: #991b1b
+                    }
+
+                    .fp-domain-block {
+                        margin-bottom: 16px;
+                        background: #f8fafb;
+                        border-radius: 16px;
+                        border: 1px solid #e8ecf0;
+                        overflow: hidden
+                    }
+
+                    .fp-domain-title {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding: 12px 16px;
+                        background: linear-gradient(135deg, #0f766e, #14b8a6);
+                        color: #fff;
+                        font-size: .88rem;
+                        font-weight: 700
+                    }
+
+                    .fp-domain-title .material-icons {
+                        font-size: 18px;
+                        opacity: .85
+                    }
+
+                    .fp-category-block {
+                        border-bottom: 1px solid #e8ecf0;
+                        padding: 0
+                    }
+
+                    .fp-category-block:last-child {
+                        border-bottom: none
+                    }
+
+                    .fp-category-title {
+                        padding: 10px 16px;
+                        font-size: .82rem;
+                        font-weight: 700;
+                        color: #0f766e;
+                        background: #eef7f6;
+                        border-bottom: 1px dashed #d1e3e0
+                    }
+
+                    .fp-indicators {
+                        padding: 0
+                    }
+
+                    .fp-indicator-row {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 12px;
+                        padding: 10px 16px;
+                        border-bottom: 1px solid #f1f4f6;
+                        transition: background .15s ease
+                    }
+
+                    .fp-indicator-row:last-child {
+                        border-bottom: none
+                    }
+
+                    .fp-indicator-row:hover {
+                        background: #f0fdfa
+                    }
+
+                    .fp-indicator-text {
+                        flex: 1;
+                        font-size: .82rem;
+                        color: #334155;
+                        line-height: 1.5;
+                        text-align: right
+                    }
+
+                    .fp-indicator-score {
+                        flex-shrink: 0;
+                        padding: 4px 12px;
+                        border-radius: 10px;
+                        font-size: .75rem;
+                        font-weight: 700;
+                        white-space: nowrap;
+                        text-align: center;
+                        min-width: 60px
+                    }
+
+                    .fp-indicator-score.fp-score-high {
+                        background: #d1fae5;
+                        color: #065f46
+                    }
+
+                    .fp-indicator-score.fp-score-mid {
+                        background: #fef3c7;
+                        color: #92400e
+                    }
+
+                    .fp-indicator-score.fp-score-low {
+                        background: #fee2e2;
+                        color: #991b1b
+                    }
+
+                    .fp-indicator-score.fp-score-na {
+                        background: #f1f5f9;
+                        color: #94a3b8
+                    }
+
+                    .fp-footer {
+                        text-align: center;
+                        padding: 24px 16px;
+                        color: #94a3b8;
+                        font-size: .8rem;
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 6px
+                    }
+
+                    .fp-footer .material-icons {
+                        font-size: 16px;
+                        color: #0d9488
+                    }
+
+                    @media(max-width:600px) {
+                        .olama-family-perf {
+                            padding: 10px
+                        }
+
+                        .fp-hero {
+                            padding: 24px 18px 20px;
+                            border-radius: 18px
+                        }
+
+                        .fp-hero-title {
+                            font-size: 1.5rem
+                        }
+
+                        .fp-hero-icon {
+                            width: 44px;
+                            height: 44px;
+                            border-radius: 12px
+                        }
+
+                        .fp-hero-icon .material-icons {
+                            font-size: 24px
+                        }
+
+                        .fp-student-header {
+                            padding: 12px 14px;
+                            gap: 10px
+                        }
+
+                        .fp-student-avatar {
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 12px;
+                            font-size: 1.1rem
+                        }
+
+                        .fp-student-name {
+                            font-size: .95rem
+                        }
+
+                        .fp-mastery-ring {
+                            width: 40px;
+                            height: 40px
+                        }
+
+                        .fp-ring-text {
+                            font-size: .62rem
+                        }
+
+                        .fp-mastery-badge {
+                            font-size: .6rem;
+                            padding: 1px 6px
+                        }
+
+                        .fp-student-body {
+                            padding: 0 14px
+                        }
+
+                        .fp-student-card.active .fp-student-body {
+                            display: block !important;
+                            padding: 0 14px 16px
+                        }
+
+                        .fp-eval-pills {
+                            gap: 6px
+                        }
+
+                        .fp-eval-pill {
+                            padding: 5px 10px;
+                            font-size: .72rem
+                        }
+
+                        .fp-eval-tab {
+                            padding: 8px 12px;
+                            font-size: .76rem
+                        }
+
+                        .fp-domain-title {
+                            padding: 10px 12px;
+                            font-size: .82rem
+                        }
+
+                        .fp-category-title {
+                            padding: 8px 12px;
+                            font-size: .78rem
+                        }
+
+                        .fp-indicator-row {
+                            padding: 8px 12px;
+                            flex-direction: column;
+                            align-items: flex-start;
+                            gap: 6px
+                        }
+
+                        .fp-indicator-text {
+                            font-size: .78rem
+                        }
+
+                        .fp-indicator-score {
+                            align-self: flex-start;
+                            min-width: auto;
+                            font-size: .7rem
+                        }
+
+                        .fp-eval-meta {
+                            gap: 6px
+                        }
+
+                        .fp-meta-chip {
+                            font-size: .72rem;
+                            padding: 4px 10px
+                        }
+                    }
+                </style>
+                <div class="olama-family-perf" dir="rtl">
+                    <!-- Hero Header -->
+                    <div class="fp-hero">
+                        <div class="fp-hero-content">
+                            <div class="fp-hero-icon">
+                                <span class="material-icons">family_restroom</span>
                             </div>
-
-                            <!-- Students Accordion -->
-                            <div class="fp-students-list">
-                                <?php foreach ($students_data as $si => $sdata):
-                                    $s = $sdata['student'];
-                                    $mastery_class = $get_mastery_class($sdata['avg_mastery']);
-                                    $mastery_label = $get_mastery_label($sdata['avg_mastery']);
-                                    // Find weakest evaluation index
-                                    $weakest_idx = 0;
-                                    $weakest_pct = 999;
-                                    foreach ($sdata['evaluations'] as $ei => $ev) {
-                                        if ($ev['percentage'] < $weakest_pct) {
-                                            $weakest_pct = $ev['percentage'];
-                                            $weakest_idx = $ei;
-                                        }
-                                    }
-                                    ?>
-                                        <div class="fp-student-card" data-student-index="<?php echo $si; ?>">
-                                            <!-- Student Header (always visible) -->
-                                            <div class="fp-student-header">
-                                                <div class="fp-student-avatar <?php echo $mastery_class; ?>">
-                                                    <?php echo mb_substr($s->student_name, 0, 1, 'UTF-8'); ?>
-                                                </div>
-                                                <div class="fp-student-info">
-                                                    <div class="fp-student-name"><?php echo esc_html($s->student_name); ?></div>
-                                                    <div class="fp-student-detail">
-                                                        <?php echo esc_html($sdata['grade_name'] . ' — ' . $sdata['section_name']); ?>
-                                                        <?php if ($sdata['age']): ?>
-                                                                <span class="fp-age-badge"><?php echo $sdata['age']; ?> سنة</span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                                <div class="fp-student-summary">
-                                                    <div class="fp-mastery-ring <?php echo $mastery_class; ?>">
-                                                        <svg viewBox="0 0 36 36">
-                                                            <path class="fp-ring-bg"
-                                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                                            <path class="fp-ring-fill"
-                                                                stroke-dasharray="<?php echo $sdata['avg_mastery']; ?>, 100"
-                                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                                        </svg>
-                                                        <span class="fp-ring-text"><?php echo $sdata['avg_mastery']; ?>%</span>
-                                                    </div>
-                                                    <span
-                                                        class="fp-mastery-badge <?php echo $mastery_class; ?>"><?php echo $mastery_label; ?></span>
-                                                </div>
-                                                <span class="material-icons fp-chevron">expand_more</span>
-                                            </div>
-
-                                            <!-- Expanded Content -->
-                                            <div class="fp-student-body">
-                                                <!-- Evaluation mini summary pills -->
-                                                <div class="fp-eval-pills">
-                                                    <?php foreach ($sdata['evaluations'] as $ei => $ev):
-                                                        $ev_class = $get_mastery_class($ev['percentage']);
-                                                        ?>
-                                                            <div class="fp-eval-pill <?php echo $ev_class; ?>" data-tab-index="<?php echo $ei; ?>"
-                                                                style="flex-direction: column; align-items: flex-start; gap: 2px;">
-                                                                <div
-                                                                    style="display: flex; justify-content: space-between; width: 100%; align-items: center; gap: 8px;">
-                                                                    <span class="fp-pill-name"
-                                                                        style="font-weight: 800;"><?php echo esc_html($ev['subject_name']); ?></span>
-                                                                    <span class="fp-pill-pct"><?php echo round($ev['percentage']); ?>%</span>
-                                                                </div>
-                                                                <div class="fp-pill-desc" style="font-size: 0.7rem; opacity: 0.8; font-weight: 500;">
-                                                                    <?php echo esc_html($ev['template_name']); ?></div>
-                                                            </div>
-                                                    <?php endforeach; ?>
-                                                </div>
-
-                                                <!-- Evaluation Tabs -->
-                                                <div class="fp-eval-tabs">
-                                                    <?php foreach ($sdata['evaluations'] as $ei => $ev): ?>
-                                                            <button class="fp-eval-tab <?php echo ($ei === $weakest_idx) ? 'active' : ''; ?>"
-                                                                data-tab-index="<?php echo $ei; ?>">
-                                                                <?php echo esc_html($ev['subject_name']); ?>
-                                                            </button>
-                                                    <?php endforeach; ?>
-                                                </div>
-
-                                                <!-- Tab Panels -->
-                                                <?php foreach ($sdata['evaluations'] as $ei => $ev): ?>
-                                                        <div class="fp-eval-panel <?php echo ($ei === $weakest_idx) ? 'active' : ''; ?>"
-                                                            data-panel-index="<?php echo $ei; ?>">
-
-                                                            <!-- Evaluation meta -->
-                                                            <div class="fp-eval-meta">
-                                                                <?php if ($ev['teacher_name']): ?>
-                                                                        <div class="fp-meta-chip">
-                                                                            <span class="material-icons">person</span>
-                                                                            <?php echo esc_html($ev['teacher_name']); ?>
-                                                                        </div>
-                                                                <?php endif; ?>
-                                                                <div class="fp-meta-chip">
-                                                                    <span class="material-icons">event</span>
-                                                                    <?php echo date_i18n('j F Y', strtotime($ev['date'])); ?>
-                                                                </div>
-                                                                <div class="fp-meta-chip <?php echo $get_mastery_class($ev['percentage']); ?>">
-                                                                    <span class="material-icons">insights</span>
-                                                                    <?php echo round($ev['percentage']); ?>%
-                                                                </div>
-                                                            </div>
-
-                                                            <!-- Domains -->
-                                                            <?php foreach ($ev['curriculum'] as $domain): ?>
-                                                                    <div class="fp-domain-block">
-                                                                        <div class="fp-domain-title">
-                                                                            <span class="material-icons">folder_open</span>
-                                                                            <?php echo esc_html($domain->title_ar); ?>
-                                                                        </div>
-                                                                        <?php foreach ($domain->categories as $category): ?>
-                                                                                <div class="fp-category-block">
-                                                                                    <div class="fp-category-title"><?php echo esc_html($category->title_ar); ?></div>
-                                                                                    <div class="fp-indicators">
-                                                                                        <?php foreach ($category->indicators as $indicator):
-                                                                                            $score_obj = isset($ev['scores'][$indicator->id]) ? $ev['scores'][$indicator->id] : null;
-                                                                                            $raw_score = $score_obj ? $score_obj->score : null;
-                                                                                            $label = $get_score_label($raw_score, $ev['score_config']);
-                                                                                            $max_keys = array_keys($ev['score_config']);
-                                                                                            $max_score_val = !empty($max_keys) ? max($max_keys) : 5;
-                                                                                            $score_cls = $get_score_class($raw_score, $max_score_val);
-                                                                                            ?>
-                                                                                                <div class="fp-indicator-row">
-                                                                                                    <div class="fp-indicator-text">
-                                                                                                        <?php echo esc_html($indicator->indicator_text); ?>
-                                                                                                    </div>
-                                                                                                    <div class="fp-indicator-score <?php echo $score_cls; ?>">
-                                                                                                        <?php echo esc_html($label); ?>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                        <?php endforeach; ?>
-                                                                                    </div>
-                                                                                </div>
-                                                                        <?php endforeach; ?>
-                                                                    </div>
-                                                            <?php endforeach; ?>
-                                                        </div>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        </div>
-                                <?php endforeach; ?>
-                            </div>
-
-                            <!-- Footer -->
-                            <div class="fp-footer">
-                                <span class="material-icons">verified</span>
-                                <?php echo Olama_School_Helpers::translate('Last updated'); ?>:
-                                <?php echo date_i18n('j F Y — H:i'); ?>
+                            <div class="fp-hero-text">
+                                <h1 class="fp-hero-title">أداء الطلاب</h1>
+                                <p class="fp-hero-subtitle">Family Students Performance</p>
                             </div>
                         </div>
-                        <?php
-                        return ob_get_clean();
+                        <div class="fp-hero-meta">
+                            <div class="fp-meta-item">
+                                <span class="material-icons">badge</span>
+                                <span><?php echo esc_html($family->family_name); ?></span>
+                            </div>
+                            <div class="fp-meta-item">
+                                <span class="material-icons">calendar_today</span>
+                                <span><?php echo esc_html($year_name . ' — ' . $semester_name); ?></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Students Accordion -->
+                    <div class="fp-students-list">
+                        <?php foreach ($students_data as $si => $sdata):
+                            $s = $sdata['student'];
+                            $mastery_class = $get_mastery_class($sdata['avg_mastery']);
+                            $mastery_label = $get_mastery_label($sdata['avg_mastery']);
+                            // Find weakest evaluation index
+                            $weakest_idx = 0;
+                            $weakest_pct = 999;
+                            foreach ($sdata['evaluations'] as $ei => $ev) {
+                                if ($ev['percentage'] < $weakest_pct) {
+                                    $weakest_pct = $ev['percentage'];
+                                    $weakest_idx = $ei;
+                                }
+                            }
+                            ?>
+                            <div class="fp-student-card" data-student-index="<?php echo $si; ?>">
+                                <!-- Student Header (always visible) -->
+                                <div class="fp-student-header">
+                                    <div class="fp-student-avatar <?php echo $mastery_class; ?>">
+                                        <?php echo mb_substr($s->student_name, 0, 1, 'UTF-8'); ?>
+                                    </div>
+                                    <div class="fp-student-info">
+                                        <div class="fp-student-name"><?php echo esc_html($s->student_name); ?></div>
+                                        <div class="fp-student-detail">
+                                            <?php echo esc_html($sdata['grade_name'] . ' — ' . $sdata['section_name']); ?>
+                                            <?php if ($sdata['age']): ?>
+                                                <span class="fp-age-badge"><?php echo $sdata['age']; ?> سنة</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <div class="fp-student-summary">
+                                        <div class="fp-mastery-ring <?php echo $mastery_class; ?>">
+                                            <svg viewBox="0 0 36 36">
+                                                <path class="fp-ring-bg"
+                                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                                <path class="fp-ring-fill"
+                                                    stroke-dasharray="<?php echo $sdata['avg_mastery']; ?>, 100"
+                                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                            </svg>
+                                            <span class="fp-ring-text"><?php echo $sdata['avg_mastery']; ?>%</span>
+                                        </div>
+                                        <span
+                                            class="fp-mastery-badge <?php echo $mastery_class; ?>"><?php echo $mastery_label; ?></span>
+                                    </div>
+                                    <span class="material-icons fp-chevron">expand_more</span>
+                                </div>
+
+                                <!-- Expanded Content -->
+                                <div class="fp-student-body">
+                                    <!-- Evaluation mini summary pills -->
+                                    <div class="fp-eval-pills">
+                                        <?php foreach ($sdata['evaluations'] as $ei => $ev):
+                                            $ev_class = $get_mastery_class($ev['percentage']);
+                                            ?>
+                                            <div class="fp-eval-pill <?php echo $ev_class; ?>" data-tab-index="<?php echo $ei; ?>"
+                                                style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                                                <div
+                                                    style="display: flex; justify-content: space-between; width: 100%; align-items: center; gap: 8px;">
+                                                    <span class="fp-pill-name"
+                                                        style="font-weight: 800;"><?php echo esc_html($ev['subject_name']); ?></span>
+                                                    <span class="fp-pill-pct"><?php echo round($ev['percentage']); ?>%</span>
+                                                </div>
+                                                <div class="fp-pill-desc" style="font-size: 0.7rem; opacity: 0.8; font-weight: 500;">
+                                                    <?php echo esc_html($ev['template_name']); ?>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+
+                                    <!-- Evaluation Tabs -->
+                                    <div class="fp-eval-tabs">
+                                        <?php foreach ($sdata['evaluations'] as $ei => $ev): ?>
+                                            <button class="fp-eval-tab <?php echo ($ei === $weakest_idx) ? 'active' : ''; ?>"
+                                                data-tab-index="<?php echo $ei; ?>">
+                                                <?php echo esc_html($ev['subject_name']); ?>
+                                            </button>
+                                        <?php endforeach; ?>
+                                    </div>
+
+                                    <!-- Tab Panels -->
+                                    <?php foreach ($sdata['evaluations'] as $ei => $ev): ?>
+                                        <div class="fp-eval-panel <?php echo ($ei === $weakest_idx) ? 'active' : ''; ?>"
+                                            data-panel-index="<?php echo $ei; ?>">
+
+                                            <!-- Evaluation meta -->
+                                            <div class="fp-eval-meta">
+                                                <?php if ($ev['teacher_name']): ?>
+                                                    <div class="fp-meta-chip">
+                                                        <span class="material-icons">person</span>
+                                                        <?php echo esc_html($ev['teacher_name']); ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <div class="fp-meta-chip">
+                                                    <span class="material-icons">event</span>
+                                                    <?php echo date_i18n('j F Y', strtotime($ev['date'])); ?>
+                                                </div>
+                                                <div class="fp-meta-chip <?php echo $get_mastery_class($ev['percentage']); ?>">
+                                                    <span class="material-icons">insights</span>
+                                                    <?php echo round($ev['percentage']); ?>%
+                                                </div>
+                                            </div>
+
+                                            <!-- Domains -->
+                                            <?php foreach ($ev['curriculum'] as $domain): ?>
+                                                <div class="fp-domain-block">
+                                                    <div class="fp-domain-title">
+                                                        <span class="material-icons">folder_open</span>
+                                                        <?php echo esc_html($domain->title_ar); ?>
+                                                    </div>
+                                                    <?php foreach ($domain->categories as $category): ?>
+                                                        <div class="fp-category-block">
+                                                            <div class="fp-category-title"><?php echo esc_html($category->title_ar); ?></div>
+                                                            <div class="fp-indicators">
+                                                                <?php foreach ($category->indicators as $indicator):
+                                                                    $score_obj = isset($ev['scores'][$indicator->id]) ? $ev['scores'][$indicator->id] : null;
+                                                                    $raw_score = $score_obj ? $score_obj->score : null;
+                                                                    $label = $get_score_label($raw_score, $ev['score_config']);
+                                                                    $max_keys = array_keys($ev['score_config']);
+                                                                    $max_score_val = !empty($max_keys) ? max($max_keys) : 5;
+                                                                    $score_cls = $get_score_class($raw_score, $max_score_val);
+                                                                    ?>
+                                                                    <div class="fp-indicator-row">
+                                                                        <div class="fp-indicator-text">
+                                                                            <?php echo esc_html($indicator->indicator_text); ?>
+                                                                        </div>
+                                                                        <div class="fp-indicator-score <?php echo $score_cls; ?>">
+                                                                            <?php echo esc_html($label); ?>
+                                                                        </div>
+                                                                    </div>
+                                                                <?php endforeach; ?>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="fp-footer">
+                        <span class="material-icons">verified</span>
+                        <?php echo Olama_School_Helpers::translate('Last updated'); ?>:
+                        <?php echo date_i18n('j F Y — H:i'); ?>
+                    </div>
+                </div>
+                <?php
+                return ob_get_clean();
     }
 }
