@@ -4483,9 +4483,11 @@ class Olama_School_Admin
 
         // Get all sections for the active year
         $sections = $wpdb->get_results($wpdb->prepare("
-            SELECT id, section_name, grade_id 
-            FROM {$wpdb->prefix}olama_sections 
-            WHERE academic_year_id = %d
+            SELECT s.id, s.section_name, s.grade_id, g.grade_name 
+            FROM {$wpdb->prefix}olama_sections s
+            JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id
+            WHERE s.academic_year_id = %d
+            ORDER BY g.grade_level ASC, s.section_name ASC
         ", $active_year_id));
 
         // Get plan statuses for the week
@@ -4498,7 +4500,7 @@ class Olama_School_Admin
         $coverage = array();
         foreach ($sections as $sec) {
             $coverage[$sec->id] = array(
-                'name' => $sec->section_name,
+                'name' => $sec->grade_name . ' - ' . $sec->section_name,
                 'plans' => array()
             );
         }
@@ -4510,6 +4512,98 @@ class Olama_School_Admin
         }
 
         return $coverage;
+    }
+
+    /**
+     * Get student attendance stats for dashboard
+     */
+    public static function get_student_attendance_stats()
+    {
+        global $wpdb;
+        $active_year = Olama_School_Academic::get_active_year();
+        $active_year_id = $active_year ? $active_year->id : 0;
+        $today = current_time('Y-m-d');
+
+        $stats = array(
+            'absences_by_section' => array(),
+            'total' => array('enrolled' => 0, 'present' => 0, 'absent' => 0),
+            'school' => array('enrolled' => 0, 'present' => 0, 'absent' => 0),
+            'kg' => array('enrolled' => 0, 'present' => 0, 'absent' => 0),
+        );
+
+        if (!$active_year_id)
+            return $stats;
+
+        // 1. Get absences by section for today
+        $absences = $wpdb->get_results($wpdb->prepare("
+            SELECT g.grade_name, s.section_name, count(a.id) as absent_count
+            FROM {$wpdb->prefix}olama_attendance a
+            JOIN {$wpdb->prefix}olama_sections s ON a.section_id = s.id
+            JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id
+            WHERE a.academic_year_id = %d AND a.attendance_date = %s AND a.status = 'absent'
+            GROUP BY a.section_id
+            HAVING absent_count > 0
+            ORDER BY g.grade_level ASC, s.section_name ASC
+        ", $active_year_id, $today));
+
+        foreach ($absences as $abs) {
+            $stats['absences_by_section'][] = array(
+                'label' => $abs->grade_name . ' - ' . $abs->section_name,
+                'count' => $abs->absent_count
+            );
+        }
+
+        // 2. Get enrollment totals by category
+        $enrollments = $wpdb->get_results($wpdb->prepare("
+            SELECT g.grade_name, count(e.id) as count
+            FROM {$wpdb->prefix}olama_student_enrollment e
+            JOIN {$wpdb->prefix}olama_sections s ON e.section_id = s.id
+            JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id
+            WHERE e.academic_year_id = %d AND e.status = 'active'
+            GROUP BY g.id
+        ", $active_year_id));
+
+        foreach ($enrollments as $en) {
+            $is_kg = (stripos($en->grade_name, 'KG') !== false || stripos($en->grade_name, 'التمهيدي') !== false || stripos($en->grade_name, 'البستان') !== false);
+            $stats['total']['enrolled'] += $en->count;
+            if ($is_kg) {
+                $stats['kg']['enrolled'] += $en->count;
+            } else {
+                $stats['school']['enrolled'] += $en->count;
+            }
+        }
+
+        // 3. Get actual attendance for today
+        $attendance = $wpdb->get_results($wpdb->prepare("
+            SELECT g.grade_name, a.status, count(a.id) as count
+            FROM {$wpdb->prefix}olama_attendance a
+            JOIN {$wpdb->prefix}olama_sections s ON a.section_id = s.id
+            JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id
+            WHERE a.academic_year_id = %d AND a.attendance_date = %s
+            GROUP BY g.id, a.status
+        ", $active_year_id, $today));
+
+        foreach ($attendance as $att) {
+            $is_kg = (stripos($att->grade_name, 'KG') !== false || stripos($att->grade_name, 'التمهيدي') !== false || stripos($att->grade_name, 'البستان') !== false);
+
+            if ($att->status == 'present') {
+                $stats['total']['present'] += $att->count;
+                if ($is_kg) {
+                    $stats['kg']['present'] += $att->count;
+                } else {
+                    $stats['school']['present'] += $att->count;
+                }
+            } else {
+                $stats['total']['absent'] += $att->count;
+                if ($is_kg) {
+                    $stats['kg']['absent'] += $att->count;
+                } else {
+                    $stats['school']['absent'] += $att->count;
+                }
+            }
+        }
+
+        return $stats;
     }
 
 

@@ -58,6 +58,7 @@ $recent_plans = $wpdb->get_results("
 // Pending Reviews (Phase 2.2)
 $pending_plans = Olama_School_Admin::get_pending_plans_for_review();
 $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
+$attendance_stats = Olama_School_Admin::get_student_attendance_stats();
 ?>
 <div class="wrap olama-school-wrap">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
@@ -89,7 +90,8 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
                     <div class="olama-notif-list" style="max-height: 350px; overflow-y: auto;">
                         <!-- JS populated -->
                         <div style="padding: 20px; text-align: center; color: #999;">
-                            <?php _e('No new notifications', 'olama-school'); ?></div>
+                            <?php _e('No new notifications', 'olama-school'); ?>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -105,7 +107,7 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
     </div>
 
     <!-- Teacher Personal KPI Row (Phase 2.3) -->
-    <?php if ($is_teacher): ?>
+    <?php if ($is_teacher && !$is_admin && !$is_supervisor): ?>
         <div style="margin-bottom: 30px;">
             <h3
                 style="margin-top: 0; color: #666; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
@@ -160,9 +162,11 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="color: #666; font-size: 0.9em; font-weight: 600; margin-bottom: 5px;">
-                            <?php _e('Total Enrollment', 'olama-school'); ?></div>
+                            <?php _e('Total Enrollment', 'olama-school'); ?>
+                        </div>
                         <div style="font-size: 2em; font-weight: 800; color: #1d2327;">
-                            <?php echo $extended_stats['enrolled_students']; ?></div>
+                            <?php echo $extended_stats['enrolled_students']; ?>
+                        </div>
                     </div>
                     <div style="background: #f0f6fb; padding: 10px; border-radius: 10px; color: #2271b1;">
                         <span class="dashicons dashicons-groups" style="font-size: 32px; width: 32px; height: 32px;"></span>
@@ -180,9 +184,11 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="color: #666; font-size: 0.9em; font-weight: 600; margin-bottom: 5px;">
-                            <?php _e('Weekly Planning', 'olama-school'); ?></div>
+                            <?php _e('Weekly Planning', 'olama-school'); ?>
+                        </div>
                         <div style="font-size: 2em; font-weight: 800; color: #1d2327;">
-                            <?php echo $extended_stats['plan_compliance']; ?>%</div>
+                            <?php echo $extended_stats['plan_compliance']; ?>%
+                        </div>
                     </div>
                     <div style="background: #fff9e7; padding: 10px; border-radius: 10px; color: #dba617;">
                         <span class="dashicons dashicons-welcome-write-blog"
@@ -199,7 +205,8 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="color: #666; font-size: 0.9em; font-weight: 600; margin-bottom: 5px;">
-                            <?php _e('Active Teachers', 'olama-school'); ?></div>
+                            <?php _e('Active Teachers', 'olama-school'); ?>
+                        </div>
                         <div style="font-size: 2em; font-weight: 800; color: #1d2327;"><?php echo $count_teachers; ?></div>
                     </div>
                     <div style="background: #f6f7f7; padding: 10px; border-radius: 10px; color: #50575e;">
@@ -217,9 +224,11 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="color: #666; font-size: 0.9em; font-weight: 600; margin-bottom: 5px;">
-                            <?php _e('Approved Plans', 'olama-school'); ?></div>
+                            <?php _e('Approved Plans', 'olama-school'); ?>
+                        </div>
                         <div style="font-size: 2em; font-weight: 800; color: #1d2327;">
-                            <?php echo $stats_by_status['approved']; ?></div>
+                            <?php echo $stats_by_status['approved']; ?>
+                        </div>
                     </div>
                     <div style="background: #e7ffef; padding: 10px; border-radius: 10px; color: #00a32a;">
                         <span class="dashicons dashicons-yes-alt"
@@ -233,48 +242,74 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
         </div>
     <?php endif; ?>
 
-    <!-- Supervisor Section -->
-    <?php if ($is_supervisor): ?>
+    <!-- Student Attendance Card (New) -->
+    <?php if ($is_admin || $is_supervisor): ?>
         <div style="margin-bottom: 30px;">
             <div style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
                 <h2
                     style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px;">
-                    <span class="dashicons dashicons-clipboard" style="color: #2271b1;"></span>
-                    <?php _e('Plan Review Queue', 'olama-school'); ?>
-                    <span
-                        style="background: #d63638; color: #fff; font-size: 0.6em; padding: 2px 8px; border-radius: 10px; vertical-align: middle;"><?php echo count($pending_plans); ?></span>
+                    <span class="dashicons dashicons-id-alt" style="color: #2271b1;"></span>
+                    <?php _e('Student Attendance Today', 'olama-school'); ?>
                 </h2>
 
-                <div style="margin-top: 20px;">
-                    <?php if ($pending_plans): ?>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
-                            <?php foreach ($pending_plans as $p): ?>
-                                <div class="olama-pending-card" id="plan-card-<?php echo $p->id; ?>"
-                                    style="border: 1px solid #f0f0f1; border-radius: 8px; padding: 15px; position: relative; transition: all 0.3s ease;">
-                                    <div style="font-weight: 700; color: #2271b1; margin-bottom: 5px;">
-                                        <?php echo esc_html($p->subject_name); ?></div>
-                                    <div style="font-size: 0.9em; color: #1d2327; margin-bottom: 10px;">
-                                        <strong><?php echo esc_html($p->grade_name . ' - ' . $p->section_name); ?></strong>
-                                        <div style="color: #666; font-size: 0.85em; margin-top: 2px;">
-                                            <?php printf(__('Submitted by %s on %s', 'olama-school'), '<strong>' . esc_html($p->teacher_name) . '</strong>', date('M j, Y', strtotime($p->created_at))); ?>
-                                        </div>
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px; margin-top: 20px;">
+                    <!-- Absences List -->
+                    <div style="border-right: 1px solid #f0f0f1; padding-right: 20px;">
+                        <h4 style="margin-top: 0; font-size: 0.9em; text-transform: uppercase; color: #666;">
+                            <?php _e('Absences by Section', 'olama-school'); ?></h4>
+                        <div style="max-height: 250px; overflow-y: auto; padding-right: 10px;">
+                            <?php if (!empty($attendance_stats['absences_by_section'])): ?>
+                                <?php foreach ($attendance_stats['absences_by_section'] as $abs): ?>
+                                    <div
+                                        style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f6f7f7;">
+                                        <span
+                                            style="font-weight: 600; font-size: 0.9em;"><?php echo esc_html($abs['label']); ?></span>
+                                        <span
+                                            style="background: #fcf0f1; color: #d63638; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.85em;"><?php echo $abs['count']; ?></span>
                                     </div>
-                                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                                        <button class="button button-primary olama-approve-btn"
-                                            data-id="<?php echo $p->id; ?>"><?php _e('Approve', 'olama-school'); ?></button>
-                                        <button class="button olama-reject-btn"
-                                            data-id="<?php echo $p->id; ?>"><?php _e('Request Edits', 'olama-school'); ?></button>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div style="text-align: center; padding: 40px 0; color: #999;">
+                                    <span class="dashicons dashicons-yes-alt"
+                                        style="font-size: 32px; width: 32px; height: 32px; opacity: 0.3;"></span>
+                                    <p style="font-size: 0.9em;"><?php _e('No absences recorded today.', 'olama-school'); ?></p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div
+                        style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: center; text-align: center;">
+                        <?php
+                        $types = array(
+                            'total' => __('Total Attendance', 'olama-school'),
+                            'school' => __('School', 'olama-school'),
+                            'kg' => __('KG', 'olama-school')
+                        );
+
+                        foreach ($types as $key => $label):
+                            $enrolled = $attendance_stats[$key]['enrolled'];
+                            $present = $attendance_stats[$key]['present'];
+                            $pct = $enrolled > 0 ? round(($present / $enrolled) * 100) : 0;
+                            $color = $key == 'kg' ? '#72aee6' : ($key == 'school' ? '#2271b1' : '#00a32a');
+                            ?>
+                            <div>
+                                <div
+                                    style="width: 120px; height: 120px; margin: 0 auto 15px; border-radius: 50%; background: conic-gradient(<?php echo $color; ?> <?php echo $pct; ?>%, #f0f0f1 0); position: relative; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
+                                    <div
+                                        style="width: 90px; height: 90px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                                        <span
+                                            style="font-size: 1.4em; font-weight: 800; color: #1d2327;"><?php echo $pct; ?>%</span>
                                     </div>
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php else: ?>
-                        <div style="text-align: center; padding: 40px; color: #999;">
-                            <span class="dashicons dashicons-yes-alt"
-                                style="font-size: 48px; width: 48px; height: 48px; margin-bottom: 10px; opacity: 0.3;"></span>
-                            <p><?php _e('All weekly plans have been reviewed.', 'olama-school'); ?></p>
-                        </div>
-                    <?php endif; ?>
+                                <h4 style="margin: 0; font-size: 0.9em; color: #1d2327;"><?php echo $label; ?></h4>
+                                <div style="font-size: 0.75em; color: #666; margin-top: 5px;">
+                                    <?php printf(__('%d of %d students', 'olama-school'), $present, $enrolled); ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -311,7 +346,8 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
                                             </div>
                                             <div>
                                                 <div style="font-weight: 700; color: #1d2327;">
-                                                    <?php echo esc_html($period->subject_name); ?></div>
+                                                    <?php echo esc_html($period->subject_name); ?>
+                                                </div>
                                                 <div style="font-size: 0.85em; color: #666;">
                                                     <?php echo esc_html($period->grade_name . ' - ' . $period->section_name); ?>
                                                 </div>
@@ -320,7 +356,7 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
                                         <div style="display: flex; align-items: center; gap: 15px;">
                                             <?php if ($period->plan_status): ?>
                                                 <span
-                                                    style="font-size: 0.85em; font-weight: 600; color: <?php echo ($period->plan_status == 'approved' ? '#00a32a' : '#dba617'); ?>;">
+                                                    style="font-size: 0.85em; font-weight: 600; color: <?php echo ($period->plan_status == 'approved' ? '#00a32a' : ($period->plan_status == 'submitted' ? '#dba617' : '#ccc')); ?>;">
                                                     <span class="dashicons dashicons-yes-alt" style="vertical-align: middle;"></span>
                                                     <?php echo ucfirst($period->plan_status); ?>
                                                 </span>
@@ -362,7 +398,7 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
                             style="box-shadow: none; border: 1px solid #f0f0f1;">
                             <thead>
                                 <tr>
-                                    <th style="width: 150px;"><?php _e('Section', 'olama-school'); ?></th>
+                                    <th style="width: 150px;"><?php _e('Grade - Section', 'olama-school'); ?></th>
                                     <th><?php _e('Coverage Status', 'olama-school'); ?></th>
                                 </tr>
                             </thead>
@@ -422,36 +458,6 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
                 </div>
             <?php endif; ?>
 
-            <!-- Recent Activity Feed -->
-            <?php if ($is_admin || $is_supervisor): ?>
-                <div style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                    <h2 style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1;">
-                        <?php _e('Recent Academic Activity', 'olama-school'); ?>
-                    </h2>
-                    <div style="margin-top: 20px;">
-                        <?php if ($recent_activity): ?>
-                            <div style="display: flex; flex-direction: column; gap: 0;">
-                                <?php foreach ($recent_activity as $log): ?>
-                                    <div
-                                        style="padding: 15px 0; border-bottom: 1px solid #f6f7f7; display: flex; justify-content: space-between; align-items: center;">
-                                        <div>
-                                            <strong><?php echo esc_html($log->action); ?></strong>
-                                            <div style="font-size: 0.85em; color: #666; margin-top: 3px;">
-                                                <?php echo esc_html($log->details); ?></div>
-                                        </div>
-                                        <div style="font-size: 0.8em; color: #999; font-style: italic;">
-                                            <?php echo Olama_School_Helpers::time_ago($log->created_at); ?>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php else: ?>
-                            <p style="text-align: center; color: #999; padding: 20px;">
-                                <?php _e('No recent activity recorded.', 'olama-school'); ?></p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
         </div>
 
         <!-- Right Column -->
@@ -509,7 +515,8 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
                                         <span style="font-size: 0.85em; font-weight: 700;"><?php echo $prog->percentage; ?>%</span>
                                     </div>
                                     <div style="font-size: 0.8em; color: #666; margin-bottom: 10px;">
-                                        <?php echo esc_html($prog->grade_name . ' - ' . $prog->section_name); ?></div>
+                                        <?php echo esc_html($prog->grade_name . ' - ' . $prog->section_name); ?>
+                                    </div>
                                     <div style="height: 8px; background: #f0f0f1; border-radius: 4px; overflow: hidden;">
                                         <div style="width: <?php echo $prog->percentage; ?>%; background: #2271b1; height: 100%;">
                                         </div>
@@ -521,7 +528,8 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
                             <?php endforeach; ?>
                         <?php else: ?>
                             <p style="text-align: center; color: #999;">
-                                <?php _e('No subject assignments found.', 'olama-school'); ?></p>
+                                <?php _e('No subject assignments found.', 'olama-school'); ?>
+                            </p>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -569,214 +577,164 @@ $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
                 </div>
             <?php endif; ?>
 
-            <!-- Recent Plans Short List -->
-            <?php if ($is_admin || $is_supervisor): ?>
-                <div style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                    <h2 style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1;">
-                        <?php _e('Latest Plans', 'olama-school'); ?>
-                    </h2>
-                    <div style="margin-top: 15px;">
-                        <?php if ($recent_plans): ?>
-                            <?php foreach ($recent_plans as $rp): ?>
-                                <div style="padding: 12px 0; border-bottom: 1px solid #f6f7f7;">
-                                    <div style="font-weight: 600; color: #2271b1;"><?php echo esc_html($rp->subject_name); ?></div>
-                                    <div style="font-size: 0.85em; color: #666;">
-                                        <?php echo esc_html($rp->grade_name . ' - ' . $rp->section_name); ?>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.8em;">
-                                        <span style="color: #999;"><?php echo date('M j', strtotime($rp->plan_date)); ?></span>
-                                        <span
-                                            style="font-weight: 600; color: <?php echo ($rp->status == 'approved' ? '#00a32a' : ($rp->status == 'submitted' ? '#dba617' : '#999')); ?>;">
-                                            <?php echo __(ucfirst($rp->status), 'olama-school'); ?>
-                                        </span>
-                                    </div>
-                                    <?php if ($is_supervisor && $rp->status !== 'approved'): ?>
-                                        <div style="display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end;">
-                                            <button class="button button-small button-primary olama-approve-btn"
-                                                data-id="<?php echo $rp->id; ?>"
-                                                style="font-size: 10px; padding: 0 8px; height: 24px; line-height: 22px;">
-                                                <span class="dashicons dashicons-yes"
-                                                    style="font-size: 14px; width: 14px; height: 14px; margin-top: 4px;"></span>
-                                                <?php _e('Approve', 'olama-school'); ?>
-                                            </button>
-                                            <button class="button button-small olama-reject-btn" data-id="<?php echo $rp->id; ?>"
-                                                style="font-size: 10px; padding: 0 8px; height: 24px; line-height: 22px;">
-                                                <span class="dashicons dashicons-edit"
-                                                    style="font-size: 14px; width: 14px; height: 14px; margin-top: 4px;"></span>
-                                                <?php _e('Request Edits', 'olama-school'); ?>
-                                            </button>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
-                            <div style="margin-top: 15px; text-align: center;">
-                                <a href="admin.php?page=olama-school-plans"
-                                    class="button button-link"><?php _e('View All Plans', 'olama-school'); ?></a>
-                            </div>
-                        <?php else: ?>
-                            <p style="text-align: center; color: #999;"><?php _e('No plans found.', 'olama-school'); ?></p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
 
         </div>
     </div>
 </div>
 
 <script>
-jQuery(document).ready(function($) {
-    // --- Phase 3: Notifications ---
-    var notifWrapper = $('.olama-notification-wrapper');
-    var notifDropdown = $('.olama-notif-dropdown');
-    var notifList = $('.olama-notif-lis t');
+    jQuery(document).ready(function ($) {
+        // --- Phase 3: Notifications ---
+        var notifWrapper = $('.olama-notification-wrapper');
+        var notifDropdown = $('.olama-notif-dropdown');
+        var notifList = $('.olama-notif-lis t');
 
-    notifWrapper.on('click', function(e) {
-        e.stopPropagation();
-        notifDropdown.toggle();
-        if (notifDropdown.is(':visible')) {
-            fetchNotifications();
-        }
-     });
-
-    $(document).on('click', function() {
-        notifDropdown.hide();
-    });
-
-    function fetchNotifications() {
-        $.ajax({
-            url: ajaxurl,
-            data: {
-                action: 'olama_get_notifications',
-                nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
-             },
-            success: function(response) {
-                if (response.success && response.data.length > 0) {
-                    var html = '';
-                     response.data.forEach(function(n) {
-                        html += '<div class="olama-notif-item ' + (n.is_read == '0' ? 'unread' : '') + '" data-id="' + n.id + '">';
-                        html += '<div style="font-size: 0.9em; line-height: 1.4; color: #1d2327;">' + n.message + '</div>';
-                        html += '<div style="font-size: 0.75em; color: #999; margin-top: 5px;">' + n.time_ago + '</div>';
-                        html += '</div>';
-                    });
-                    notifList.html(html);
-                } else {
-                    notifList.html('<div style="padding: 20px; text-align: center; color: #999;"><?php _e('No new notifications', 'olama-school'); ?></div>');
-                }
+        notifWrapper.on('click', function (e) {
+            e.stopPropagation();
+            notifDropdown.toggle();
+            if (notifDropdown.is(':visible')) {
+                fetchNotifications();
             }
         });
-    }
+
+        $(document).on('click', function () {
+            notifDropdown.hide();
+        });
+
+        function fetchNotifications() {
+            $.ajax({
+                url: ajaxurl,
+                data: {
+                    action: 'olama_get_notifications',
+                    nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
+                },
+                success: function (response) {
+                    if (response.success && response.data.length > 0) {
+                        var html = '';
+                        response.data.forEach(function (n) {
+                            html += '<div class="olama-notif-item ' + (n.is_read == '0' ? 'unread' : '') + '" data-id="' + n.id + '">';
+                            html += '<div style="font-size: 0.9em; line-height: 1.4; color: #1d2327;">' + n.message + '</div>';
+                            html += '<div style="font-size: 0.75em; color: #999; margin-top: 5px;">' + n.time_ago + '</div>';
+                            html += '</div>';
+                        });
+                        notifList.html(html);
+                    } else {
+                        notifList.html('<div style="padding: 20px; text-align: center; color: #999;"><?php _e('No new notifications', 'olama-school'); ?></div>');
+                    }
+                }
+            });
+        }
 
     // Mark single notification as read
-    notifLis t.on('click', '.olama-notif-item', function(e) {
-        var id = $(this).data('id');
-        $(this).removeClass('unread');
-        $.post(ajaxurl, {
-            action: 'olama_mark_notification_read',
-            id: id,
-            nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
-        });
-    });
-
-     $('.olama-clear-all').on('click', function(e) {
-        e.preventDefault();
-        $.post(ajaxurl, {
-            action: 'olama_mark_notification_read',
-            id: 0,
-            nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
-        }, function() {
-            $('.olama-notif-badge').remove();
-            fetchNotifications();
-        });
-    });
-
-    // --- Phase 3: Feedback Modal ---
-    var currentPlanId = null;
-    $ ('.olama-approve-btn').on('click', function() {
-        var $btn = $(this);
-        var planId = $btn.data('id');
-        var card = $('#plan-card-' + planId); // Main queue card
-
-        $btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> <?php _e('Approving...', 'olama-school'); ?>');
-        
-        $.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'olama_handle_plan_approval',
-                plan_id: planId,
-                status: 'approved',
+    notifLis t.on('click', '.olama-notif-item', function (e) {
+            var id = $(this).data('id');
+            $(this).removeClass('unread');
+            $.post(ajaxurl, {
+                action: 'olama_mark_notification_read',
+                id: id,
                 nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
-             },
-            success: function(response) {
-                if (response.success) {
-                    if (card.length > 0) {
-                         card.fadeOut(500, function() { $(this).remove(); });
-                    } else {
-                        window.location.reload();
-                    }
-                } else {
-                    alert(response.data.message || 'Error processing request');
-                    $btn.prop('disabled', false).html('<?php _e('Approve', 'olama-school'); ?>');
-                }
-            }
+            });
         });
-    });
 
-     $('.olama-reject-btn').on('click', function() {
-        currentBtn = $(this);
-        currentPlanId = currentBtn.data('id');
-        currentCard = $('#plan-card-' + currentPlanId);
-        $('#olama-feedback-text').val('');
-        $('#olama-feedback-modal').css('display', 'flex');
-    });
-
-    $( '.olama-modal-cancel').on('click', function() {
-        $('#olama-feedback-modal').hide();
-    });
-
-    $( '.olama-modal-submit').on('click', function() {
-        var feedback = $('#olama-feedback-text').val();
-        if (!feedback.trim()) {
-            alert('<?php _e('Please enter some feedback.', 'olama-school'); ?>');
-            return;
-        }
-
-        $(this).prop('disabled', true).text('<?php _e('Sending...', 'olama-school'); ?>');
-        
-        $.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'olama_handle_plan_approval',
-                plan_id: currentPlanId,
-                status: 'draft', // Rejected back to draft
-                feedback: feedback, // We'll handle this in backend
+        $('.olama-clear-all').on('click', function (e) {
+            e.preventDefault();
+            $.post(ajaxurl, {
+                action: 'olama_mark_notification_read',
+                id: 0,
                 nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
-             },
-            success: function(response) {
-                $('#olama-feedback-modal').hide();
-                $('.olama-modal-submit').prop('disabled', false).text('<?php _e('Send & Request Edits', 'olama-school'); ?>');
-                
-                if (response.success) {
-                    if (currentCard.length > 0) {
-                        currentCard.css('ba ckground', '#fcf0f1').fadeOut(800, function() {
-                            $(this).remove();
-                            // Update badge count
-                            var badge = $('.olama-school-wrap h2 span');
-                            var count = parseInt(badge.text()) - 1;
-                            if (count >= 0) badge.text(count);
-                        });
-                    } else {
-                        window.location.reload();
-                    }
-                } else {
-                    alert(response.data.message || 'Error processing request');
-                }
-            }
+            }, function () {
+                $('.olama-notif-badge').remove();
+                fetchNotifications();
+            });
         });
-  });
-});
+
+        // --- Phase 3: Feedback Modal ---
+        var currentPlanId = null;
+        $('.olama-approve-btn').on('click', function () {
+            var $btn = $(this);
+            var planId = $btn.data('id');
+            var card = $('#plan-card-' + planId); // Main queue card
+
+            $btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> <?php _e('Approving...', 'olama-school'); ?>');
+
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'olama_handle_plan_approval',
+                    plan_id: planId,
+                    status: 'approved',
+                    nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
+                },
+                success: function (response) {
+                    if (response.success) {
+                        if (card.length > 0) {
+                            card.fadeOut(500, function () { $(this).remove(); });
+                        } else {
+                            window.location.reload();
+                        }
+                    } else {
+                        alert(response.data.message || 'Error processing request');
+                        $btn.prop('disabled', false).html('<?php _e('Approve', 'olama-school'); ?>');
+                    }
+                }
+            });
+        });
+
+        $('.olama-reject-btn').on('click', function () {
+            currentBtn = $(this);
+            currentPlanId = currentBtn.data('id');
+            currentCard = $('#plan-card-' + currentPlanId);
+            $('#olama-feedback-text').val('');
+            $('#olama-feedback-modal').css('display', 'flex');
+        });
+
+        $('.olama-modal-cancel').on('click', function () {
+            $('#olama-feedback-modal').hide();
+        });
+
+        $('.olama-modal-submit').on('click', function () {
+            var feedback = $('#olama-feedback-text').val();
+            if (!feedback.trim()) {
+                alert('<?php _e('Please enter some feedback.', 'olama-school'); ?>');
+                return;
+            }
+
+            $(this).prop('disabled', true).text('<?php _e('Sending...', 'olama-school'); ?>');
+
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'olama_handle_plan_approval',
+                    plan_id: currentPlanId,
+                    status: 'draft', // Rejected back to draft
+                    feedback: feedback, // We'll handle this in backend
+                    nonce: '<?php echo wp_create_nonce('olama_admin_nonce'); ?>'
+                },
+                success: function (response) {
+                    $('#olama-feedback-modal').hide();
+                    $('.olama-modal-submit').prop('disabled', false).text('<?php _e('Send & Request Edits', 'olama-school'); ?>');
+
+                    if (response.success) {
+                        if (currentCard.length > 0) {
+                            currentCard.css('ba ckground', '#fcf0f1').fadeOut(800, function () {
+                                $(this).remove();
+                                // Update badge count
+                                var badge = $('.olama-school-wrap h2 span');
+                                var count = parseInt(badge.text()) - 1;
+                                if (count >= 0) badge.text(count);
+                            });
+                        } else {
+                            window.location.reload();
+                        }
+                    } else {
+                        alert(response.data.message || 'Error processing request');
+                    }
+                }
+            });
+        });
+    });
 </script>
 
 <!-- Feedback Modal HTML (Phase 3) -->
