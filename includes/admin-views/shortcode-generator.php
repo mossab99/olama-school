@@ -58,6 +58,12 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 <option value="family_performance">
                     <?php _e('Family Performance', 'olama-school'); ?>
                 </option>
+                <option value="logged_teacher_schedule">
+                    <?php _e('Today\'s Teaching Schedule', 'olama-school'); ?>
+                </option>
+                <option value="logged_user_shifts">
+                    <?php _e('My Weekly Shifts', 'olama-school'); ?>
+                </option>
             </select>
         </div>
         <div>
@@ -205,7 +211,7 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 $('#gen-week-wrapper').hide();
                 $('#gen-exam-wrapper').hide();
                 $('#gen-schedule-type-wrapper').hide();
-            } else if (type === 'family_performance') {
+            } else if (type === 'family_performance' || type === 'logged_teacher_schedule' || type === 'logged_user_shifts') {
                 $('#gen-semester').closest('div').show();
                 $('#gen-grade').closest('div').hide();
                 $('#gen-section').closest('div').hide();
@@ -231,8 +237,8 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
             }
 
             if (type !== 'stationary') {
-                if (type === 'family_performance') {
-                    if (semester) shortcode += ' semester="' + semester + '"';
+                if (type === 'family_performance' || type === 'logged_teacher_schedule' || type === 'logged_user_shifts') {
+                    if (semester && type === 'family_performance') shortcode += ' semester="' + semester + '"';
                 } else {
                     if (semester) shortcode += ' semester="' + semester + '"';
                     if (grade) shortcode += ' grade="' + grade + '"';
