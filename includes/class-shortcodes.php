@@ -3934,66 +3934,67 @@ class Olama_School_Shortcodes
                 <div class="olama-logged-teacher-schedule-wrap"
                     style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
                     <h2
-                        style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px; font-family: 'Tajawal', sans-serif;">
-                        <span class="dashicons dashicons-calendar-alt" style="color: #2271b1;"></span>
-                        <?php echo Olama_School_Helpers::translate('Today\'s Teaching Schedule'); ?>
-                        <span
-                            style="font-size: 0.6em; background: #f0f6fb; color: #2271b1; padding: 4px 10px; border-radius: 15px; font-weight: 700;">
-                            <?php echo date_i18n('l, M j'); ?>
-                        </span>
-                    </h2>
-                    <div style="margin-top: 20px;">
-                        <?php if ($teacher_schedule): ?>
-                            <div style="display: flex; flex-direction: column; gap: 12px;">
-                                <?php foreach ($teacher_schedule as $period): ?>
-                                    <div
-                                        style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #f9f9f9; border-radius: 8px; border-right: 4px solid #2271b1;">
-                                        <div style="display: flex; align-items: center; gap: 20px;">
-                                            <div
-                                                style="background: #2271b1; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800;">
-                                                <?php echo $period->period_number; ?>
-                                            </div>
-                                            <div>
-                                                <div style="font-weight: 700; color: #1d2327;">
-                                                    <?php echo esc_html($period->subject_name); ?>
-                                                </div>
-                                                <div style="font-size: 0.85em; color: #666;">
-                                                    <?php echo esc_html($period->grade_name . ' - ' . $period->section_name); ?>
-                                                </div>
-                                            </div>
+                        class="olama-schedule-title"
+                                style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px; font-family: 'Tajawal', sans-serif;">
+                                <span class="dashicons dashicons-calendar-alt" style="color: #2271b1;"></span>
+                                <?php echo Olama_School_Helpers::translate('Today\'s Teaching Schedule'); ?>
+                                <span class="olama-date-badge"
+                                    style="font-size: 0.6em; background: #f0f6fb; color: #2271b1; padding: 4px 10px; border-radius: 15px; font-weight: 700;">
+                                    <?php echo date_i18n('l, M j'); ?>
+                                </span>
+                            </h2>
+                            <div style="margin-top: 20px;">
+                                <?php if ($teacher_schedule): ?>
+                                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                                            <?php foreach ($teacher_schedule as $period): ?>
+                                                    <div
+                                                        style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #f9f9f9; border-radius: 8px; border-right: 4px solid #2271b1;">
+                                                        <div style="display: flex; align-items: center; gap: 20px;">
+                                                            <div
+                                                                style="background: #2271b1; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800;">
+                                                                <?php echo $period->period_number; ?>
+                                                            </div>
+                                                            <div>
+                                                                <div style="font-weight: 700; color: #1d2327;">
+                                                                    <?php echo esc_html($period->subject_name); ?>
+                                                                </div>
+                                                                <div style="font-size: 0.85em; color: #666;">
+                                                                    <?php echo esc_html($period->grade_name . ' - ' . $period->section_name); ?>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div style="display: flex; align-items: center; gap: 15px;">
+                                                            <?php if ($period->plan_status): ?>
+                                                                    <span
+                                                                        style="font-size: 0.85em; font-weight: 600; color: <?php echo ($period->plan_status == 'approved' ? '#00a32a' : ($period->plan_status == 'submitted' ? '#dba617' : '#ccc')); ?>;">
+                                                                        <span class="dashicons dashicons-yes-alt" style="vertical-align: middle;"></span>
+                                                                        <?php echo ucfirst($period->plan_status); ?>
+                                                                    </span>
+                                                                    <a href="<?php echo admin_url('admin.php?page=olama-school-plans&action=edit&id=' . $period->plan_id); ?>"
+                                                                        class="button button-small"><?php echo Olama_School_Helpers::translate('View Plan'); ?></a>
+                                                            <?php else: ?>
+                                                                    <span style="font-size: 0.85em; color: #d63638; font-weight: 600;">
+                                                                        <span class="dashicons dashicons-warning" style="vertical-align: middle;"></span>
+                                                                        <?php echo Olama_School_Helpers::translate('Missing Plan'); ?>
+                                                                    </span>
+                                                                    <a href="<?php echo admin_url('admin.php?page=olama-school-plans&action=create&section_id=' . $period->section_id . '&subject_id=' . $period->subject_id . '&period=' . $period->period_number . '&date=' . date('Y-m-d')); ?>"
+                                                                        class="button button-primary button-small"><?php echo Olama_School_Helpers::translate('Create Now'); ?></a>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </div>
+                                            <?php endforeach; ?>
                                         </div>
-                                        <div style="display: flex; align-items: center; gap: 15px;">
-                                            <?php if ($period->plan_status): ?>
-                                                <span
-                                                    style="font-size: 0.85em; font-weight: 600; color: <?php echo ($period->plan_status == 'approved' ? '#00a32a' : ($period->plan_status == 'submitted' ? '#dba617' : '#ccc')); ?>;">
-                                                    <span class="dashicons dashicons-yes-alt" style="vertical-align: middle;"></span>
-                                                    <?php echo ucfirst($period->plan_status); ?>
-                                                </span>
-                                                <a href="<?php echo admin_url('admin.php?page=olama-school-plans&action=edit&id=' . $period->plan_id); ?>"
-                                                    class="button button-small"><?php echo Olama_School_Helpers::translate('View Plan'); ?></a>
-                                            <?php else: ?>
-                                                <span style="font-size: 0.85em; color: #d63638; font-weight: 600;">
-                                                    <span class="dashicons dashicons-warning" style="vertical-align: middle;"></span>
-                                                    <?php echo Olama_School_Helpers::translate('Missing Plan'); ?>
-                                                </span>
-                                                <a href="<?php echo admin_url('admin.php?page=olama-school-plans&action=create&section_id=' . $period->section_id . '&subject_id=' . $period->subject_id . '&period=' . $period->period_number . '&date=' . date('Y-m-d')); ?>"
-                                                    class="button button-primary button-small"><?php echo Olama_School_Helpers::translate('Create Now'); ?></a>
-                                            <?php endif; ?>
+                                <?php else: ?>
+                                        <div style="text-align: center; padding: 30px; color: #999;">
+                                            <span class="dashicons dashicons-calendar"
+                                                style="font-size: 40px; width: 40px; height: 40px; opacity: 0.3; margin-bottom: 10px;"></span>
+                                            <p><?php echo Olama_School_Helpers::translate('No classes scheduled for today.'); ?></p>
                                         </div>
-                                    </div>
-                                <?php endforeach; ?>
+                                <?php endif; ?>
                             </div>
-                        <?php else: ?>
-                            <div style="text-align: center; padding: 30px; color: #999;">
-                                <span class="dashicons dashicons-calendar"
-                                    style="font-size: 40px; width: 40px; height: 40px; opacity: 0.3; margin-bottom: 10px;"></span>
-                                <p><?php echo Olama_School_Helpers::translate('No classes scheduled for today.'); ?></p>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <?php
-                return ob_get_clean();
+                        </div>
+                        <?php
+                        return ob_get_clean();
     }
 
     /**
@@ -4010,66 +4011,69 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-                <div class="olama-logged-user-shifts-wrap"
-                    style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                    <h2
-                        style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px; font-family: 'Tajawal', sans-serif;">
-                        <span class="dashicons dashicons-clock" style="color: #d63638;"></span>
-                        <?php echo Olama_School_Helpers::translate('My Weekly Shifts'); ?>
-                    </h2>
-                    <div style="margin-top: 20px; overflow-x: auto;">
-                        <?php if ($teacher_shifts): ?>
-                            <table class="wp-list-table widefat fixed striped"
-                                style="box-shadow: none; border: 1px solid #f0f0f1; border-collapse: collapse; width: 100%;">
-                                <thead>
-                                    <tr style="background: #f8f9fa;">
-                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e9ecef;">
-                                            <?php echo Olama_School_Helpers::translate('Day'); ?></th>
-                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e9ecef;">
-                                            <?php echo Olama_School_Helpers::translate('Slot'); ?></th>
-                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e9ecef;">
-                                            <?php echo Olama_School_Helpers::translate('Location'); ?></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $days = array(
-                                        0 => Olama_School_Helpers::translate('Sunday'),
-                                        1 => Olama_School_Helpers::translate('Monday'),
-                                        2 => Olama_School_Helpers::translate('Tuesday'),
-                                        3 => Olama_School_Helpers::translate('Wednesday'),
-                                        4 => Olama_School_Helpers::translate('Thursday')
-                                    );
-                                    foreach ($teacher_shifts as $shift): ?>
-                                        <tr>
-                                            <td style="padding: 12px; font-weight: 600; border-bottom: 1px solid #f0f0f1;">
-                                                <?php echo isset($days[$shift->day_of_week]) ? $days[$shift->day_of_week] : $shift->day_of_week; ?>
-                                            </td>
-                                            <td style="padding: 12px; border-bottom: 1px solid #f0f0f1;">
-                                                <div style="font-weight: 600;"><?php echo esc_html($shift->slot_label); ?></div>
-                                                <div style="font-size: 0.85em; color: #666;">
-                                                    <?php echo date('H:i', strtotime($shift->start_time)) . ' - ' . date('H:i', strtotime($shift->end_time)); ?>
-                                                </div>
-                                            </td>
-                                            <td style="padding: 12px; border-bottom: 1px solid #f0f0f1;">
-                                                <div style="font-weight: 600;"><?php echo esc_html($shift->location_name); ?></div>
-                                                <div style="font-size: 0.85em; color: #666;"><?php echo esc_html($shift->area_floor); ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        <?php else: ?>
-                            <div style="text-align: center; padding: 30px; color: #999;">
-                                <span class="dashicons dashicons-clock"
-                                    style="font-size: 40px; width: 40px; height: 40px; opacity: 0.3; margin-bottom: 10px;"></span>
-                                <p><?php echo Olama_School_Helpers::translate('No shifts assigned for this week.'); ?></p>
+                        <div class="olama-logged-user-shifts-wrap"
+                            style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                            <h2
+                                style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px; font-family: 'Tajawal', sans-serif;">
+                                <span class="dashicons dashicons-clock" style="color: #d63638;"></span>
+                                <?php echo Olama_School_Helpers::translate('My Weekly Shifts'); ?>
+                            </h2>
+                            <div class="olama-shifts-table-container" style="margin-top: 20px; overflow-x: auto;">
+                                <?php if ($teacher_shifts): ?>
+                                        <table class="olama-shifts-table wp-list-table widefat fixed striped"
+                                            style="box-shadow: none; border: 1px solid #f0f0f1; border-collapse: collapse; width: 100%;">
+                                            <thead>
+                                                <tr style="background: #f8f9fa;">
+                                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e9ecef;">
+                                                        <?php echo Olama_School_Helpers::translate('Day'); ?>
+                                                    </th>
+                                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e9ecef;">
+                                                        <?php echo Olama_School_Helpers::translate('Slot'); ?>
+                                                    </th>
+                                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e9ecef;">
+                                                        <?php echo Olama_School_Helpers::translate('Location'); ?>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php
+                                                $days = array(
+                                                    0 => Olama_School_Helpers::translate('Sunday'),
+                                                    1 => Olama_School_Helpers::translate('Monday'),
+                                                    2 => Olama_School_Helpers::translate('Tuesday'),
+                                                    3 => Olama_School_Helpers::translate('Wednesday'),
+                                                    4 => Olama_School_Helpers::translate('Thursday')
+                                                );
+                                                foreach ($teacher_shifts as $shift): ?>
+                                                        <tr>
+                                                            <td style="padding: 12px; font-weight: 600; border-bottom: 1px solid #f0f0f1;">
+                                                                <?php echo isset($days[$shift->day_of_week]) ? $days[$shift->day_of_week] : $shift->day_of_week; ?>
+                                                            </td>
+                                                            <td style="padding: 12px; border-bottom: 1px solid #f0f0f1;">
+                                                                <div style="font-weight: 600;"><?php echo esc_html($shift->slot_label); ?></div>
+                                                                <div style="font-size: 0.85em; color: #666;">
+                                                                    <?php echo date('H:i', strtotime($shift->start_time)) . ' - ' . date('H:i', strtotime($shift->end_time)); ?>
+                                                                </div>
+                                                            </td>
+                                                            <td style="padding: 12px; border-bottom: 1px solid #f0f0f1;">
+                                                                <div style="font-weight: 600;"><?php echo esc_html($shift->location_name); ?></div>
+                                                                <div style="font-size: 0.85em; color: #666;"><?php echo esc_html($shift->area_floor); ?>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                <?php else: ?>
+                                        <div style="text-align: center; padding: 30px; color: #999;">
+                                            <span class="dashicons dashicons-clock"
+                                                style="font-size: 40px; width: 40px; height: 40px; opacity: 0.3; margin-bottom: 10px;"></span>
+                                            <p><?php echo Olama_School_Helpers::translate('No shifts assigned for this week.'); ?></p>
+                                        </div>
+                                <?php endif; ?>
                             </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <?php
-                return ob_get_clean();
+                        </div>
+                        <?php
+                        return ob_get_clean();
     }
 }
