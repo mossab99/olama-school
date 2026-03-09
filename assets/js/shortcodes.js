@@ -16,15 +16,15 @@ jQuery(document).ready(function ($) {
     });
 
     // Stationary Accordion
-    $(document).on('click', '.olama-stationary-accordion .accordion-header', function () {
-        const item = $(this).closest('.accordion-item');
-        const content = item.find('.accordion-content');
+    $(document).on('click', '.olama-stationary-accordion .olama-accordion-header', function () {
+        const item = $(this).closest('.olama-accordion-item');
+        const content = item.find('.olama-accordion-content');
         const wasActive = item.hasClass('active');
-
+ 
         // Close all others
-        $('.olama-stationary-accordion .accordion-item').removeClass('active');
-        $('.olama-stationary-accordion .accordion-content').hide();
-
+        $('.olama-stationary-accordion .olama-accordion-item').removeClass('active');
+        $('.olama-stationary-accordion .olama-accordion-content').hide();
+ 
         // Toggle current
         if (!wasActive) {
             item.addClass('active');
