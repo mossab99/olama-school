@@ -1653,7 +1653,7 @@ class Olama_School_Shortcodes
                         $is_first = $index === 0;
                         $index++;
                         ?>
-                        <div class="olama-accordion-item <?php echo $is_first ? 'active' : ''; ?>">
+                        <div class="olama-accordion-item <?php echo $is_first ? 'olama-active' : ''; ?>">
                             <div class="olama-accordion-header" style="background: <?php echo $gradient; ?>;">
                                 <div class="header-left">
                                     <span class="grade-icon">🎒</span>
@@ -1836,7 +1836,7 @@ class Olama_School_Shortcodes
                     transition: transform 0.3s ease;
                 }
 
-                .olama-accordion-item.active .toggle-icon {
+                .olama-accordion-item.olama-active .toggle-icon {
                     transform: rotate(180deg);
                 }
 
@@ -1932,25 +1932,25 @@ class Olama_School_Shortcodes
                     }
 
                     .olama-accordion-header {
-                                padding: 15px 18px;
-                            }
- 
-                            .grade-name {
-                                font-size: 1rem;
-                            }
- 
-                            .olama-accordion-content {
-                                padding: 18px;
-                            }
+                        padding: 15px 18px;
+                    }
 
-                            .section-content {
-                                padding: 12px 15px;
-                                font-size: 0.9rem;
-                            }
-                        }
-                    </style>
-                    <?php
-                    return ob_get_clean();
+                    .grade-name {
+                        font-size: 1rem;
+                    }
+
+                    .olama-accordion-content {
+                        padding: 18px;
+                    }
+
+                    .section-content {
+                        padding: 12px 15px;
+                        font-size: 0.9rem;
+                    }
+                }
+            </style>
+            <?php
+            return ob_get_clean();
     }
 
     /**
@@ -1987,345 +1987,345 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-                    <div class="olama-exam-schedule-student">
-                        <div class="exam-header">
-                            <div class="exam-title-group">
-                                <h2 class="exam-name">
-                                    <?php echo esc_html($exam->exam_name); ?>
-                                </h2>
-                                <p class="exam-semester">
-                                    <?php echo esc_html($semester->semester_name); ?> -
-                                    <?php echo esc_html($active_year->year_name); ?>
-                                </p>
+            <div class="olama-exam-schedule-student">
+                <div class="exam-header">
+                    <div class="exam-title-group">
+                        <h2 class="exam-name">
+                            <?php echo esc_html($exam->exam_name); ?>
+                        </h2>
+                        <p class="exam-semester">
+                            <?php echo esc_html($semester->semester_name); ?> -
+                            <?php echo esc_html($active_year->year_name); ?>
+                        </p>
+                    </div>
+                    <div class="exam-grade-badge">
+                        <?php
+                        $grade_info = Olama_School_Grade::get_grade($grade_id);
+                        echo $grade_info ? esc_html($grade_info->grade_name) : '';
+                        ?>
+                    </div>
+                </div>
+
+                <div class="exam-list">
+                    <?php foreach ($exams as $ex):
+                        $subject = Olama_School_Subject::get_subject($ex->subject_id);
+                        $formatted_date = Olama_School_Helpers::format_date($ex->exam_date);
+                        ?>
+                        <div class="exam-card">
+                            <div class="exam-card-header" onclick="this.parentElement.classList.toggle('active')">
+                                <div class="subject-info">
+                                    <span class="dashicons dashicons-book subject-icon"></span>
+                                    <span class="subject-name">
+                                        <?php echo $subject ? esc_html($subject->subject_name) : ''; ?>
+                                    </span>
+                                </div>
+                                <div class="exam-meta">
+                                    <span class="exam-date">
+                                        <?php echo $formatted_date; ?>
+                                    </span>
+                                    <span class="dashicons dashicons-arrow-down-alt2 toggle-icon"></span>
+                                </div>
                             </div>
-                            <div class="exam-grade-badge">
-                                <?php
-                                $grade_info = Olama_School_Grade::get_grade($grade_id);
-                                echo $grade_info ? esc_html($grade_info->grade_name) : '';
-                                ?>
-                            </div>
-                        </div>
+                            <div class="exam-card-content">
+                                <?php if ($ex->room_number): ?>
+                                    <div class="detail-row room">
+                                        <span class="label">
+                                            <?php echo Olama_School_Helpers::translate('Room'); ?>:
+                                        </span>
+                                        <span class="value">
+                                            <?php echo esc_html($ex->room_number); ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
 
-                        <div class="exam-list">
-                            <?php foreach ($exams as $ex):
-                                $subject = Olama_School_Subject::get_subject($ex->subject_id);
-                                $formatted_date = Olama_School_Helpers::format_date($ex->exam_date);
-                                ?>
-                                    <div class="exam-card">
-                                        <div class="exam-card-header" onclick="this.parentElement.classList.toggle('active')">
-                                            <div class="subject-info">
-                                                <span class="dashicons dashicons-book subject-icon"></span>
-                                                <span class="subject-name">
-                                                    <?php echo $subject ? esc_html($subject->subject_name) : ''; ?>
-                                                </span>
-                                            </div>
-                                            <div class="exam-meta">
-                                                <span class="exam-date">
-                                                    <?php echo $formatted_date; ?>
-                                                </span>
-                                                <span class="dashicons dashicons-arrow-down-alt2 toggle-icon"></span>
-                                            </div>
-                                        </div>
-                                        <div class="exam-card-content">
-                                            <?php if ($ex->room_number): ?>
-                                                    <div class="detail-row room">
-                                                        <span class="label">
-                                                            <?php echo Olama_School_Helpers::translate('Room'); ?>:
-                                                        </span>
-                                                        <span class="value">
-                                                            <?php echo esc_html($ex->room_number); ?>
-                                                        </span>
-                                                    </div>
-                                            <?php endif; ?>
-
-                                            <?php if ($ex->description): ?>
-                                                    <div class="detail-row description" style="margin-bottom: 15px;">
-                                                        <span class="label">
-                                                            <?php echo Olama_School_Helpers::translate('Description'); ?>:
-                                                        </span>
-                                                        <div class="value" style="font-weight: 600; color: #1e293b;">
-                                                            <?php echo nl2br(esc_html($ex->description)); ?>
-                                                        </div>
-                                                    </div>
-                                            <?php endif; ?>
-
-                                            <?php
-                                            $json_material = json_decode($ex->exam_material_json, true);
-                                            $material = is_array($json_material) ? $json_material : array();
-
-                                            // Render Curriculum Items if they exist
-                                            if (!empty($material['curriculum_items'])): ?>
-                                                    <div class="curriculum-material-section" style="margin-bottom: 20px;">
-                                                        <span class="label" style="margin-bottom: 8px;">
-                                                            <?php echo Olama_School_Helpers::translate('Curriculum Material'); ?>:
-                                                        </span>
-                                                        <div class="curriculum-table-wrapper"
-                                                            style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
-                                                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                                                                <thead>
-                                                                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                                                                        <th style="padding: 10px; text-align: start; font-weight: 700; color: #475569;">
-                                                                            <?php echo Olama_School_Helpers::translate('Unit / Lesson'); ?>
-                                                                        </th>
-                                                                        <th style="padding: 10px; text-align: start; font-weight: 700; color: #475569;">
-                                                                            <?php echo Olama_School_Helpers::translate('Material'); ?>
-                                                                        </th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    <?php foreach ($material['curriculum_items'] as $item):
-                                                                        $unit = !empty($item['unit_id']) ? Olama_School_Unit::get_unit($item['unit_id']) : null;
-                                                                        $lesson = !empty($item['lesson_id']) ? Olama_School_Lesson::get_lesson($item['lesson_id']) : null;
-                                                                        $unit_name = $unit ? $unit->unit_name : '';
-                                                                        $lesson_name = $lesson ? $lesson->lesson_title : '';
-                                                                        ?>
-                                                                            <tr style="border-bottom: 1px solid #f1f5f9;">
-                                                                                <td style="padding: 10px;">
-                                                                                    <div style="font-weight: 700; color: #1e293b;">
-                                                                                        <?php echo esc_html($unit_name); ?>
-                                                                                    </div>
-                                                                                    <div style="font-size: 0.8rem; color: #64748b;">
-                                                                                        <?php echo esc_html($lesson_name); ?>
-                                                                                    </div>
-                                                                                </td>
-                                                                                <td style="padding: 10px; color: #334155;">
-                                                                                    <?php echo esc_html($item['material']); ?>
-                                                                                </td>
-                                                                            </tr>
-                                                                    <?php endforeach; ?>
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
-                                            <?php endif; ?>
-
-                                            <div class="material-sections"
-                                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
-                                                <?php if ($ex->student_book_material): ?>
-                                                        <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
-                                                            <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
-                                                                <?php echo Olama_School_Helpers::translate('Student Book'); ?>
-                                                            </div>
-                                                            <div class="material-content">
-                                                                <?php echo esc_html($ex->student_book_material); ?>
-                                                            </div>
-                                                        </div>
-                                                <?php endif; ?>
-
-                                                <?php if ($ex->workbook_material): ?>
-                                                        <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
-                                                            <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
-                                                                <?php echo Olama_School_Helpers::translate('Workbook'); ?>
-                                                            </div>
-                                                            <div class="material-content">
-                                                                <?php echo esc_html($ex->workbook_material); ?>
-                                                            </div>
-                                                        </div>
-                                                <?php endif; ?>
-
-                                                <?php if ($ex->exercise_book_material): ?>
-                                                        <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
-                                                            <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
-                                                                <?php echo Olama_School_Helpers::translate('Exercise Notebook'); ?>
-                                                            </div>
-                                                            <div class="material-content">
-                                                                <?php echo esc_html($ex->exercise_book_material); ?>
-                                                            </div>
-                                                        </div>
-                                                <?php endif; ?>
-
-                                                <?php
-                                                $booklets_val = !empty($material['notebook_material']) ? $material['notebook_material'] : (!empty($ex->notebook_material) ? $ex->notebook_material : '');
-                                                if (!empty($booklets_val)): ?>
-                                                        <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
-                                                            <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
-                                                                <?php echo Olama_School_Helpers::translate('Booklets & Notebooks'); ?>
-                                                            </div>
-                                                            <div class="material-content">
-                                                                <?php echo esc_html($booklets_val); ?>
-                                                            </div>
-                                                        </div>
-                                                <?php endif; ?>
-                                            </div>
-
-                                            <?php
-                                            $notes_val = !empty($material['teacher_notes']) ? $material['teacher_notes'] : (!empty($ex->teacher_notes) ? $ex->teacher_notes : '');
-                                            if (!empty($notes_val)): ?>
-                                                    <div class="teacher-notes-box"
-                                                        style="background:#fff7ed; border-right:4px solid #f97316; padding:10px; border-radius:4px;">
-                                                        <span class="label" style="color:#c2410c; font-weight:800; font-size:11px;">
-                                                            <?php echo Olama_School_Helpers::translate('Teacher Notes'); ?>:
-                                                        </span>
-                                                        <div class="value">
-                                                            <?php echo nl2br(esc_html($notes_val)); ?>
-                                                        </div>
-                                                    </div>
-                                            <?php endif; ?>
+                                <?php if ($ex->description): ?>
+                                    <div class="detail-row description" style="margin-bottom: 15px;">
+                                        <span class="label">
+                                            <?php echo Olama_School_Helpers::translate('Description'); ?>:
+                                        </span>
+                                        <div class="value" style="font-weight: 600; color: #1e293b;">
+                                            <?php echo nl2br(esc_html($ex->description)); ?>
                                         </div>
                                     </div>
-                            <?php endforeach; ?>
+                                <?php endif; ?>
+
+                                <?php
+                                $json_material = json_decode($ex->exam_material_json, true);
+                                $material = is_array($json_material) ? $json_material : array();
+
+                                // Render Curriculum Items if they exist
+                                if (!empty($material['curriculum_items'])): ?>
+                                    <div class="curriculum-material-section" style="margin-bottom: 20px;">
+                                        <span class="label" style="margin-bottom: 8px;">
+                                            <?php echo Olama_School_Helpers::translate('Curriculum Material'); ?>:
+                                        </span>
+                                        <div class="curriculum-table-wrapper"
+                                            style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                                                <thead>
+                                                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                                        <th style="padding: 10px; text-align: start; font-weight: 700; color: #475569;">
+                                                            <?php echo Olama_School_Helpers::translate('Unit / Lesson'); ?>
+                                                        </th>
+                                                        <th style="padding: 10px; text-align: start; font-weight: 700; color: #475569;">
+                                                            <?php echo Olama_School_Helpers::translate('Material'); ?>
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <?php foreach ($material['curriculum_items'] as $item):
+                                                        $unit = !empty($item['unit_id']) ? Olama_School_Unit::get_unit($item['unit_id']) : null;
+                                                        $lesson = !empty($item['lesson_id']) ? Olama_School_Lesson::get_lesson($item['lesson_id']) : null;
+                                                        $unit_name = $unit ? $unit->unit_name : '';
+                                                        $lesson_name = $lesson ? $lesson->lesson_title : '';
+                                                        ?>
+                                                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                                                            <td style="padding: 10px;">
+                                                                <div style="font-weight: 700; color: #1e293b;">
+                                                                    <?php echo esc_html($unit_name); ?>
+                                                                </div>
+                                                                <div style="font-size: 0.8rem; color: #64748b;">
+                                                                    <?php echo esc_html($lesson_name); ?>
+                                                                </div>
+                                                            </td>
+                                                            <td style="padding: 10px; color: #334155;">
+                                                                <?php echo esc_html($item['material']); ?>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="material-sections"
+                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
+                                    <?php if ($ex->student_book_material): ?>
+                                        <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
+                                            <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
+                                                <?php echo Olama_School_Helpers::translate('Student Book'); ?>
+                                            </div>
+                                            <div class="material-content">
+                                                <?php echo esc_html($ex->student_book_material); ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if ($ex->workbook_material): ?>
+                                        <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
+                                            <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
+                                                <?php echo Olama_School_Helpers::translate('Workbook'); ?>
+                                            </div>
+                                            <div class="material-content">
+                                                <?php echo esc_html($ex->workbook_material); ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if ($ex->exercise_book_material): ?>
+                                        <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
+                                            <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
+                                                <?php echo Olama_School_Helpers::translate('Exercise Notebook'); ?>
+                                            </div>
+                                            <div class="material-content">
+                                                <?php echo esc_html($ex->exercise_book_material); ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php
+                                    $booklets_val = !empty($material['notebook_material']) ? $material['notebook_material'] : (!empty($ex->notebook_material) ? $ex->notebook_material : '');
+                                    if (!empty($booklets_val)): ?>
+                                        <div class="material-block" style="background:#f1f5f9; padding:10px; border-radius:4px;">
+                                            <div class="material-label" style="font-weight:700; font-size:11px; color:#64748b;">
+                                                <?php echo Olama_School_Helpers::translate('Booklets & Notebooks'); ?>
+                                            </div>
+                                            <div class="material-content">
+                                                <?php echo esc_html($booklets_val); ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <?php
+                                $notes_val = !empty($material['teacher_notes']) ? $material['teacher_notes'] : (!empty($ex->teacher_notes) ? $ex->teacher_notes : '');
+                                if (!empty($notes_val)): ?>
+                                    <div class="teacher-notes-box"
+                                        style="background:#fff7ed; border-right:4px solid #f97316; padding:10px; border-radius:4px;">
+                                        <span class="label" style="color:#c2410c; font-weight:800; font-size:11px;">
+                                            <?php echo Olama_School_Helpers::translate('Teacher Notes'); ?>:
+                                        </span>
+                                        <div class="value">
+                                            <?php echo nl2br(esc_html($notes_val)); ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
 
-                    <style>
-                        .olama-exam-schedule-student {
-                            max-width: 800px;
-                            margin: 0 auto;
-                            font-family: 'Tajawal', sans-serif;
-                        }
+            <style>
+                .olama-exam-schedule-student {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    font-family: 'Tajawal', sans-serif;
+                }
 
-                        .exam-header {
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-                            color: #fff;
-                            padding: 25px;
-                            border-radius: 12px;
-                            margin-bottom: 20px;
-                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                        }
+                .exam-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+                    color: #fff;
+                    padding: 25px;
+                    border-radius: 12px;
+                    margin-bottom: 20px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                }
 
-                        .exam-name {
-                            margin: 0;
-                            font-size: 1.5rem;
-                            font-weight: 800;
-                        }
+                .exam-name {
+                    margin: 0;
+                    font-size: 1.5rem;
+                    font-weight: 800;
+                }
 
-                        .exam-semester {
-                            margin: 5px 0 0;
-                            opacity: 0.8;
-                            font-size: 0.9rem;
-                        }
+                .exam-semester {
+                    margin: 5px 0 0;
+                    opacity: 0.8;
+                    font-size: 0.9rem;
+                }
 
-                        .exam-grade-badge {
-                            background: rgba(255, 255, 255, 0.2);
-                            padding: 5px 15px;
-                            border-radius: 20px;
-                            font-weight: 700;
-                            font-size: 0.9rem;
-                        }
+                .exam-grade-badge {
+                    background: rgba(255, 255, 255, 0.2);
+                    padding: 5px 15px;
+                    border-radius: 20px;
+                    font-weight: 700;
+                    font-size: 0.9rem;
+                }
 
-                        .exam-list {
-                            display: flex;
-                            flex-direction: column;
-                            gap: 12px;
-                        }
+                .exam-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                }
 
-                        .exam-card {
-                            background: #fff;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 10px;
-                            overflow: hidden;
-                            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-                            transition: all 0.2s;
-                        }
+                .exam-card {
+                    background: #fff;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                    transition: all 0.2s;
+                }
 
-                        .exam-card-header {
-                            padding: 15px 20px;
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            cursor: pointer;
-                            background: #fff;
-                        }
+                .exam-card-header {
+                    padding: 15px 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: pointer;
+                    background: #fff;
+                }
 
-                        .exam-card-header:hover {
-                            background: #f8fafc;
-                        }
+                .exam-card-header:hover {
+                    background: #f8fafc;
+                }
 
-                        .subject-info {
-                            display: flex;
-                            align-items: center;
-                            gap: 12px;
-                        }
+                .subject-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
 
-                        .subject-icon {
-                            color: #3b82f6;
-                        }
+                .subject-icon {
+                    color: #3b82f6;
+                }
 
-                        .subject-name {
-                            font-weight: 700;
-                            color: #1e293b;
-                            font-size: 1.1rem;
-                        }
+                .subject-name {
+                    font-weight: 700;
+                    color: #1e293b;
+                    font-size: 1.1rem;
+                }
 
-                        .exam-meta {
-                            display: flex;
-                            align-items: center;
-                            gap: 15px;
-                        }
+                .exam-meta {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                }
 
-                        .exam-date {
-                            font-weight: 600;
-                            color: #64748b;
-                            font-size: 0.9rem;
-                        }
+                .exam-date {
+                    font-weight: 600;
+                    color: #64748b;
+                    font-size: 0.9rem;
+                }
 
-                        .toggle-icon {
-                            transition: transform 0.3s;
-                            color: #94a3b8;
-                        }
+                .toggle-icon {
+                    transition: transform 0.3s;
+                    color: #94a3b8;
+                }
 
-                        .exam-card.active .toggle-icon {
-                            transform: rotate(180deg);
-                        }
+                .exam-card.active .toggle-icon {
+                    transform: rotate(180deg);
+                }
 
-                        .exam-card-content {
-                            display: none;
-                            padding: 20px;
-                            background: #fdfdfd;
-                            border-top: 1px solid #f1f5f9;
-                        }
+                .exam-card-content {
+                    display: none;
+                    padding: 20px;
+                    background: #fdfdfd;
+                    border-top: 1px solid #f1f5f9;
+                }
 
-                        .exam-card.active .exam-card-content {
-                            display: block;
-                        }
+                .exam-card.active .exam-card-content {
+                    display: block;
+                }
 
-                        .detail-row .label {
-                            display: block;
-                            font-weight: 700;
-                            color: #475569;
-                            font-size: 0.8rem;
-                            margin-bottom: 4px;
-                            text-transform: uppercase;
-                        }
+                .detail-row .label {
+                    display: block;
+                    font-weight: 700;
+                    color: #475569;
+                    font-size: 0.8rem;
+                    margin-bottom: 4px;
+                    text-transform: uppercase;
+                }
 
-                        .detail-row .value {
-                            color: #1e293b;
-                            font-size: 0.95rem;
-                            line-height: 1.6;
-                        }
+                .detail-row .value {
+                    color: #1e293b;
+                    font-size: 0.95rem;
+                    line-height: 1.6;
+                }
 
-                        <?php if (Olama_School_Helpers::is_arabic()): ?>
-                                .olama-exam-schedule-student {
-                                    direction: rtl;
-                                }
+                <?php if (Olama_School_Helpers::is_arabic()): ?>
+                    .olama-exam-schedule-student {
+                        direction: rtl;
+                    }
 
-                        <?php endif; ?>
-                        @media (max-width: 600px) {
-                            .exam-header {
-                                flex-direction: column;
-                                text-align: center;
-                                gap: 15px;
-                            }
+                <?php endif; ?>
+                @media (max-width: 600px) {
+                    .exam-header {
+                        flex-direction: column;
+                        text-align: center;
+                        gap: 15px;
+                    }
 
-                            .exam-card-header {
-                                flex-direction: column;
-                                align-items: flex-start;
-                                gap: 10px;
-                            }
+                    .exam-card-header {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: 10px;
+                    }
 
-                            .exam-meta {
-                                width: 100%;
-                                justify-content: space-between;
-                                border-top: 1px solid #f1f5f9;
-                                padding-top: 10px;
-                            }
-                        }
-                    </style>
-                    <?php
-                    return ob_get_clean();
+                    .exam-meta {
+                        width: 100%;
+                        justify-content: space-between;
+                        border-top: 1px solid #f1f5f9;
+                        padding-top: 10px;
+                    }
+                }
+            </style>
+            <?php
+            return ob_get_clean();
     }
 
     /**
@@ -2434,346 +2434,346 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-                    <div class="olama-attendance-shortcode" dir="rtl">
-                        <div class="attendance-header">
-                            <h2>
-                                <?php echo Olama_School_Helpers::translate("Daily Attendance"); ?>
-                            </h2>
-                            <div class="attendance-meta">
-                                <span class="meta-item"><i class="material-icons">calendar_today</i>
-                                    <?php echo date_i18n("l, j F Y", strtotime($attendance_date)); ?>
-                                </span>
+            <div class="olama-attendance-shortcode" dir="rtl">
+                <div class="olama-attendance-header">
+                    <h2>
+                        <?php echo Olama_School_Helpers::translate("Daily Attendance"); ?>
+                    </h2>
+                    <div class="olama-attendance-meta">
+                        <span class="olama-meta-item"><i class="material-icons">calendar_today</i>
+                            <?php echo date_i18n("l, j F Y", strtotime($attendance_date)); ?>
+                        </span>
+                    </div>
+                </div>
+
+                <?php if (!empty($assignments)): ?>
+                    <div class="olama-section-selector">
+                        <?php
+                        // Deduplicate sections if any (might happen if teacher assigned multiple subjects in same section)
+                        $seen_sections = array();
+                        foreach ($assignments as $asgn):
+                            if (in_array($asgn->section_id, $seen_sections))
+                                continue;
+                            $seen_sections[] = $asgn->section_id;
+                            ?>
+                            <a href="<?php echo add_query_arg("section_id", $asgn->section_id); ?>" class="olama-section-chip
+                <?php echo $section_id == $asgn->section_id ? "olama-active" : ""; ?>">
+                                <?php echo esc_html($asgn->grade_name . " - " . $asgn->section_name); ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($section_id): ?>
+                    <div class="olama-attendance-summary-cards">
+                        <div class="olama-summary-card olama-present">
+                            <div class="olama-card-label">
+                                <span class="olama-label-ar">حاضر</span>
+                                <span class="olama-label-en">(Present)</span>
+                            </div>
+                            <div class="olama-card-value" id="total-present">
+                                <?php echo $total_present; ?>
                             </div>
                         </div>
+                        <div class="olama-summary-card olama-absent">
+                            <div class="olama-card-label">
+                                <span class="olama-label-ar">غائب</span>
+                                <span class="olama-label-en">(Absent)</span>
+                            </div>
+                            <div class="olama-card-value" id="total-absent">
+                                <?php echo $total_absent; ?>
+                            </div>
+                        </div>
+                    </div>
 
-                        <?php if (!empty($assignments)): ?>
-                                <div class="section-selector">
-                                    <?php
-                                    // Deduplicate sections if any (might happen if teacher assigned multiple subjects in same section)
-                                    $seen_sections = array();
-                                    foreach ($assignments as $asgn):
-                                        if (in_array($asgn->section_id, $seen_sections))
-                                            continue;
-                                        $seen_sections[] = $asgn->section_id;
-                                        ?>
-                                            <a href="<?php echo add_query_arg("section_id", $asgn->section_id); ?>" class="section-chip
-                <?php echo $section_id == $asgn->section_id ? "active" : ""; ?>">
-                                                <?php echo esc_html($asgn->grade_name . " - " . $asgn->section_name); ?>
-                                            </a>
-                                    <?php endforeach; ?>
+                    <div class="olama-students-grid">
+                        <?php foreach ($students as $stu):
+                            $status = $attendance_records[$stu->id] ?? "present";
+                            ?>
+                            <div class="olama-attendance-btn olama-<?php echo $status; ?>" data-student="<?php echo $stu->id; ?>"
+                                data-section="<?php echo $section_id; ?>" data-year="<?php echo $year_id; ?>"
+                                data-semester="<?php echo $semester_id; ?>" data-date="<?php echo $attendance_date; ?>">
+                                <div class="olama-student-name">
+                                    <?php echo esc_html($stu->student_name); ?>
                                 </div>
-                        <?php endif; ?>
-
-                        <?php if ($section_id): ?>
-                                <div class="attendance-summary-cards">
-                                    <div class="summary-card present">
-                                        <div class="card-label">
-                                            <span class="label-ar">حاضر</span>
-                                            <span class="label-en">(Present)</span>
-                                        </div>
-                                        <div class="card-value" id="total-present">
-                                            <?php echo $total_present; ?>
-                                        </div>
-                                    </div>
-                                    <div class="summary-card absent">
-                                        <div class="card-label">
-                                            <span class="label-ar">غائب</span>
-                                            <span class="label-en">(Absent)</span>
-                                        </div>
-                                        <div class="card-value" id="total-absent">
-                                            <?php echo $total_absent; ?>
-                                        </div>
-                                    </div>
+                                <div class="olama-student-status">
+                                    <span class="olama-status-present">
+                                        <?php echo Olama_School_Helpers::translate("Present"); ?>
+                                    </span>
+                                    <span class="olama-status-absent">
+                                        <?php echo Olama_School_Helpers::translate("Absent"); ?>
+                                    </span>
                                 </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
 
-                                <div class="students-grid">
-                                    <?php foreach ($students as $stu):
-                                        $status = $attendance_records[$stu->id] ?? "present";
-                                        ?>
-                                            <div class="student-attendance-btn <?php echo $status; ?>" data-student="<?php echo $stu->id; ?>"
-                                                data-section="<?php echo $section_id; ?>" data-year="<?php echo $year_id; ?>"
-                                                data-semester="<?php echo $semester_id; ?>" data-date="<?php echo $attendance_date; ?>">
-                                                <div class="student-name">
-                                                    <?php echo esc_html($stu->student_name); ?>
-                                                </div>
-                                                <div class="student-status">
-                                                    <span class="status-present">
-                                                        <?php echo Olama_School_Helpers::translate("Present"); ?>
-                                                    </span>
-                                                    <span class="status-absent">
-                                                        <?php echo Olama_School_Helpers::translate("Absent"); ?>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                    <?php endforeach; ?>
-                                </div>
+                    <div class="olama-attendance-footer">
+                        <p class="hint">💡
+                            <?php echo Olama_School_Helpers::translate("Click on a student name to mark them as absent (Red) or present (Blue). Changes are saved instantly."); ?>
+                        </p>
+                    </div>
 
-                                <div class="attendance-footer">
-                                    <p class="hint">ًں’،
-                                        <?php echo Olama_School_Helpers::translate("Click on a student name to mark them as absent (Red) or present (Blue). Changes are saved instantly."); ?>
-                                    </p>
-                                </div>
+                    <script>
+                        jQuery(document).ready(function ($) {
+                            $(".olama-attendance-btn").on("click", function () {
+                                var $btn = $(this);
+                                var studentId = $btn.data("student");
+                                var sectionId = $btn.data("section");
+                                var yearId = $btn.data("year");
+                                var semId = $btn.data("semester");
+                                var date = $btn.data("date");
+                                var currentStatus = $btn.hasClass("olama-present") ? "present" : "absent";
+                                var newStatus = currentStatus === "present" ? "absent" : "present";
 
-                                <script>
-                                    jQuery(document).ready(function ($) {
-                                        $(".student-attendance-btn").on("click", function () {
-                                            var $btn = $(this);
-                                            var studentId = $btn.data("student");
-                                            var sectionId = $btn.data("section");
-                                            var yearId = $btn.data("year");
-                                            var semId = $btn.data("semester");
-                                            var date = $btn.data("date");
-                                            var currentStatus = $btn.hasClass("present") ? "present" : "absent";
-                                            var newStatus = currentStatus === "present" ? "absent" : "present";
+                                $btn.addClass("olama-loading");
 
-                                            $btn.addClass("loading");
-
-                                            $.post(olama_admin_ajax.ajax_url, {
-                                                action: "olama_save_attendance",
-                                                nonce: olama_admin_ajax.nonce,
-                                                student_id: studentId,
-                                                status: newStatus,
-                                                section_id: sectionId,
-                                                academic_year_id: yearId,
-                                                semester_id: semId,
-                                                date: date
-                                            }, function (response) {
-                                                $btn.removeClass("loading");
-                                                if (response.success) {
-                                                    $btn.removeClass("present absent").addClass(newStatus);
-                                                    // Update counts
-                                                    var presentCount = $(".student-attendance-btn.present").length;
-                                                    var absentCount = $(".student-attendance-btn.absent").length;
-                                                    $("#total-present").text(presentCount);
-                                                    $("#total-absent").text(absentCount);
-                                                } else {
-                                                    alert("Error: " + response.data);
-                                                }
-                                            });
-                                        });
-                                    });
-                                </script>
-
-                                <style>
-                                    .olama-attendance-shortcode {
-                                        font-family: "Tajawal", sans-serif;
-                                        max-width: 800px;
-                                        margin: 0 auto;
-                                        background: #f8fafc;
-                                        padding: 20px;
-                                        border-radius: 16px;
+                                $.post(olama_admin_ajax.ajax_url, {
+                                    action: "olama_save_attendance",
+                                    nonce: olama_admin_ajax.nonce,
+                                    student_id: studentId,
+                                    status: newStatus,
+                                    section_id: sectionId,
+                                    academic_year_id: yearId,
+                                    semester_id: semId,
+                                    date: date
+                                }, function (response) {
+                                    $btn.removeClass("olama-loading");
+                                    if (response.success) {
+                                        $btn.removeClass("olama-present olama-absent").addClass("olama-" + newStatus);
+                                        // Update counts
+                                        var presentCount = $(".olama-attendance-btn.olama-present").length;
+                                        var absentCount = $(".olama-attendance-btn.olama-absent").length;
+                                        $("#total-present").text(presentCount);
+                                        $("#total-absent").text(absentCount);
+                                    } else {
+                                        alert("Error: " + response.data);
                                     }
+                                });
+                            });
+                        });
+                    </script>
 
-                                    /* Attendance Summary Cards */
-                                    .attendance-summary-cards {
-                                        display: flex;
-                                        gap: 15px;
-                                        margin-bottom: 25px;
-                                        direction: rtl;
-                                    }
+                    <style>
+                        .olama-attendance-shortcode {
+                            font-family: "Tajawal", sans-serif;
+                            max-width: 800px;
+                            margin: 0 auto;
+                            background: #f8fafc;
+                            padding: 20px;
+                            border-radius: 16px;
+                        }
 
-                                    .summary-card {
-                                        flex: 1;
-                                        padding: 15px 20px;
-                                        border-radius: 20px;
-                                        display: flex;
-                                        justify-content: space-between;
-                                        align-items: center;
-                                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-                                        border: 1px solid rgba(0, 0, 0, 0.05);
-                                    }
+                        /* Attendance Summary Cards */
+                        .olama-attendance-summary-cards {
+                            display: flex;
+                            gap: 15px;
+                            margin-bottom: 25px;
+                            direction: rtl;
+                        }
 
-                                    .summary-card.present {
-                                        background: #e6fffa;
-                                        border-color: #b2f5ea;
-                                    }
+                        .olama-summary-card {
+                            flex: 1;
+                            padding: 15px 20px;
+                            border-radius: 20px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                            border: 1px solid rgba(0, 0, 0, 0.05);
+                        }
 
-                                    .summary-card.absent {
-                                        background: #fff5f5;
-                                        border-color: #fed7d7;
-                                    }
+                        .olama-summary-card.olama-present {
+                            background: #e6fffa;
+                            border-color: #b2f5ea;
+                        }
 
-                                    .summary-card .card-label {
-                                        display: flex;
-                                        flex-direction: column;
-                                        gap: 2px;
-                                    }
+                        .olama-summary-card.olama-absent {
+                            background: #fff5f5;
+                            border-color: #fed7d7;
+                        }
 
-                                    .summary-card .label-ar {
-                                        font-size: 1.1rem;
-                                        font-weight: 800;
-                                    }
+                        .olama-summary-card .olama-card-label {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 2px;
+                        }
 
-                                    .summary-card.present .label-ar {
-                                        color: #2c7a7b;
-                                    }
+                        .olama-summary-card .olama-label-ar {
+                            font-size: 1.1rem;
+                            font-weight: 800;
+                        }
 
-                                    .summary-card.absent .label-ar {
-                                        color: #c53030;
-                                    }
+                        .olama-summary-card.olama-present .olama-label-ar {
+                            color: #2c7a7b;
+                        }
 
-                                    .summary-card .label-en {
-                                        font-size: 0.8rem;
-                                        font-weight: 600;
-                                        opacity: 0.7;
-                                    }
+                        .olama-summary-card.olama-absent .olama-label-ar {
+                            color: #c53030;
+                        }
 
-                                    .summary-card.present .label-en {
-                                        color: #319795;
-                                    }
+                        .olama-summary-card .olama-label-en {
+                            font-size: 0.8rem;
+                            font-weight: 600;
+                            opacity: 0.7;
+                        }
 
-                                    .summary-card.absent .label-en {
-                                        color: #e53e3e;
-                                    }
+                        .olama-summary-card.olama-present .olama-label-en {
+                            color: #319795;
+                        }
 
-                                    .summary-card .card-value {
-                                        font-size: 2.2rem;
-                                        font-weight: 900;
-                                    }
+                        .olama-summary-card.olama-absent .olama-label-en {
+                            color: #e53e3e;
+                        }
 
-                                    .summary-card.present .card-value {
-                                        color: #234e52;
-                                    }
+                        .olama-summary-card .olama-card-value {
+                            font-size: 2.2rem;
+                            font-weight: 900;
+                        }
 
-                                    .summary-card.absent .card-value {
-                                        color: #742a2a;
-                                    }
+                        .olama-summary-card.olama-present .olama-card-value {
+                            color: #234e52;
+                        }
 
-                                    @media (max-width: 480px) {
-                                        .attendance-summary-cards {
-                                            flex-direction: column;
-                                        }
-                                    }
+                        .olama-summary-card.olama-absent .olama-card-value {
+                            color: #742a2a;
+                        }
 
-                                    .attendance-header {
-                                        margin-bottom: 25px;
-                                        text-align: center;
-                                    }
+                        @media (max-width: 480px) {
+                            .olama-attendance-summary-cards {
+                                flex-direction: column;
+                            }
+                        }
 
-                                    .attendance-header h2 {
-                                        margin: 0 0 10px;
-                                        color: #1e293b;
-                                        font-size: 1.8rem;
-                                    }
+                        .olama-attendance-header {
+                            margin-bottom: 25px;
+                            text-align: center;
+                        }
 
-                                    .attendance-meta {
-                                        color: #64748b;
-                                        display: flex;
-                                        justify-content: center;
-                                        gap: 20px;
-                                    }
+                        .olama-attendance-header h2 {
+                            margin: 0 0 10px;
+                            color: #1e293b;
+                            font-size: 1.8rem;
+                        }
 
-                                    .meta-item {
-                                        display: flex;
-                                        align-items: center;
-                                        gap: 5px;
-                                    }
+                        .olama-attendance-meta {
+                            color: #64748b;
+                            display: flex;
+                            justify-content: center;
+                            gap: 20px;
+                        }
 
-                                    .section-selector {
-                                        display: flex;
-                                        gap: 10px;
-                                        overflow-x: auto;
-                                        padding-bottom: 15px;
-                                        margin-bottom: 25px;
-                                        justify-content: flex-start;
-                                    }
+                        .olama-meta-item {
+                            display: flex;
+                            align-items: center;
+                            gap: 5px;
+                        }
 
-                                    .section-chip {
-                                        padding: 8px 16px;
-                                        background: #fff;
-                                        border: 1px solid #e2e8f0;
-                                        border-radius: 20px;
-                                        text-decoration: none;
-                                        color: #475569;
-                                        white-space: nowrap;
-                                        font-weight: 500;
-                                        transition: all 0.2s;
-                                    }
+                        .olama-section-selector {
+                            display: flex;
+                            gap: 10px;
+                            overflow-x: auto;
+                            padding-bottom: 15px;
+                            margin-bottom: 25px;
+                            justify-content: flex-start;
+                        }
 
-                                    .section-chip.active {
-                                        background: #3b82f6;
-                                        color: #fff;
-                                        border-color: #3b82f6;
-                                    }
+                        .olama-section-chip {
+                            padding: 8px 16px;
+                            background: #fff;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 20px;
+                            text-decoration: none;
+                            color: #475569;
+                            white-space: nowrap;
+                            font-weight: 500;
+                            transition: all 0.2s;
+                        }
 
-                                    .students-grid {
-                                        display: grid;
-                                        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-                                        gap: 12px;
-                                    }
+                        .olama-section-chip.olama-active {
+                            background: #3b82f6;
+                            color: #fff;
+                            border-color: #3b82f6;
+                        }
 
-                                    .student-attendance-btn {
-                                        padding: 15px 10px;
-                                        background: #fff;
-                                        border-radius: 12px;
-                                        border: 2px solid #e2e8f0;
-                                        cursor: pointer;
-                                        text-align: center;
-                                        transition: all 0.2s;
-                                        position: relative;
-                                    }
+                        .olama-students-grid {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                            gap: 12px;
+                        }
 
-                                    .student-attendance-btn.present {
-                                        border-color: #3b82f6;
-                                        background: #eff6ff;
-                                    }
+                        .olama-attendance-btn {
+                            padding: 15px 10px;
+                            background: #fff;
+                            border-radius: 12px;
+                            border: 2px solid #e2e8f0;
+                            cursor: pointer;
+                            text-align: center;
+                            transition: all 0.2s;
+                            position: relative;
+                        }
 
-                                    .student-attendance-btn.absent {
-                                        border-color: #ef4444;
-                                        background: #fef2f2;
-                                    }
+                        .olama-attendance-btn.olama-present {
+                            border-color: #3b82f6;
+                            background: #eff6ff;
+                        }
 
-                                    .student-name {
-                                        font-weight: 600;
-                                        color: #1e293b;
-                                        margin-bottom: 8px;
-                                        font-size: 0.95rem;
-                                        line-height: 1.3;
-                                    }
+                        .olama-attendance-btn.olama-absent {
+                            border-color: #ef4444;
+                            background: #fef2f2;
+                        }
 
-                                    .student-status {
-                                        font-size: 0.8rem;
-                                        font-weight: 700;
-                                        text-transform: uppercase;
-                                    }
+                        .olama-student-name {
+                            font-weight: 600;
+                            color: #1e293b;
+                            margin-bottom: 8px;
+                            font-size: 0.95rem;
+                            line-height: 1.3;
+                        }
 
-                                    .student-attendance-btn.present .status-absent {
-                                        display: none;
-                                    }
+                        .olama-student-status {
+                            font-size: 0.8rem;
+                            font-weight: 700;
+                            text-transform: uppercase;
+                        }
 
-                                    .student-attendance-btn.present .status-present {
-                                        color: #3b82f6;
-                                    }
+                        .olama-attendance-btn.present .olama-status-absent {
+                            display: none;
+                        }
 
-                                    .student-attendance-btn.absent .status-present {
-                                        display: none;
-                                    }
+                        .olama-attendance-btn.present .olama-status-present {
+                            color: #3b82f6;
+                        }
 
-                                    .student-attendance-btn.absent .status-absent {
-                                        color: #ef4444;
-                                    }
+                        .olama-attendance-btn.absent .olama-status-present {
+                            display: none;
+                        }
 
-                                    .student-attendance-btn.loading {
-                                        opacity: 0.6;
-                                        pointer-events: none;
-                                    }
+                        .olama-attendance-btn.absent .olama-status-absent {
+                            color: #ef4444;
+                        }
 
-                                    .attendance-footer {
-                                        margin-top: 30px;
-                                        text-align: center;
-                                        color: #64748b;
-                                        font-size: 0.9rem;
-                                    }
+                        .olama-attendance-btn.olama-loading {
+                            opacity: 0.6;
+                            pointer-events: none;
+                        }
 
-                                    @media (max-width: 480px) {
-                                        .students-grid {
-                                            grid-template-columns: repeat(2, 1fr);
-                                        }
-                                    }
-                                </style>
-                                <?php
-                        endif;
-                        return ob_get_clean();
+                        .olama-attendance-footer {
+                            margin-top: 30px;
+                            text-align: center;
+                            color: #64748b;
+                            font-size: 0.9rem;
+                        }
+
+                        @media (max-width: 480px) {
+                            .olama-students-grid {
+                                grid-template-columns: repeat(2, 1fr);
+                            }
+                        }
+                    </style>
+                    <?php
+                endif;
+                return ob_get_clean();
     }
 
     /**
@@ -2998,919 +2998,919 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-                        <style>
-                            /* Family Performance Dashboard - Inline Styles */
-                            .olama-family-perf {
-                                font-family: 'Tajawal', 'Inter', sans-serif;
-                                max-width: 900px;
-                                margin: 0 auto;
-                                padding: 16px;
-                                direction: rtl;
-                                background: #f0f4f8;
-                                min-height: 100vh;
-                                -webkit-font-smoothing: antialiased
-                            }
-
-                            .fp-hero {
-                                background: linear-gradient(135deg, #0f766e 0%, #0d9488 30%, #14b8a6 60%, #2dd4bf 100%);
-                                border-radius: 24px;
-                                padding: 36px 28px 28px;
-                                position: relative;
-                                overflow: hidden;
-                                margin-bottom: 20px;
-                                box-shadow: 0 8px 32px rgba(13, 148, 136, .25)
-                            }
-
-                            .fp-hero::before {
-                                content: '';
-                                position: absolute;
-                                top: -40px;
-                                left: -40px;
-                                width: 180px;
-                                height: 180px;
-                                border-radius: 50%;
-                                background: rgba(255, 255, 255, .08)
-                            }
-
-                            .fp-hero::after {
-                                content: '';
-                                position: absolute;
-                                bottom: -30px;
-                                right: -30px;
-                                width: 140px;
-                                height: 140px;
-                                border-radius: 50%;
-                                background: rgba(255, 255, 255, .06)
-                            }
-
-                            .fp-hero-content {
-                                display: flex;
-                                align-items: center;
-                                gap: 16px;
-                                position: relative;
-                                z-index: 2;
-                                margin-bottom: 20px
-                            }
-
-                            .fp-hero-icon {
-                                width: 56px;
-                                height: 56px;
-                                border-radius: 16px;
-                                background: rgba(255, 255, 255, .2);
-                                backdrop-filter: blur(10px);
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                flex-shrink: 0
-                            }
-
-                            .fp-hero-icon .material-icons {
-                                font-size: 30px;
-                                color: #fff
-                            }
-
-                            .fp-hero-title {
-                                font-size: 1.9rem;
-                                font-weight: 900;
-                                color: #fff;
-                                margin: 0;
-                                line-height: 1.2;
-                                text-shadow: 0 2px 8px rgba(0, 0, 0, .1)
-                            }
-
-                            .fp-hero-subtitle {
-                                font-family: 'Inter', sans-serif;
-                                font-size: .85rem;
-                                color: rgba(255, 255, 255, .75);
-                                margin: 4px 0 0;
-                                font-weight: 500;
-                                letter-spacing: .5px
-                            }
-
-                            .fp-hero-meta {
-                                display: flex;
-                                flex-wrap: wrap;
-                                gap: 10px;
-                                position: relative;
-                                z-index: 2
-                            }
-
-                            .fp-meta-item {
-                                display: inline-flex;
-                                align-items: center;
-                                gap: 6px;
-                                background: rgba(255, 255, 255, .18);
-                                backdrop-filter: blur(8px);
-                                padding: 6px 14px;
-                                border-radius: 30px;
-                                color: #fff;
-                                font-size: .85rem;
-                                font-weight: 600
-                            }
-
-                            .fp-meta-item .material-icons {
-                                font-size: 16px;
-                                opacity: .8
-                            }
-
-                            .fp-students-list {
-                                display: flex;
-                                flex-direction: column;
-                                gap: 14px
-                            }
-
-                            .fp-student-card {
-                                background: #fff;
-                                border-radius: 20px;
-                                overflow: hidden;
-                                box-shadow: 0 2px 12px rgba(0, 0, 0, .04);
-                                border: 1px solid #e5e9ef;
-                                transition: box-shadow .3s ease, border-color .3s ease
-                            }
-
-                            .fp-student-card.active {
-                                box-shadow: 0 8px 30px rgba(0, 0, 0, .08);
-                                border-color: #d1d5db
-                            }
-
-                            .fp-student-header {
-                                display: flex;
-                                align-items: center;
-                                gap: 12px;
-                                padding: 16px 18px;
-                                cursor: pointer;
-                                transition: background .2s ease;
-                                user-select: none
-                            }
-
-                            .fp-student-header:hover {
-                                background: #f9fafb
-                            }
-
-                            .fp-student-avatar {
-                                width: 46px;
-                                height: 46px;
-                                border-radius: 14px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                font-size: 1.3rem;
-                                font-weight: 800;
-                                color: #fff;
-                                flex-shrink: 0;
-                                line-height: 1
-                            }
-
-                            .fp-student-avatar.fp-excellent {
-                                background: linear-gradient(135deg, #059669, #10b981)
-                            }
-
-                            .fp-student-avatar.fp-good {
-                                background: linear-gradient(135deg, #0284c7, #38bdf8)
-                            }
-
-                            .fp-student-avatar.fp-fair {
-                                background: linear-gradient(135deg, #d97706, #fbbf24)
-                            }
-
-                            .fp-student-avatar.fp-weak {
-                                background: linear-gradient(135deg, #dc2626, #f87171)
-                            }
-
-                            .fp-student-info {
-                                flex: 1;
-                                min-width: 0
-                            }
-
-                            .fp-student-name {
-                                font-size: 1.05rem;
-                                font-weight: 800;
-                                color: #1e293b;
-                                line-height: 1.3;
-                                white-space: nowrap;
-                                overflow: hidden;
-                                text-overflow: ellipsis
-                            }
-
-                            .fp-student-detail {
-                                font-size: .8rem;
-                                color: #64748b;
-                                font-weight: 500;
-                                display: flex;
-                                align-items: center;
-                                gap: 6px;
-                                flex-wrap: wrap;
-                                margin-top: 2px
-                            }
-
-                            .fp-age-badge {
-                                background: #f1f5f9;
-                                color: #475569;
-                                padding: 1px 8px;
-                                border-radius: 10px;
-                                font-size: .72rem;
-                                font-weight: 700
-                            }
-
-                            .fp-student-summary {
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-                                gap: 4px;
-                                flex-shrink: 0
-                            }
-
-                            .fp-mastery-ring {
-                                width: 46px;
-                                height: 46px;
-                                position: relative
-                            }
-
-                            .fp-mastery-ring svg {
-                                width: 100%;
-                                height: 100%;
-                                transform: rotate(-90deg)
-                            }
-
-                            .fp-ring-bg {
-                                fill: none;
-                                stroke: #e5e7eb;
-                                stroke-width: 3
-                            }
-
-                            .fp-ring-fill {
-                                fill: none;
-                                stroke-width: 3;
-                                stroke-linecap: round;
-                                transition: stroke-dasharray .6s ease
-                            }
-
-                            .fp-mastery-ring.fp-excellent .fp-ring-fill {
-                                stroke: #10b981
-                            }
-
-                            .fp-mastery-ring.fp-good .fp-ring-fill {
-                                stroke: #38bdf8
-                            }
-
-                            .fp-mastery-ring.fp-fair .fp-ring-fill {
-                                stroke: #fbbf24
-                            }
-
-                            .fp-mastery-ring.fp-weak .fp-ring-fill {
-                                stroke: #f87171
-                            }
-
-                            .fp-ring-text {
-                                position: absolute;
-                                top: 50%;
-                                left: 50%;
-                                transform: translate(-50%, -50%);
-                                font-size: .7rem;
-                                font-weight: 800;
-                                color: #334155;
-                                font-family: 'Inter', sans-serif
-                            }
-
-                            .fp-mastery-badge {
-                                font-size: .65rem;
-                                font-weight: 700;
-                                padding: 2px 8px;
-                                border-radius: 8px;
-                                white-space: nowrap
-                            }
-
-                            .fp-mastery-badge.fp-excellent {
-                                background: #d1fae5;
-                                color: #065f46
-                            }
-
-                            .fp-mastery-badge.fp-good {
-                                background: #dbeafe;
-                                color: #1e40af
-                            }
-
-                            .fp-mastery-badge.fp-fair {
-                                background: #fef3c7;
-                                color: #92400e
-                            }
-
-                            .fp-mastery-badge.fp-weak {
-                                background: #fee2e2;
-                                color: #991b1b
-                            }
-
-                            .fp-chevron {
-                                color: #94a3b8;
-                                font-size: 24px !important;
-                                transition: transform .3s ease;
-                                flex-shrink: 0
-                            }
-
-                            .fp-student-card.active .fp-chevron {
-                                transform: rotate(180deg);
-                                color: #0d9488
-                            }
-
-                            .fp-student-body {
-                                display: none !important;
-                                padding: 0 18px
-                            }
-
-                            .fp-student-card.active .fp-student-body {
-                                display: block !important;
-                                padding: 0 18px 20px
-                            }
-
-                            .fp-eval-pills {
-                                display: flex;
-                                flex-wrap: wrap;
-                                gap: 8px;
-                                margin-bottom: 16px;
-                                padding-top: 4px
-                            }
-
-                            .fp-eval-pill {
-                                display: flex;
-                                align-items: center;
-                                gap: 6px;
-                                padding: 6px 12px;
-                                border-radius: 12px;
-                                font-size: .78rem;
-                                font-weight: 600;
-                                cursor: pointer;
-                                transition: transform .15s ease, box-shadow .15s ease
-                            }
-
-                            .fp-eval-pill:hover {
-                                transform: translateY(-1px);
-                                box-shadow: 0 3px 8px rgba(0, 0, 0, .08)
-                            }
-
-                            .fp-eval-pill.fp-excellent {
-                                background: #d1fae5;
-                                color: #065f46
-                            }
-
-                            .fp-eval-pill.fp-good {
-                                background: #dbeafe;
-                                color: #1e40af
-                            }
-
-                            .fp-eval-pill.fp-fair {
-                                background: #fef3c7;
-                                color: #92400e
-                            }
-
-                            .fp-eval-pill.fp-weak {
-                                background: #fee2e2;
-                                color: #991b1b
-                            }
-
-                            .fp-pill-name {
-                                white-space: nowrap
-                            }
-
-                            .fp-pill-pct {
-                                font-family: 'Inter', sans-serif;
-                                font-weight: 800;
-                                font-size: .82rem
-                            }
-
-                            .fp-eval-tabs {
-                                display: flex;
-                                gap: 4px;
-                                border-bottom: 2px solid #e5e7eb;
-                                margin-bottom: 16px;
-                                overflow-x: auto;
-                                -webkit-overflow-scrolling: touch;
-                                scrollbar-width: none;
-                                padding-bottom: 0
-                            }
-
-                            .fp-eval-tabs::-webkit-scrollbar {
-                                display: none
-                            }
-
-                            .fp-eval-tab {
-                                padding: 10px 16px;
-                                font-size: .82rem;
-                                font-weight: 700;
-                                font-family: 'Tajawal', sans-serif;
-                                color: #64748b;
-                                background: none;
-                                border: none;
-                                border-bottom: 3px solid transparent;
-                                cursor: pointer;
-                                white-space: nowrap;
-                                transition: all .2s ease;
-                                margin-bottom: -2px
-                            }
-
-                            .fp-eval-tab:hover {
-                                color: #0d9488;
-                                background: #f0fdfa;
-                                border-radius: 8px 8px 0 0
-                            }
-
-                            .fp-eval-tab.active {
-                                color: #0f766e;
-                                border-bottom-color: #0d9488;
-                                background: #f0fdfa;
-                                border-radius: 8px 8px 0 0
-                            }
-
-                            .fp-eval-panel {
-                                display: none
-                            }
-
-                            .fp-eval-panel.active {
-                                display: block;
-                                animation: fpFadeIn .3s ease
-                            }
-
-                            @keyframes fpFadeIn {
-                                from {
-                                    opacity: 0;
-                                    transform: translateY(8px)
-                                }
-
-                                to {
-                                    opacity: 1;
-                                    transform: translateY(0)
-                                }
-                            }
-
-                            .fp-eval-meta {
-                                display: flex;
-                                flex-wrap: wrap;
-                                gap: 8px;
-                                margin-bottom: 16px
-                            }
-
-                            .fp-meta-chip {
-                                display: inline-flex;
-                                align-items: center;
-                                gap: 5px;
-                                padding: 5px 12px;
-                                border-radius: 10px;
-                                font-size: .78rem;
-                                font-weight: 600;
-                                background: #f1f5f9;
-                                color: #475569
-                            }
-
-                            .fp-meta-chip .material-icons {
-                                font-size: 15px;
-                                opacity: .7
-                            }
-
-                            .fp-meta-chip.fp-excellent {
-                                background: #d1fae5;
-                                color: #065f46
-                            }
-
-                            .fp-meta-chip.fp-good {
-                                background: #dbeafe;
-                                color: #1e40af
-                            }
-
-                            .fp-meta-chip.fp-fair {
-                                background: #fef3c7;
-                                color: #92400e
-                            }
-
-                            .fp-meta-chip.fp-weak {
-                                background: #fee2e2;
-                                color: #991b1b
-                            }
-
-                            .fp-domain-block {
-                                margin-bottom: 16px;
-                                background: #f8fafb;
-                                border-radius: 16px;
-                                border: 1px solid #e8ecf0;
-                                overflow: hidden
-                            }
-
-                            .fp-domain-title {
-                                display: flex;
-                                align-items: center;
-                                gap: 8px;
-                                padding: 12px 16px;
-                                background: linear-gradient(135deg, #0f766e, #14b8a6);
-                                color: #fff;
-                                font-size: .88rem;
-                                font-weight: 700
-                            }
-
-                            .fp-domain-title .material-icons {
-                                font-size: 18px;
-                                opacity: .85
-                            }
-
-                            .fp-category-block {
-                                border-bottom: 1px solid #e8ecf0;
-                                padding: 0
-                            }
-
-                            .fp-category-block:last-child {
-                                border-bottom: none
-                            }
-
-                            .fp-category-title {
-                                padding: 10px 16px;
-                                font-size: .82rem;
-                                font-weight: 700;
-                                color: #0f766e;
-                                background: #eef7f6;
-                                border-bottom: 1px dashed #d1e3e0
-                            }
-
-                            .fp-indicators {
-                                padding: 0
-                            }
-
-                            .fp-indicator-row {
-                                display: flex;
-                                align-items: center;
-                                justify-content: space-between;
-                                gap: 12px;
-                                padding: 10px 16px;
-                                border-bottom: 1px solid #f1f4f6;
-                                transition: background .15s ease
-                            }
-
-                            .fp-indicator-row:last-child {
-                                border-bottom: none
-                            }
-
-                            .fp-indicator-row:hover {
-                                background: #f0fdfa
-                            }
-
-                            .fp-indicator-text {
-                                flex: 1;
-                                font-size: .82rem;
-                                color: #334155;
-                                line-height: 1.5;
-                                text-align: right
-                            }
-
-                            .fp-indicator-score {
-                                flex-shrink: 0;
-                                padding: 4px 12px;
-                                border-radius: 10px;
-                                font-size: .75rem;
-                                font-weight: 700;
-                                white-space: nowrap;
-                                text-align: center;
-                                min-width: 60px
-                            }
-
-                            .fp-indicator-score.fp-score-high {
-                                background: #d1fae5;
-                                color: #065f46
-                            }
-
-                            .fp-indicator-score.fp-score-mid {
-                                background: #fef3c7;
-                                color: #92400e
-                            }
-
-                            .fp-indicator-score.fp-score-low {
-                                background: #fee2e2;
-                                color: #991b1b
-                            }
-
-                            .fp-indicator-score.fp-score-na {
-                                background: #f1f5f9;
-                                color: #94a3b8
-                            }
-
-                            .fp-footer {
-                                text-align: center;
-                                padding: 24px 16px;
-                                color: #94a3b8;
-                                font-size: .8rem;
-                                font-weight: 500;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                gap: 6px
-                            }
-
-                            .fp-footer .material-icons {
-                                font-size: 16px;
-                                color: #0d9488
-                            }
-
-                            @media(max-width:600px) {
-                                .olama-family-perf {
-                                    padding: 10px
-                                }
-
-                                .fp-hero {
-                                    padding: 24px 18px 20px;
-                                    border-radius: 18px
-                                }
-
-                                .fp-hero-title {
-                                    font-size: 1.5rem
-                                }
-
-                                .fp-hero-icon {
-                                    width: 44px;
-                                    height: 44px;
-                                    border-radius: 12px
-                                }
-
-                                .fp-hero-icon .material-icons {
-                                    font-size: 24px
-                                }
-
-                                .fp-student-header {
-                                    padding: 12px 14px;
-                                    gap: 10px
-                                }
-
-                                .fp-student-avatar {
-                                    width: 40px;
-                                    height: 40px;
-                                    border-radius: 12px;
-                                    font-size: 1.1rem
-                                }
-
-                                .fp-student-name {
-                                    font-size: .95rem
-                                }
-
-                                .fp-mastery-ring {
-                                    width: 40px;
-                                    height: 40px
-                                }
-
-                                .fp-ring-text {
-                                    font-size: .62rem
-                                }
-
-                                .fp-mastery-badge {
-                                    font-size: .6rem;
-                                    padding: 1px 6px
-                                }
-
-                                .fp-student-body {
-                                    padding: 0 14px
-                                }
-
-                                .fp-student-card.active .fp-student-body {
-                                    display: block !important;
-                                    padding: 0 14px 16px
-                                }
-
-                                .fp-eval-pills {
-                                    gap: 6px
-                                }
-
-                                .fp-eval-pill {
-                                    padding: 5px 10px;
-                                    font-size: .72rem
-                                }
-
-                                .fp-eval-tab {
-                                    padding: 8px 12px;
-                                    font-size: .76rem
-                                }
-
-                                .fp-domain-title {
-                                    padding: 10px 12px;
-                                    font-size: .82rem
-                                }
-
-                                .fp-category-title {
-                                    padding: 8px 12px;
-                                    font-size: .78rem
-                                }
-
-                                .fp-indicator-row {
-                                    padding: 8px 12px;
-                                    flex-direction: column;
-                                    align-items: flex-start;
-                                    gap: 6px
-                                }
-
-                                .fp-indicator-text {
-                                    font-size: .78rem
-                                }
-
-                                .fp-indicator-score {
-                                    align-self: flex-start;
-                                    min-width: auto;
-                                    font-size: .7rem
-                                }
-
-                                .fp-eval-meta {
-                                    gap: 6px
-                                }
-
-                                .fp-meta-chip {
-                                    font-size: .72rem;
-                                    padding: 4px 10px
-                                }
-                            }
-                        </style>
-                        <div class="olama-family-perf" dir="rtl">
-                            <!-- Hero Header -->
-                            <div class="fp-hero">
-                                <div class="fp-hero-content">
-                                    <div class="fp-hero-icon">
-                                        <span class="material-icons">family_restroom</span>
-                                    </div>
-                                    <div class="fp-hero-text">
-                                        <h1 class="fp-hero-title">أداء الطلاب</h1>
-                                        <p class="fp-hero-subtitle">Family Students Performance</p>
-                                    </div>
-                                </div>
-                                <div class="fp-hero-meta">
-                                    <div class="fp-meta-item">
-                                        <span class="material-icons">badge</span>
-                                        <span>
-                                            <?php echo esc_html($family->family_name); ?>
-                                        </span>
-                                    </div>
-                                    <div class="fp-meta-item">
-                                        <span class="material-icons">calendar_today</span>
-                                        <span>
-                                            <?php echo esc_html($year_name . ' — ' . $semester_name); ?>
-                                        </span>
-                                    </div>
-                                </div>
+                <style>
+                    /* Family Performance Dashboard - Inline Styles */
+                    .olama-family-perf {
+                        font-family: 'Tajawal', 'Inter', sans-serif;
+                        max-width: 900px;
+                        margin: 0 auto;
+                        padding: 16px;
+                        direction: rtl;
+                        background: #f0f4f8;
+                        min-height: 100vh;
+                        -webkit-font-smoothing: antialiased
+                    }
+
+                    .fp-hero {
+                        background: linear-gradient(135deg, #0f766e 0%, #0d9488 30%, #14b8a6 60%, #2dd4bf 100%);
+                        border-radius: 24px;
+                        padding: 36px 28px 28px;
+                        position: relative;
+                        overflow: hidden;
+                        margin-bottom: 20px;
+                        box-shadow: 0 8px 32px rgba(13, 148, 136, .25)
+                    }
+
+                    .fp-hero::before {
+                        content: '';
+                        position: absolute;
+                        top: -40px;
+                        left: -40px;
+                        width: 180px;
+                        height: 180px;
+                        border-radius: 50%;
+                        background: rgba(255, 255, 255, .08)
+                    }
+
+                    .fp-hero::after {
+                        content: '';
+                        position: absolute;
+                        bottom: -30px;
+                        right: -30px;
+                        width: 140px;
+                        height: 140px;
+                        border-radius: 50%;
+                        background: rgba(255, 255, 255, .06)
+                    }
+
+                    .fp-hero-content {
+                        display: flex;
+                        align-items: center;
+                        gap: 16px;
+                        position: relative;
+                        z-index: 2;
+                        margin-bottom: 20px
+                    }
+
+                    .fp-hero-icon {
+                        width: 56px;
+                        height: 56px;
+                        border-radius: 16px;
+                        background: rgba(255, 255, 255, .2);
+                        backdrop-filter: blur(10px);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0
+                    }
+
+                    .fp-hero-icon .material-icons {
+                        font-size: 30px;
+                        color: #fff
+                    }
+
+                    .fp-hero-title {
+                        font-size: 1.9rem;
+                        font-weight: 900;
+                        color: #fff;
+                        margin: 0;
+                        line-height: 1.2;
+                        text-shadow: 0 2px 8px rgba(0, 0, 0, .1)
+                    }
+
+                    .fp-hero-subtitle {
+                        font-family: 'Inter', sans-serif;
+                        font-size: .85rem;
+                        color: rgba(255, 255, 255, .75);
+                        margin: 4px 0 0;
+                        font-weight: 500;
+                        letter-spacing: .5px
+                    }
+
+                    .fp-hero-meta {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                        position: relative;
+                        z-index: 2
+                    }
+
+                    .fp-meta-item {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                        background: rgba(255, 255, 255, .18);
+                        backdrop-filter: blur(8px);
+                        padding: 6px 14px;
+                        border-radius: 30px;
+                        color: #fff;
+                        font-size: .85rem;
+                        font-weight: 600
+                    }
+
+                    .fp-meta-item .material-icons {
+                        font-size: 16px;
+                        opacity: .8
+                    }
+
+                    .fp-students-list {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 14px
+                    }
+
+                    .fp-student-card {
+                        background: #fff;
+                        border-radius: 20px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 12px rgba(0, 0, 0, .04);
+                        border: 1px solid #e5e9ef;
+                        transition: box-shadow .3s ease, border-color .3s ease
+                    }
+
+                    .fp-student-card.active {
+                        box-shadow: 0 8px 30px rgba(0, 0, 0, .08);
+                        border-color: #d1d5db
+                    }
+
+                    .fp-student-header {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        padding: 16px 18px;
+                        cursor: pointer;
+                        transition: background .2s ease;
+                        user-select: none
+                    }
+
+                    .fp-student-header:hover {
+                        background: #f9fafb
+                    }
+
+                    .fp-student-avatar {
+                        width: 46px;
+                        height: 46px;
+                        border-radius: 14px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 1.3rem;
+                        font-weight: 800;
+                        color: #fff;
+                        flex-shrink: 0;
+                        line-height: 1
+                    }
+
+                    .fp-student-avatar.fp-excellent {
+                        background: linear-gradient(135deg, #059669, #10b981)
+                    }
+
+                    .fp-student-avatar.fp-good {
+                        background: linear-gradient(135deg, #0284c7, #38bdf8)
+                    }
+
+                    .fp-student-avatar.fp-fair {
+                        background: linear-gradient(135deg, #d97706, #fbbf24)
+                    }
+
+                    .fp-student-avatar.fp-weak {
+                        background: linear-gradient(135deg, #dc2626, #f87171)
+                    }
+
+                    .fp-student-info {
+                        flex: 1;
+                        min-width: 0
+                    }
+
+                    .fp-student-name {
+                        font-size: 1.05rem;
+                        font-weight: 800;
+                        color: #1e293b;
+                        line-height: 1.3;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis
+                    }
+
+                    .fp-student-detail {
+                        font-size: .8rem;
+                        color: #64748b;
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        margin-top: 2px
+                    }
+
+                    .fp-age-badge {
+                        background: #f1f5f9;
+                        color: #475569;
+                        padding: 1px 8px;
+                        border-radius: 10px;
+                        font-size: .72rem;
+                        font-weight: 700
+                    }
+
+                    .fp-student-summary {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 4px;
+                        flex-shrink: 0
+                    }
+
+                    .fp-mastery-ring {
+                        width: 46px;
+                        height: 46px;
+                        position: relative
+                    }
+
+                    .fp-mastery-ring svg {
+                        width: 100%;
+                        height: 100%;
+                        transform: rotate(-90deg)
+                    }
+
+                    .fp-ring-bg {
+                        fill: none;
+                        stroke: #e5e7eb;
+                        stroke-width: 3
+                    }
+
+                    .fp-ring-fill {
+                        fill: none;
+                        stroke-width: 3;
+                        stroke-linecap: round;
+                        transition: stroke-dasharray .6s ease
+                    }
+
+                    .fp-mastery-ring.fp-excellent .fp-ring-fill {
+                        stroke: #10b981
+                    }
+
+                    .fp-mastery-ring.fp-good .fp-ring-fill {
+                        stroke: #38bdf8
+                    }
+
+                    .fp-mastery-ring.fp-fair .fp-ring-fill {
+                        stroke: #fbbf24
+                    }
+
+                    .fp-mastery-ring.fp-weak .fp-ring-fill {
+                        stroke: #f87171
+                    }
+
+                    .fp-ring-text {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        font-size: .7rem;
+                        font-weight: 800;
+                        color: #334155;
+                        font-family: 'Inter', sans-serif
+                    }
+
+                    .fp-mastery-badge {
+                        font-size: .65rem;
+                        font-weight: 700;
+                        padding: 2px 8px;
+                        border-radius: 8px;
+                        white-space: nowrap
+                    }
+
+                    .fp-mastery-badge.fp-excellent {
+                        background: #d1fae5;
+                        color: #065f46
+                    }
+
+                    .fp-mastery-badge.fp-good {
+                        background: #dbeafe;
+                        color: #1e40af
+                    }
+
+                    .fp-mastery-badge.fp-fair {
+                        background: #fef3c7;
+                        color: #92400e
+                    }
+
+                    .fp-mastery-badge.fp-weak {
+                        background: #fee2e2;
+                        color: #991b1b
+                    }
+
+                    .fp-chevron {
+                        color: #94a3b8;
+                        font-size: 24px !important;
+                        transition: transform .3s ease;
+                        flex-shrink: 0
+                    }
+
+                    .fp-student-card.active .fp-chevron {
+                        transform: rotate(180deg);
+                        color: #0d9488
+                    }
+
+                    .fp-student-body {
+                        display: none !important;
+                        padding: 0 18px
+                    }
+
+                    .fp-student-card.active .fp-student-body {
+                        display: block !important;
+                        padding: 0 18px 20px
+                    }
+
+                    .fp-eval-pills {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 8px;
+                        margin-bottom: 16px;
+                        padding-top: 4px
+                    }
+
+                    .fp-eval-pill {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        padding: 6px 12px;
+                        border-radius: 12px;
+                        font-size: .78rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform .15s ease, box-shadow .15s ease
+                    }
+
+                    .fp-eval-pill:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 3px 8px rgba(0, 0, 0, .08)
+                    }
+
+                    .fp-eval-pill.fp-excellent {
+                        background: #d1fae5;
+                        color: #065f46
+                    }
+
+                    .fp-eval-pill.fp-good {
+                        background: #dbeafe;
+                        color: #1e40af
+                    }
+
+                    .fp-eval-pill.fp-fair {
+                        background: #fef3c7;
+                        color: #92400e
+                    }
+
+                    .fp-eval-pill.fp-weak {
+                        background: #fee2e2;
+                        color: #991b1b
+                    }
+
+                    .fp-pill-name {
+                        white-space: nowrap
+                    }
+
+                    .fp-pill-pct {
+                        font-family: 'Inter', sans-serif;
+                        font-weight: 800;
+                        font-size: .82rem
+                    }
+
+                    .fp-eval-tabs {
+                        display: flex;
+                        gap: 4px;
+                        border-bottom: 2px solid #e5e7eb;
+                        margin-bottom: 16px;
+                        overflow-x: auto;
+                        -webkit-overflow-scrolling: touch;
+                        scrollbar-width: none;
+                        padding-bottom: 0
+                    }
+
+                    .fp-eval-tabs::-webkit-scrollbar {
+                        display: none
+                    }
+
+                    .fp-eval-tab {
+                        padding: 10px 16px;
+                        font-size: .82rem;
+                        font-weight: 700;
+                        font-family: 'Tajawal', sans-serif;
+                        color: #64748b;
+                        background: none;
+                        border: none;
+                        border-bottom: 3px solid transparent;
+                        cursor: pointer;
+                        white-space: nowrap;
+                        transition: all .2s ease;
+                        margin-bottom: -2px
+                    }
+
+                    .fp-eval-tab:hover {
+                        color: #0d9488;
+                        background: #f0fdfa;
+                        border-radius: 8px 8px 0 0
+                    }
+
+                    .fp-eval-tab.active {
+                        color: #0f766e;
+                        border-bottom-color: #0d9488;
+                        background: #f0fdfa;
+                        border-radius: 8px 8px 0 0
+                    }
+
+                    .fp-eval-panel {
+                        display: none
+                    }
+
+                    .fp-eval-panel.active {
+                        display: block;
+                        animation: fpFadeIn .3s ease
+                    }
+
+                    @keyframes fpFadeIn {
+                        from {
+                            opacity: 0;
+                            transform: translateY(8px)
+                        }
+
+                        to {
+                            opacity: 1;
+                            transform: translateY(0)
+                        }
+                    }
+
+                    .fp-eval-meta {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 8px;
+                        margin-bottom: 16px
+                    }
+
+                    .fp-meta-chip {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 5px;
+                        padding: 5px 12px;
+                        border-radius: 10px;
+                        font-size: .78rem;
+                        font-weight: 600;
+                        background: #f1f5f9;
+                        color: #475569
+                    }
+
+                    .fp-meta-chip .material-icons {
+                        font-size: 15px;
+                        opacity: .7
+                    }
+
+                    .fp-meta-chip.fp-excellent {
+                        background: #d1fae5;
+                        color: #065f46
+                    }
+
+                    .fp-meta-chip.fp-good {
+                        background: #dbeafe;
+                        color: #1e40af
+                    }
+
+                    .fp-meta-chip.fp-fair {
+                        background: #fef3c7;
+                        color: #92400e
+                    }
+
+                    .fp-meta-chip.fp-weak {
+                        background: #fee2e2;
+                        color: #991b1b
+                    }
+
+                    .fp-domain-block {
+                        margin-bottom: 16px;
+                        background: #f8fafb;
+                        border-radius: 16px;
+                        border: 1px solid #e8ecf0;
+                        overflow: hidden
+                    }
+
+                    .fp-domain-title {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding: 12px 16px;
+                        background: linear-gradient(135deg, #0f766e, #14b8a6);
+                        color: #fff;
+                        font-size: .88rem;
+                        font-weight: 700
+                    }
+
+                    .fp-domain-title .material-icons {
+                        font-size: 18px;
+                        opacity: .85
+                    }
+
+                    .fp-category-block {
+                        border-bottom: 1px solid #e8ecf0;
+                        padding: 0
+                    }
+
+                    .fp-category-block:last-child {
+                        border-bottom: none
+                    }
+
+                    .fp-category-title {
+                        padding: 10px 16px;
+                        font-size: .82rem;
+                        font-weight: 700;
+                        color: #0f766e;
+                        background: #eef7f6;
+                        border-bottom: 1px dashed #d1e3e0
+                    }
+
+                    .fp-indicators {
+                        padding: 0
+                    }
+
+                    .fp-indicator-row {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 12px;
+                        padding: 10px 16px;
+                        border-bottom: 1px solid #f1f4f6;
+                        transition: background .15s ease
+                    }
+
+                    .fp-indicator-row:last-child {
+                        border-bottom: none
+                    }
+
+                    .fp-indicator-row:hover {
+                        background: #f0fdfa
+                    }
+
+                    .fp-indicator-text {
+                        flex: 1;
+                        font-size: .82rem;
+                        color: #334155;
+                        line-height: 1.5;
+                        text-align: right
+                    }
+
+                    .fp-indicator-score {
+                        flex-shrink: 0;
+                        padding: 4px 12px;
+                        border-radius: 10px;
+                        font-size: .75rem;
+                        font-weight: 700;
+                        white-space: nowrap;
+                        text-align: center;
+                        min-width: 60px
+                    }
+
+                    .fp-indicator-score.fp-score-high {
+                        background: #d1fae5;
+                        color: #065f46
+                    }
+
+                    .fp-indicator-score.fp-score-mid {
+                        background: #fef3c7;
+                        color: #92400e
+                    }
+
+                    .fp-indicator-score.fp-score-low {
+                        background: #fee2e2;
+                        color: #991b1b
+                    }
+
+                    .fp-indicator-score.fp-score-na {
+                        background: #f1f5f9;
+                        color: #94a3b8
+                    }
+
+                    .fp-footer {
+                        text-align: center;
+                        padding: 24px 16px;
+                        color: #94a3b8;
+                        font-size: .8rem;
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 6px
+                    }
+
+                    .fp-footer .material-icons {
+                        font-size: 16px;
+                        color: #0d9488
+                    }
+
+                    @media(max-width:600px) {
+                        .olama-family-perf {
+                            padding: 10px
+                        }
+
+                        .fp-hero {
+                            padding: 24px 18px 20px;
+                            border-radius: 18px
+                        }
+
+                        .fp-hero-title {
+                            font-size: 1.5rem
+                        }
+
+                        .fp-hero-icon {
+                            width: 44px;
+                            height: 44px;
+                            border-radius: 12px
+                        }
+
+                        .fp-hero-icon .material-icons {
+                            font-size: 24px
+                        }
+
+                        .fp-student-header {
+                            padding: 12px 14px;
+                            gap: 10px
+                        }
+
+                        .fp-student-avatar {
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 12px;
+                            font-size: 1.1rem
+                        }
+
+                        .fp-student-name {
+                            font-size: .95rem
+                        }
+
+                        .fp-mastery-ring {
+                            width: 40px;
+                            height: 40px
+                        }
+
+                        .fp-ring-text {
+                            font-size: .62rem
+                        }
+
+                        .fp-mastery-badge {
+                            font-size: .6rem;
+                            padding: 1px 6px
+                        }
+
+                        .fp-student-body {
+                            padding: 0 14px
+                        }
+
+                        .fp-student-card.active .fp-student-body {
+                            display: block !important;
+                            padding: 0 14px 16px
+                        }
+
+                        .fp-eval-pills {
+                            gap: 6px
+                        }
+
+                        .fp-eval-pill {
+                            padding: 5px 10px;
+                            font-size: .72rem
+                        }
+
+                        .fp-eval-tab {
+                            padding: 8px 12px;
+                            font-size: .76rem
+                        }
+
+                        .fp-domain-title {
+                            padding: 10px 12px;
+                            font-size: .82rem
+                        }
+
+                        .fp-category-title {
+                            padding: 8px 12px;
+                            font-size: .78rem
+                        }
+
+                        .fp-indicator-row {
+                            padding: 8px 12px;
+                            flex-direction: column;
+                            align-items: flex-start;
+                            gap: 6px
+                        }
+
+                        .fp-indicator-text {
+                            font-size: .78rem
+                        }
+
+                        .fp-indicator-score {
+                            align-self: flex-start;
+                            min-width: auto;
+                            font-size: .7rem
+                        }
+
+                        .fp-eval-meta {
+                            gap: 6px
+                        }
+
+                        .fp-meta-chip {
+                            font-size: .72rem;
+                            padding: 4px 10px
+                        }
+                    }
+                </style>
+                <div class="olama-family-perf" dir="rtl">
+                    <!-- Hero Header -->
+                    <div class="fp-hero">
+                        <div class="fp-hero-content">
+                            <div class="fp-hero-icon">
+                                <span class="material-icons">family_restroom</span>
                             </div>
-
-                            <!-- Students Accordion -->
-                            <div class="fp-students-list">
-                                <?php foreach ($students_data as $si => $sdata):
-                                    $s = $sdata['student'];
-                                    $mastery_class = $get_mastery_class($sdata['avg_mastery']);
-                                    $mastery_label = $get_mastery_label($sdata['avg_mastery']);
-                                    // Find weakest evaluation index
-                                    $weakest_idx = 0;
-                                    $weakest_pct = 999;
-                                    foreach ($sdata['evaluations'] as $ei => $ev) {
-                                        if ($ev['percentage'] < $weakest_pct) {
-                                            $weakest_pct = $ev['percentage'];
-                                            $weakest_idx = $ei;
-                                        }
-                                    }
-                                    ?>
-                                        <div class="fp-student-card" data-student-index="<?php echo $si; ?>">
-                                            <!-- Student Header (always visible) -->
-                                            <div class="fp-student-header">
-                                                <div class="fp-student-avatar <?php echo $mastery_class; ?>">
-                                                    <?php echo mb_substr($s->student_name, 0, 1, 'UTF-8'); ?>
-                                                </div>
-                                                <div class="fp-student-info">
-                                                    <div class="fp-student-name">
-                                                        <?php echo esc_html($s->student_name); ?>
-                                                    </div>
-                                                    <div class="fp-student-detail">
-                                                        <?php echo esc_html($sdata['grade_name'] . ' — ' . $sdata['section_name']); ?>
-                                                        <?php if ($sdata['age']): ?>
-                                                                <span class="fp-age-badge">
-                                                                    <?php echo $sdata['age']; ?> سنة
-                                                                </span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                                <div class="fp-student-summary">
-                                                    <div class="fp-mastery-ring <?php echo $mastery_class; ?>">
-                                                        <svg viewBox="0 0 36 36">
-                                                            <path class="fp-ring-bg"
-                                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                                            <path class="fp-ring-fill"
-                                                                stroke-dasharray="<?php echo $sdata['avg_mastery']; ?>, 100"
-                                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                                        </svg>
-                                                        <span class="fp-ring-text">
-                                                            <?php echo $sdata['avg_mastery']; ?>%
-                                                        </span>
-                                                    </div>
-                                                    <span class="fp-mastery-badge <?php echo $mastery_class; ?>">
-                                                        <?php echo $mastery_label; ?>
-                                                    </span>
-                                                </div>
-                                                <span class="material-icons fp-chevron">expand_more</span>
-                                            </div>
-
-                                            <!-- Expanded Content -->
-                                            <div class="fp-student-body">
-                                                <!-- Evaluation mini summary pills -->
-                                                <div class="fp-eval-pills">
-                                                    <?php foreach ($sdata['evaluations'] as $ei => $ev):
-                                                        $ev_class = $get_mastery_class($ev['percentage']);
-                                                        ?>
-                                                            <div class="fp-eval-pill <?php echo $ev_class; ?>" data-tab-index="<?php echo $ei; ?>"
-                                                                style="flex-direction: column; align-items: flex-start; gap: 2px;">
-                                                                <div
-                                                                    style="display: flex; justify-content: space-between; width: 100%; align-items: center; gap: 8px;">
-                                                                    <span class="fp-pill-name" style="font-weight: 800;">
-                                                                        <?php echo esc_html($ev['subject_name']); ?>
-                                                                    </span>
-                                                                    <span class="fp-pill-pct">
-                                                                        <?php echo round($ev['percentage']); ?>%
-                                                                    </span>
-                                                                </div>
-                                                                <div class="fp-pill-desc" style="font-size: 0.7rem; opacity: 0.8; font-weight: 500;">
-                                                                    <?php echo esc_html($ev['template_name']); ?>
-                                                                </div>
-                                                            </div>
-                                                    <?php endforeach; ?>
-                                                </div>
-
-                                                <!-- Evaluation Tabs -->
-                                                <div class="fp-eval-tabs">
-                                                    <?php foreach ($sdata['evaluations'] as $ei => $ev): ?>
-                                                            <button class="fp-eval-tab <?php echo ($ei === $weakest_idx) ? 'active' : ''; ?>"
-                                                                data-tab-index="<?php echo $ei; ?>">
-                                                                <?php echo esc_html($ev['subject_name']); ?>
-                                                            </button>
-                                                    <?php endforeach; ?>
-                                                </div>
-
-                                                <!-- Tab Panels -->
-                                                <?php foreach ($sdata['evaluations'] as $ei => $ev): ?>
-                                                        <div class="fp-eval-panel <?php echo ($ei === $weakest_idx) ? 'active' : ''; ?>"
-                                                            data-panel-index="<?php echo $ei; ?>">
-
-                                                            <!-- Evaluation meta -->
-                                                            <div class="fp-eval-meta">
-                                                                <?php if ($ev['teacher_name']): ?>
-                                                                        <div class="fp-meta-chip">
-                                                                            <span class="material-icons">person</span>
-                                                                            <?php echo esc_html($ev['teacher_name']); ?>
-                                                                        </div>
-                                                                <?php endif; ?>
-                                                                <div class="fp-meta-chip">
-                                                                    <span class="material-icons">event</span>
-                                                                    <?php echo date_i18n('j F Y', strtotime($ev['date'])); ?>
-                                                                </div>
-                                                                <div class="fp-meta-chip <?php echo $get_mastery_class($ev['percentage']); ?>">
-                                                                    <span class="material-icons">insights</span>
-                                                                    <?php echo round($ev['percentage']); ?>%
-                                                                </div>
-                                                            </div>
-
-                                                            <!-- Domains -->
-                                                            <?php foreach ($ev['curriculum'] as $domain): ?>
-                                                                    <div class="fp-domain-block">
-                                                                        <div class="fp-domain-title">
-                                                                            <span class="material-icons">folder_open</span>
-                                                                            <?php echo esc_html($domain->title_ar); ?>
-                                                                        </div>
-                                                                        <?php foreach ($domain->categories as $category): ?>
-                                                                                <div class="fp-category-block">
-                                                                                    <div class="fp-category-title">
-                                                                                        <?php echo esc_html($category->title_ar); ?>
-                                                                                    </div>
-                                                                                    <div class="fp-indicators">
-                                                                                        <?php foreach ($category->indicators as $indicator):
-                                                                                            $score_obj = isset($ev['scores'][$indicator->id]) ? $ev['scores'][$indicator->id] : null;
-                                                                                            $raw_score = $score_obj ? $score_obj->score : null;
-                                                                                            $label = $get_score_label($raw_score, $ev['score_config']);
-                                                                                            $max_keys = array_keys($ev['score_config']);
-                                                                                            $max_score_val = !empty($max_keys) ? max($max_keys) : 5;
-                                                                                            $score_cls = $get_score_class($raw_score, $max_score_val);
-                                                                                            ?>
-                                                                                                <div class="fp-indicator-row">
-                                                                                                    <div class="fp-indicator-text">
-                                                                                                        <?php echo esc_html($indicator->indicator_text); ?>
-                                                                                                    </div>
-                                                                                                    <div class="fp-indicator-score <?php echo $score_cls; ?>">
-                                                                                                        <?php echo esc_html($label); ?>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                        <?php endforeach; ?>
-                                                                                    </div>
-                                                                                </div>
-                                                                        <?php endforeach; ?>
-                                                                    </div>
-                                                            <?php endforeach; ?>
-                                                        </div>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        </div>
-                                <?php endforeach; ?>
-                            </div>
-
-                            <!-- Footer -->
-                            <div class="fp-footer">
-                                <span class="material-icons">verified</span>
-                                <?php echo Olama_School_Helpers::translate('Last updated'); ?>:
-                                <?php echo date_i18n('j F Y — H:i'); ?>
+                            <div class="fp-hero-text">
+                                <h1 class="fp-hero-title">أداء الطلاب</h1>
+                                <p class="fp-hero-subtitle">Family Students Performance</p>
                             </div>
                         </div>
-                        <?php
-                        return ob_get_clean();
+                        <div class="fp-hero-meta">
+                            <div class="fp-meta-item">
+                                <span class="material-icons">badge</span>
+                                <span>
+                                    <?php echo esc_html($family->family_name); ?>
+                                </span>
+                            </div>
+                            <div class="fp-meta-item">
+                                <span class="material-icons">calendar_today</span>
+                                <span>
+                                    <?php echo esc_html($year_name . ' — ' . $semester_name); ?>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Students Accordion -->
+                    <div class="fp-students-list">
+                        <?php foreach ($students_data as $si => $sdata):
+                            $s = $sdata['student'];
+                            $mastery_class = $get_mastery_class($sdata['avg_mastery']);
+                            $mastery_label = $get_mastery_label($sdata['avg_mastery']);
+                            // Find weakest evaluation index
+                            $weakest_idx = 0;
+                            $weakest_pct = 999;
+                            foreach ($sdata['evaluations'] as $ei => $ev) {
+                                if ($ev['percentage'] < $weakest_pct) {
+                                    $weakest_pct = $ev['percentage'];
+                                    $weakest_idx = $ei;
+                                }
+                            }
+                            ?>
+                            <div class="fp-student-card" data-student-index="<?php echo $si; ?>">
+                                <!-- Student Header (always visible) -->
+                                <div class="fp-student-header">
+                                    <div class="fp-student-avatar <?php echo $mastery_class; ?>">
+                                        <?php echo mb_substr($s->student_name, 0, 1, 'UTF-8'); ?>
+                                    </div>
+                                    <div class="fp-student-info">
+                                        <div class="fp-student-name">
+                                            <?php echo esc_html($s->student_name); ?>
+                                        </div>
+                                        <div class="fp-student-detail">
+                                            <?php echo esc_html($sdata['grade_name'] . ' — ' . $sdata['section_name']); ?>
+                                            <?php if ($sdata['age']): ?>
+                                                <span class="fp-age-badge">
+                                                    <?php echo $sdata['age']; ?> سنة
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <div class="fp-student-summary">
+                                        <div class="fp-mastery-ring <?php echo $mastery_class; ?>">
+                                            <svg viewBox="0 0 36 36">
+                                                <path class="fp-ring-bg"
+                                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                                <path class="fp-ring-fill"
+                                                    stroke-dasharray="<?php echo $sdata['avg_mastery']; ?>, 100"
+                                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                            </svg>
+                                            <span class="fp-ring-text">
+                                                <?php echo $sdata['avg_mastery']; ?>%
+                                            </span>
+                                        </div>
+                                        <span class="fp-mastery-badge <?php echo $mastery_class; ?>">
+                                            <?php echo $mastery_label; ?>
+                                        </span>
+                                    </div>
+                                    <span class="material-icons fp-chevron">expand_more</span>
+                                </div>
+
+                                <!-- Expanded Content -->
+                                <div class="fp-student-body">
+                                    <!-- Evaluation mini summary pills -->
+                                    <div class="fp-eval-pills">
+                                        <?php foreach ($sdata['evaluations'] as $ei => $ev):
+                                            $ev_class = $get_mastery_class($ev['percentage']);
+                                            ?>
+                                            <div class="fp-eval-pill <?php echo $ev_class; ?>" data-tab-index="<?php echo $ei; ?>"
+                                                style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                                                <div
+                                                    style="display: flex; justify-content: space-between; width: 100%; align-items: center; gap: 8px;">
+                                                    <span class="fp-pill-name" style="font-weight: 800;">
+                                                        <?php echo esc_html($ev['subject_name']); ?>
+                                                    </span>
+                                                    <span class="fp-pill-pct">
+                                                        <?php echo round($ev['percentage']); ?>%
+                                                    </span>
+                                                </div>
+                                                <div class="fp-pill-desc" style="font-size: 0.7rem; opacity: 0.8; font-weight: 500;">
+                                                    <?php echo esc_html($ev['template_name']); ?>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+
+                                    <!-- Evaluation Tabs -->
+                                    <div class="fp-eval-tabs">
+                                        <?php foreach ($sdata['evaluations'] as $ei => $ev): ?>
+                                            <button class="fp-eval-tab <?php echo ($ei === $weakest_idx) ? 'active' : ''; ?>"
+                                                data-tab-index="<?php echo $ei; ?>">
+                                                <?php echo esc_html($ev['subject_name']); ?>
+                                            </button>
+                                        <?php endforeach; ?>
+                                    </div>
+
+                                    <!-- Tab Panels -->
+                                    <?php foreach ($sdata['evaluations'] as $ei => $ev): ?>
+                                        <div class="fp-eval-panel <?php echo ($ei === $weakest_idx) ? 'active' : ''; ?>"
+                                            data-panel-index="<?php echo $ei; ?>">
+
+                                            <!-- Evaluation meta -->
+                                            <div class="fp-eval-meta">
+                                                <?php if ($ev['teacher_name']): ?>
+                                                    <div class="fp-meta-chip">
+                                                        <span class="material-icons">person</span>
+                                                        <?php echo esc_html($ev['teacher_name']); ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <div class="fp-meta-chip">
+                                                    <span class="material-icons">event</span>
+                                                    <?php echo date_i18n('j F Y', strtotime($ev['date'])); ?>
+                                                </div>
+                                                <div class="fp-meta-chip <?php echo $get_mastery_class($ev['percentage']); ?>">
+                                                    <span class="material-icons">insights</span>
+                                                    <?php echo round($ev['percentage']); ?>%
+                                                </div>
+                                            </div>
+
+                                            <!-- Domains -->
+                                            <?php foreach ($ev['curriculum'] as $domain): ?>
+                                                <div class="fp-domain-block">
+                                                    <div class="fp-domain-title">
+                                                        <span class="material-icons">folder_open</span>
+                                                        <?php echo esc_html($domain->title_ar); ?>
+                                                    </div>
+                                                    <?php foreach ($domain->categories as $category): ?>
+                                                        <div class="fp-category-block">
+                                                            <div class="fp-category-title">
+                                                                <?php echo esc_html($category->title_ar); ?>
+                                                            </div>
+                                                            <div class="fp-indicators">
+                                                                <?php foreach ($category->indicators as $indicator):
+                                                                    $score_obj = isset($ev['scores'][$indicator->id]) ? $ev['scores'][$indicator->id] : null;
+                                                                    $raw_score = $score_obj ? $score_obj->score : null;
+                                                                    $label = $get_score_label($raw_score, $ev['score_config']);
+                                                                    $max_keys = array_keys($ev['score_config']);
+                                                                    $max_score_val = !empty($max_keys) ? max($max_keys) : 5;
+                                                                    $score_cls = $get_score_class($raw_score, $max_score_val);
+                                                                    ?>
+                                                                    <div class="fp-indicator-row">
+                                                                        <div class="fp-indicator-text">
+                                                                            <?php echo esc_html($indicator->indicator_text); ?>
+                                                                        </div>
+                                                                        <div class="fp-indicator-score <?php echo $score_cls; ?>">
+                                                                            <?php echo esc_html($label); ?>
+                                                                        </div>
+                                                                    </div>
+                                                                <?php endforeach; ?>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="fp-footer">
+                        <span class="material-icons">verified</span>
+                        <?php echo Olama_School_Helpers::translate('Last updated'); ?>:
+                        <?php echo date_i18n('j F Y — H:i'); ?>
+                    </div>
+                </div>
+                <?php
+                return ob_get_clean();
     }
 
     /**
@@ -3931,69 +3931,69 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-                        <div class="olama-logged-teacher-schedule-wrap"
-                            style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                            <h2 class="olama-schedule-title"
-                                style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px; font-family: 'Tajawal', sans-serif;">
-                                <span class="dashicons dashicons-calendar-alt" style="color: #2271b1;"></span>
-                                <?php echo Olama_School_Helpers::translate('Today\'s Teaching Schedule'); ?>
-                                <span class="olama-date-badge"
-                                    style="font-size: 0.6em; background: #f0f6fb; color: #2271b1; padding: 4px 10px; border-radius: 15px; font-weight: 700;">
-                                    <?php echo date_i18n('l, M j'); ?>
-                                </span>
-                            </h2>
-                            <div style="margin-top: 20px;">
-                                <?php if ($teacher_schedule): ?>
-                                        <div style="display: flex; flex-direction: column; gap: 12px;">
-                                            <?php foreach ($teacher_schedule as $period): ?>
-                                                    <div
-                                                        style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #f9f9f9; border-radius: 8px; border-right: 4px solid #2271b1;">
-                                                        <div style="display: flex; align-items: center; gap: 20px;">
-                                                            <div
-                                                                style="background: #2271b1; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800;">
-                                                                <?php echo $period->period_number; ?>
-                                                            </div>
-                                                            <div>
-                                                                <div style="font-weight: 700; color: #1d2327;">
-                                                                    <?php echo esc_html($period->subject_name); ?>
-                                                                </div>
-                                                                <div style="font-size: 0.85em; color: #666;">
-                                                                    <?php echo esc_html($period->grade_name . ' - ' . $period->section_name); ?>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div style="display: flex; align-items: center; gap: 15px;">
-                                                            <?php if ($period->plan_status): ?>
-                                                                    <span
-                                                                        style="font-size: 0.85em; font-weight: 600; color: <?php echo ($period->plan_status == 'approved' ? '#00a32a' : ($period->plan_status == 'submitted' ? '#dba617' : '#ccc')); ?>;">
-                                                                        <span class="dashicons dashicons-yes-alt" style="vertical-align: middle;"></span>
-                                                                        <?php echo ucfirst($period->plan_status); ?>
-                                                                    </span>
-                                                                    <a href="<?php echo admin_url('admin.php?page=olama-school-plans&action=edit&id=' . $period->plan_id); ?>"
-                                                                        class="button button-small"><?php echo Olama_School_Helpers::translate('View Plan'); ?></a>
-                                                            <?php else: ?>
-                                                                    <span style="font-size: 0.85em; color: #d63638; font-weight: 600;">
-                                                                        <span class="dashicons dashicons-warning" style="vertical-align: middle;"></span>
-                                                                        <?php echo Olama_School_Helpers::translate('Missing Plan'); ?>
-                                                                    </span>
-                                                                    <a href="<?php echo admin_url('admin.php?page=olama-school-plans&action=create&section_id=' . $period->section_id . '&subject_id=' . $period->subject_id . '&period=' . $period->period_number . '&date=' . date('Y-m-d')); ?>"
-                                                                        class="button button-primary button-small"><?php echo Olama_School_Helpers::translate('Create Now'); ?></a>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                    </div>
-                                            <?php endforeach; ?>
+                <div class="olama-logged-teacher-schedule-wrap"
+                    style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <h2 class="olama-schedule-title"
+                        style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px; font-family: 'Tajawal', sans-serif;">
+                        <span class="dashicons dashicons-calendar-alt" style="color: #2271b1;"></span>
+                        <?php echo Olama_School_Helpers::translate('Today\'s Teaching Schedule'); ?>
+                        <span class="olama-date-badge"
+                            style="font-size: 0.6em; background: #f0f6fb; color: #2271b1; padding: 4px 10px; border-radius: 15px; font-weight: 700;">
+                            <?php echo date_i18n('l, M j'); ?>
+                        </span>
+                    </h2>
+                    <div style="margin-top: 20px;">
+                        <?php if ($teacher_schedule): ?>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <?php foreach ($teacher_schedule as $period): ?>
+                                    <div
+                                        style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #f9f9f9; border-radius: 8px; border-right: 4px solid #2271b1;">
+                                        <div style="display: flex; align-items: center; gap: 20px;">
+                                            <div
+                                                style="background: #2271b1; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800;">
+                                                <?php echo $period->period_number; ?>
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 700; color: #1d2327;">
+                                                    <?php echo esc_html($period->subject_name); ?>
+                                                </div>
+                                                <div style="font-size: 0.85em; color: #666;">
+                                                    <?php echo esc_html($period->grade_name . ' - ' . $period->section_name); ?>
+                                                </div>
+                                            </div>
                                         </div>
-                                <?php else: ?>
-                                        <div style="text-align: center; padding: 30px; color: #999;">
-                                            <span class="dashicons dashicons-calendar"
-                                                style="font-size: 40px; width: 40px; height: 40px; opacity: 0.3; margin-bottom: 10px;"></span>
-                                            <p><?php echo Olama_School_Helpers::translate('No classes scheduled for today.'); ?></p>
+                                        <div style="display: flex; align-items: center; gap: 15px;">
+                                            <?php if ($period->plan_status): ?>
+                                                <span
+                                                    style="font-size: 0.85em; font-weight: 600; color: <?php echo ($period->plan_status == 'approved' ? '#00a32a' : ($period->plan_status == 'submitted' ? '#dba617' : '#ccc')); ?>;">
+                                                    <span class="dashicons dashicons-yes-alt" style="vertical-align: middle;"></span>
+                                                    <?php echo ucfirst($period->plan_status); ?>
+                                                </span>
+                                                <a href="<?php echo admin_url('admin.php?page=olama-school-plans&action=edit&id=' . $period->plan_id); ?>"
+                                                    class="button button-small"><?php echo Olama_School_Helpers::translate('View Plan'); ?></a>
+                                            <?php else: ?>
+                                                <span style="font-size: 0.85em; color: #d63638; font-weight: 600;">
+                                                    <span class="dashicons dashicons-warning" style="vertical-align: middle;"></span>
+                                                    <?php echo Olama_School_Helpers::translate('Missing Plan'); ?>
+                                                </span>
+                                                <a href="<?php echo admin_url('admin.php?page=olama-school-plans&action=create&section_id=' . $period->section_id . '&subject_id=' . $period->subject_id . '&period=' . $period->period_number . '&date=' . date('Y-m-d')); ?>"
+                                                    class="button button-primary button-small"><?php echo Olama_School_Helpers::translate('Create Now'); ?></a>
+                                            <?php endif; ?>
                                         </div>
-                                <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
-                        </div>
-                        <?php
-                        return ob_get_clean();
+                        <?php else: ?>
+                            <div style="text-align: center; padding: 30px; color: #999;">
+                                <span class="dashicons dashicons-calendar"
+                                    style="font-size: 40px; width: 40px; height: 40px; opacity: 0.3; margin-bottom: 10px;"></span>
+                                <p><?php echo Olama_School_Helpers::translate('No classes scheduled for today.'); ?></p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php
+                return ob_get_clean();
     }
 
     /**
@@ -4010,69 +4010,69 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-                        <div class="olama-logged-user-shifts-wrap"
-                            style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                            <h2
-                                style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px; font-family: 'Tajawal', sans-serif;">
-                                <span class="dashicons dashicons-clock" style="color: #d63638;"></span>
-                                <?php echo Olama_School_Helpers::translate('My Weekly Shifts'); ?>
-                            </h2>
-                            <div class="olama-shifts-table-container" style="margin-top: 20px; overflow-x: auto;">
-                                <?php if ($teacher_shifts): ?>
-                                        <table class="olama-shifts-table wp-list-table widefat fixed striped"
-                                            style="box-shadow: none; border: 1px solid #f0f0f1; border-collapse: collapse; width: 100%;">
-                                            <thead>
-                                                <tr style="background: #f8f9fa;">
-                                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e9ecef;">
-                                                        <?php echo Olama_School_Helpers::translate('Day'); ?>
-                                                    </th>
-                                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e9ecef;">
-                                                        <?php echo Olama_School_Helpers::translate('Slot'); ?>
-                                                    </th>
-                                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e9ecef;">
-                                                        <?php echo Olama_School_Helpers::translate('Location'); ?>
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php
-                                                $days = array(
-                                                    0 => Olama_School_Helpers::translate('Sunday'),
-                                                    1 => Olama_School_Helpers::translate('Monday'),
-                                                    2 => Olama_School_Helpers::translate('Tuesday'),
-                                                    3 => Olama_School_Helpers::translate('Wednesday'),
-                                                    4 => Olama_School_Helpers::translate('Thursday')
-                                                );
-                                                foreach ($teacher_shifts as $shift): ?>
-                                                        <tr>
-                                                            <td style="padding: 12px; font-weight: 600; border-bottom: 1px solid #f0f0f1;">
-                                                                <?php echo isset($days[$shift->day_of_week]) ? $days[$shift->day_of_week] : $shift->day_of_week; ?>
-                                                            </td>
-                                                            <td style="padding: 12px; border-bottom: 1px solid #f0f0f1;">
-                                                                <div style="font-weight: 600;"><?php echo esc_html($shift->slot_label); ?></div>
-                                                                <div style="font-size: 0.85em; color: #666;">
-                                                                    <?php echo date('H:i', strtotime($shift->start_time)) . ' - ' . date('H:i', strtotime($shift->end_time)); ?>
-                                                                </div>
-                                                            </td>
-                                                            <td style="padding: 12px; border-bottom: 1px solid #f0f0f1;">
-                                                                <div style="font-weight: 600;"><?php echo esc_html($shift->location_name); ?></div>
-                                                                <div style="font-size: 0.85em; color: #666;"><?php echo esc_html($shift->area_floor); ?>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                <?php endforeach; ?>
-                                            </tbody>
-                                        </table>
-                                <?php else: ?>
-                                        <div style="text-align: center; padding: 30px; color: #999;">
-                                            <span class="dashicons dashicons-clock"
-                                                style="font-size: 40px; width: 40px; height: 40px; opacity: 0.3; margin-bottom: 10px;"></span>
-                                            <p><?php echo Olama_School_Helpers::translate('No shifts assigned for this week.'); ?></p>
-                                        </div>
-                                <?php endif; ?>
+                <div class="olama-logged-user-shifts-wrap"
+                    style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <h2
+                        style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px; font-family: 'Tajawal', sans-serif;">
+                        <span class="dashicons dashicons-clock" style="color: #d63638;"></span>
+                        <?php echo Olama_School_Helpers::translate('My Weekly Shifts'); ?>
+                    </h2>
+                    <div class="olama-shifts-table-container" style="margin-top: 20px; overflow-x: auto;">
+                        <?php if ($teacher_shifts): ?>
+                            <table class="olama-shifts-table wp-list-table widefat fixed striped"
+                                style="box-shadow: none; border: 1px solid #f0f0f1; border-collapse: collapse; width: 100%;">
+                                <thead>
+                                    <tr style="background: #f8f9fa;">
+                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e9ecef;">
+                                            <?php echo Olama_School_Helpers::translate('Day'); ?>
+                                        </th>
+                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e9ecef;">
+                                            <?php echo Olama_School_Helpers::translate('Slot'); ?>
+                                        </th>
+                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e9ecef;">
+                                            <?php echo Olama_School_Helpers::translate('Location'); ?>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    $days = array(
+                                        0 => Olama_School_Helpers::translate('Sunday'),
+                                        1 => Olama_School_Helpers::translate('Monday'),
+                                        2 => Olama_School_Helpers::translate('Tuesday'),
+                                        3 => Olama_School_Helpers::translate('Wednesday'),
+                                        4 => Olama_School_Helpers::translate('Thursday')
+                                    );
+                                    foreach ($teacher_shifts as $shift): ?>
+                                        <tr>
+                                            <td style="padding: 12px; font-weight: 600; border-bottom: 1px solid #f0f0f1;">
+                                                <?php echo isset($days[$shift->day_of_week]) ? $days[$shift->day_of_week] : $shift->day_of_week; ?>
+                                            </td>
+                                            <td style="padding: 12px; border-bottom: 1px solid #f0f0f1;">
+                                                <div style="font-weight: 600;"><?php echo esc_html($shift->slot_label); ?></div>
+                                                <div style="font-size: 0.85em; color: #666;">
+                                                    <?php echo date('H:i', strtotime($shift->start_time)) . ' - ' . date('H:i', strtotime($shift->end_time)); ?>
+                                                </div>
+                                            </td>
+                                            <td style="padding: 12px; border-bottom: 1px solid #f0f0f1;">
+                                                <div style="font-weight: 600;"><?php echo esc_html($shift->location_name); ?></div>
+                                                <div style="font-size: 0.85em; color: #666;"><?php echo esc_html($shift->area_floor); ?>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        <?php else: ?>
+                            <div style="text-align: center; padding: 30px; color: #999;">
+                                <span class="dashicons dashicons-clock"
+                                    style="font-size: 40px; width: 40px; height: 40px; opacity: 0.3; margin-bottom: 10px;"></span>
+                                <p><?php echo Olama_School_Helpers::translate('No shifts assigned for this week.'); ?></p>
                             </div>
-                        </div>
-                        <?php
-                        return ob_get_clean();
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php
+                return ob_get_clean();
     }
 }

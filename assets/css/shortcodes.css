@@ -1203,14 +1203,14 @@
 }
 
 /* Attendance Summary Cards */
-.attendance-summary-cards {
+.olama-attendance-summary-cards {
     display: flex;
     gap: 15px;
     margin-bottom: 25px;
     direction: rtl;
 }
 
-.summary-card {
+.olama-summary-card {
     flex: 1;
     padding: 15px 20px;
     border-radius: 20px;
@@ -1221,64 +1221,64 @@
     border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.summary-card.present {
+.olama-summary-card.olama-present {
     background: #e6fffa;
     border-color: #b2f5ea;
 }
 
-.summary-card.absent {
+.olama-summary-card.olama-absent {
     background: #fff5f5;
     border-color: #fed7d7;
 }
 
-.summary-card .card-label {
+.olama-summary-card .olama-card-label {
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
-.summary-card .label-ar {
+.olama-summary-card .olama-label-ar {
     font-size: 1.1rem;
     font-weight: 800;
 }
 
-.summary-card.present .label-ar {
+.olama-summary-card.olama-present .olama-label-ar {
     color: #2c7a7b;
 }
 
-.summary-card.absent .label-ar {
+.olama-summary-card.olama-absent .olama-label-ar {
     color: #c53030;
 }
 
-.summary-card .label-en {
+.olama-summary-card .olama-label-en {
     font-size: 0.8rem;
     font-weight: 600;
     opacity: 0.7;
 }
 
-.summary-card.present .label-en {
+.olama-summary-card.olama-present .olama-label-en {
     color: #319795;
 }
 
-.summary-card.absent .label-en {
+.olama-summary-card.olama-absent .olama-label-en {
     color: #e53e3e;
 }
 
-.summary-card .card-value {
+.olama-summary-card .olama-card-value {
     font-size: 2.2rem;
     font-weight: 900;
 }
 
-.summary-card.present .card-value {
+.olama-summary-card.olama-present .olama-card-value {
     color: #234e52;
 }
 
-.summary-card.absent .card-value {
+.olama-summary-card.olama-absent .olama-card-value {
     color: #742a2a;
 }
 
 @media (max-width: 480px) {
-    .attendance-summary-cards {
+    .olama-attendance-summary-cards {
         flex-direction: column;
     }
 }
