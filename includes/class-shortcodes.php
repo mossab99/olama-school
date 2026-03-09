@@ -3948,37 +3948,31 @@ class Olama_School_Shortcodes
                                 <?php foreach ($teacher_schedule as $period): ?>
                                     <div
                                         style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #f9f9f9; border-radius: 8px; border-right: 4px solid #2271b1;">
-                                        <div style="display: flex; align-items: center; gap: 20px;">
-                                            <div
-                                                style="background: #2271b1; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800;">
-                                                <?php echo $period->period_number; ?>
+                                        <div style="display: flex; align-items: center; gap: 15px;">
+                                            <div style="background: #f0f6fb; padding: 8px; border-radius: 8px;">
+                                                <span class="dashicons dashicons-book-alt"
+                                                    style="color: #2271b1; font-size: 20px; width: 20px; height: 20px;"></span>
                                             </div>
                                             <div>
-                                                <div style="font-weight: 700; color: #1d2327;">
+                                                <div style="font-weight: 700; color: #1d2327; font-size: 1.1em;">
                                                     <?php echo esc_html($period->subject_name); ?>
                                                 </div>
-                                                <div style="font-size: 0.85em; color: #666;">
+                                                <div style="font-size: 0.9em; color: #666; font-weight: 500;">
                                                     <?php echo esc_html($period->grade_name . ' - ' . $period->section_name); ?>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div style="display: flex; align-items: center; gap: 15px;">
-                                            <?php if ($period->plan_status): ?>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div
+                                                style="background: #2271b1; color: #fff; width: 45px; height: 45px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(34, 113, 177, 0.2);">
                                                 <span
-                                                    style="font-size: 0.85em; font-weight: 600; color: <?php echo ($period->plan_status == 'approved' ? '#00a32a' : ($period->plan_status == 'submitted' ? '#dba617' : '#ccc')); ?>;">
-                                                    <span class="dashicons dashicons-yes-alt" style="vertical-align: middle;"></span>
-                                                    <?php echo ucfirst($period->plan_status); ?>
+                                                    style="font-size: 0.7em; text-transform: uppercase; font-weight: 700; opacity: 0.9; margin-bottom: -4px;">
+                                                    <?php echo Olama_School_Helpers::translate('Period'); ?>
                                                 </span>
-                                                <a href="<?php echo admin_url('admin.php?page=olama-school-plans&action=edit&id=' . $period->plan_id); ?>"
-                                                    class="button button-small"><?php echo Olama_School_Helpers::translate('View Plan'); ?></a>
-                                            <?php else: ?>
-                                                <span style="font-size: 0.85em; color: #d63638; font-weight: 600;">
-                                                    <span class="dashicons dashicons-warning" style="vertical-align: middle;"></span>
-                                                    <?php echo Olama_School_Helpers::translate('Missing Plan'); ?>
+                                                <span style="font-size: 1.4em; font-weight: 900;">
+                                                    <?php echo $period->period_number; ?>
                                                 </span>
-                                                <a href="<?php echo admin_url('admin.php?page=olama-school-plans&action=create&section_id=' . $period->section_id . '&subject_id=' . $period->subject_id . '&period=' . $period->period_number . '&date=' . date('Y-m-d')); ?>"
-                                                    class="button button-primary button-small"><?php echo Olama_School_Helpers::translate('Create Now'); ?></a>
-                                            <?php endif; ?>
+                                            </div>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
