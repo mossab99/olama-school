@@ -19,14 +19,18 @@ class Olama_School_Permissions
      */
     public static function init()
     {
-        // Skip if capabilities already initialized (check option)
-        if (get_option('olama_school_caps_version') === OLAMA_SCHOOL_VERSION) {
+        // Skip if capabilities already initialized and exams caps are added
+        $initialized = get_option('olama_school_caps_version') === OLAMA_SCHOOL_VERSION;
+        $exams_added = get_option('olama_school_exams_caps_added');
+
+        if ($initialized && $exams_added) {
             return;
         }
 
-        // Run capability setup only once
+        // Run capability setup only once or if explicit sync flag missing
         self::add_capabilities();
         update_option('olama_school_caps_version', OLAMA_SCHOOL_VERSION);
+        update_option('olama_school_exams_caps_added', true);
     }
 
     /**
@@ -95,6 +99,10 @@ class Olama_School_Permissions
                     'olama_manage_exams_schedule' => __('Exam Schedule', 'olama-school'),
                     'olama_fill_exam_details' => __('Fill Exam Details', 'olama-school'),
                     'olama_upload_exam_files' => __('Upload Exam Files', 'olama-school'),
+                    'olama_manage_question_bank' => __('Question Bank (Exam Engine)', 'olama-school'),
+                    'olama_create_exams' => __('Create / Edit Exams (Exam Engine)', 'olama-school'),
+                    'olama_grade_exams' => __('Grade Essays (Exam Engine)', 'olama-school'),
+                    'olama_view_exam_results' => __('View Results (Exam Engine)', 'olama-school'),
                 )
             ),
             'evaluation' => array(
@@ -211,6 +219,10 @@ class Olama_School_Permissions
                                 'olama_access_exams_mgmt',
                                 'olama_fill_exam_details',
                                 'olama_upload_exam_files',
+                                'olama_manage_question_bank',
+                                'olama_create_exams',
+                                'olama_grade_exams',
+                                'olama_view_exam_results',
                                 'olama_access_reports',
                                 'olama_view_reports_summary',
                                 'olama_view_plans_load',
