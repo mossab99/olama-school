@@ -1,0 +1,8 @@
+# AI Development Rules for Olama School Weekly Plan (Eval 02)
+
+- Do not perform a full-repository scan unless explicitly requested.
+- When refactoring modules from the Core, only load the specific class file being moved and its corresponding entry point in the Core.
+- Always prioritize RTL/Arabic compatibility when suggesting UI changes.
+- **Token Saver**: Many files in this plugin are extremely large (e.g., `class-admin.php` is 245KB+). NEVER read these entire files. Always use `grep_search` to find relevant sections first, then use `view_file` with `StartLine` and `EndLine` to read only the specific code blocks needed for the task.
+- Maintain consistency with the existing WordPress plugin architecture and coding standards.
+- Ensure all weekly plan analysis and reporting features account for cumulative curriculum coverage as previously implemented.

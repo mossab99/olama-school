@@ -1,0 +1,25 @@
+# Exclude dependencies and version control
+node_modules/
+vendor/
+.git/
+.vscode/
+
+# Exclude build artifacts
+assets/dist/
+
+# Exclude legacy, backup, and temporary files
+*.bak
+*-old.php
+ev-fix-orphans.php
+ev-migrate.php
+import_debug.log
+
+# Exclude large media, translation, and log files
+**/*.po
+**/*.mo
+**/*.log
+**/*.min.css
+**/*.min.js
+media-library/
+assets/images/
+uploads/
