@@ -744,7 +744,7 @@ if (!defined('ABSPATH')) {
                                 <th>
                                     <?php _e('Phone', 'olama-school'); ?>
                                 </th>
-                                <th style="width: 100px;">
+                                <th style="width: 180px;">
                                     <?php _e('Actions', 'olama-school'); ?>
                                 </th>
                             </tr>
@@ -793,34 +793,32 @@ if (!defined('ABSPATH')) {
                 </div>
 
                 <!-- Edit Teacher Modal -->
-                <div id="olama-edit-teacher-form"
-                    style="display: none; background: #fff; padding: 20px; border: 1px solid #ccd0d4; margin-top: 20px;">
-                    <h3>
-                        <?php _e('Edit Teacher Information', 'olama-school'); ?>
-                    </h3>
-                    <form method="post" action="">
-                        <?php wp_nonce_field('olama_update_teacher'); ?>
-                        <input type="hidden" name="teacher_id" id="edit_teacher_id" />
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row">
-                                    <?php _e('Employee ID', 'olama-school'); ?>
-                                </th>
-                                <td><input type="text" name="employee_id" id="edit_employee_id" class="regular-text" /></td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <?php _e('Phone Number', 'olama-school'); ?>
-                                </th>
-                                <td><input type="text" name="phone_number" id="edit_phone_number" class="regular-text" /></td>
-                            </tr>
-                        </table>
-                        <?php submit_button(__('Update Teacher', 'olama-school'), 'primary', 'update_teacher', false); ?>
-                        <button type="button" class="button"
-                            onclick="document.getElementById('olama-edit-teacher-form').style.display='none';">
-                            <?php _e('Cancel', 'olama-school'); ?>
-                        </button>
-                    </form>
+                <div id="olama-edit-teacher-modal" class="olama-modal">
+                    <div class="olama-modal-content" style="margin: 10% auto; width: 450px;">
+                        <div class="olama-modal-header">
+                            <h2><?php _e('Edit Teacher Information', 'olama-school'); ?></h2>
+                            <span class="olama-modal-close" onclick="olamaCloseEditTeacherModal()">&times;</span>
+                        </div>
+                        <form method="post" action="">
+                            <div class="olama-modal-body">
+                                <?php wp_nonce_field('olama_update_teacher'); ?>
+                                <input type="hidden" name="teacher_id" id="edit_teacher_id" />
+                                
+                                <div style="margin-bottom: 15px;">
+                                    <label style="display: block; font-weight: 600; margin-bottom: 5px;"><?php _e('Employee ID', 'olama-school'); ?></label>
+                                    <input type="text" name="employee_id" id="edit_employee_id" class="widefat" />
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <label style="display: block; font-weight: 600; margin-bottom: 5px;"><?php _e('Phone Number', 'olama-school'); ?></label>
+                                    <input type="text" name="phone_number" id="edit_phone_number" class="widefat" />
+                                </div>
+                            </div>
+                            <div class="olama-modal-footer">
+                                <button type="button" class="button" onclick="olamaCloseEditTeacherModal()"><?php _e('Cancel', 'olama-school'); ?></button>
+                                <?php submit_button(__('Update Teacher', 'olama-school'), 'primary', 'update_teacher', false); ?>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
                 <script>
@@ -828,8 +826,11 @@ if (!defined('ABSPATH')) {
                         document.getElementById('edit_teacher_id').value = id;
                         document.getElementById('edit_employee_id').value = employeeId;
                         document.getElementById('edit_phone_number').value = phone;
-                        document.getElementById('olama-edit-teacher-form').style.display = 'block';
-                        document.getElementById('olama-edit-teacher-form').scrollIntoView({ behavior: 'smooth' });
+                        document.getElementById('olama-edit-teacher-modal').style.display = 'block';
+                    }
+
+                    function olamaCloseEditTeacherModal() {
+                        document.getElementById('olama-edit-teacher-modal').style.display = 'none';
                     }
                 </script>
 
