@@ -45,9 +45,8 @@ $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_
 $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
 $selected_semester_id = $active_semester ? intval($active_semester->id) : ($semesters[0]->id ?? 0);
 
-$default_schedule_type = Olama_School_Schedule::is_ramadan() ? 'ramadan' : 'normal';
-$requested_schedule_type = isset($_GET['schedule_type']) ? sanitize_text_field($_GET['schedule_type']) : $default_schedule_type;
-$selected_schedule_type = ($requested_schedule_type === 'ramadan') ? 'ramadan' : 'normal';
+$selected_schedule_type = Olama_School_Schedule::is_ramadan() ? 'ramadan' : 'normal';
+
 
 $periods_to_show = 8;
 if ($selected_grade_id) {
@@ -173,11 +172,12 @@ $scheduled_sections = Olama_School_Schedule::get_scheduled_sections($selected_sc
             </div>
 
             <div class="olama-filter-item">
-                <label><?php echo Olama_School_Helpers::translate('Schedule Type'); ?></label>
-                <select name="schedule_type" onchange="this.form.submit()">
-                    <option value="normal" <?php selected($selected_schedule_type, 'normal'); ?>><?php echo Olama_School_Helpers::translate('Normal Schedule'); ?></option>
-                    <option value="ramadan" <?php selected($selected_schedule_type, 'ramadan'); ?>><?php echo Olama_School_Helpers::translate('Ramadan Schedule'); ?></option>
-                </select>
+                <?php echo Olama_School_Helpers::locked_filter_render(
+                    Olama_School_Helpers::translate('Schedule Type'),
+                    $selected_schedule_type === 'ramadan' ? Olama_School_Helpers::translate('Ramadan Schedule') : Olama_School_Helpers::translate('Normal Schedule'),
+                    'schedule_type',
+                    $selected_schedule_type
+                ); ?>
             </div>
         </form>
 

@@ -18,9 +18,8 @@ $active_semester = Olama_School_Academic::get_active_semester($active_year_id);
 $selected_semester_id = $active_semester ? intval($active_semester->id) : ($semesters[0]->id ?? 0);
 
 // Fetch schedule
-$default_schedule_type = Olama_School_Schedule::is_ramadan() ? 'ramadan' : 'normal';
-$schedule_type = isset($_GET['schedule_type']) ? sanitize_text_field($_GET['schedule_type']) : $default_schedule_type;
 $schedule = [];
+
 
 $all_weeks = Olama_School_Academic::get_academic_weeks($active_year_id, $selected_semester_id);
 
@@ -81,9 +80,16 @@ if (!$valid_week && !empty($current_month_weeks)) {
 
 $week_range = Olama_School_Helpers::get_week_range($week_start);
 
+// Determine schedule type based on the week being viewed
+$schedule_type = Olama_School_Schedule::is_ramadan($week_start) ? 'ramadan' : 'normal';
+
 if ($selected_section_id && $selected_semester_id) {
     $schedule = Olama_School_Schedule::get_schedule($selected_section_id, $selected_semester_id, $schedule_type);
 }
+
+
+
+
 
 // Fetch existing visits for this section/semester to display in grid
 global $wpdb;
@@ -221,12 +227,13 @@ $templates = Olama_School_EV_Template::get_templates($selected_grade_id, $active
                 </select>
             </div>
 
-                <div class="olama-filter-item" style="flex:1; min-width:150px;">
-                    <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:6px;"><?php _e('Schedule Type', 'olama-school'); ?></label>
-                    <select name="schedule_type" onchange="this.form.submit()" style="width:100%;">
-                        <option value="normal" <?php selected($schedule_type, 'normal'); ?>><?php _e('Normal Schedule', 'olama-school'); ?></option>
-                        <option value="ramadan" <?php selected($schedule_type, 'ramadan'); ?>><?php _e('Ramadan Schedule', 'olama-school'); ?></option>
-                    </select>
+                <div class="olama-filter-item">
+                    <?php echo Olama_School_Helpers::locked_filter_render(
+                        Olama_School_Helpers::translate('Schedule Type'),
+                        $schedule_type === 'ramadan' ? Olama_School_Helpers::translate('Ramadan Schedule') : Olama_School_Helpers::translate('Normal Schedule'),
+                        'schedule_type',
+                        $schedule_type
+                    ); ?>
                 </div>
         </form>
     </div>
