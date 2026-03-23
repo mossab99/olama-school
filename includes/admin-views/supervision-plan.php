@@ -221,13 +221,13 @@ $templates = Olama_School_EV_Template::get_templates($selected_grade_id, $active
                 </select>
             </div>
 
-            <div class="olama-filter-item">
-                <label><?php echo Olama_School_Helpers::translate('Schedule Type'); ?></label>
-                <select name="schedule_type" onchange="this.form.submit()">
-                    <option value="normal" <?php selected($schedule_type, 'normal'); ?>><?php echo Olama_School_Helpers::translate('Normal Schedule'); ?></option>
-                    <option value="ramadan" <?php selected($schedule_type, 'ramadan'); ?>><?php echo Olama_School_Helpers::translate('Ramadan Schedule'); ?></option>
-                </select>
-            </div>
+                <div class="olama-filter-item" style="flex:1; min-width:150px;">
+                    <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:6px;"><?php _e('Schedule Type', 'olama-school'); ?></label>
+                    <select name="schedule_type" onchange="this.form.submit()" style="width:100%;">
+                        <option value="normal" <?php selected($schedule_type, 'normal'); ?>><?php _e('Normal Schedule', 'olama-school'); ?></option>
+                        <option value="ramadan" <?php selected($schedule_type, 'ramadan'); ?>><?php _e('Ramadan Schedule', 'olama-school'); ?></option>
+                    </select>
+                </div>
         </form>
     </div>
 
