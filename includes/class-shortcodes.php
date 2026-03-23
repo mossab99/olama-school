@@ -24,6 +24,7 @@ class Olama_School_Shortcodes
         add_shortcode('olama_logged_teacher_schedule', array($this, 'render_logged_teacher_schedule_shortcode'));
         add_shortcode('olama_logged_user_shifts', array($this, 'render_logged_user_shifts_shortcode'));
         add_shortcode('force_login', array($this, 'render_force_login_shortcode'));
+        add_shortcode('olama_family_gateway', array($this, 'render_family_gateway_shortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_shortcode_assets'));
     }
 
@@ -4068,5 +4069,503 @@ class Olama_School_Shortcodes
                 </div>
                 <?php
                 return ob_get_clean();
+    }
+
+    /**
+     * Shortcode: [olama_family_gateway]
+     * Family Gateway – Central hub for parents.
+     * Hybrid approach: inline summary cards + link-out service cards.
+     */
+    public function render_family_gateway_shortcode($atts)
+    {
+        $atts = shortcode_atts(array(), $atts, 'olama_family_gateway');
+
+        // ── Auth ────────────────────────────────────────────────
+        if (!is_user_logged_in()) {
+            return '<div class="fg-msg fg-msg-error" dir="rtl">' .
+                '<span class="material-icons">lock</span>' .
+                Olama_School_Helpers::translate('Please log in to view your family portal.') .
+                '</div>';
+        }
+
+        $user = get_userdata(get_current_user_id());
+        $family_uid = $user ? $user->user_login : '';
+
+        global $wpdb;
+        $family = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}olama_families WHERE family_uid = %s",
+            $family_uid
+        ));
+
+        if (!$family) {
+            return '<div class="fg-msg fg-msg-warn" dir="rtl">' .
+                '<span class="material-icons">family_restroom</span>' .
+                Olama_School_Helpers::translate('Your account is not linked to a family. Please contact the school administration.') .
+                '</div>';
+        }
+
+        // ── Academic context ────────────────────────────────────
+        $active_year = Olama_School_Academic::get_active_year();
+        $year_id = $active_year ? $active_year->id : 0;
+        $year_name = $active_year ? $active_year->year_name : '';
+        $active_semester = $year_id ? Olama_School_Academic::get_active_semester($year_id) : null;
+        $semester_id = $active_semester ? $active_semester->id : 0;
+        $semester_name = $active_semester ? $active_semester->semester_name : '';
+
+        // ── Students ────────────────────────────────────────────
+        $students_raw = Olama_School_Family::get_family_students($family_uid);
+        if (empty($students_raw)) {
+            return '<div class="fg-msg fg-msg-warn" dir="rtl">' .
+                '<span class="material-icons">school</span>' .
+                Olama_School_Helpers::translate('No students found for this family.') .
+                '</div>';
+        }
+
+        // ── Service page URLs (configurable via settings) ───────
+        $settings = get_option('olama_school_settings', array());
+        $page_evaluation = $settings['fg_page_evaluation'] ?? '/family-evaluation/';
+        $page_exams      = $settings['fg_page_exams'] ?? '/online-exams/';
+        $page_weekly_plan = $settings['fg_page_weekly_plan'] ?? '/weekly-plan/';
+        $page_exam_schedule = $settings['fg_page_exam_schedule'] ?? '/exam-schedule/';
+
+        // ── Day names mapping ───────────────────────────────────
+        $day_map = array(
+            0 => 'Sunday', 1 => 'Monday', 2 => 'Tuesday',
+            3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday'
+        );
+        $today_num = intval(current_time('w'));
+        $today_name = $day_map[$today_num] ?? '';
+        $day_names_ar = array(
+            'Sunday' => 'الأحد', 'Monday' => 'الاثنين', 'Tuesday' => 'الثلاثاء',
+            'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس', 'Friday' => 'الجمعة', 'Saturday' => 'السبت'
+        );
+
+        // ── Build per-student data ──────────────────────────────
+        $students_data = array();
+        $avatar_colors = array('#0d9488', '#6366f1', '#ea580c', '#0284c7', '#d946ef', '#dc2626');
+
+        foreach ($students_raw as $idx => $student) {
+            $enrollment = Olama_School_Student::get_student_enrollment($student->id, $year_id);
+            if (!$enrollment) continue;
+
+            $section = Olama_School_Section::get_section($enrollment->section_id);
+            $grade = $section ? Olama_School_Grade::get_grade($section->grade_id) : null;
+            if (!$grade) continue;
+
+            // -- Evaluation avg --
+            $eval_avg = null;
+            $templates = Olama_School_EV_Template::get_templates($grade->id, $year_id, $semester_id, 'student');
+            if (empty($templates)) {
+                $templates = Olama_School_EV_Template::get_templates($grade->id, $year_id, 0, 'student');
+            }
+            $eval_scores = array();
+            foreach ($templates as $tmpl) {
+                $evaluation = Olama_School_EV_Record::get_evaluation($student->id, $year_id, $semester_id, $tmpl->id, 'student');
+                if (!$evaluation) continue;
+                $scores = Olama_School_EV_Record::get_scores($evaluation->id);
+                $curriculum = Olama_School_EV_Curriculum::get_full_curriculum($tmpl->id);
+                $responses = array();
+                foreach ($curriculum as $domain) {
+                    foreach ($domain->categories as $cat) {
+                        foreach ($cat->indicators as $ind) {
+                            if (isset($scores[$ind->id]) && !is_null($scores[$ind->id]->score)) {
+                                $responses[] = array(
+                                    'rating' => (int)$scores[$ind->id]->score,
+                                    'weight' => (float)$ind->weight,
+                                    'is_critical' => (bool)$ind->is_critical
+                                );
+                            }
+                        }
+                    }
+                }
+                if (!empty($responses)) {
+                    $result = \Olama\Services\EvaluationScoringService::calculate_score($responses);
+                    $eval_scores[] = $result['percentage'];
+                }
+            }
+            if (!empty($eval_scores)) {
+                $eval_avg = round(array_sum($eval_scores) / count($eval_scores));
+            }
+
+            // -- Last online exam --
+            $last_exam = $wpdb->get_row($wpdb->prepare(
+                "SELECT a.percentage, a.result, e.title
+                 FROM {$wpdb->prefix}olama_exam_attempts a
+                 JOIN {$wpdb->prefix}olama_exam_exams e ON a.exam_id = e.id
+                 WHERE a.student_uid = %s AND a.is_preview = 0 AND a.submitted_at IS NOT NULL
+                 ORDER BY a.submitted_at DESC LIMIT 1",
+                $student->student_uid
+            ));
+
+            // -- Attendance counts --
+            $attendance = $wpdb->get_results($wpdb->prepare(
+                "SELECT status, COUNT(*) as cnt
+                 FROM {$wpdb->prefix}olama_attendance
+                 WHERE student_uid = %s AND semester_id = %d
+                 GROUP BY status",
+                $student->student_uid, $semester_id
+            ));
+            $att_present = 0; $att_absent = 0; $att_late = 0;
+            foreach ($attendance as $att) {
+                if ($att->status === 'present') $att_present = (int)$att->cnt;
+                elseif ($att->status === 'absent') $att_absent = (int)$att->cnt;
+                elseif ($att->status === 'late') $att_late = (int)$att->cnt;
+            }
+            $att_total = $att_present + $att_absent + $att_late;
+
+            // -- Bus info --
+            $bus = Olama_School_Bus::get_student_bus($student->id, $year_id);
+
+            // -- Today's timetable --
+            $timetable = array();
+            if ($today_name && $semester_id) {
+                $schedule = Olama_School_Schedule::get_schedule($enrollment->section_id, $semester_id);
+                if (isset($schedule[$today_name])) {
+                    ksort($schedule[$today_name]);
+                    foreach ($schedule[$today_name] as $period => $slot) {
+                        $timetable[] = array(
+                            'period' => $period,
+                            'subject' => $slot->subject_name,
+                            'color' => $slot->color_code ?? '#6366f1'
+                        );
+                    }
+                }
+            }
+
+            // -- Age --
+            $age = '';
+            if (!empty($student->dob)) {
+                $dob = new DateTime($student->dob);
+                $now = new DateTime();
+                $age = $now->diff($dob)->y;
+            }
+
+            $students_data[] = array(
+                'student' => $student,
+                'grade' => $grade,
+                'section' => $section,
+                'enrollment' => $enrollment,
+                'age' => $age,
+                'eval_avg' => $eval_avg,
+                'last_exam' => $last_exam,
+                'att_present' => $att_present,
+                'att_absent' => $att_absent,
+                'att_late' => $att_late,
+                'att_total' => $att_total,
+                'bus' => $bus,
+                'timetable' => $timetable,
+                'color' => $avatar_colors[$idx % count($avatar_colors)],
+            );
+        }
+
+        if (empty($students_data)) {
+            return '<div class="fg-msg fg-msg-warn" dir="rtl">' .
+                '<span class="material-icons">school</span>' .
+                Olama_School_Helpers::translate('No enrolled students found for this semester.') .
+                '</div>';
+        }
+
+        // ── Services array ──────────────────────────────────────
+        $services = array(
+            array(
+                'icon' => 'assignment',
+                'title' => 'تقرير التقييم',
+                'subtitle' => 'Evaluation Report',
+                'url' => $page_evaluation,
+                'color' => '#0d9488',
+                'gradient' => 'linear-gradient(135deg, #0d9488, #14b8a6)',
+            ),
+            array(
+                'icon' => 'quiz',
+                'title' => 'الاختبارات الإلكترونية',
+                'subtitle' => 'Online Exams',
+                'url' => $page_exams,
+                'color' => '#6366f1',
+                'gradient' => 'linear-gradient(135deg, #6366f1, #818cf8)',
+            ),
+            array(
+                'icon' => 'event_note',
+                'title' => 'الخطة الأسبوعية',
+                'subtitle' => 'Weekly Plan',
+                'url' => $page_weekly_plan,
+                'color' => '#0284c7',
+                'gradient' => 'linear-gradient(135deg, #0284c7, #38bdf8)',
+                'param' => 'section_id',
+                'param_key' => 'section_id',
+            ),
+            array(
+                'icon' => 'calendar_month',
+                'title' => 'جدول الاختبارات',
+                'subtitle' => 'Exam Schedule',
+                'url' => $page_exam_schedule,
+                'color' => '#ea580c',
+                'gradient' => 'linear-gradient(135deg, #ea580c, #fb923c)',
+                'param' => 'grade',
+                'param_key' => 'grade_id',
+            ),
+        );
+
+        // ── Render ──────────────────────────────────────────────
+        ob_start();
+        ?>
+        <style>
+            /* ═══ Family Gateway ═══ */
+            .olama-family-gateway{font-family:'Tajawal','Inter',sans-serif;max-width:900px;margin:0 auto;padding:16px;direction:rtl;-webkit-font-smoothing:antialiased}
+            .fg-msg{text-align:center;padding:40px 20px;border-radius:16px;font-weight:700;font-size:1.1rem;font-family:'Tajawal',sans-serif;direction:rtl}
+            .fg-msg .material-icons{font-size:48px;display:block;margin:0 auto 12px;opacity:.6}
+            .fg-msg-error{background:#fff1f2;color:#b91c1c}
+            .fg-msg-warn{background:#fefce8;color:#854d0e}
+
+            /* Hero */
+            .fg-hero{background:linear-gradient(135deg,#0f766e 0%,#0d9488 30%,#14b8a6 60%,#2dd4bf 100%);border-radius:24px;padding:32px 24px 24px;position:relative;overflow:hidden;margin-bottom:16px;box-shadow:0 8px 32px rgba(13,148,136,.25)}
+            .fg-hero::before{content:'';position:absolute;top:-40px;left:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.08)}
+            .fg-hero::after{content:'';position:absolute;bottom:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.06)}
+            .fg-hero-top{display:flex;align-items:center;gap:14px;position:relative;z-index:2;margin-bottom:16px}
+            .fg-hero-icon{width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.2);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+            .fg-hero-icon .material-icons{font-size:28px;color:#fff}
+            .fg-hero-title{font-size:1.7rem;font-weight:900;color:#fff;margin:0;line-height:1.2}
+            .fg-hero-subtitle{font-size:.82rem;color:rgba(255,255,255,.75);margin:4px 0 0;font-weight:500}
+            .fg-hero-meta{display:flex;flex-wrap:wrap;gap:8px;position:relative;z-index:2}
+            .fg-meta-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.18);backdrop-filter:blur(8px);padding:5px 12px;border-radius:30px;color:#fff;font-size:.82rem;font-weight:600}
+            .fg-meta-pill .material-icons{font-size:15px;opacity:.8}
+
+            /* Student Tabs */
+            .fg-tabs{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 0 12px;margin-bottom:4px}
+            .fg-tabs::-webkit-scrollbar{display:none}
+            .fg-tab{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:16px;border:2px solid #e5e9ef;background:#fff;cursor:pointer;transition:all .25s ease;white-space:nowrap;flex-shrink:0;font-family:'Tajawal',sans-serif}
+            .fg-tab:hover{border-color:#d1d5db;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+            .fg-tab.active{border-color:#0d9488;background:#f0fdfa;box-shadow:0 4px 16px rgba(13,148,136,.15)}
+            .fg-tab-avatar{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:#fff;flex-shrink:0}
+            .fg-tab-info{display:flex;flex-direction:column}
+            .fg-tab-name{font-size:.92rem;font-weight:800;color:#1e293b;line-height:1.2}
+            .fg-tab-grade{font-size:.75rem;color:#64748b;font-weight:500}
+
+            /* Panel */
+            .fg-panel{display:none}
+            .fg-panel.active{display:block;animation:fgFadeIn .3s ease}
+            @keyframes fgFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+            /* Summary Row */
+            .fg-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:16px}
+            .fg-stat{background:#fff;border-radius:16px;padding:14px;border:1px solid #e5e9ef;display:flex;align-items:center;gap:10px;transition:box-shadow .2s}
+            .fg-stat:hover{box-shadow:0 4px 12px rgba(0,0,0,.06)}
+            .fg-stat-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+            .fg-stat-icon .material-icons{font-size:22px;color:#fff}
+            .fg-stat-body{flex:1;min-width:0}
+            .fg-stat-value{font-size:1.15rem;font-weight:800;color:#1e293b;font-family:'Inter',sans-serif;line-height:1.2}
+            .fg-stat-label{font-size:.72rem;color:#64748b;font-weight:600;margin-top:1px}
+
+            /* Timetable */
+            .fg-timetable-section{background:#fff;border-radius:16px;padding:16px;border:1px solid #e5e9ef;margin-bottom:16px}
+            .fg-timetable-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:.88rem;font-weight:700;color:#334155}
+            .fg-timetable-header .material-icons{font-size:20px;color:#0d9488}
+            .fg-timetable-grid{display:flex;flex-wrap:wrap;gap:8px}
+            .fg-period{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;font-size:.82rem;font-weight:600;color:#334155;transition:transform .15s}
+            .fg-period:hover{transform:translateY(-1px)}
+            .fg-period-num{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#fff;flex-shrink:0}
+            .fg-period-name{white-space:nowrap}
+            .fg-no-schedule{text-align:center;padding:16px;color:#94a3b8;font-size:.85rem}
+            .fg-no-schedule .material-icons{font-size:32px;display:block;margin:0 auto 6px;opacity:.4}
+
+            /* Service Cards */
+            .fg-services-title{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:.88rem;font-weight:700;color:#334155}
+            .fg-services-title .material-icons{font-size:20px;color:#6366f1}
+            .fg-services{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+            .fg-service{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 12px;border-radius:18px;background:#fff;border:1px solid #e5e9ef;text-decoration:none;transition:all .25s ease;text-align:center;cursor:pointer}
+            .fg-service:hover{box-shadow:0 8px 24px rgba(0,0,0,.08);border-color:#d1d5db;transform:translateY(-2px)}
+            .fg-service-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center}
+            .fg-service-icon .material-icons{font-size:26px;color:#fff}
+            .fg-service-name{font-size:.88rem;font-weight:800;color:#1e293b;line-height:1.3}
+            .fg-service-sub{font-size:.72rem;color:#94a3b8;font-weight:500}
+
+            /* Responsive */
+            @media(max-width:600px){
+                .fg-hero{padding:24px 16px 18px}
+                .fg-hero-title{font-size:1.4rem}
+                .fg-summary{grid-template-columns:repeat(2,1fr)}
+                .fg-services{grid-template-columns:repeat(2,1fr)}
+                .fg-tab{padding:8px 12px}
+            }
+            @media(max-width:380px){
+                .fg-summary{grid-template-columns:1fr}
+            }
+        </style>
+
+        <div class="olama-family-gateway">
+            <!-- Hero -->
+            <div class="fg-hero">
+                <div class="fg-hero-top">
+                    <div class="fg-hero-icon"><span class="material-icons">home</span></div>
+                    <div>
+                        <h2 class="fg-hero-title"><?php echo esc_html($family->family_name); ?></h2>
+                        <div class="fg-hero-subtitle">Family Gateway</div>
+                    </div>
+                </div>
+                <div class="fg-hero-meta">
+                    <span class="fg-meta-pill"><span class="material-icons">calendar_today</span> <?php echo esc_html($year_name); ?></span>
+                    <?php if ($semester_name): ?>
+                        <span class="fg-meta-pill"><span class="material-icons">schedule</span> <?php echo esc_html($semester_name); ?></span>
+                    <?php endif; ?>
+                    <span class="fg-meta-pill"><span class="material-icons">people</span> <?php echo count($students_data); ?> <?php echo Olama_School_Helpers::translate('Students'); ?></span>
+                </div>
+            </div>
+
+            <!-- Student Tabs -->
+            <?php if (count($students_data) > 1): ?>
+            <div class="fg-tabs">
+                <?php foreach ($students_data as $i => $sd): ?>
+                    <button class="fg-tab <?php echo $i === 0 ? 'active' : ''; ?>" data-fg-student="<?php echo $i; ?>">
+                        <div class="fg-tab-avatar" style="background:<?php echo esc_attr($sd['color']); ?>">
+                            <?php echo mb_substr($sd['student']->student_name, 0, 1); ?>
+                        </div>
+                        <div class="fg-tab-info">
+                            <span class="fg-tab-name"><?php echo esc_html($sd['student']->student_name); ?></span>
+                            <span class="fg-tab-grade"><?php echo esc_html($sd['grade']->grade_name . ' - ' . $sd['section']->section_name); ?></span>
+                        </div>
+                    </button>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <!-- Per-Student Panels -->
+            <?php foreach ($students_data as $i => $sd): ?>
+            <div class="fg-panel <?php echo $i === 0 ? 'active' : ''; ?>" data-fg-panel="<?php echo $i; ?>">
+
+                <!-- Summary Cards -->
+                <div class="fg-summary">
+                    <!-- Evaluation -->
+                    <div class="fg-stat">
+                        <div class="fg-stat-icon" style="background:linear-gradient(135deg,#059669,#10b981)">
+                            <span class="material-icons">assignment</span>
+                        </div>
+                        <div class="fg-stat-body">
+                            <div class="fg-stat-value"><?php echo $sd['eval_avg'] !== null ? $sd['eval_avg'] . '%' : '—'; ?></div>
+                            <div class="fg-stat-label"><?php echo Olama_School_Helpers::translate('Evaluation'); ?></div>
+                        </div>
+                    </div>
+                    <!-- Last Exam -->
+                    <div class="fg-stat">
+                        <div class="fg-stat-icon" style="background:linear-gradient(135deg,#6366f1,#818cf8)">
+                            <span class="material-icons">quiz</span>
+                        </div>
+                        <div class="fg-stat-body">
+                            <div class="fg-stat-value"><?php
+                                if ($sd['last_exam']) {
+                                    echo round($sd['last_exam']->percentage) . '%';
+                                } else {
+                                    echo '—';
+                                }
+                            ?></div>
+                            <div class="fg-stat-label"><?php echo Olama_School_Helpers::translate('Last Exam'); ?></div>
+                        </div>
+                    </div>
+                    <!-- Attendance -->
+                    <div class="fg-stat">
+                        <div class="fg-stat-icon" style="background:linear-gradient(135deg,#0284c7,#38bdf8)">
+                            <span class="material-icons">how_to_reg</span>
+                        </div>
+                        <div class="fg-stat-body">
+                            <div class="fg-stat-value"><?php
+                                if ($sd['att_total'] > 0) {
+                                    echo $sd['att_present'] . '/' . $sd['att_total'];
+                                } else {
+                                    echo '—';
+                                }
+                            ?></div>
+                            <div class="fg-stat-label"><?php echo Olama_School_Helpers::translate('Attendance'); ?>
+                                <?php if ($sd['att_absent'] > 0): ?>
+                                    <span style="color:#ef4444;margin-right:4px">(<?php echo $sd['att_absent']; ?> <?php echo Olama_School_Helpers::translate('absent'); ?>)</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Bus -->
+                    <div class="fg-stat">
+                        <div class="fg-stat-icon" style="background:linear-gradient(135deg,#ea580c,#fb923c)">
+                            <span class="material-icons">directions_bus</span>
+                        </div>
+                        <div class="fg-stat-body">
+                            <div class="fg-stat-value"><?php echo $sd['bus'] ? esc_html($sd['bus']->bus_number) : '—'; ?></div>
+                            <div class="fg-stat-label"><?php echo Olama_School_Helpers::translate('Bus'); ?>
+                                <?php if ($sd['bus'] && !empty($sd['bus']->plate_number)): ?>
+                                    <span style="color:#64748b"> (<?php echo esc_html($sd['bus']->plate_number); ?>)</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Timetable -->
+                <div class="fg-timetable-section">
+                    <div class="fg-timetable-header">
+                        <span class="material-icons">view_timeline</span>
+                        <?php echo Olama_School_Helpers::translate("Today's Schedule"); ?> — <?php echo esc_html($day_names_ar[$today_name] ?? $today_name); ?>
+                    </div>
+                    <?php if (!empty($sd['timetable'])): ?>
+                        <div class="fg-timetable-grid">
+                            <?php foreach ($sd['timetable'] as $t): ?>
+                                <div class="fg-period">
+                                    <span class="fg-period-num" style="background:<?php echo esc_attr($t['color']); ?>"><?php echo $t['period']; ?></span>
+                                    <span class="fg-period-name"><?php echo esc_html($t['subject']); ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="fg-no-schedule">
+                            <span class="material-icons">weekend</span>
+                            <?php echo Olama_School_Helpers::translate('No classes scheduled for today.'); ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Service Cards -->
+                <div class="fg-services-title">
+                    <span class="material-icons">apps</span>
+                    <?php echo Olama_School_Helpers::translate('Services'); ?>
+                </div>
+                <div class="fg-services">
+                    <?php foreach ($services as $svc):
+                        $url = $svc['url'];
+                        // Append student-specific params if defined
+                        if (isset($svc['param_key'])) {
+                            $val = '';
+                            if ($svc['param_key'] === 'section_id') $val = $sd['enrollment']->section_id;
+                            elseif ($svc['param_key'] === 'grade_id') $val = $sd['grade']->id;
+                            $url = add_query_arg($svc['param'] ?? $svc['param_key'], $val, $url);
+                        }
+                    ?>
+                        <a class="fg-service" href="<?php echo esc_url($url); ?>">
+                            <div class="fg-service-icon" style="background:<?php echo esc_attr($svc['gradient']); ?>">
+                                <span class="material-icons"><?php echo esc_html($svc['icon']); ?></span>
+                            </div>
+                            <span class="fg-service-name"><?php echo esc_html($svc['title']); ?></span>
+                            <span class="fg-service-sub"><?php echo esc_html($svc['subtitle']); ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+
+            </div>
+            <?php endforeach; ?>
+        </div>
+
+        <script>
+        (function(){
+            var tabs = document.querySelectorAll('.fg-tab');
+            var panels = document.querySelectorAll('.fg-panel');
+            if (!tabs.length) return;
+            tabs.forEach(function(tab){
+                tab.addEventListener('click', function(){
+                    var idx = this.getAttribute('data-fg-student');
+                    tabs.forEach(function(t){ t.classList.remove('active'); });
+                    panels.forEach(function(p){ p.classList.remove('active'); });
+                    this.classList.add('active');
+                    var panel = document.querySelector('.fg-panel[data-fg-panel="'+idx+'"]');
+                    if(panel) panel.classList.add('active');
+                });
+            });
+        })();
+        </script>
+        <?php
+        return ob_get_clean();
     }
 }

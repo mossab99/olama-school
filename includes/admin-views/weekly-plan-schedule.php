@@ -45,7 +45,8 @@ $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_
 $active_semester = Olama_School_Academic::get_active_semester($selected_year_id);
 $selected_semester_id = $active_semester ? intval($active_semester->id) : ($semesters[0]->id ?? 0);
 
-$requested_schedule_type = isset($_GET['schedule_type']) ? sanitize_text_field($_GET['schedule_type']) : 'normal';
+$default_schedule_type = Olama_School_Schedule::is_ramadan() ? 'ramadan' : 'normal';
+$requested_schedule_type = isset($_GET['schedule_type']) ? sanitize_text_field($_GET['schedule_type']) : $default_schedule_type;
 $selected_schedule_type = ($requested_schedule_type === 'ramadan') ? 'ramadan' : 'normal';
 
 $periods_to_show = 8;

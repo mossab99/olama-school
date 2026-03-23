@@ -2653,6 +2653,8 @@ class Olama_School_Admin
 
         $tabs_config = array(
             'plan_visit' => array('label' => __('Plan Visit', 'olama-school'), 'cap' => 'olama_manage_supervision_plan'),
+            'complete_plan' => array('label' => __('Complete Plan', 'olama-school'), 'cap' => 'olama_manage_supervision_plan'),
+            'assignments' => array('label' => __('Assign Supervisor', 'olama-school'), 'cap' => 'olama_manage_supervision_plan'),
             'reports' => array('label' => __('Reports', 'olama-school'), 'cap' => 'olama_view_supervision_reports'),
             'analytics' => array('label' => __('Analytics', 'olama-school'), 'cap' => 'olama_view_supervision_analytics'),
         );
@@ -2692,6 +2694,12 @@ class Olama_School_Admin
                 switch ($active_tab) {
                     case 'plan_visit':
                         include OLAMA_SCHOOL_PATH . 'includes/admin-views/supervision-plan.php';
+                        break;
+                    case 'complete_plan':
+                        include OLAMA_SCHOOL_PATH . 'includes/admin-views/supervision-complete-plan.php';
+                        break;
+                    case 'assignments':
+                        include OLAMA_SCHOOL_PATH . 'includes/admin-views/supervision-assignments.php';
                         break;
                     case 'reports':
                         include OLAMA_SCHOOL_PATH . 'includes/admin-views/supervision-reports.php';

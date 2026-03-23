@@ -13,6 +13,8 @@ class Olama_School_Supervision_Ajax_Handlers
         add_action('wp_ajax_olama_delete_supervisor_visit', array($this, 'delete_supervisor_visit'));
         add_action('wp_ajax_olama_get_supervisor_evaluation_modal', array($this, 'get_supervisor_evaluation_modal'));
         add_action('wp_ajax_olama_save_supervisor_evaluation_modal', array($this, 'save_supervisor_evaluation_modal'));
+        add_action('wp_ajax_olama_save_supervisor_assignment', array($this, 'save_supervisor_assignment'));
+        add_action('wp_ajax_olama_delete_supervisor_assignment', array($this, 'delete_supervisor_assignment'));
     }
 
     /**
@@ -20,63 +22,74 @@ class Olama_School_Supervision_Ajax_Handlers
      */
     public function save_supervisor_visit()
     {
-        parse_str($_POST['data'] ?? '', $data);
+        try {
+            parse_str($_POST['data'] ?? '', $data);
 
-        if (empty($data) || !wp_verify_nonce($data['_wpnonce'] ?? '', 'olama_plan_visit_nonce')) {
-            wp_send_json_error(__('Security check failed.', 'olama-school'));
+            if (empty($data) || !wp_verify_nonce($data['_wpnonce'] ?? '', 'olama_plan_visit_nonce')) {
+                wp_send_json_error(__('Security check failed.', 'olama-school'));
+            }
+
+            if (!Olama_School_Permissions::can('olama_manage_supervision_plan')) {
+                wp_send_json_error(__('Unauthorized.', 'olama-school'));
+            }
+
+            $schedule_id = intval($data['schedule_id']);
+            $raw_visit_date = sanitize_text_field($data['visit_date']);
+            $visit_date = date('Y-m-d', strtotime($raw_visit_date));
+            $template_id = intval($data['template_id']);
+
+            // 1. Validate date matches day
+            global $wpdb;
+            $schedule = $wpdb->get_row($wpdb->prepare(
+                "SELECT s.day_name, sem.academic_year_id, s.semester_id 
+                 FROM {$wpdb->prefix}olama_schedule s
+                 JOIN {$wpdb->prefix}olama_semesters sem ON s.semester_id = sem.id
+                 WHERE s.id = %d",
+                $schedule_id
+            ));
+
+            if (!$schedule) {
+                wp_send_json_error(__('Schedule not found. Schedule ID: ' . $schedule_id, 'olama-school'));
+            }
+
+            if (!\Olama\Services\ScheduleValidatorService::validate_date_matches_day($visit_date, $schedule->day_name)) {
+                wp_send_json_error(__('Visit date does not match the scheduled day. Sent: ' . $visit_date . ' Expected: ' . $schedule->day_name, 'olama-school'));
+            }
+
+            // 2. Check if it's a past date
+            if (\Olama\Services\ScheduleValidatorService::is_past_date($visit_date)) {
+                wp_send_json_error(__('Cannot plan visits in the past.', 'olama-school'));
+            }
+
+            // 3. Create Visit Record
+            $visit_data = [
+                'schedule_id' => $schedule_id,
+                'supervisor_id' => get_current_user_id(),
+                'visit_date' => $visit_date,
+                'notes' => $data['notes'] ?? ''
+            ];
+            $visit_id = \Olama\Services\SupervisorVisitService::create_visit($visit_data);
+
+            if (!$visit_id) {
+                wp_send_json_error('Failed to create visit record. DB Error: ' . $wpdb->last_error . ' Data: ' . json_encode($visit_data));
+            }
+
+            // 4. Pre-create Evaluation Record for this visit
+            Olama_School_EV_Record::save_evaluation([
+                'template_id' => $template_id,
+                'academic_year_id' => $schedule->academic_year_id,
+                'semester_id' => $schedule->semester_id,
+                'context_type' => 'supervisor',
+                'related_entity_type' => 'supervisor_visit',
+                'related_entity_id' => $visit_id,
+                'status' => 'draft'
+            ]);
+
+            wp_send_json_success();
+        } catch (\Throwable $e) {
+            error_log('Supervision Save Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            wp_send_json_error('Server Error: ' . $e->getMessage());
         }
-
-        if (!Olama_School_Permissions::can('olama_manage_supervision_plan')) {
-            wp_send_json_error(__('Unauthorized.', 'olama-school'));
-        }
-
-        $schedule_id = intval($data['schedule_id']);
-        $visit_date = sanitize_text_field($data['visit_date']);
-        $template_id = intval($data['template_id']);
-
-        // 1. Validate date matches day
-        global $wpdb;
-        $schedule = $wpdb->get_row($wpdb->prepare(
-            "SELECT s.day_name, sem.academic_year_id, s.semester_id 
-             FROM {$wpdb->prefix}olama_schedule s
-             JOIN {$wpdb->prefix}olama_semesters sem ON s.semester_id = sem.id
-             WHERE s.id = %d",
-            $schedule_id
-        ));
-
-        if (!$schedule || !\Olama\Services\ScheduleValidatorService::validate_date_matches_day($visit_date, $schedule->day_name)) {
-            wp_send_json_error(__('Visit date does not match the scheduled day.', 'olama-school'));
-        }
-
-        // 2. Check if it's a past date
-        if (\Olama\Services\ScheduleValidatorService::is_past_date($visit_date)) {
-            wp_send_json_error(__('Cannot plan visits in the past.', 'olama-school'));
-        }
-
-        // 3. Create Visit Record
-        $visit_id = \Olama\Services\SupervisorVisitService::create_visit([
-            'schedule_id' => $schedule_id,
-            'supervisor_id' => get_current_user_id(),
-            'visit_date' => $visit_date,
-            'notes' => $data['notes'] ?? ''
-        ]);
-
-        if (!$visit_id) {
-            wp_send_json_error(__('Failed to create visit record.', 'olama-school'));
-        }
-
-        // 4. Pre-create Evaluation Record for this visit
-        Olama_School_EV_Record::save_evaluation([
-            'template_id' => $template_id,
-            'academic_year_id' => $schedule->academic_year_id,
-            'semester_id' => $schedule->semester_id,
-            'context_type' => 'supervisor',
-            'related_entity_type' => 'supervisor_visit',
-            'related_entity_id' => $visit_id,
-            'status' => 'draft'
-        ]);
-
-        wp_send_json_success();
     }
 
     /**
@@ -510,5 +523,75 @@ class Olama_School_Supervision_Ajax_Handlers
         ], ['id' => $visit_id]);
 
         wp_send_json_success();
+    }
+
+    /**
+     * AJAX: Save Supervisor Assignment
+     */
+    public function save_supervisor_assignment() {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_manage_supervision_plan')) {
+            wp_send_json_error(__('Unauthorized.', 'olama-school'));
+        }
+
+        $supervisor_id = intval($_POST['supervisor_id']);
+        $grade_id = intval($_POST['grade_id']);
+        $subject_id = !empty($_POST['subject_id']) ? intval($_POST['subject_id']) : null;
+        $academic_year_id = intval($_POST['academic_year_id']);
+        $semester_id = intval($_POST['semester_id']);
+
+        if (!$supervisor_id || !$grade_id || !$academic_year_id || !$semester_id) {
+            wp_send_json_error(__('Missing required fields.', 'olama-school'));
+        }
+
+        global $wpdb;
+        $table = "{$wpdb->prefix}olama_supervisor_assignments";
+
+        // Check if already exists
+        $exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM $table WHERE academic_year_id = %d AND semester_id = %d AND supervisor_id = %d AND grade_id = %d AND (subject_id = %d OR (subject_id IS NULL AND %d IS NULL))",
+            $academic_year_id, $semester_id, $supervisor_id, $grade_id, $subject_id, $subject_id
+        ));
+
+        if ($exists) {
+            wp_send_json_error(__('Assignment already exists.', 'olama-school'));
+        }
+
+        $result = $wpdb->insert($table, [
+            'academic_year_id' => $academic_year_id,
+            'semester_id' => $semester_id,
+            'supervisor_id' => $supervisor_id,
+            'grade_id' => $grade_id,
+            'subject_id' => $subject_id
+        ]);
+
+        if ($result) {
+            wp_send_json_success();
+        } else {
+            wp_send_json_error(__('Failed to save assignment.', 'olama-school'));
+        }
+    }
+
+    /**
+     * AJAX: Delete Supervisor Assignment
+     */
+    public function delete_supervisor_assignment() {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_manage_supervision_plan')) {
+            wp_send_json_error(__('Unauthorized.', 'olama-school'));
+        }
+
+        $id = intval($_POST['id']);
+        global $wpdb;
+
+        $result = $wpdb->delete("{$wpdb->prefix}olama_supervisor_assignments", ['id' => $id]);
+
+        if ($result) {
+            wp_send_json_success();
+        } else {
+            wp_send_json_error(__('Failed to delete assignment.', 'olama-school'));
+        }
     }
 }

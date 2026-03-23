@@ -18,22 +18,102 @@ $active_semester = Olama_School_Academic::get_active_semester($active_year_id);
 $selected_semester_id = $active_semester ? intval($active_semester->id) : ($semesters[0]->id ?? 0);
 
 // Fetch schedule
+$default_schedule_type = Olama_School_Schedule::is_ramadan() ? 'ramadan' : 'normal';
+$schedule_type = isset($_GET['schedule_type']) ? sanitize_text_field($_GET['schedule_type']) : $default_schedule_type;
 $schedule = [];
+
+$all_weeks = Olama_School_Academic::get_academic_weeks($active_year_id, $selected_semester_id);
+
+$months_weeks = array();
+if (!empty($all_weeks)) {
+    foreach ($all_weeks as $val => $label) {
+        if (empty($val)) continue;
+        $m_key_start = date('Y-m', strtotime($val));
+        $months_weeks[$m_key_start][] = array('val' => $val, 'label' => $label);
+
+        $week_range = Olama_School_Helpers::get_week_range($val);
+        $m_key_end = date('Y-m', strtotime($week_range['end']));
+        if ($m_key_end !== $m_key_start) {
+            $months_weeks[$m_key_end][] = array('val' => $val, 'label' => $label);
+        }
+    }
+    ksort($months_weeks);
+}
+
+$selected_month = isset($_GET['plan_month']) ? sanitize_text_field($_GET['plan_month']) : '';
+if (empty($selected_month) || !isset($months_weeks[$selected_month])) {
+    $today_month = date('Y-m');
+    if (isset($months_weeks[$today_month])) {
+        $selected_month = $today_month;
+    } elseif (!empty($months_weeks)) {
+        $m_keys = array_keys($months_weeks);
+        $selected_month = $m_keys[0];
+    }
+}
+
+$current_month_weeks = $months_weeks[$selected_month] ?? array();
+
+$week_start = isset($_GET['week_start']) ? sanitize_text_field($_GET['week_start']) : '';
+$valid_week = false;
+if (!empty($week_start)) {
+    foreach ($current_month_weeks as $w) {
+        if ($w['val'] === $week_start) {
+            $valid_week = true;
+            break;
+        }
+    }
+}
+if (!$valid_week && !empty($current_month_weeks)) {
+    $today = current_time('Y-m-d');
+    $found_current = false;
+    foreach ($current_month_weeks as $w) {
+        $w_range = Olama_School_Helpers::get_week_range($w['val']);
+        if ($today >= $w_range['start'] && $today <= $w_range['end']) {
+            $week_start = $w['val'];
+            $found_current = true;
+            break;
+        }
+    }
+    if (!$found_current) {
+        $week_start = $current_month_weeks[0]['val'] ?? '';
+    }
+}
+
+$week_range = Olama_School_Helpers::get_week_range($week_start);
+
 if ($selected_section_id && $selected_semester_id) {
-    $schedule_type = Olama_School_Schedule::is_ramadan() ? 'ramadan' : 'normal';
     $schedule = Olama_School_Schedule::get_schedule($selected_section_id, $selected_semester_id, $schedule_type);
 }
 
 // Fetch existing visits for this section/semester to display in grid
 global $wpdb;
 $existing_visits = $wpdb->get_results($wpdb->prepare(
-    "SELECT v.*, s.day_name, s.period_number 
+    "SELECT v.*, s.day_name, s.period_number, u.display_name as supervisor_name 
      FROM {$wpdb->prefix}olama_supervisor_visits v
      JOIN {$wpdb->prefix}olama_schedule s ON v.schedule_id = s.id
-     WHERE s.section_id = %d AND s.semester_id = %d",
+     JOIN {$wpdb->users} u ON v.supervisor_id = u.ID
+     WHERE s.section_id = %d AND s.semester_id = %d
+     AND v.visit_date >= %s AND v.visit_date <= %s",
     $selected_section_id,
-    $selected_semester_id
+    $selected_semester_id,
+    $week_range['start'],
+    $week_range['end']
 ));
+
+// Helper for supervisor colors
+$supervisor_colors = [];
+function get_supervisor_color($id) {
+    $palette = [
+        ['bg' => '#fef3c7', 'border' => '#f59e0b', 'text' => '#92400e'], // Amber
+        ['bg' => '#dcfce7', 'border' => '#10b981', 'text' => '#065f46'], // Green
+        ['bg' => '#f3e8ff', 'border' => '#a855f7', 'text' => '#6b21a8'], // Purple
+        ['bg' => '#e0f2fe', 'border' => '#0ea5e9', 'text' => '#075985'], // Sky
+        ['bg' => '#ffedd5', 'border' => '#f97316', 'text' => '#9a3412'], // Orange
+        ['bg' => '#ede9fe', 'border' => '#6366f1', 'text' => '#3730a3'], // Indigo
+        ['bg' => '#fce7f3', 'border' => '#ec4899', 'text' => '#9d174d'], // Pink
+    ];
+    return $palette[$id % count($palette)];
+}
 
 $visits_map = [];
 foreach ($existing_visits as $v) {
@@ -116,6 +196,38 @@ $templates = Olama_School_EV_Template::get_templates($selected_grade_id, $active
                     <?php endforeach; ?>
                 </select>
             </div>
+
+            <div class="olama-filter-item">
+                <label><?php _e('Month', 'olama-school'); ?></label>
+                <select name="plan_month" onchange="this.form.submit()">
+                    <?php if (!empty($months_weeks)): foreach ($months_weeks as $m_key => $weeks): ?>
+                        <option value="<?php echo esc_attr($m_key); ?>" <?php selected($selected_month, $m_key); ?>>
+                            <?php echo date_i18n('F Y', strtotime($m_key . '-01')); ?>
+                        </option>
+                    <?php endforeach; endif; ?>
+                </select>
+            </div>
+
+            <div class="olama-filter-item">
+                <label><?php echo Olama_School_Helpers::translate('Week Start'); ?></label>
+                <select name="week_start" onchange="this.form.submit()">
+                    <?php
+                    $w_count = 1;
+                    foreach ($current_month_weeks as $w): ?>
+                        <option value="<?php echo esc_attr($w['val']); ?>" <?php selected($week_start, $w['val']); ?>>
+                            <?php echo sprintf(__('%s %d', 'olama-school'), __('Week', 'olama-school'), $w_count) . ' ' . esc_html($w['label']); ?>
+                        </option>
+                    <?php $w_count++; endforeach; ?>
+                </select>
+            </div>
+
+            <div class="olama-filter-item">
+                <label><?php echo Olama_School_Helpers::translate('Schedule Type'); ?></label>
+                <select name="schedule_type" onchange="this.form.submit()">
+                    <option value="normal" <?php selected($schedule_type, 'normal'); ?>><?php echo Olama_School_Helpers::translate('Normal Schedule'); ?></option>
+                    <option value="ramadan" <?php selected($schedule_type, 'ramadan'); ?>><?php echo Olama_School_Helpers::translate('Ramadan Schedule'); ?></option>
+                </select>
+            </div>
         </form>
     </div>
 
@@ -145,10 +257,26 @@ $templates = Olama_School_EV_Template::get_templates($selected_grade_id, $active
                                         <?php echo esc_html($item->subject_name); ?>
                                     </div>
                                     
-                                    <?php foreach ($visits as $visit): ?>
-                                        <div class="olama-visit-tag" style="background: #fef9c3; border: 1px solid #fde047; color: #854d0e; font-size: 10px; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px;">
-                                            <span class="dashicons dashicons-visibility" style="font-size: 12px; width: 12px; height: 12px;"></span>
-                                            <?php echo date('M j', strtotime($visit->visit_date)); ?>
+                                    <?php foreach ($visits_map[$day][$p] ?? [] as $visit): 
+                                        $v_color = get_supervisor_color($visit->supervisor_id);
+                                        ?>
+                                        <div class="olama-visit-planned" 
+                                             style="background: <?php echo $v_color['bg']; ?>; 
+                                                    border: 1px solid <?php echo $v_color['border']; ?>;
+                                                    color: <?php echo $v_color['text']; ?>;
+                                                    padding: 5px; border-radius: 4px; margin-bottom: 5px; font-size: 11px; font-weight: 600;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                                                <div style="display:flex; align-items:center; gap:3px;">
+                                                    <span class="dashicons <?php echo $visit->status === 'completed' ? 'dashicons-yes-alt' : 'dashicons-visibility'; ?>" style="font-size: 12px; width: 12px; height: 12px;"></span>
+                                                    <span style="padding: 1px 4px; border-radius: 2px; background: rgba(255,255,255,0.6); font-size: 8px; text-transform: uppercase;">
+                                                        <?php echo $visit->status === 'completed' ? __('Completed', 'olama-school') : __('Planned', 'olama-school'); ?>
+                                                    </span>
+                                                </div>
+                                                <span style="font-size:10px;"><?php echo date_i18n('M j', strtotime($visit->visit_date)); ?></span>
+                                            </div>
+                                            <div style="font-size: 10px; border-top: 1px solid <?php echo $v_color['border']; ?>50; padding-top: 3px; margin-top: 3px; opacity: 0.9; display: flex; align-items: center;">
+                                                <span style="margin-right: 3px;">👤</span> <?php echo esc_html($visit->supervisor_name); ?>
+                                            </div>
                                         </div>
                                     <?php endforeach; ?>
 

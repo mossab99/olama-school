@@ -636,6 +636,20 @@ class Olama_School_DB
 				KEY schedule_id (schedule_id),
 				KEY visit_date (visit_date),
 				KEY supervisor_id (supervisor_id)
+			) $charset_collate;",
+
+			'olama_supervisor_assignments' => "CREATE TABLE {$wpdb->prefix}olama_supervisor_assignments (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL,
+				supervisor_id bigint(20) UNSIGNED NOT NULL,
+				grade_id mediumint(9) NOT NULL,
+				subject_id mediumint(9) DEFAULT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				KEY year_semester (academic_year_id, semester_id),
+				KEY supervisor_id (supervisor_id),
+				KEY grade_subject (grade_id, subject_id)
 			) $charset_collate;"
 
 
