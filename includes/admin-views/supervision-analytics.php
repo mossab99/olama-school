@@ -46,6 +46,22 @@ $grade_stats = $wpdb->get_results($wpdb->prepare(
     $active_year_id
 ));
 
+// 3. Performance by Supervisor
+$supervisor_stats = $wpdb->get_results($wpdb->prepare(
+    "SELECT u.display_name, 
+            COUNT(v.id) as total_planned,
+            SUM(CASE WHEN v.status = 'completed' THEN 1 ELSE 0 END) as total_completed,
+            AVG(CASE WHEN v.status = 'completed' THEN v.final_score ELSE NULL END) as avg_score
+     FROM {$wpdb->prefix}olama_supervisor_visits v
+     JOIN {$wpdb->prefix}olama_schedule s ON v.schedule_id = s.id
+     JOIN {$wpdb->prefix}olama_sections sec ON s.section_id = sec.id
+     JOIN {$wpdb->users} u ON v.supervisor_id = u.ID
+     WHERE sec.academic_year_id = %d
+     GROUP BY u.ID
+     ORDER BY total_planned DESC",
+    $active_year_id
+));
+
 ?>
 
 <div class="olama-supervision-analytics-wrap">
@@ -132,6 +148,74 @@ $grade_stats = $wpdb->get_results($wpdb->prepare(
                 <?php else: ?>
                     <tr>
                         <td colspan="3" style="text-align: center; color: #64748b; font-style: italic; padding: 20px;">
+                            <?php _e('No data available.', 'olama-school'); ?>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Performance by Supervisor Section -->
+    <div class="olama-card"
+        style="background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-top: 30px;">
+        <h3>
+            <?php _e('Performance by Supervisor', 'olama-school'); ?>
+        </h3>
+        <table class="wp-list-table widefat fixed striped">
+            <thead>
+                <tr>
+                    <th>
+                        <?php _e('Supervisor', 'olama-school'); ?>
+                    </th>
+                    <th>
+                        <?php _e('Total Planned Visits', 'olama-school'); ?>
+                    </th>
+                    <th>
+                        <?php _e('Total Completed Visits', 'olama-school'); ?>
+                    </th>
+                    <th>
+                        <?php _e('Average Score', 'olama-school'); ?>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if ($supervisor_stats): ?>
+                    <?php foreach ($supervisor_stats as $stat): 
+                        $score = $stat->avg_score ? number_format($stat->avg_score, 1) : 0;
+                    ?>
+                        <tr>
+                            <td style="font-weight: 600; color: #334155;">
+                                <?php echo esc_html($stat->display_name); ?>
+                            </td>
+                            <td>
+                                <span style="background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">
+                                    <?php echo intval($stat->total_planned); ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">
+                                    <?php echo intval($stat->total_completed); ?>
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div
+                                        style="flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden;">
+                                        <div
+                                            style="height: 100%; background: #3b82f6; width: <?php echo $score; ?>%;">
+                                        </div>
+                                    </div>
+                                    <span style="font-weight: 600;">
+                                        <?php echo $score; ?>%
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #64748b; font-style: italic; padding: 20px;">
                             <?php _e('No data available.', 'olama-school'); ?>
                         </td>
                     </tr>
