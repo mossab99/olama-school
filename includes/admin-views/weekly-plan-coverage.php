@@ -46,7 +46,8 @@ if (!$current_semester && !empty($semesters)) {
 
 $years = Olama_School_Academic::get_years();
 $grades = Olama_School_Grade::get_grades();
-// Getting subjects with limits
+// Getting subjects with limits (Strictly Active Only)
+Olama_School_Subject::clear_cache();
 $subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_grade_id, true) : [];
 
 // 3. Determine Effective Date Range for filtering plans (Sunday to Thursday alignment)
@@ -230,8 +231,8 @@ $num_weeks = 1;
                                     <?php echo Olama_School_Helpers::translate('Subject Name'); ?>
                                 </th>
                                 <th
-                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 100px; text-align: center;">
-                                    <?php echo Olama_School_Helpers::translate('Total number of plans'); ?>
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 140px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Total number of plans and reviews'); ?>
                                 </th>
                                 <th
                                     style="padding: 15px 10px; font-weight: 700; color: #475569; width: 100px; text-align: center;">
@@ -243,7 +244,11 @@ $num_weeks = 1;
                                 </th>
                                 <th
                                     style="padding: 15px 10px; font-weight: 700; color: #475569; width: 140px; text-align: center;">
-                                    <?php echo Olama_School_Helpers::translate('Lesson Coverage'); ?>
+                                    <?php echo Olama_School_Helpers::translate('Current Lesson Coverage'); ?>
+                                </th>
+                                <th
+                                    style="padding: 15px 10px; font-weight: 700; color: #475569; width: 140px; text-align: center;">
+                                    <?php echo Olama_School_Helpers::translate('Total Lesson Coverage'); ?>
                                 </th>
                                 <th
                                     style="padding: 15px 10px; font-weight: 700; color: #475569; text-align: center; width: 110px;">
@@ -256,6 +261,7 @@ $num_weeks = 1;
                                 $total_plans_global = 0;
                                 $total_lessons_global = 0;
                                 $total_covered_global = 0;
+                                $total_expected_global = 0;
                                 ?>
                                 <?php foreach ($subjects as $subject):
                                     $analysis_start_date = $current_semester->start_date;
@@ -264,31 +270,48 @@ $num_weeks = 1;
                                     $total_plans = $wpdb->get_var($wpdb->prepare(
                                         "SELECT COUNT(id) FROM {$wpdb->prefix}olama_plans 
                                          WHERE subject_id = %d AND section_id = %d 
-                                         AND status = 'approved'
+                                         AND (status = 'approved' OR plan_type = 'review')
                                          AND plan_date >= %s AND plan_date <= %s",
                                         $subject->id,
                                         $selected_section_id,
                                         $analysis_start_date,
                                         $effective_end
-                                    ));
-                                    $total_plans = intval($total_plans);
-                                    $total_plans_global += $total_plans;
+                                    ));                                     $total_plans = intval($total_plans);
 
-                                    // 2. Total number of all lesson
-                                    $total_lessons = $wpdb->get_var($wpdb->prepare(
-                                        "SELECT COUNT(l.id) FROM {$wpdb->prefix}olama_curriculum_lessons l
-                                         INNER JOIN {$wpdb->prefix}olama_curriculum_units u ON l.unit_id = u.id
-                                         WHERE u.subject_id = %d AND u.grade_id = %d AND u.semester_id = %d",
-                                        $subject->id, $selected_grade_id, $selected_semester_id
-                                    ));
-                                    $total_lessons = intval($total_lessons);
-                                    $total_lessons_global += $total_lessons;
+                                     // 2. Total number of all lesson (Entire Semester)
+                                     $total_lessons = $wpdb->get_var($wpdb->prepare(
+                                         "SELECT COUNT(l.id) FROM {$wpdb->prefix}olama_curriculum_lessons l
+                                          INNER JOIN {$wpdb->prefix}olama_curriculum_units u ON l.unit_id = u.id
+                                          WHERE u.subject_id = %d AND u.grade_id = %d AND u.semester_id = %d",
+                                         $subject->id, $selected_grade_id, $selected_semester_id
+                                     ));
+                                     $total_lessons = intval($total_lessons);
+
+                                     // Skip non-academic or unmonitored subjects (those with zero lessons planned and marked inactive)
+                                     // Special check: even if active, if it has 0 lessons for the whole semester, it's not an academic target
+                                     if ($total_lessons === 0 && (isset($_GET['hide_empty']) || true)) {
+                                         // If a subject has NO lessons in curriculum, it shouldn't be in this report
+                                         // unless it has plans (which shouldn't happen if no curriculum exists)
+                                         $has_any_plans = $wpdb->get_var($wpdb->prepare(
+                                             "SELECT COUNT(id) FROM {$wpdb->prefix}olama_plans WHERE subject_id = %d AND section_id = %d AND (status = 'approved' OR plan_type = 'review') LIMIT 1",
+                                             $subject->id, $selected_section_id
+                                         ));
+                                         if (!$has_any_plans) {
+                                             continue;
+                                         }
+                                     }
+
+                                     $total_plans_global += $total_plans;
+                                     $total_lessons_global += $total_lessons;
+
+
 
                                     // 3. Total number of covered lessons
                                     $covered_lessons = $wpdb->get_var($wpdb->prepare(
                                         "SELECT COUNT(DISTINCT lesson_id) FROM {$wpdb->prefix}olama_plans 
                                          WHERE subject_id = %d AND section_id = %d 
-                                         AND status = 'approved' AND lesson_id IS NOT NULL AND lesson_id > 0
+                                         AND (status = 'approved' OR plan_type = 'review') 
+                                         AND lesson_id IS NOT NULL AND lesson_id > 0
                                          AND plan_date >= %s AND plan_date <= %s",
                                         $subject->id,
                                         $selected_section_id,
@@ -297,19 +320,38 @@ $num_weeks = 1;
                                     ));
                                     $covered_lessons = intval($covered_lessons);
                                     $total_covered_global += $covered_lessons;
+                                    // 4. Expected lessons up to the selected week (Timeline bound)
+                                    $expected_lessons = $wpdb->get_var($wpdb->prepare(
+                                        "SELECT COUNT(l.id) FROM {$wpdb->prefix}olama_curriculum_lessons l
+                                         INNER JOIN {$wpdb->prefix}olama_curriculum_units u ON l.unit_id = u.id
+                                         WHERE u.subject_id = %d AND u.grade_id = %d AND u.semester_id = %d
+                                         AND l.end_date <= %s AND l.end_date IS NOT NULL",
+                                        $subject->id, $selected_grade_id, $selected_semester_id, $effective_end
+                                    ));
+                                    $expected_lessons = intval($expected_lessons);
+                                    $total_expected_global += $expected_lessons;
 
-                                    // 4. Coverage Calcs
-                                    $lesson_cov_pct = $total_lessons > 0 ? min(100, round(($covered_lessons / $total_lessons) * 100, 1)) : 0;
+                                    // 5. Coverage Calcs
+                                    // Total coverage: covered / total semester lessons
+                                    $total_cov_pct = $total_lessons > 0 ? min(100, round(($covered_lessons / $total_lessons) * 100, 1)) : 0;
+                                    
+                                    // Current coverage: covered / expected by timeline
+                                    $current_cov_pct = $expected_lessons > 0 ? round(($covered_lessons / $expected_lessons) * 100, 1) : 0;
 
-                                    // Status based on Lesson Coverage
+                                    // Status based on Current (Timeline) Lesson Coverage
                                     $status_label = Olama_School_Helpers::translate('Optimal');
                                     $status_color = '#10b981';
                                     $status_icon = 'dashicons-yes';
                                     $bg_color = 'rgba(16, 185, 129, 0.1)';
 
-                                    if ($lesson_cov_pct >= 95) {
+                                    if ($expected_lessons == 0) {
+                                        $status_label = Olama_School_Helpers::translate('N/A');
+                                        $status_color = '#94a3b8';
+                                        $status_icon = 'dashicons-minus';
+                                        $bg_color = 'rgba(148, 163, 184, 0.1)';
+                                    } elseif ($current_cov_pct >= 95) {
                                         // Optimal
-                                    } elseif ($lesson_cov_pct >= 80) {
+                                    } elseif ($current_cov_pct >= 80) {
                                         $status_label = Olama_School_Helpers::translate('High');
                                         $status_color = '#f59e0b';
                                         $status_icon = 'dashicons-arrow-up-alt';
@@ -340,7 +382,13 @@ $num_weeks = 1;
                                             <?php echo $covered_lessons; ?>
                                         </td>
                                         <td style="padding: 15px 10px; text-align: center;">
-                                            <div style="font-weight: 700; color: #1e293b;"><?php echo $lesson_cov_pct; ?>%</div>
+                                            <div style="font-weight: 700; color: #1e293b;"><?php echo $current_cov_pct; ?>%</div>
+                                            <div style="font-size: 11px; color: #64748b;">
+                                                <?php echo $covered_lessons . ' / ' . $expected_lessons; ?>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 15px 10px; text-align: center;">
+                                            <div style="font-weight: 700; color: #1e293b;"><?php echo $total_cov_pct; ?>%</div>
                                             <div style="font-size: 11px; color: #64748b;">
                                                 <?php echo $covered_lessons . ' / ' . $total_lessons; ?>
                                             </div>
@@ -366,13 +414,19 @@ $num_weeks = 1;
                                     </td>
                                     <td style="padding: 20px; text-align: center; font-weight: 800;">
                                         <?php echo $total_lessons_global; ?>
-                                    </td>
-                                    <td style="padding: 20px; text-align: center; font-weight: 800;">
+                                    </td>                                    <td style="padding: 20px; text-align: center; font-weight: 800;">
                                         <?php echo $total_covered_global; ?>
                                     </td>
                                     <td style="padding: 20px; text-align: center;">
-                                        <?php $global_cov_pct = $total_lessons_global > 0 ? round(($total_covered_global / $total_lessons_global) * 100, 1) : 0; ?>
-                                        <div style="font-weight: 800; color: #1e293b;"><?php echo $global_cov_pct; ?>%</div>
+                                        <?php $global_current_pct = $total_expected_global > 0 ? round(($total_covered_global / $total_expected_global) * 100, 1) : 0; ?>
+                                        <div style="font-weight: 800; color: #1e293b;"><?php echo $global_current_pct; ?>%</div>
+                                        <div style="font-size: 11px; color: #64748b;">
+                                            <?php echo $total_covered_global . ' / ' . $total_expected_global; ?>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 20px; text-align: center;">
+                                        <?php $global_total_pct = $total_lessons_global > 0 ? round(($total_covered_global / $total_lessons_global) * 100, 1) : 0; ?>
+                                        <div style="font-weight: 800; color: #1e293b;"><?php echo $global_total_pct; ?>%</div>
                                         <div style="font-size: 11px; color: #64748b;">
                                             <?php echo $total_covered_global . ' / ' . $total_lessons_global; ?>
                                         </div>
@@ -384,9 +438,14 @@ $num_weeks = 1;
                                         $status_label = Olama_School_Helpers::translate('Optimal');
                                         $bg_color = 'rgba(16, 185, 129, 0.1)';
 
-                                        if ($global_cov_pct >= 95) {
+                                        if ($total_expected_global == 0) {
+                                            $status_label = Olama_School_Helpers::translate('N/A');
+                                            $status_color = '#94a3b8';
+                                            $status_icon = 'dashicons-minus';
+                                            $bg_color = 'rgba(148, 163, 184, 0.1)';
+                                        } elseif ($global_current_pct >= 95) {
                                             // Optimal
-                                        } elseif ($global_cov_pct >= 80) {
+                                        } elseif ($global_current_pct >= 80) {
                                             $status_color = '#f59e0b';
                                             $status_icon = 'dashicons-arrow-up-alt';
                                             $status_label = Olama_School_Helpers::translate('High');
@@ -398,6 +457,7 @@ $num_weeks = 1;
                                             $bg_color = 'rgba(239, 68, 68, 0.1)';
                                         }
                                         ?>
+
                                         <div
                                             style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 18px; border-radius: 20px; background: <?php echo $bg_color; ?>; color: <?php echo $status_color; ?>; font-weight: 800; font-size: 0.9rem; border: 1px solid <?php echo $status_color; ?>30; min-width: 100px;">
                                             <span class="dashicons <?php echo $status_icon; ?>"
@@ -429,18 +489,18 @@ $num_weeks = 1;
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                             <div>
                                 <p style="margin: 0 0 8px 0; color: #1e40af;">
-                                    <strong><?php echo Olama_School_Helpers::translate('Lesson Coverage'); ?></strong>
+                                    <strong><?php echo Olama_School_Helpers::translate('Current Lesson Coverage'); ?></strong>
                                 </p>
                                 <p style="margin: 0; font-size: 13px; color: #4b66b9; line-height: 1.5;">
-                                    <?php echo Olama_School_Helpers::translate('Percentage of uniquely covered lessons up to the selected week compared to the total curriculum lessons.'); ?>
+                                    <?php echo Olama_School_Helpers::translate('Percentage of uniquely covered lessons up to the selected week compared to the planned lessons on the curriculum timeline.'); ?>
                                 </p>
                             </div>
                             <div>
                                 <p style="margin: 0 0 8px 0; color: #1e40af;">
-                                    <strong><?php echo Olama_School_Helpers::translate('Total number of all lesson'); ?></strong>
+                                    <strong><?php echo Olama_School_Helpers::translate('Total Lesson Coverage'); ?></strong>
                                 </p>
                                 <p style="margin: 0; font-size: 13px; color: #4b66b9; line-height: 1.5;">
-                                    <?php echo Olama_School_Helpers::translate('The total lessons scheduled in the curriculum timeline for the entire semester.'); ?>
+                                    <?php echo Olama_School_Helpers::translate('Percentage of uniquely covered lessons up to the selected week compared to the total curriculum lessons for the entire semester.'); ?>
                                 </p>
                             </div>
                         </div>
