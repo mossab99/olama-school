@@ -279,7 +279,17 @@ $templates = Olama_School_EV_Template::get_templates($selected_grade_id, $active
                                                         <?php echo $visit->status === 'completed' ? __('Completed', 'olama-school') : __('Planned', 'olama-school'); ?>
                                                     </span>
                                                 </div>
-                                                <span style="font-size:10px;"><?php echo date_i18n('M j', strtotime($visit->visit_date)); ?></span>
+                                                <div style="display: flex; align-items: center; gap: 4px;">
+                                                    <span style="font-size:10px;"><?php echo date_i18n('M j', strtotime($visit->visit_date)); ?></span>
+                                                    <?php if ($visit->status === 'planned'): ?>
+                                                        <span class="dashicons dashicons-trash olama-delete-visit-btn" 
+                                                              data-visit-id="<?php echo $visit->id; ?>" 
+                                                              data-nonce="<?php echo wp_create_nonce('olama_delete_visit_nonce'); ?>"
+                                                              title="<?php _e('Delete Planned Visit', 'olama-school'); ?>" 
+                                                              style="font-size: 12px; width: 12px; height: 12px; cursor: pointer; color: #ef4444;"
+                                                              onmouseover="this.style.opacity=0.7" onmouseout="this.style.opacity=1"></span>
+                                                    <?php endif; ?>
+                                                </div>
                                             </div>
                                             <div style="font-size: 10px; border-top: 1px solid <?php echo $v_color['border']; ?>50; padding-top: 3px; margin-top: 3px; opacity: 0.9; display: flex; align-items: center;">
                                                 <span style="margin-right: 3px;">👤</span> <?php echo esc_html($visit->supervisor_name); ?>
@@ -410,6 +420,33 @@ jQuery(document).ready(function($) {
         } else {
             $('#modal-date-error').hide();
         }
+    });
+
+    // Delete Planned Visit
+    $('.olama-delete-visit-btn').on('click', function(e) {
+        e.stopPropagation();
+        if (!confirm('<?php echo esc_js(__('Are you sure you want to delete this planned visit?', 'olama-school')); ?>')) {
+            return;
+        }
+
+        const visitId = $(this).data('visit-id');
+        const nonce = $(this).data('nonce');
+        const btn = $(this);
+
+        btn.css('opacity', 0.5).css('pointer-events', 'none');
+
+        $.post(ajaxurl, {
+            action: 'olama_delete_supervisor_visit',
+            id: visitId,
+            nonce: nonce
+        }, function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert(response.data || '<?php echo esc_js(__('Error deleting visit', 'olama-school')); ?>');
+                btn.css('opacity', 1).css('pointer-events', 'auto');
+            }
+        });
     });
 });
 </script>

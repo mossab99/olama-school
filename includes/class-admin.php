@@ -4316,7 +4316,8 @@ class Olama_School_Admin
      */
     public function ajax_get_subjects()
     {
-        $grade_id = intval($_GET['grade_id']);
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+        $grade_id = intval($_REQUEST['grade_id']);
         $subjects = Olama_School_Subject::get_subjects_by_grade($grade_id, true);
         wp_send_json_success($subjects);
     }
