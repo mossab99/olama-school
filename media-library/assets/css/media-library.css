@@ -2,8 +2,49 @@
 
 .academy-media-library-wrap {
     margin-top: 20px;
-    /* Use standard WP fonts */
+    position: relative;
+    direction: rtl;
 }
+
+#academy-notification-bar {
+    position: sticky;
+    top: 32px;
+    z-index: 9999;
+    margin-bottom: 15px;
+    display: none;
+}
+
+.academy-notification {
+    padding: 12px 20px;
+    border-radius: 4px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    animation: academySlideDown 0.3s ease;
+}
+
+@keyframes academySlideDown {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.academy-notification.success { background: #46b450; }
+.academy-notification.error { background: #dc3232; }
+.academy-notification.info { background: #2271b1; }
+
+.academy-notification .close-notify {
+    cursor: pointer;
+    font-size: 18px;
+    margin-left: 15px;
+    opacity: 0.8;
+}
+
+.academy-notification .close-notify:hover { opacity: 1; }
+
 
 .academy-media-library-wrap .card {
     max-width: 100%;

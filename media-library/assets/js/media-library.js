@@ -18,6 +18,37 @@ jQuery(document).ready(function ($) {
         return academyMedia.i18n['status_' + status] || status.toUpperCase();
     };
 
+    // --- Notification System ---
+    const $notifyBar = $('<div id="academy-notification-bar"></div>');
+    $('.academy-media-library-wrap').prepend($notifyBar);
+
+    function showNotification(message, type = 'info', duration = 5000) {
+        const $notification = $(`
+            <div class="academy-notification ${type}">
+                <span class="notify-message">${message}</span>
+                <span class="dashicons dashicons-dismiss close-notify"></span>
+            </div>
+        `);
+
+        $notifyBar.show().append($notification);
+
+        $notification.find('.close-notify').on('click', function() {
+            $notification.fadeOut(300, function() { 
+                $(this).remove();
+                if ($notifyBar.children().length === 0) $notifyBar.hide();
+            });
+        });
+
+        if (duration > 0) {
+            setTimeout(() => {
+                $notification.fadeOut(300, function() { 
+                    $(this).remove();
+                    if ($notifyBar.children().length === 0) $notifyBar.hide();
+                });
+            }, duration);
+        }
+    }
+
     // --- Tab Management ---
     $('.nav-tab').on('click', function (e) {
         e.preventDefault();
@@ -76,7 +107,7 @@ jQuery(document).ready(function ($) {
         };
 
         if (!filters.grade_id || !filters.subject_id || !filters.semester_id) {
-            alert(academyMedia.i18n.select_all);
+            showNotification(academyMedia.i18n.select_all, 'error');
             return;
         }
 
@@ -94,7 +125,7 @@ jQuery(document).ready(function ($) {
                 if (response.success) {
                     renderCurriculum(response.data);
                 } else {
-                    alert(response.data || academyMedia.i18n.error);
+                    showNotification(response.data || academyMedia.i18n.error, 'error');
                 }
             },
             complete: function () {
@@ -117,7 +148,7 @@ jQuery(document).ready(function ($) {
         };
 
         if (!filters.grade_id || !filters.subject_id || !filters.semester_id) {
-            alert(academyMedia.i18n.select_all);
+            showNotification(academyMedia.i18n.select_all, 'error');
             return;
         }
 
@@ -135,14 +166,14 @@ jQuery(document).ready(function ($) {
             },
             success: function (response) {
                 if (response.success) {
-                    alert(response.data);
+                    showNotification(response.data, 'success');
                     $('#btn-load-curriculum').click(); // Refresh list to show new statuses
                 } else {
-                    alert(response.data || academyMedia.i18n.error);
+                    showNotification(response.data || academyMedia.i18n.error, 'error');
                 }
             },
             error: function () {
-                alert(academyMedia.i18n.error);
+                showNotification(academyMedia.i18n.error, 'error');
             },
             complete: function () {
                 $btn.prop('disabled', false).text(originalText);
@@ -289,7 +320,7 @@ jQuery(document).ready(function ($) {
         });
 
         if (validFiles.length < files.length) {
-            alert('تم استبعاد بعض الملفات لأنها ليست بصيغة فيديو مدعومة.');
+            showNotification('تم استبعاد بعض الملفات لأنها ليست بصيغة فيديو مدعومة.', 'error');
         }
 
         if (validFiles.length === 0) {
@@ -321,8 +352,9 @@ jQuery(document).ready(function ($) {
         if (state.isUploading || state.uploadQueue.length === 0) {
             if (!state.isUploading && state.totalFiles > 0) {
                 // All finished
+                const type = state.errorCount > 0 ? (state.successCount > 0 ? 'info' : 'error') : 'success';
                 const message = `${academyMedia.i18n.status_completed}: ${state.successCount}, ${academyMedia.i18n.error}: ${state.errorCount}`;
-                alert(message);
+                showNotification(message, type, 10000);
                 
                 // Reset counters
                 state.successCount = 0;
@@ -523,7 +555,7 @@ jQuery(document).ready(function ($) {
                     setTimeout(() => $textarea.css('border-color', ''), 1000);
                 } else {
                     $textarea.css('border-color', '#dc3545'); // Red error
-                    alert(response.data);
+                    showNotification(response.data || academyMedia.i18n.error, 'error');
                 }
             },
             error: function () {
@@ -580,7 +612,7 @@ jQuery(document).ready(function ($) {
                 if (response.success) {
                     $('#btn-load-curriculum').click(); // Refresh
                 } else {
-                    alert(response.data);
+                    showNotification(response.data || academyMedia.i18n.error, 'error');
                 }
             }
         });
