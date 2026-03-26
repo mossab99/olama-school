@@ -33,10 +33,10 @@ class Academy_Media_Library
     private function maybe_init_db()
     {
         $current_version = get_option('academy_media_db_version', '0');
-        if (version_compare($current_version, '1.0.1', '<')) {
+        if (version_compare($current_version, '1.0.2', '<')) {
             $db = new Academy_Media_DB();
             $db->init();
-            update_option('academy_media_db_version', '1.0.1');
+            update_option('academy_media_db_version', '1.0.2');
         }
     }
 
@@ -161,7 +161,8 @@ class Academy_Media_Library
                 'reject' => __('Reject', 'olama-school'),
                 'comments' => __('Notes', 'olama-school'),
                 'save' => __('Save', 'olama-school'),
-                'cancel' => __('Cancel', 'olama-school')
+                'cancel' => __('Cancel', 'olama-school'),
+                'part' => __('Part', 'olama-school')
             ]
         ]);
     }

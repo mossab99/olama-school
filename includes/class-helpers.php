@@ -1562,6 +1562,8 @@ class Olama_School_Helpers
         'Rejected' => 'مرفوض',
         'Uploader' => 'الرافع',
         'Reject' => 'رفض',
+        'Part' => 'جزء',
+        'Lesson' => 'درس',
         );
 
         return $map[$text] ?? $text;

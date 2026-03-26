@@ -330,4 +330,4 @@ $grades = Olama_School_Grade::get_grades();
 </div>
 
 <!-- Hidden common file input -->
-<input type="file" id="media-video-input" style="display:none;" accept="video/*">
+<input type="file" id="media-video-input" style="display:none;" accept="video/*" multiple>

@@ -229,7 +229,8 @@ jQuery(document).ready(function ($) {
                                 data-unit-id="${unit.id}"
                                 data-lesson-name="${lesson.lesson_title}"
                                 data-lesson-number="${lesson.lesson_number}"
-                                data-unit-name="${unit.unit_name}">
+                                data-unit-name="${unit.unit_name}"
+                                data-record-id="${lesson.media_record_id || ''}">
                                 <span class="dashicons ${uploadIcon}"></span>
                             </button>`;
 
@@ -238,9 +239,11 @@ jQuery(document).ready(function ($) {
                                 <div class="progress-bar"></div>
                             </div>`;
 
+                    const lessonTitle = lesson.part_number ? `${lesson.lesson_title} (${academyMedia.i18n.part} ${lesson.part_number})` : lesson.lesson_title;
+
                     html += `<tr>
                         <td>${lesson.lesson_number}</td>
-                        <td>${lesson.lesson_title}</td>
+                        <td>${lessonTitle}</td>
                         <td>${notesHtml}</td>
                         <td>${uploaderHtml}</td>
                         <td>${statusHtml}</td>
@@ -268,20 +271,44 @@ jQuery(document).ready(function ($) {
     });
 
     $('#media-video-input').on('change', function () {
-        const file = this.files[0];
-        if (!file || !state.currentLesson) return;
+        const files = Array.from(this.files);
+        if (files.length === 0 || !state.currentLesson) return;
 
-        // --- File Type Validation ---
         const allowedExtensions = ['mp4', 'mov', 'avi', 'mkv', 'wmv', 'm4v'];
-        const extension = file.name.split('.').pop().toLowerCase();
 
-        if (!allowedExtensions.includes(extension)) {
-            alert('يسمح فقط بملفات الفيديو (mp4, mov, avi, mkv, wmv, m4v)');
+        // Filter and validate files
+        const validFiles = files.filter(file => {
+            const ext = file.name.split('.').pop().toLowerCase();
+            return allowedExtensions.includes(ext);
+        });
+
+        if (validFiles.length < files.length) {
+            alert('تم استبعاد بعض الملفات لأنها ليست بصيغة فيديو مدعومة.');
+        }
+
+        if (validFiles.length === 0) {
             this.value = '';
             return;
         }
 
-        performUpload(file, state.currentLesson);
+        // --- Multi-Upload Loop ---
+        validFiles.forEach((file, index) => {
+            const data = { ...state.currentLesson };
+
+            // If we are uploading multiple files, they become parts.
+            // If we are replacing an existing record (data.recordId is set), the FIRST file replaces it,
+            // subsequent files are added as new parts for the same lesson.
+            if (validFiles.length > 1) {
+                data.part = index + 1;
+                // Important: Only clear recordId for subsequent files to avoid overwriting the same one
+                if (index > 0) {
+                    data.recordId = ''; 
+                }
+            }
+
+            performUpload(file, data);
+        });
+
         this.value = ''; // Reset input
     });
 
@@ -296,11 +323,15 @@ jQuery(document).ready(function ($) {
         formData.append('action', 'academy_upload_media_video');
         formData.append('nonce', academyMedia.nonce);
         formData.append('video_file', file);
+        formData.append('id', lessonData.recordId || '');  // If we are replacing
         formData.append('lesson_id', lessonData.lessonId);
         formData.append('unit_id', lessonData.unitId);
         formData.append('lesson_name', lessonData.lessonName);
         formData.append('lesson_number', lessonData.lessonNumber);
         formData.append('unit_name', lessonData.unitName);
+        if (lessonData.part) {
+            formData.append('part_number', lessonData.part);
+        }
         formData.append('grade_name', $('#filter-grade option:selected').data('name'));
         formData.append('subject_name', $('#filter-subject option:selected').data('name'));
         formData.append('semester_name', $('#filter-semester-name').val());

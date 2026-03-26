@@ -36,6 +36,7 @@ class Academy_Media_DB
             academic_year VARCHAR(20),
             lesson_name VARCHAR(255),
             unit_name VARCHAR(255),
+            part_number INT UNSIGNED NULL,
             drive_file_id VARCHAR(255) NULL,
             drive_file_url VARCHAR(500) NULL,
             drive_folder_id VARCHAR(255) NULL,
@@ -83,13 +84,13 @@ class Academy_Media_DB
             $unit->lessons = $wpdb->get_results($wpdb->prepare(
                 "SELECT l.id, l.lesson_number, l.lesson_title, 
                         m.upload_status, m.drive_file_url, m.drive_file_id, m.id as media_record_id,
-                        m.approval_status, m.comments, m.uploader_id, m.uploaded_at,
+                        m.approval_status, m.comments, m.uploader_id, m.uploaded_at, m.part_number,
                         u.display_name as uploader_name
                 FROM $lessons_table l
                 LEFT JOIN $this->table_name m ON l.id = m.lesson_id
                 LEFT JOIN $users_table u ON m.uploader_id = u.ID
                 WHERE l.unit_id = %d
-                ORDER BY CAST(l.lesson_number AS UNSIGNED) ASC",
+                ORDER BY CAST(l.lesson_number AS UNSIGNED) ASC, m.part_number ASC",
                 $unit->id
             ));
         }
@@ -104,14 +105,12 @@ class Academy_Media_DB
     {
         global $wpdb;
 
-        $existing = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM $this->table_name WHERE lesson_id = %d",
-            $data['lesson_id']
-        ));
+        $record_id = isset($data['id']) ? intval($data['id']) : 0;
+        unset($data['id']); // Don't include ID in the actual data array for update/insert
 
-        if ($existing) {
-            $wpdb->update($this->table_name, $data, ['id' => $existing]);
-            return $existing;
+        if ($record_id) {
+            $wpdb->update($this->table_name, $data, ['id' => $record_id]);
+            return $record_id;
         } else {
             $wpdb->insert($this->table_name, $data);
             return $wpdb->insert_id;

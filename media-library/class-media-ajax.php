@@ -105,6 +105,8 @@ class Academy_Media_AJAX
 
         $lesson_id = intval($_POST['lesson_id'] ?? 0);
         $unit_id = intval($_POST['unit_id'] ?? 0);
+        $record_id = intval($_POST['id'] ?? 0);
+        $part_number = intval($_POST['part_number'] ?? 0);
         $lesson_name = sanitize_text_field($_POST['lesson_name'] ?? '');
         $lesson_number = sanitize_text_field($_POST['lesson_number'] ?? '');
         $unit_name = sanitize_text_field($_POST['unit_name'] ?? '');
@@ -136,13 +138,19 @@ class Academy_Media_AJAX
                 throw new Exception(__('Only video files are allowed.', 'olama-school'));
             }
 
-            // 2. Rename File to: درس {number} {name}
+            // 2. Rename File to: Lesson {number} (Part {part}) {name}
             $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
             if (empty($extension)) {
                 $extension = 'mp4'; // Default to mp4 if unknown
             }
-            // Format: Lesson 1 Lesson Name
-            $new_filename = sprintf(__('%s %s %s.%s', 'olama-school'), __('Lesson', 'olama-school'), $lesson_number, $lesson_name, $extension);
+            
+            if ($part_number > 0) {
+                // Format: Lesson 1 Part 1 Title
+                $new_filename = sprintf(__('%s %s %s %s %s.%s', 'olama-school'), __('Lesson', 'olama-school'), $lesson_number, __('Part', 'olama-school'), $part_number, $lesson_name, $extension);
+            } else {
+                // Format: Lesson 1 Title
+                $new_filename = sprintf(__('%s %s %s.%s', 'olama-school'), __('Lesson', 'olama-school'), $lesson_number, $lesson_name, $extension);
+            }
 
             // 3. Get/Create Folder Structure
             $path = [$academic_year, $semester, $grade, $subject, $unit_name];
@@ -157,6 +165,7 @@ class Academy_Media_AJAX
 
             // 5. Save to DB
             $db_data = [
+                'id' => $record_id,
                 'lesson_id' => $lesson_id,
                 'unit_id' => $unit_id,
                 'grade' => $grade,
@@ -165,6 +174,7 @@ class Academy_Media_AJAX
                 'academic_year' => $academic_year,
                 'lesson_name' => $lesson_name,
                 'unit_name' => $unit_name,
+                'part_number' => $part_number ?: null,
                 'drive_file_id' => $result['file_id'],
                 'drive_file_url' => $result['web_view_link'],
                 'drive_folder_id' => $folder_id,
