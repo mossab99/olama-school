@@ -350,19 +350,6 @@ jQuery(document).ready(function ($) {
 
     function processQueue() {
         if (state.isUploading || state.uploadQueue.length === 0) {
-            if (!state.isUploading && state.totalFiles > 0) {
-                // All finished
-                const type = state.errorCount > 0 ? (state.successCount > 0 ? 'info' : 'error') : 'success';
-                const message = `${academyMedia.i18n.status_completed}: ${state.successCount}, ${academyMedia.i18n.error}: ${state.errorCount}`;
-                showNotification(message, type, 10000);
-                
-                // Reset counters
-                state.successCount = 0;
-                state.errorCount = 0;
-                state.totalFiles = 0;
-
-                $('#btn-load-curriculum').click(); // Refresh list at the very end
-            }
             return;
         }
 
@@ -371,9 +358,27 @@ jQuery(document).ready(function ($) {
         
         performUpload(task.file, task.data, function() {
             state.isUploading = false;
-            processQueue();
+
+            if (state.uploadQueue.length > 0) {
+                // More files to process
+                processQueue();
+            } else {
+                // All done - show summary and refresh
+                const type = state.errorCount > 0 ? (state.successCount > 0 ? 'info' : 'error') : 'success';
+                const message = `${academyMedia.i18n.status_completed}: ${state.successCount}, ${academyMedia.i18n.error}: ${state.errorCount}`;
+                showNotification(message, type, 10000);
+
+                // Reset counters
+                state.successCount = 0;
+                state.errorCount = 0;
+                state.totalFiles = 0;
+
+                // Refresh the curriculum list
+                $('#btn-load-curriculum').click();
+            }
         });
     }
+
 
     function performUpload(file, lessonData, callback = null) {
         const $progressCont = $(`#progress-${lessonData.lessonId}`);
