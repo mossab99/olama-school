@@ -5,7 +5,9 @@ jQuery(document).ready(function ($) {
         activeTab: 'upload',
         curriculum: [],
         currentLesson: null,
-        logPage: 1
+        logPage: 1,
+        uploadQueue: [],
+        isUploading: false
     };
 
     const getStatusLabel = (status) => {
@@ -291,28 +293,37 @@ jQuery(document).ready(function ($) {
             return;
         }
 
-        // --- Multi-Upload Loop ---
+        // --- Add to Queue ---
         validFiles.forEach((file, index) => {
             const data = { ...state.currentLesson };
 
-            // If we are uploading multiple files, they become parts.
-            // If we are replacing an existing record (data.recordId is set), the FIRST file replaces it,
-            // subsequent files are added as new parts for the same lesson.
             if (validFiles.length > 1) {
                 data.part = index + 1;
-                // Important: Only clear recordId for subsequent files to avoid overwriting the same one
                 if (index > 0) {
                     data.recordId = ''; 
                 }
             }
 
-            performUpload(file, data);
+            state.uploadQueue.push({ file, data });
         });
 
+        processQueue();
         this.value = ''; // Reset input
     });
 
-    function performUpload(file, lessonData) {
+    function processQueue() {
+        if (state.isUploading || state.uploadQueue.length === 0) return;
+
+        state.isUploading = true;
+        const task = state.uploadQueue.shift();
+        
+        performUpload(task.file, task.data, function() {
+            state.isUploading = false;
+            processQueue();
+        });
+    }
+
+    function performUpload(file, lessonData, callback = null) {
         const $progressCont = $(`#progress-${lessonData.lessonId}`);
         const $progressBar = $progressCont.find('.progress-bar');
 
@@ -355,8 +366,11 @@ jQuery(document).ready(function ($) {
             },
             success: function (response) {
                 if (response.success) {
-                    alert(response.data.message);
-                    $('#btn-load-curriculum').click(); // Refresh list
+                    // console.log('Upload success:', response.data.message);
+                    if (state.uploadQueue.length === 0) {
+                        alert(response.data.message);
+                        $('#btn-load-curriculum').click(); // Refresh list on last upload
+                    }
                 } else {
                     alert(response.data || academyMedia.i18n.error);
                 }
@@ -366,6 +380,7 @@ jQuery(document).ready(function ($) {
             },
             complete: function () {
                 $progressCont.hide();
+                if (callback) callback();
             }
         });
     }
