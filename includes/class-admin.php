@@ -36,6 +36,7 @@ class Olama_School_Admin
         add_action('admin_init', array($this, 'handle_lesson_planner_actions'));
         add_action('admin_init', array($this, 'handle_attendance_save'));
         add_action('wp_ajax_olama_save_attendance', array($this, 'ajax_save_attendance'));
+        add_action('wp_ajax_olama_mark_all_present', array($this, 'ajax_mark_all_present'));
         add_action('wp_ajax_olama_kg_autosave', array($this, 'ajax_kg_autosave'));
         add_action('wp_ajax_olama_save_exam', array($this, 'ajax_save_exam'));
         add_action('wp_ajax_olama_get_semesters', array($this, 'ajax_get_semesters'));
@@ -4543,12 +4544,12 @@ class Olama_School_Admin
     /**
      * Get student attendance stats for dashboard
      */
-    public static function get_student_attendance_stats()
+    public static function get_student_attendance_stats($date = null)
     {
         global $wpdb;
         $active_year = Olama_School_Academic::get_active_year();
         $active_year_id = $active_year ? $active_year->id : 0;
-        $today = current_time('Y-m-d');
+        $today = $date ?: current_time('Y-m-d');
 
         $stats = array(
             'absences_by_section' => array(),
@@ -4560,22 +4561,38 @@ class Olama_School_Admin
         if (!$active_year_id)
             return $stats;
 
-        // 1. Get absences by section for today
-        $absences = $wpdb->get_results($wpdb->prepare("
-            SELECT g.grade_name, s.section_name, count(a.id) as absent_count
-            FROM {$wpdb->prefix}olama_attendance a
-            JOIN {$wpdb->prefix}olama_sections s ON a.section_id = s.id
+        // 1. Get all active sections and their attendance status in one query
+        $sections_data = $wpdb->get_results($wpdb->prepare("
+            SELECT 
+                s.id as section_id, 
+                g.grade_name, 
+                s.section_name,
+                sh.id as sheet_id,
+                (SELECT COUNT(*) 
+                 FROM {$wpdb->prefix}olama_attendance a 
+                 WHERE a.section_id = s.id 
+                 AND a.attendance_date = %s 
+                 AND a.status = 'absent') as absent_count
+            FROM {$wpdb->prefix}olama_sections s
             JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id
-            WHERE a.academic_year_id = %d AND a.attendance_date = %s AND a.status = 'absent'
-            GROUP BY a.section_id
-            HAVING absent_count > 0
+            LEFT JOIN {$wpdb->prefix}olama_attendance_sheets sh ON s.id = sh.section_id AND sh.attendance_date = %s
+            WHERE s.academic_year_id = %d
             ORDER BY g.grade_level ASC, s.section_name ASC
-        ", $active_year_id, $today));
+        ", $today, $today, $active_year_id));
 
-        foreach ($absences as $abs) {
+        foreach ($sections_data as $sec) {
+            $is_completed = !empty($sec->sheet_id);
+            $absent_count = (int) $sec->absent_count;
+            
+            $status = 'pending';
+            if ($is_completed) {
+                $status = ($absent_count > 0) ? 'absences' : 'all_present';
+            }
+
             $stats['absences_by_section'][] = array(
-                'label' => $abs->grade_name . ' - ' . $abs->section_name,
-                'count' => $abs->absent_count
+                'label' => $sec->grade_name . ' - ' . $sec->section_name,
+                'count' => $absent_count,
+                'status' => $status
             );
         }
 
@@ -4608,9 +4625,9 @@ class Olama_School_Admin
             FROM {$wpdb->prefix}olama_attendance a
             JOIN {$wpdb->prefix}olama_sections s ON a.section_id = s.id
             JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id
-            WHERE a.academic_year_id = %d AND a.attendance_date = %s
+            WHERE a.attendance_date = %s
             GROUP BY g.id, a.status
-        ", $active_year_id, $today));
+        ", $today));
 
         foreach ($attendance as $att) {
             $is_kg = (stripos($att->grade_name, 'KG') !== false || stripos($att->grade_name, 'التمهيدي') !== false || stripos($att->grade_name, 'البستان') !== false);
@@ -4989,7 +5006,8 @@ class Olama_School_Admin
             $table = $wpdb->prefix . 'olama_attendance';
 
             // Ensure table exists
-            if ($wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table) {
+            $table_sheets = $wpdb->prefix . 'olama_attendance_sheets';
+            if ($wpdb->get_var("SHOW TABLES LIKE '$table_sheets'") !== $table_sheets) {
                 $olama_db = new Olama_School_DB();
                 $olama_db->create_tables();
             }
@@ -5027,6 +5045,18 @@ class Olama_School_Admin
                     error_log("Olama Attendance: Failed to save attendance for student $student_id on date $date. DB Error: " . $wpdb->last_error);
                 }
             }
+
+            // Also mark the attendance sheet as completed for this section/date
+            $wpdb->query($wpdb->prepare(
+                "INSERT INTO {$wpdb->prefix}olama_attendance_sheets (academic_year_id, section_id, attendance_date, recorded_by, status)
+                VALUES (%d, %d, %s, %d, 'completed')
+                ON DUPLICATE KEY UPDATE recorded_by = %d, status = 'completed'",
+                $academic_year_id,
+                $section_id,
+                $date,
+                get_current_user_id(),
+                get_current_user_id()
+            ));
 
             wp_redirect(add_query_arg('message', 'attendance_saved', wp_get_referer()));
             exit;
@@ -5072,7 +5102,8 @@ class Olama_School_Admin
         $table = $wpdb->prefix . 'olama_attendance';
 
         // Check if table exists
-        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table) {
+        $table_sheets = $wpdb->prefix . 'olama_attendance_sheets';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_sheets'") !== $table_sheets) {
             $olama_db = new Olama_School_DB();
             $olama_db->create_tables();
         }
@@ -5101,11 +5132,83 @@ class Olama_School_Admin
         ));
 
         if ($result !== false) {
+            // Also mark the attendance sheet as completed for this section/date
+            $wpdb->query($wpdb->prepare(
+                "INSERT INTO {$wpdb->prefix}olama_attendance_sheets (academic_year_id, section_id, attendance_date, recorded_by, status)
+                VALUES (%d, %d, %s, %d, 'completed')
+                ON DUPLICATE KEY UPDATE recorded_by = %d, status = 'completed'",
+                $academic_year_id,
+                $section_id,
+                $date,
+                get_current_user_id(),
+                get_current_user_id()
+            ));
+
             wp_send_json_success();
         } else {
             error_log("Olama Attendance AJAX: Failed to save attendance for student $student_id on date $date. DB Error: " . $wpdb->last_error);
             wp_send_json_error(__('Database error', 'olama-school'));
         }
+    }
+
+    /**
+     * AJAX: Mark ALL students in a section as present for today
+     */
+    public function ajax_mark_all_present()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_manage_attendance')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
+        $section_id = intval($_POST['section_id'] ?? 0);
+        $date = Olama_School_Helpers::sanitize_date($_POST['date']);
+        $academic_year_id = intval($_POST['academic_year_id'] ?? 0);
+
+        if (!$section_id || !$date) {
+            wp_send_json_error('Missing parameters');
+        }
+
+        if (!$academic_year_id) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $academic_year_id = $active_year ? $active_year->id : 0;
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'olama_attendance';
+
+        // 1. Get all students in this section
+        $students = $wpdb->get_results($wpdb->prepare(
+            "SELECT s.id, s.student_uid 
+             FROM {$wpdb->prefix}olama_student_enrollment e
+             JOIN {$wpdb->prefix}olama_students s ON e.student_uid = s.student_uid
+             WHERE e.section_id = %d AND e.academic_year_id = %d AND e.status = 'active'",
+            $section_id,
+            $academic_year_id
+        ));
+
+        // 2. Clear existing attendance records for this section/date (so we reset to All Present)
+        $wpdb->delete($table, array(
+            'section_id' => $section_id,
+            'attendance_date' => $date
+        ));
+
+        // Note: In this system, "present" seems to be the default state if no record exists.
+        // However, we want to record that the sheet IS completed.
+        
+        $wpdb->query($wpdb->prepare(
+            "INSERT INTO {$wpdb->prefix}olama_attendance_sheets (academic_year_id, section_id, attendance_date, recorded_by, status)
+            VALUES (%d, %d, %s, %d, 'completed')
+            ON DUPLICATE KEY UPDATE recorded_by = %d, status = 'completed'",
+            $academic_year_id,
+            $section_id,
+            $date,
+            get_current_user_id(),
+            get_current_user_id()
+        ));
+
+        wp_send_json_success();
     }
 
     /**
@@ -5131,7 +5234,7 @@ class Olama_School_Admin
         $grades_table = $wpdb->prefix . 'olama_grades';
 
         $absentees = $wpdb->get_results($wpdb->prepare(
-            "SELECT a.*, s.student_name, s.student_uid, sec.section_name, g.grade_name 
+            "SELECT a.*, s.student_name, s.student_uid, sec.section_name, g.grade_name, sec.grade_id
             FROM $table a
             JOIN $students_table s ON a.student_uid = s.student_uid
             JOIN $sections_table sec ON a.section_id = sec.id
@@ -5140,6 +5243,39 @@ class Olama_School_Admin
             ORDER BY g.id, sec.id, s.student_name",
             $date
         ));
+
+        // Get sections that haven't taken attendance yet
+        $active_year = Olama_School_Academic::get_active_year();
+        $pending_sections = array();
+        if ($active_year) {
+            $pending_sections = $wpdb->get_results($wpdb->prepare(
+                "SELECT s.id, g.grade_name, s.section_name 
+                FROM $sections_table s 
+                JOIN $grades_table g ON s.grade_id = g.id 
+                WHERE s.academic_year_id = %d 
+                AND s.id NOT IN (
+                    SELECT section_id FROM {$wpdb->prefix}olama_attendance_sheets 
+                    WHERE academic_year_id = %d AND attendance_date = %s
+                )
+                ORDER BY g.grade_level, s.section_name",
+                $active_year->id, $active_year->id, $date
+            ));
+            
+            // Get sections with "All Present" (completed but no absentees in $absentees)
+            $all_present_sections = $wpdb->get_results($wpdb->prepare(
+                "SELECT s.id, g.grade_name, s.section_name 
+                FROM $sections_table s 
+                JOIN $grades_table g ON s.grade_id = g.id 
+                JOIN {$wpdb->prefix}olama_attendance_sheets sh ON s.id = sh.section_id
+                WHERE s.academic_year_id = %d AND sh.attendance_date = %s
+                AND s.id NOT IN (
+                    SELECT DISTINCT section_id FROM $table 
+                    WHERE attendance_date = %s AND status = 'absent'
+                )
+                ORDER BY g.grade_level, s.section_name",
+                $active_year->id, $date, $date
+            ));
+        }
 
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/report-daily-absence.php';
     }

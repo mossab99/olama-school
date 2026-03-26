@@ -64,6 +64,9 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 <option value="logged_user_shifts">
                     <?php _e('My Weekly Shifts', 'olama-school'); ?>
                 </option>
+                <option value="supervisor_visits">
+                    <?php _e('Supervisor Visits', 'olama-school'); ?>
+                </option>
             </select>
         </div>
         <div>
@@ -211,7 +214,7 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 $('#gen-week-wrapper').hide();
                 $('#gen-exam-wrapper').hide();
                 $('#gen-schedule-type-wrapper').hide();
-            } else if (type === 'family_performance' || type === 'logged_teacher_schedule' || type === 'logged_user_shifts') {
+            } else if (type === 'family_performance' || type === 'logged_teacher_schedule' || type === 'logged_user_shifts' || type === 'supervisor_visits') {
                 $('#gen-semester').closest('div').show();
                 $('#gen-grade').closest('div').hide();
                 $('#gen-section').closest('div').hide();

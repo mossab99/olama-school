@@ -521,6 +521,20 @@ class Olama_School_DB
 				KEY attendance_date (attendance_date)
 			) $charset_collate;",
 
+			'olama_attendance_sheets' => "CREATE TABLE {$wpdb->prefix}olama_attendance_sheets (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
+				section_id mediumint(9) NOT NULL,
+				attendance_date date NOT NULL,
+				recorded_by bigint(20) UNSIGNED DEFAULT NULL,
+				status varchar(20) DEFAULT 'completed' NOT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY section_date (section_id, attendance_date),
+				KEY academic_year_id (academic_year_id),
+				KEY attendance_date (attendance_date)
+			) $charset_collate;",
+
 			'olama_shifts_locations' => "CREATE TABLE {$wpdb->prefix}olama_shifts_locations (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				location_name varchar(100) NOT NULL,

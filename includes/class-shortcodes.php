@@ -25,6 +25,7 @@ class Olama_School_Shortcodes
         add_shortcode('olama_logged_user_shifts', array($this, 'render_logged_user_shifts_shortcode'));
         add_shortcode('force_login', array($this, 'render_force_login_shortcode'));
         add_shortcode('olama_family_gateway', array($this, 'render_family_gateway_shortcode'));
+        add_shortcode('olama_supervisor_visits', array($this, 'render_supervisor_visit_schedule_shortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_shortcode_assets'));
     }
 
@@ -2422,6 +2423,14 @@ class Olama_School_Shortcodes
                 $attendance_records[$res->student_id] = $res->status;
             }
 
+            // Check if attendance sheet is completed
+            $is_sheet_completed = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}olama_attendance_sheets 
+                 WHERE section_id = %d AND attendance_date = %s",
+                $section_id,
+                $attendance_date
+            ));
+
             // Calculate counts
             foreach ($students as $stu) {
                 $status = $attendance_records[$stu->id] ?? "present";
@@ -2487,6 +2496,26 @@ class Olama_School_Shortcodes
                         </div>
                     </div>
 
+                    <div class="olama-attendance-actions" style="margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
+                        <button type="button" class="olama-btn-all-present" id="mark-all-present" 
+                                data-section="<?php echo $section_id; ?>" data-year="<?php echo $year_id; ?>" data-date="<?php echo $attendance_date; ?>">
+                            <i class="material-icons">done_all</i>
+                            <?php echo Olama_School_Helpers::translate("All Present"); ?>
+                        </button>
+
+                        <?php if ($is_sheet_completed): ?>
+                            <div class="olama-attendance-status-badge completed">
+                                <i class="material-icons">check_circle</i>
+                                <?php echo Olama_School_Helpers::translate("Attendance Completed"); ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="olama-attendance-status-badge pending">
+                                <i class="material-icons">history</i>
+                                <?php echo Olama_School_Helpers::translate("Attendance Pending"); ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
                     <div class="olama-students-grid">
                         <?php foreach ($students as $stu):
                             $status = $attendance_records[$stu->id] ?? "present";
@@ -2542,6 +2571,14 @@ class Olama_School_Shortcodes
                                     $btn.removeClass("olama-loading");
                                     if (response.success) {
                                         $btn.removeClass("olama-present olama-absent").addClass("olama-" + newStatus);
+                                        
+                                        // Update status badge dynamically
+                                        var $badge = $(".olama-attendance-status-badge.pending");
+                                        if ($badge.length) {
+                                            $badge.removeClass("pending").addClass("completed")
+                                                .html('<i class="material-icons">check_circle</i> <?php echo Olama_School_Helpers::translate("Attendance Completed"); ?>');
+                                        }
+
                                         // Update counts
                                         var presentCount = $(".olama-attendance-btn.olama-present").length;
                                         var absentCount = $(".olama-attendance-btn.olama-absent").length;
@@ -2549,6 +2586,34 @@ class Olama_School_Shortcodes
                                         $("#total-absent").text(absentCount);
                                     } else {
                                         alert("Error: " + response.data);
+                                    }
+                                });
+                            });
+
+                            $("#mark-all-present").on("click", function () {
+                                if (!confirm("<?php echo Olama_School_Helpers::translate("Are you sure everyone is present? This will reset all current marks for this section today."); ?>")) {
+                                    return;
+                                }
+
+                                var $btn = $(this);
+                                var sectionId = $btn.data("section");
+                                var yearId = $btn.data("year");
+                                var date = $btn.data("date");
+
+                                $btn.prop("disabled", true).css("opacity", "0.5");
+
+                                $.post(olama_admin_ajax.ajax_url, {
+                                    action: "olama_mark_all_present",
+                                    nonce: olama_admin_ajax.nonce,
+                                    section_id: sectionId,
+                                    academic_year_id: yearId,
+                                    date: date
+                                }, function (response) {
+                                    if (response.success) {
+                                        location.reload();
+                                    } else {
+                                        alert("Error: " + response.data);
+                                        $btn.prop("disabled", false).css("opacity", "1");
                                     }
                                 });
                             });
@@ -2757,6 +2822,55 @@ class Olama_School_Shortcodes
                         .olama-attendance-btn.olama-loading {
                             opacity: 0.6;
                             pointer-events: none;
+                        }
+
+                        /* All Present Button */
+                        .olama-btn-all-present {
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                            padding: 10px 20px;
+                            background: #10b981;
+                            color: #fff;
+                            border: none;
+                            border-radius: 12px;
+                            font-weight: 700;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+                        }
+
+                        .olama-btn-all-present:hover {
+                            background: #059669;
+                            transform: translateY(-2px);
+                        }
+
+                        .olama-btn-all-present .material-icons {
+                            font-size: 20px;
+                        }
+
+                        .olama-attendance-status-badge {
+                            display: flex;
+                            align-items: center;
+                            gap: 6px;
+                            padding: 8px 16px;
+                            border-radius: 20px;
+                            font-size: 0.9rem;
+                            font-weight: 700;
+                        }
+
+                        .olama-attendance-status-badge.completed {
+                            background: #d1fae5;
+                            color: #065f46;
+                        }
+
+                        .olama-attendance-status-badge.pending {
+                            background: #fef3c7;
+                            color: #92400e;
+                        }
+
+                        .olama-attendance-status-badge .material-icons {
+                            font-size: 18px;
                         }
 
                         .olama-attendance-footer {
@@ -4565,6 +4679,67 @@ class Olama_School_Shortcodes
             });
         })();
         </script>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Shortcode: [olama_supervisor_visits]
+     */
+    public function render_supervisor_visit_schedule_shortcode($atts)
+    {
+        if (!is_user_logged_in()) {
+            return '<div class="olama-error">' . Olama_School_Helpers::translate('Please log in to view your visit schedule.') . '</div>';
+        }
+
+        $user_id = get_current_user_id();
+        if (!current_user_can('olama_create_plans')) {
+            return '<div class="olama-error">' . Olama_School_Helpers::translate('This feature is only available for teachers.') . '</div>';
+        }
+
+        $upcoming_visits = \Olama\Services\SupervisorVisitService::get_teacher_upcoming_visits($user_id);
+
+        ob_start();
+        ?>
+        <div class="olama-supervisor-visits-wrap" style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <h2 style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px; font-family: 'Tajawal', sans-serif;">
+                <span class="dashicons dashicons-businessman" style="color: #2271b1;"></span>
+                <?php echo Olama_School_Helpers::translate('Upcoming Supervisor Visits'); ?>
+            </h2>
+            <div style="margin-top: 20px;">
+                <?php if ($upcoming_visits): ?>
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <?php foreach ($upcoming_visits as $visit): ?>
+                            <div style="padding: 15px; background: #f9f9f9; border-radius: 8px; border-right: 4px solid #2271b1;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                    <div style="font-weight: 700; color: #1d2327;">
+                                        <?php echo date_i18n('Y-m-d', strtotime($visit->visit_date)); ?> 
+                                        <span style="font-weight: 400; color: #666; font-size: 0.9em;">(<?php echo Olama_School_Helpers::translate($visit->day_name); ?>)</span>
+                                    </div>
+                                    <div style="background: #e7ffef; color: #00a32a; font-size: 0.75em; padding: 3px 8px; border-radius: 10px; font-weight: 700;">
+                                        <?php printf(Olama_School_Helpers::translate('Period %d'), $visit->period_number); ?>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 5px;">
+                                    <span class="dashicons dashicons-book" style="font-size: 16px; width: 16px; height: 16px; color: #999; vertical-align: middle;"></span>
+                                    <span style="font-size: 0.9em; font-weight: 600; color: #2271b1;"><?php echo esc_html($visit->subject_name); ?></span>
+                                    <span style="font-size: 0.8em; color: #666;"> - <?php echo esc_html($visit->grade_name . ' (' . $visit->section_name . ')'); ?></span>
+                                </div>
+                                <div style="font-size: 0.85em; color: #50575e;">
+                                    <span class="dashicons dashicons-admin-users" style="font-size: 16px; width: 16px; height: 16px; color: #999; vertical-align: middle;"></span>
+                                    <?php printf(Olama_School_Helpers::translate('Supervisor: %s'), esc_html($visit->supervisor_name)); ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div style="text-align: center; padding: 30px; color: #999;">
+                        <span class="dashicons dashicons-calendar" style="font-size: 40px; width: 40px; height: 40px; opacity: 0.3; margin-bottom: 10px;"></span>
+                        <p><?php echo Olama_School_Helpers::translate('No upcoming supervisor visits.'); ?></p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
         <?php
         return ob_get_clean();
     }

@@ -37,6 +37,7 @@ if ($is_teacher) {
     $teacher_stats = Olama_School_Admin::get_teacher_personal_stats($user_id);
     $teacher_progress = Olama_School_Admin::get_teacher_subjects_progress($user_id);
     $teacher_shifts = Olama_School_Shifts::get_teacher_weekly_shifts($user_id);
+    $upcoming_visits = \Olama\Services\SupervisorVisitService::get_teacher_upcoming_visits($user_id);
 }
 
 // Recent Activity
@@ -58,7 +59,8 @@ $recent_plans = $wpdb->get_results("
 // Pending Reviews (Phase 2.2)
 $pending_plans = Olama_School_Admin::get_pending_plans_for_review();
 $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
-$attendance_stats = Olama_School_Admin::get_student_attendance_stats();
+$attendance_date = isset($_GET['attendance_date']) ? sanitize_text_field($_GET['attendance_date']) : current_time('Y-m-d');
+$attendance_stats = Olama_School_Admin::get_student_attendance_stats($attendance_date);
 ?>
 <div class="wrap olama-school-wrap">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
@@ -249,7 +251,17 @@ $attendance_stats = Olama_School_Admin::get_student_attendance_stats();
                 <h2
                     style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px;">
                     <span class="dashicons dashicons-id-alt" style="color: #2271b1;"></span>
-                    <?php _e('Student Attendance Today', 'olama-school'); ?>
+                    <?php _e('Student Attendance Statistics', 'olama-school'); ?>
+                    <form method="get" action="" style="margin-right: auto; display: flex; align-items: center; gap: 10px;">
+                        <input type="hidden" name="page" value="olama-school">
+                        <div class="olama-date-shortcuts" style="display: flex; gap: 5px;">
+                            <a href="<?php echo add_query_arg('attendance_date', date('Y-m-d', strtotime('-1 day'))); ?>" 
+                               class="button button-small <?php echo $attendance_date === date('Y-m-d', strtotime('-1 day')) ? 'button-primary' : ''; ?>"><?php _e('Yesterday', 'olama-school'); ?></a>
+                            <a href="<?php echo add_query_arg('attendance_date', date('Y-m-d')); ?>" 
+                               class="button button-small <?php echo $attendance_date === date('Y-m-d') ? 'button-primary' : ''; ?>"><?php _e('Today', 'olama-school'); ?></a>
+                        </div>
+                        <input type="date" name="attendance_date" value="<?php echo esc_attr($attendance_date); ?>" onchange="this.form.submit()" style="height: 28px; padding: 0 8px; font-size: 13px;">
+                    </form>
                 </h2>
 
                 <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px; margin-top: 20px;">
@@ -264,8 +276,14 @@ $attendance_stats = Olama_School_Admin::get_student_attendance_stats();
                                         style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f6f7f7;">
                                         <span
                                             style="font-weight: 600; font-size: 0.9em;"><?php echo esc_html($abs['label']); ?></span>
-                                        <span
-                                            style="background: #fcf0f1; color: #d63638; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.85em;"><?php echo $abs['count']; ?></span>
+                                        <?php if ($abs['status'] === 'pending'): ?>
+                                            <span style="background: #fff8e5; color: #854d0e; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.8em;"><?php _e('Pending', 'olama-school'); ?></span>
+                                        <?php elseif ($abs['status'] === 'all_present'): ?>
+                                            <span style="background: #e7ffef; color: #00a32a; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.8em;"><?php _e('All Present', 'olama-school'); ?></span>
+                                        <?php else: ?>
+                                            <span
+                                                style="background: #fcf0f1; color: #d63638; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.85em;"><?php echo $abs['count']; ?></span>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
@@ -462,6 +480,42 @@ $attendance_stats = Olama_School_Admin::get_student_attendance_stats();
 
         <!-- Right Column -->
         <div style="display: flex; flex-direction: column; gap: 30px;">
+
+            <!-- Supervisor Visits (New) -->
+            <?php if ($is_teacher && !empty($upcoming_visits)): ?>
+                <div style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <h2 style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px;">
+                        <span class="dashicons dashicons-businessman" style="color: #2271b1;"></span>
+                        <?php _e('Supervisor Visits', 'olama-school'); ?>
+                    </h2>
+                    <div style="margin-top: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <?php foreach ($upcoming_visits as $visit): ?>
+                                <div style="padding: 15px; background: #f9f9f9; border-radius: 8px; border-right: 4px solid #2271b1;">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                        <div style="font-weight: 700; color: #1d2327;">
+                                            <?php echo date('Y-m-d', strtotime($visit->visit_date)); ?> 
+                                            <span style="font-weight: 400; color: #666; font-size: 0.9em;">(<?php _e($visit->day_name, 'olama-school'); ?>)</span>
+                                        </div>
+                                        <div style="background: #e7ffef; color: #00a32a; font-size: 0.75em; padding: 3px 8px; border-radius: 10px; font-weight: 700;">
+                                            <?php echo sprintf(__('Period %d', 'olama-school'), $visit->period_number); ?>
+                                        </div>
+                                    </div>
+                                    <div style="margin-bottom: 5px;">
+                                        <span class="dashicons dashicons-book" style="font-size: 16px; width: 16px; height: 16px; color: #999; vertical-align: middle;"></span>
+                                        <span style="font-size: 0.9em; font-weight: 600; color: #2271b1;"><?php echo esc_html($visit->subject_name); ?></span>
+                                        <span style="font-size: 0.8em; color: #666;"> - <?php echo esc_html($visit->grade_name . ' (' . $visit->section_name . ')'); ?></span>
+                                    </div>
+                                    <div style="font-size: 0.85em; color: #50575e;">
+                                        <span class="dashicons dashicons-admin-users" style="font-size: 16px; width: 16px; height: 16px; color: #999; vertical-align: middle;"></span>
+                                        <?php printf(__('Supervisor: %s', 'olama-school'), esc_html($visit->supervisor_name)); ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <!-- My Shifts (New Feature) -->
             <?php if ($is_teacher && !empty($teacher_shifts)): ?>

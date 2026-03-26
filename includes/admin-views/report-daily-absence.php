@@ -65,4 +65,56 @@ $date = isset($_GET['attendance_date']) ? sanitize_text_field($_GET['attendance_
             <?php endif; ?>
         </tbody>
     </table>
+
+    <?php if (!empty($pending_sections)): ?>
+        <h2 style="margin-top: 40px; color: #d63638;"><?php echo Olama_School_Helpers::translate('Sections Pending Attendance'); ?></h2>
+        <div class="card" style="padding: 0;">
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th><?php _e('Grade & Section', 'olama-school'); ?></th>
+                        <th width="150"><?php _e('Actions', 'olama-school'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($pending_sections as $sec): ?>
+                        <tr>
+                            <td><strong><?php echo esc_html($sec->grade_name . ' - ' . $sec->section_name); ?></strong></td>
+                            <td>
+                                <a href="<?php echo admin_url('admin.php?page=olama-school-follow-up&tab=student_attendance&section_id=' . $sec->id . '&attendance_date=' . $date); ?>" class="button button-small">
+                                    <?php _e('Take Attendance', 'olama-school'); ?>
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($all_present_sections)): ?>
+        <h2 style="margin-top: 40px; color: #00a32a;"><?php echo Olama_School_Helpers::translate('Sections with 100% Attendance'); ?></h2>
+        <div class="card" style="padding: 0;">
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th><?php _e('Grade & Section', 'olama-school'); ?></th>
+                        <th width="150"><?php _e('Actions', 'olama-school'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($all_present_sections as $sec): ?>
+                        <tr>
+                            <td><strong><?php echo esc_html($sec->grade_name . ' - ' . $sec->section_name); ?></strong></td>
+                            <td>
+                                <a href="<?php echo admin_url('admin.php?page=olama-school-follow-up&tab=student_attendance&section_id=' . $sec->id . '&attendance_date=' . $date); ?>" class="button button-small">
+                                    <?php _e('View', 'olama-school'); ?>
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
 </div>
