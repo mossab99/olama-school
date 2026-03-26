@@ -120,11 +120,25 @@ class Academy_Media_Library
         wp_enqueue_style('academy-media-library-css', ACADEMY_MEDIA_URL . 'assets/css/media-library.css', [], '1.0.3');
         wp_enqueue_script('academy-media-library-js', ACADEMY_MEDIA_URL . 'assets/js/media-library.js', ['jquery'], '1.0.3', true);
 
+        $settings = get_option('academy_media_library_settings', []);
+        $max_size_mb = intval($settings['max_file_size'] ?? 100);
+        $max_size_bytes = $max_size_mb * 1024 * 1024;
+
+        // Get server limits for helpful error messages
+        $upload_max = ini_get('upload_max_filesize');
+        $post_max = ini_get('post_max_size');
+
         wp_localize_script('academy-media-library-js', 'academyMedia', [
             'ajaxurl' => admin_url('admin-ajax.php', 'relative'),
             'nonce' => wp_create_nonce('olama_admin_nonce'),
             'can_approve' => Olama_School_Permissions::can('olama_media_approve_video'),
             'current_user_id' => get_current_user_id(),
+            'max_file_size' => $max_size_bytes,
+            'max_file_size_human' => $max_size_mb . 'MB',
+            'server_limits' => [
+                'upload_max' => $upload_max,
+                'post_max' => $post_max
+            ],
             'i18n' => [
                 'confirm_delete' => __('Are you sure you want to delete this record?', 'olama-school'),
                 'uploading' => __('Uploading...', 'olama-school'),
@@ -162,9 +176,12 @@ class Academy_Media_Library
                 'comments' => __('Notes', 'olama-school'),
                 'save' => __('Save', 'olama-school'),
                 'cancel' => __('Cancel', 'olama-school'),
-                'part' => __('Part', 'olama-school')
+                'part' => __('Part', 'olama-school'),
+                'file_too_large' => __('File is too large. Max size allowed: %s', 'olama-school'),
+                'payload_too_large' => __('The file is too large for the server to process. Please contact your administrator or try a smaller file.', 'olama-school')
             ]
         ]);
+
     }
 
     public function handle_oauth_callback()

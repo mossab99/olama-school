@@ -125,7 +125,15 @@ class Academy_Media_AJAX
             $drive = new Academy_Media_Drive();
             $db = new Academy_Media_DB();
 
-            // 1. File Type Validation
+            // 1. File Type & Size Validation
+            $settings = get_option('academy_media_library_settings', []);
+            $max_size_mb = intval($settings['max_file_size'] ?? 100);
+            $max_size_bytes = $max_size_mb * 1024 * 1024;
+
+            if ($file['size'] > $max_size_bytes) {
+                throw new Exception(sprintf(__('File is too large. Max size allowed: %sMB', 'olama-school'), $max_size_mb));
+            }
+
             $allowed_types = [
                 'video/mp4',
                 'video/quicktime',
@@ -137,6 +145,7 @@ class Academy_Media_AJAX
             if (!in_array($file['type'], $allowed_types)) {
                 throw new Exception(__('Only video files are allowed.', 'olama-school'));
             }
+
 
             // 2. Rename File to: Lesson {number} (Part {part}) {name}
             $extension = pathinfo($file['name'], PATHINFO_EXTENSION);

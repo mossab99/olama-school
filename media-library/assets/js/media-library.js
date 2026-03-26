@@ -324,6 +324,14 @@ jQuery(document).ready(function ($) {
     }
 
     function performUpload(file, lessonData, callback = null) {
+        // 1. Client-side Size Validation
+        if (academyMedia.max_file_size && file.size > academyMedia.max_file_size) {
+            const errorMsg = academyMedia.i18n.file_too_large.replace('%s', academyMedia.max_file_size_human);
+            alert(errorMsg);
+            if (callback) callback();
+            return;
+        }
+
         const $progressCont = $(`#progress-${lessonData.lessonId}`);
         const $progressBar = $progressCont.find('.progress-bar');
 
@@ -366,7 +374,6 @@ jQuery(document).ready(function ($) {
             },
             success: function (response) {
                 if (response.success) {
-                    // console.log('Upload success:', response.data.message);
                     if (state.uploadQueue.length === 0) {
                         alert(response.data.message);
                         $('#btn-load-curriculum').click(); // Refresh list on last upload
@@ -375,8 +382,12 @@ jQuery(document).ready(function ($) {
                     alert(response.data || academyMedia.i18n.error);
                 }
             },
-            error: function () {
-                alert(academyMedia.i18n.error);
+            error: function (xhr) {
+                if (xhr.status === 413) {
+                    alert(academyMedia.i18n.payload_too_large);
+                } else {
+                    alert(academyMedia.i18n.error);
+                }
             },
             complete: function () {
                 $progressCont.hide();
@@ -384,6 +395,7 @@ jQuery(document).ready(function ($) {
             }
         });
     }
+
 
     // --- Settings Management ---
     $('#drive-settings-form').on('submit', function (e) {
