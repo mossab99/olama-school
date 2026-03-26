@@ -7,7 +7,10 @@ jQuery(document).ready(function ($) {
         currentLesson: null,
         logPage: 1,
         uploadQueue: [],
-        isUploading: false
+        isUploading: false,
+        successCount: 0,
+        errorCount: 0,
+        totalFiles: 0
     };
 
     const getStatusLabel = (status) => {
@@ -238,7 +241,8 @@ jQuery(document).ready(function ($) {
 
                     // Progress Bar
                     actionsHtml += `<div class="upload-progress-container" id="progress-${lesson.id}" style="display:none;">
-                                <div class="progress-bar"></div>
+                                <div class="progress-bar-wrapper"><div class="progress-bar"></div></div>
+                                <div class="status-text"></div>
                             </div>`;
 
                     const lessonTitle = lesson.part_number ? `${lesson.lesson_title} (${academyMedia.i18n.part} ${lesson.part_number})` : lesson.lesson_title;
@@ -293,6 +297,8 @@ jQuery(document).ready(function ($) {
             return;
         }
 
+        state.totalFiles += validFiles.length;
+
         // --- Add to Queue ---
         validFiles.forEach((file, index) => {
             const data = { ...state.currentLesson };
@@ -312,7 +318,21 @@ jQuery(document).ready(function ($) {
     });
 
     function processQueue() {
-        if (state.isUploading || state.uploadQueue.length === 0) return;
+        if (state.isUploading || state.uploadQueue.length === 0) {
+            if (!state.isUploading && state.totalFiles > 0) {
+                // All finished
+                const message = `${academyMedia.i18n.status_completed}: ${state.successCount}, ${academyMedia.i18n.error}: ${state.errorCount}`;
+                alert(message);
+                
+                // Reset counters
+                state.successCount = 0;
+                state.errorCount = 0;
+                state.totalFiles = 0;
+
+                $('#btn-load-curriculum').click(); // Refresh list at the very end
+            }
+            return;
+        }
 
         state.isUploading = true;
         const task = state.uploadQueue.shift();
@@ -324,19 +344,23 @@ jQuery(document).ready(function ($) {
     }
 
     function performUpload(file, lessonData, callback = null) {
+        const $progressCont = $(`#progress-${lessonData.lessonId}`);
+        const $progressBar = $progressCont.find('.progress-bar');
+        const $statusText = $progressCont.find('.status-text');
+
+        $progressCont.show();
+        $progressBar.removeClass('error').css('width', '5%');
+        $statusText.removeClass('error').text(academyMedia.i18n.uploading + ' (' + file.name + ')');
+
         // 1. Client-side Size Validation
         if (academyMedia.max_file_size && file.size > academyMedia.max_file_size) {
             const errorMsg = academyMedia.i18n.file_too_large.replace('%s', academyMedia.max_file_size_human);
-            alert(errorMsg);
+            $progressBar.addClass('error').css('width', '100%');
+            $statusText.addClass('error').text(errorMsg);
+            state.errorCount++;
             if (callback) callback();
             return;
         }
-
-        const $progressCont = $(`#progress-${lessonData.lessonId}`);
-        const $progressBar = $progressCont.find('.progress-bar');
-
-        $progressCont.show();
-        $progressBar.css('width', '5%');
 
         const formData = new FormData();
         formData.append('action', 'academy_upload_media_video');
@@ -366,7 +390,7 @@ jQuery(document).ready(function ($) {
                 const xhr = new window.XMLHttpRequest();
                 xhr.upload.addEventListener("progress", function (evt) {
                     if (evt.lengthComputable) {
-                        const percentComplete = (evt.loaded / evt.total) * 100;
+                        const percentComplete = Math.round((evt.loaded / evt.total) * 95); // Keep some room for server processing
                         $progressBar.css('width', percentComplete + '%');
                     }
                 }, false);
@@ -374,27 +398,37 @@ jQuery(document).ready(function ($) {
             },
             success: function (response) {
                 if (response.success) {
-                    if (state.uploadQueue.length === 0) {
-                        alert(response.data.message);
-                        $('#btn-load-curriculum').click(); // Refresh list on last upload
-                    }
+                    $progressBar.css('width', '100%');
+                    $statusText.text(academyMedia.i18n.status_completed);
+                    state.successCount++;
                 } else {
-                    alert(response.data || academyMedia.i18n.error);
+                    $progressBar.addClass('error').css('width', '100%');
+                    $statusText.addClass('error').text(response.data || academyMedia.i18n.error);
+                    state.errorCount++;
                 }
             },
             error: function (xhr) {
+                $progressBar.addClass('error').css('width', '100%');
                 if (xhr.status === 413) {
-                    alert(academyMedia.i18n.payload_too_large);
+                    $statusText.addClass('error').text(academyMedia.i18n.payload_too_large);
                 } else {
-                    alert(academyMedia.i18n.error);
+                    $statusText.addClass('error').text(academyMedia.i18n.error);
                 }
+                state.errorCount++;
             },
             complete: function () {
-                $progressCont.hide();
+                // Don't hide progress immediately so user can see what happened
+                setTimeout(() => {
+                    if (!$statusText.hasClass('error')) {
+                        $progressCont.fadeOut(1000);
+                    }
+                }, 2000);
+
                 if (callback) callback();
             }
         });
     }
+
 
 
     // --- Settings Management ---
