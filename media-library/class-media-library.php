@@ -124,17 +124,37 @@ class Academy_Media_Library
         $max_size_mb = intval($settings['max_file_size'] ?? 100);
         $max_size_bytes = $max_size_mb * 1024 * 1024;
 
-        // Get server limits for helpful error messages
+        // Get server limits and convert to bytes
         $upload_max = ini_get('upload_max_filesize');
         $post_max = ini_get('post_max_size');
+
+        // Helper: convert PHP shorthand (e.g. '128M') to bytes
+        $to_bytes = function($val) {
+            $val = trim($val);
+            $last = strtolower($val[strlen($val)-1]);
+            $val = intval($val);
+            switch($last) {
+                case 'g': $val *= 1024;
+                case 'm': $val *= 1024;
+                case 'k': $val *= 1024;
+            }
+            return $val;
+        };
+
+        $upload_max_bytes = $to_bytes($upload_max);
+        $post_max_bytes = $to_bytes($post_max);
+
+        // Effective max = the smallest of all three limits
+        $effective_max = min($max_size_bytes, $upload_max_bytes, $post_max_bytes);
+        $effective_max_human = size_format($effective_max);
 
         wp_localize_script('academy-media-library-js', 'academyMedia', [
             'ajaxurl' => admin_url('admin-ajax.php', 'relative'),
             'nonce' => wp_create_nonce('olama_admin_nonce'),
             'can_approve' => Olama_School_Permissions::can('olama_media_approve_video'),
             'current_user_id' => get_current_user_id(),
-            'max_file_size' => $max_size_bytes,
-            'max_file_size_human' => $max_size_mb . 'MB',
+            'max_file_size' => $effective_max,
+            'max_file_size_human' => $effective_max_human,
             'server_limits' => [
                 'upload_max' => $upload_max,
                 'post_max' => $post_max
