@@ -149,6 +149,7 @@ class Olama_School_Permissions
                     'olama_access_followup' => __('Access Management', 'olama-school'),
                     'olama_manage_attendance' => __('Student Attendance', 'olama-school'),
                     'olama_manage_shifts' => __('Employee Shifts', 'olama-school'),
+                    'olama_manage_cleaning' => __('Toilet Cleaning Follow-up', 'olama-school'),
                 )
             ),
             'transportation' => array(
@@ -228,6 +229,7 @@ class Olama_School_Permissions
                                 'olama_view_plans_load',
                                 'olama_access_followup',
                                 'olama_manage_attendance',
+                                'olama_manage_cleaning',
                                 'olama_manage_lesson_planner',
                                 'olama_access_media_library',
                                 'olama_media_upload_video'

@@ -11,6 +11,15 @@ if (!defined('ABSPATH')) {
 class Olama_School_Helpers
 {
     /**
+     * Get user display name safely
+     */
+    public static function get_user_display_name($user_id)
+    {
+        $user = get_userdata($user_id);
+        return $user ? $user->display_name : '';
+    }
+
+    /**
      * Calculate progress status based on plan date vs lesson dates
      * 
      * @param string $plan_date The date the plan was executed
@@ -792,6 +801,71 @@ class Olama_School_Helpers
         'Bypass' => 'متجاوز',
         'Delayed' => 'متأخر',
         'On-time' => 'في الوقت المحدد',
+        'Cleaning' => 'النظافة',
+        'Toilet Cleaning Follow-up' => 'متابعة نظافة الحمامات',
+        'Floor' => 'الطابق',
+        'Ground Floor' => 'الطابق الأرضي',
+        'First Floor' => 'الطابق الأول',
+        'Second Floor' => 'الطابق الثاني',
+        'Third Floor' => 'الطابق الثالث',
+        'Cleaner Name' => 'اسم عامل/عاملة النظافة',
+        'Cleaning Sinks' => 'تنظيف المغاسل',
+        'Cleaning Toilets' => 'تنظيف الحمامات (المراحيض)',
+        'Mopping/Washing Floor' => 'تلييف/غسيل الأرض',
+        'Refilling Soap' => 'تعبئة الصابون',
+        'Refilling Tissues' => 'تعبئة المناديل',
+        'Time' => 'الوقت',
+        'Done' => 'تم',
+        'Not Done' => 'لم يتم',
+        'Staff/Signature' => 'الموظف/التوقيع',
+        'Cleaning log saved successfully.' => 'تم حفظ سجل النظافة بنجاح.',
+        'Select Staff' => 'اختيار الموظف',
+        'Save Cleaning Log' => 'حفظ سجل النظافة',
+        'Item' => 'البند',
+        'Configuration' => 'الإعدادات',
+        'Cleaning Configuration' => 'إعدادات وحدة النظافة',
+        'Cleaning Items' => 'بنود النظافة',
+        'Manage Floors' => 'إدارة الطوابق',
+        'Manage Cleaners' => 'إدارة عمال النظافة',
+        'Manage Time Slots' => 'إدارة الفترات الزمنية',
+        'Auto-assigned Cleaner' => 'عامل النظافة الموزع آلياً',
+        'Floor Selection' => 'اختيار الطابق',
+        'Checkup Time Slot' => 'فترة التفتيش',
+        'Assigned Cleaner' => 'العامل المسؤول',
+        'Not Editable' => 'غير قابل للتعديل',
+        'Add New Item' => 'إضافة بند جديد',
+        'Add New Floor' => 'إضافة طابق جديد',
+        'Add New Cleaner' => 'إضافة عامل جديد',
+        'Add New Slot' => 'إضافة فترة تفتيش',
+        'Assign Cleaner to Floor' => 'تعيين عامل للطابق',
+        'Setup floors first' => 'يرجى إعداد الطوابق أولاً',
+        'Setup slots first' => 'يرجى إعداد فترات التفتيش أولاً',
+        'No cleaning items defined in setup.' => 'لا توجد بنود نظافة معرفة في الإعدادات.',
+        'Personnel name' => 'الاسم',
+        'Add' => 'إضافة',
+        'Back to Logs' => 'العودة للسجلات',
+        'Date:' => 'التاريخ:',
+        'Item Name' => 'اسم البند',
+        'Slot Time' => 'وقت الفترة',
+        'Floor Name' => 'اسم الطابق',
+        'Actions' => 'الإجراءات',
+        'Edit' => 'تعديل',
+        'Delete' => 'حذف',
+        'Status' => 'الحالة',
+        'Yesterday' => 'يوم أمس',
+        'Today' => 'اليوم',
+        'Toilet Cleaning Monitoring' => 'متابعة نظافة الحمامات',
+        'Status by Floor' => 'الحالة حسب الطوابق',
+        'Supervisor Status' => 'حالة المشرفين',
+        'Total Cleaning Tasks' => 'إجمالي مهام النظافة',
+        'In Progress' => 'قيد التنفيذ',
+        'No supervisors assigned' => 'لا يوجد مشرفين معينين',
+        'Responsible Supervisor' => 'المشرف المسؤول',
+        'Assign a cleaner to each floor for automatic selection during checkup.' => 'تعيين عامل لكل طابق للاختيار التلقائي أثناء التفتيش.',
+        'Assign' => 'تعيين',
+        '%d of %d slots checked' => 'تم فحص %d من أصل %d فترة',
+        'Please complete the setup to start using the cleaning module.' => 'يرجى إكمال الإعدادات للبدء باستخدام وحدة النظافة.',
+        'Not Assigned' => 'غير محدد',
         'Plan Load Management' => 'إدارة حدود الخطط الأسبوعية',
         'Manage the maximum number of plans allowed per week. Define limits at the grade level or for specific subjects.' => 'إدارة الحد الأقصى لعدد الخطط المسموح بها في الأسبوع. تحديد الحدود على مستوى الصف أو لمواد محددة.',
         'Grades & Sections Limits' => 'حدود الصفوف والشعب',

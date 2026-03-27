@@ -630,9 +630,9 @@ class Olama_School_DB
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
-				KEY year_semester (academic_year_id, semester_id),
-				KEY teacher_id (teacher_id),
-				KEY section_subject_date (section_id, subject_id, start_date)
+				KEY  year_semester (academic_year_id,semester_id),
+				KEY  teacher_id (teacher_id),
+				KEY  section_subject_date (section_id,subject_id,start_date)
 			) $charset_collate;",
 
 			'olama_supervisor_visits' => "CREATE TABLE {$wpdb->prefix}olama_supervisor_visits (
@@ -647,9 +647,9 @@ class Olama_School_DB
 				notes text DEFAULT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
-				KEY schedule_id (schedule_id),
-				KEY visit_date (visit_date),
-				KEY supervisor_id (supervisor_id)
+				KEY  schedule_id (schedule_id),
+				KEY  visit_date (visit_date),
+				KEY  supervisor_id (supervisor_id)
 			) $charset_collate;",
 
 			'olama_supervisor_assignments' => "CREATE TABLE {$wpdb->prefix}olama_supervisor_assignments (
@@ -661,9 +661,72 @@ class Olama_School_DB
 				subject_id mediumint(9) DEFAULT NULL,
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
-				KEY year_semester (academic_year_id, semester_id),
-				KEY supervisor_id (supervisor_id),
-				KEY grade_subject (grade_id, subject_id)
+				KEY  year_semester (academic_year_id,semester_id),
+				KEY  supervisor_id (supervisor_id),
+				KEY  grade_subject (grade_id,subject_id)
+			) $charset_collate;",
+
+			'olama_cleaning_logs' => "CREATE TABLE {$wpdb->prefix}olama_cleaning_logs (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
+				floor_id bigint(20) UNSIGNED DEFAULT NULL,
+				floor_name varchar(100) NOT NULL,
+				cleaning_date date NOT NULL,
+				slot_id bigint(20) UNSIGNED DEFAULT NULL,
+				slot_time varchar(50) DEFAULT NULL,
+				cleaner_id bigint(20) UNSIGNED DEFAULT NULL,
+				cleaner_name varchar(255) DEFAULT NULL,
+				checkpoints_data longtext NOT NULL,
+				recorded_by bigint(20) UNSIGNED NOT NULL,
+				recorded_by_name varchar(255) DEFAULT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				KEY  academic_year_id (academic_year_id),
+				KEY  cleaning_date (cleaning_date),
+				KEY  floor_id (floor_id),
+				KEY  slot_id (slot_id)
+			) $charset_collate;",
+
+			'olama_cleaning_items' => "CREATE TABLE {$wpdb->prefix}olama_cleaning_items (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
+				item_name varchar(255) NOT NULL,
+				is_active tinyint(1) DEFAULT 1 NOT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id)
+			) $charset_collate;",
+
+			'olama_cleaning_floors' => "CREATE TABLE {$wpdb->prefix}olama_cleaning_floors (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
+				floor_name varchar(255) NOT NULL,
+				is_active tinyint(1) DEFAULT 1 NOT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id)
+			) $charset_collate;",
+
+			'olama_cleaning_cleaners' => "CREATE TABLE {$wpdb->prefix}olama_cleaning_cleaners (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
+				cleaner_name varchar(255) NOT NULL,
+				is_active tinyint(1) DEFAULT 1 NOT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id)
+			) $charset_collate;",
+
+			'olama_cleaning_slots' => "CREATE TABLE {$wpdb->prefix}olama_cleaning_slots (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
+				slot_time varchar(50) NOT NULL,
+				is_active tinyint(1) DEFAULT 1 NOT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id)
+			) $charset_collate;",
+
+			'olama_cleaning_assignments' => "CREATE TABLE {$wpdb->prefix}olama_cleaning_assignments (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
+				floor_id bigint(20) UNSIGNED NOT NULL,
+				cleaner_id bigint(20) UNSIGNED NOT NULL,
+				supervisor_id bigint(20) UNSIGNED DEFAULT NULL,
+				PRIMARY KEY  (id),
+				KEY  floor_cleaner (floor_id,cleaner_id),
+				KEY  supervisor_id (supervisor_id)
 			) $charset_collate;"
 
 

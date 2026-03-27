@@ -9,18 +9,21 @@ if (!defined('ABSPATH')) {
 
 $can_manage_attendance = Olama_School_Permissions::can('olama_manage_attendance');
 $can_manage_shifts = Olama_School_Permissions::can('olama_manage_shifts');
+$can_manage_cleaning = Olama_School_Permissions::can('olama_manage_cleaning');
 
-if (!$can_manage_attendance && !$can_manage_shifts) {
+if (!$can_manage_attendance && !$can_manage_shifts && !$can_manage_cleaning) {
     wp_die(__('Unauthorized', 'olama-school'));
 }
 
-$active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : ($can_manage_attendance ? 'student_attendance' : 'employee_shifts');
+$active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : ($can_manage_attendance ? 'student_attendance' : ($can_manage_shifts ? 'employee_shifts' : 'cleaning'));
 
 // Validate active tab access
 if ($active_tab === 'student_attendance' && !$can_manage_attendance) {
-    $active_tab = 'employee_shifts';
+    $active_tab = $can_manage_shifts ? 'employee_shifts' : 'cleaning';
 } elseif ($active_tab === 'employee_shifts' && !$can_manage_shifts) {
-    $active_tab = 'student_attendance';
+    $active_tab = $can_manage_attendance ? 'student_attendance' : 'cleaning';
+} elseif ($active_tab === 'cleaning' && !$can_manage_cleaning) {
+    $active_tab = $can_manage_attendance ? 'student_attendance' : 'employee_shifts';
 }
 
 $grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : 0;
@@ -70,6 +73,14 @@ if ($section_id && $active_year && $can_manage_attendance) {
         </div>
     <?php endif; ?>
 
+    <?php if (isset($_GET['message']) && $_GET['message'] === 'cleaning_saved'): ?>
+        <div class="updated notice is-dismissible">
+            <p>
+                <?php echo Olama_School_Helpers::translate('Cleaning log saved successfully.'); ?>
+            </p>
+        </div>
+    <?php endif; ?>
+
     <h2 class="nav-tab-wrapper">
         <?php if ($can_manage_attendance): ?>
             <a href="?page=olama-school-follow-up&tab=student_attendance"
@@ -81,6 +92,12 @@ if ($section_id && $active_year && $can_manage_attendance) {
             <a href="?page=olama-school-follow-up&tab=employee_shifts"
                 class="nav-tab <?php echo $active_tab === 'employee_shifts' ? 'nav-tab-active' : ''; ?>">
                 <?php echo Olama_School_Helpers::translate('Employee Shifts'); ?>
+            </a>
+        <?php endif; ?>
+        <?php if ($can_manage_cleaning): ?>
+            <a href="?page=olama-school-follow-up&tab=cleaning"
+                class="nav-tab <?php echo $active_tab === 'cleaning' ? 'nav-tab-active' : ''; ?>">
+                <?php echo Olama_School_Helpers::translate('Cleaning'); ?>
             </a>
         <?php endif; ?>
     </h2>
@@ -543,6 +560,218 @@ if ($section_id && $active_year && $can_manage_attendance) {
                     font-size: 20px;
                 }
             </style>
+        <?php elseif ($active_tab === 'cleaning' && $can_manage_cleaning): ?>
+            <?php
+            global $wpdb;
+            $view = isset($_GET['view']) ? sanitize_text_field($_GET['view']) : 'log';
+            $config_section = isset($_GET['section']) ? sanitize_text_field($_GET['section']) : 'items';
+            
+            // Manage Setup Access
+            $can_configure = current_user_can('manage_options');
+            
+            if ($view === 'config' && $can_configure): 
+                include OLAMA_SCHOOL_PATH . 'includes/admin-views/follow-up-cleaning-config.php';
+            else:
+                // --- LOG VIEW ---
+                $floor_id = isset($_GET['floor_id']) ? intval($_GET['floor_id']) : 0;
+                $slot_id = isset($_GET['slot_id']) ? intval($_GET['slot_id']) : 0;
+                $cleaning_date = isset($_GET['cleaning_date']) ? sanitize_text_field($_GET['cleaning_date']) : current_time('Y-m-d');
+                
+                // Fetch dynamic data
+                $floors_list = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_cleaning_floors WHERE is_active = 1");
+                $slots_list = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_cleaning_slots WHERE is_active = 1");
+                $items_list = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_cleaning_items WHERE is_active = 1");
+                
+                // If no floor selected, pick first
+                if (!$floor_id && !empty($floors_list)) $floor_id = $floors_list[0]->id;
+                if (!$slot_id && !empty($slots_list)) $slot_id = $slots_list[0]->id;
+                
+                $current_floor = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_cleaning_floors WHERE id = %d", $floor_id));
+                $current_slot = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_cleaning_slots WHERE id = %d", $slot_id));
+
+                // Fetch Auto-assigned cleaner
+                $assigned_cleaner = $wpdb->get_row($wpdb->prepare(
+                    "SELECT c.* FROM {$wpdb->prefix}olama_cleaning_assignments a 
+                    JOIN {$wpdb->prefix}olama_cleaning_cleaners c ON a.cleaner_id = c.id 
+                    WHERE a.floor_id = %d", $floor_id
+                ));
+
+                // Fetch Existing Log
+                $cleaning_log = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}olama_cleaning_logs WHERE floor_id = %d AND cleaning_date = %s AND slot_id = %d",
+                    $floor_id, $cleaning_date, $slot_id
+                ));
+                
+                $checkpoints = $cleaning_log ? json_decode($cleaning_log->checkpoints_data, true) : array();
+                $logged_staff_name = Olama_School_Helpers::get_user_display_name(get_current_user_id());
+                ?>
+
+                <div class="cleaning-header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div></div>
+                    <?php if ($can_configure): ?>
+                        <a href="?page=olama-school-follow-up&tab=cleaning&view=config" class="button">
+                            <span class="dashicons dashicons-admin-generic" style="vertical-align: middle; margin-right: 5px;"></span>
+                            <?php echo Olama_School_Helpers::translate('Configuration'); ?>
+                        </a>
+                    <?php endif; ?>
+                </div>
+
+                <div class="cleaning-filters card" style="padding: 20px; margin-bottom: 25px; border-radius: 12px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: #fdfdfd;">
+                    <form method="get" action="">
+                        <input type="hidden" name="page" value="olama-school-follow-up">
+                        <input type="hidden" name="tab" value="cleaning">
+                        <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display: block; margin-bottom: 8px; color: #555; font-weight: 600;">
+                                    <?php echo Olama_School_Helpers::translate('Floor Selection'); ?>
+                                </label>
+                                <select name="floor_id" onchange="this.form.submit()" style="width: 100%; height: 40px; border-radius: 6px;">
+                                    <?php foreach ($floors_list as $f): ?>
+                                        <option value="<?php echo $f->id; ?>" <?php selected($floor_id, $f->id); ?>><?php echo esc_html($f->floor_name); ?></option>
+                                    <?php endforeach; ?>
+                                    <?php if (empty($floors_list)): ?>
+                                        <option value=""><?php echo Olama_School_Helpers::translate('Setup floors first'); ?></option>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display: block; margin-bottom: 8px; color: #555; font-weight: 600;">
+                                    <?php echo Olama_School_Helpers::translate('Checkup Time Slot'); ?>
+                                </label>
+                                <select name="slot_id" onchange="this.form.submit()" style="width: 100%; height: 40px; border-radius: 6px;">
+                                    <?php foreach ($slots_list as $s): ?>
+                                        <option value="<?php echo $s->id; ?>" <?php selected($slot_id, $s->id); ?>><?php echo esc_html($s->slot_time); ?></option>
+                                    <?php endforeach; ?>
+                                    <?php if (empty($slots_list)): ?>
+                                        <option value=""><?php echo Olama_School_Helpers::translate('Setup slots first'); ?></option>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display: block; margin-bottom: 8px; color: #555; font-weight: 600;">
+                                    <?php echo Olama_School_Helpers::translate('Date:'); ?>
+                                </label>
+                                <input type="date" name="cleaning_date" value="<?php echo esc_attr($cleaning_date); ?>" onchange="this.form.submit()" style="width: 100%; height: 40px; border-radius: 6px;">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <?php if ($floor_id && $slot_id): ?>
+                    <div class="cleaning-form-container card" style="padding: 30px; border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.08); background: #fff;">
+                        <form method="post" action="">
+                            <?php wp_nonce_field('olama_save_cleaning_log'); ?>
+                            <input type="hidden" name="olama_save_cleaning_log" value="1">
+                            <input type="hidden" name="academic_year_id" value="<?php echo $active_year->id ?? 0; ?>">
+                            <input type="hidden" name="floor_id" value="<?php echo $floor_id; ?>">
+                            <input type="hidden" name="floor_name" value="<?php echo esc_attr($current_floor ? $current_floor->floor_name : ''); ?>">
+                            <input type="hidden" name="slot_id" value="<?php echo $slot_id; ?>">
+                            <input type="hidden" name="slot_time" value="<?php echo esc_attr($current_slot ? $current_slot->slot_time : ''); ?>">
+                            <input type="hidden" name="cleaning_date" value="<?php echo esc_attr($cleaning_date); ?>">
+
+                            <div style="text-align: center; border-bottom: 2px solid #eef2f7; padding-bottom: 20px; margin-bottom: 30px;">
+                                <h2 style="margin: 0; color: #1e88e5; font-size: 28px; font-weight: 700;">
+                                    <?php echo Olama_School_Helpers::translate('Toilet Cleaning Follow-up'); ?>
+                                </h2>
+                                <div style="margin-top: 15px; display: inline-flex; gap: 10px; background: #f0f7ff; padding: 8px 20px; border-radius: 50px; color: #1e88e5; font-weight: 600;">
+                                    <span><i class="dashicons dashicons-location-alt" style="font-size: 16px; margin-top:2px;"></i> <?php echo esc_html($current_floor ? $current_floor->floor_name : ''); ?></span>
+                                    <span style="color: #ccc;">|</span>
+                                    <span><i class="dashicons dashicons-clock" style="font-size: 16px; margin-top:2px;"></i> <?php echo esc_html($current_slot ? $current_slot->slot_time : ''); ?></span>
+                                    <span style="color: #ccc;">|</span>
+                                    <span><i class="dashicons dashicons-calendar" style="font-size: 16px; margin-top:2px;"></i> <?php echo $cleaning_date; ?></span>
+                                </div>
+                            </div>
+
+                            <div style="background: #f8fbff; padding: 20px; border-radius: 10px; margin-bottom: 30px; border: 1px solid #e1e9f1;">
+                                <div style="display: flex; gap: 40px; align-items: center;">
+                                    <div style="flex: 1;">
+                                        <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 600;">
+                                            <?php echo Olama_School_Helpers::translate('Assigned Cleaner'); ?>
+                                        </label>
+                                        <input type="text" value="<?php echo esc_attr($assigned_cleaner ? $assigned_cleaner->cleaner_name : Olama_School_Helpers::translate('Not Assigned')); ?>" readonly class="regular-text" style="width: 100%; border-color: #d1d9e4; background: #fff;">
+                                        <input type="hidden" name="cleaner_id" value="<?php echo esc_attr($assigned_cleaner ? $assigned_cleaner->id : 0); ?>">
+                                        <input type="hidden" name="cleaner_name" value="<?php echo esc_attr($assigned_cleaner ? $assigned_cleaner->cleaner_name : ''); ?>">
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 600;">
+                                            <?php echo Olama_School_Helpers::translate('Staff/Signature'); ?> (<?php echo Olama_School_Helpers::translate('Not Editable'); ?>)
+                                        </label>
+                                        <input type="text" value="<?php echo esc_attr($logged_staff_name); ?>" readonly class="regular-text" style="width: 100%; border-color: #d1d9e4; background: #f9f9f9; color: #666; font-style: italic;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="cleaning-items-table" style="border: 1px solid #eef2f7; border-radius: 10px; overflow: hidden;">
+                                <table class="wp-list-table widefat fixed striped" style="border: none;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 50%; padding: 15px; font-weight: 700; background: #fff;"><?php echo Olama_School_Helpers::translate('Item'); ?></th>
+                                            <th style="text-align: center; padding: 15px; font-weight: 700; background: #fff;"><?php echo Olama_School_Helpers::translate('Done'); ?></th>
+                                            <th style="text-align: center; padding: 15px; font-weight: 700; background: #fff;"><?php echo Olama_School_Helpers::translate('Not Done'); ?></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if (empty($items_list)): ?>
+                                            <tr><td colspan="3" style="text-align: center; padding: 30px; color: #999;"><?php echo Olama_School_Helpers::translate('No cleaning items defined in setup.'); ?></td></tr>
+                                        <?php endif; ?>
+                                        <?php foreach ($items_list as $item): 
+                                            $val = $checkpoints[$item->id] ?? '';
+                                        ?>
+                                            <tr>
+                                                <td style="padding: 18px; font-size: 16px; color: #2c3e50;">
+                                                    <span class="dashicons dashicons-clipboard" style="color: #3498db; margin-right: 10px;"></span>
+                                                    <?php echo esc_html($item->item_name); ?>
+                                                </td>
+                                                <td style="text-align: center; padding: 15px;">
+                                                    <div class="status-choice done">
+                                                        <input type="radio" name="checkpoints[<?php echo $item->id; ?>]" value="done" id="done_<?php echo $item->id; ?>" <?php checked($val, 'done'); ?>>
+                                                        <label for="done_<?php echo $item->id; ?>"></label>
+                                                    </div>
+                                                </td>
+                                                <td style="text-align: center; padding: 15px;">
+                                                    <div class="status-choice not-done">
+                                                        <input type="radio" name="checkpoints[<?php echo $item->id; ?>]" value="not_done" id="ndone_<?php echo $item->id; ?>" <?php checked($val, 'not_done'); ?>>
+                                                        <label for="ndone_<?php echo $item->id; ?>"></label>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div style="margin-top: 40px; text-align: center;">
+                                <button type="submit" class="button button-primary" style="height: 50px; min-width: 250px; font-size: 18px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 15px rgba(34, 113, 177, 0.3);">
+                                    <span class="dashicons dashicons-saved" style="margin-top: 10px;"></span>
+                                    <?php echo Olama_School_Helpers::translate('Save Cleaning Log'); ?>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <style>
+                        .status-choice input { display: none; }
+                        .status-choice label { display: inline-block; width: 30px; height: 30px; border-radius: 50%; border: 3px solid #ddd; cursor: pointer; transition: all 0.2s; position: relative; }
+                        .status-choice.done label { border-color: #2ecc71; }
+                        .status-choice.not-done label { border-color: #e74c3c; }
+                        .status-choice.done input:checked + label { background: #2ecc71; }
+                        .status-choice.not-done input:checked + label { background: #e74c3c; }
+                        .status-choice input:checked + label::after { content: '\f147'; font-family: dashicons; color: #fff; font-size: 20px; line-height: 24px; position: absolute; left: 2px; }
+                        .status-choice.not-done input:checked + label::after { content: '\f158'; }
+                        .cleaning-items-table tr { transition: background 0.2s; }
+                        .cleaning-items-table tr:hover { background: #fcfdfe !important; }
+                        [dir="rtl"] .dashicons { margin-right: 0; margin-left: 10px; }
+                        [dir="rtl"] .status-choice input:checked + label::after { left: auto; right: 2px; }
+                    </style>
+                <?php else: ?>
+                    <div style="text-align: center; padding: 50px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                        <span class="dashicons dashicons-info" style="font-size: 40px; width: 40px; height: 40px; color: #ccc;"></span>
+                        <p style="font-size: 18px; color: #999; margin-top: 15px;">
+                            <?php echo Olama_School_Helpers::translate('Please complete the setup to start using the cleaning module.'); ?>
+                        </p>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 </div>

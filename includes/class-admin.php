@@ -35,6 +35,8 @@ class Olama_School_Admin
         add_action('admin_init', array($this, 'handle_family_actions'));
         add_action('admin_init', array($this, 'handle_lesson_planner_actions'));
         add_action('admin_init', array($this, 'handle_attendance_save'));
+        add_action('admin_init', array($this, 'handle_cleaning_save'));
+        add_action('admin_init', array($this, 'handle_cleaning_config_save'));
         add_action('wp_ajax_olama_save_attendance', array($this, 'ajax_save_attendance'));
         add_action('wp_ajax_olama_mark_all_present', array($this, 'ajax_mark_all_present'));
         add_action('wp_ajax_olama_kg_autosave', array($this, 'ajax_kg_autosave'));
@@ -4648,6 +4650,78 @@ class Olama_School_Admin
         return $stats;
     }
 
+    /**
+     * Get cleaning monitoring stats for dashboard
+     */
+    public static function get_cleaning_dashboard_stats($date = null)
+    {
+        global $wpdb;
+
+        $floors = $wpdb->get_results("SELECT id, floor_name FROM {$wpdb->prefix}olama_cleaning_floors WHERE is_active = 1");
+        $slots = $wpdb->get_results("SELECT id, slot_time FROM {$wpdb->prefix}olama_cleaning_slots WHERE is_active = 1");
+        $assignments = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_cleaning_assignments");
+
+        $date = $date ?: current_time('Y-m-d');
+        $total_slots = count($slots);
+        $total_tasks = count($floors) * $total_slots;
+
+        // Current logs for the day
+        $logs = $wpdb->get_results($wpdb->prepare(
+            "SELECT floor_id, slot_id FROM {$wpdb->prefix}olama_cleaning_logs WHERE cleaning_date = %s",
+            $date
+        ));
+
+        // 1. Floor statuses
+        $floor_stats = array();
+        foreach ($floors as $fl) {
+            $completed_on_floor = 0;
+            foreach ($logs as $log) {
+                if ((int) $log->floor_id === (int) $fl->id) {
+                    $completed_on_floor++;
+                }
+            }
+            $floor_stats[] = array(
+                'label' => $fl->floor_name,
+                'total' => $total_slots,
+                'completed' => $completed_on_floor,
+                'status' => ($completed_on_floor >= $total_slots) ? 'completed' : (($completed_on_floor > 0) ? 'partial' : 'pending')
+            );
+        }
+
+        // 2. Supervisor statuses
+        $supervisor_tasks = array();
+        foreach ($assignments as $as) {
+            if (!$as->supervisor_id)
+                continue;
+            if (!isset($supervisor_tasks[$as->supervisor_id])) {
+                $supervisor_tasks[$as->supervisor_id] = array(
+                    'total' => 0,
+                    'completed' => 0,
+                    'name' => Olama_School_Helpers::get_user_display_name($as->supervisor_id)
+                );
+            }
+            $supervisor_tasks[$as->supervisor_id]['total'] += $total_slots;
+
+            // Check completion for this assignment
+            foreach ($logs as $log) {
+                if ((int) $log->floor_id === (int) $as->floor_id) {
+                    $supervisor_tasks[$as->supervisor_id]['completed']++;
+                }
+            }
+        }
+
+        $completed_total = count($logs);
+
+        return array(
+            'date' => $date,
+            'total_tasks' => $total_tasks,
+            'completed_tasks' => $completed_total,
+            'percentage' => $total_tasks > 0 ? round(($completed_total / $total_tasks) * 100) : 0,
+            'floor_stats' => $floor_stats,
+            'supervisors' => $supervisor_tasks
+        );
+    }
+
 
 
     /**
@@ -5059,6 +5133,158 @@ class Olama_School_Admin
             ));
 
             wp_redirect(add_query_arg('message', 'attendance_saved', wp_get_referer()));
+            exit;
+        }
+    }
+
+    /**
+     * Handle Cleaning Log Save
+     */
+    public function handle_cleaning_save()
+    {
+        if (isset($_POST['olama_save_cleaning_log']) && check_admin_referer('olama_save_cleaning_log')) {
+            if (!Olama_School_Permissions::can('olama_manage_cleaning')) {
+                wp_die(__('Unauthorized', 'olama-school'));
+            }
+
+            global $wpdb;
+            $table = $wpdb->prefix . 'olama_cleaning_logs';
+
+            // Dynamic table check 
+            if ($wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table) {
+                $olama_db = new Olama_School_DB();
+                $olama_db->create_tables();
+            }
+
+            $academic_year_id = intval($_POST['academic_year_id'] ?? 0);
+            $floor_id = intval($_POST['floor_id']);
+            $floor_name = sanitize_text_field($_POST['floor_name']);
+            $cleaning_date = Olama_School_Helpers::sanitize_date($_POST['cleaning_date']);
+            $slot_id = intval($_POST['slot_id']);
+            $slot_time = sanitize_text_field($_POST['slot_time']);
+            $cleaner_id = intval($_POST['cleaner_id']);
+            $cleaner_name = sanitize_text_field($_POST['cleaner_name']);
+            $checkpoints = $_POST['checkpoints'] ?? array();
+            
+            $recorded_by_name = Olama_School_Helpers::get_user_display_name(get_current_user_id());
+
+            $data = array(
+                'academic_year_id' => $academic_year_id,
+                'floor_id' => $floor_id,
+                'floor_name' => $floor_name,
+                'cleaning_date' => $cleaning_date,
+                'slot_id' => $slot_id,
+                'slot_time' => $slot_time,
+                'cleaner_id' => $cleaner_id,
+                'cleaner_name' => $cleaner_name,
+                'checkpoints_data' => json_encode($checkpoints),
+                'recorded_by' => get_current_user_id(),
+                'recorded_by_name' => $recorded_by_name
+            );
+
+            // Check for existing record for THIS slot on THIS date/floor
+            $existing_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM $table WHERE floor_id = %d AND cleaning_date = %s AND slot_id = %d",
+                $floor_id,
+                $cleaning_date,
+                $slot_id
+            ));
+
+            if ($existing_id) {
+                $wpdb->update($table, $data, array('id' => $existing_id));
+            } else {
+                $wpdb->insert($table, $data);
+            }
+
+            $redirect_url = admin_url('admin.php?page=olama-school-follow-up&tab=cleaning');
+            $redirect_url = add_query_arg(array(
+                'floor_id' => $floor_id,
+                'cleaning_date' => $cleaning_date,
+                'slot_id' => $slot_id,
+                'message' => 'cleaning_saved'
+            ), $redirect_url);
+
+            wp_redirect($redirect_url);
+            exit;
+        }
+    }
+
+    /**
+     * Handle Cleaning Module Configuration Save
+     */
+    public function handle_cleaning_config_save()
+    {
+        if (isset($_POST['olama_save_cleaning_config']) && check_admin_referer('olama_save_cleaning_config')) {
+            if (!current_user_can('manage_options')) {
+                wp_die(__('Unauthorized', 'olama-school'));
+            }
+
+            global $wpdb;
+
+            // Dynamic table check to ensure they exist
+            $test_table = $wpdb->prefix . 'olama_cleaning_items';
+            if ($wpdb->get_var("SHOW TABLES LIKE '$test_table'") !== $test_table) {
+                $olama_db = new Olama_School_DB();
+                $olama_db->create_tables();
+            }
+
+            $type = sanitize_text_field($_POST['config_type']);
+
+            if ($type === 'items') {
+                $table = $wpdb->prefix . 'olama_cleaning_items';
+                if (!empty($_POST['new_item'])) {
+                    $wpdb->insert($table, array('item_name' => sanitize_text_field($_POST['new_item'])));
+                }
+                if (isset($_POST['delete_item'])) {
+                    $wpdb->delete($table, array('id' => intval($_POST['delete_item'])));
+                }
+            } elseif ($type === 'floors') {
+                $table = $wpdb->prefix . 'olama_cleaning_floors';
+                if (!empty($_POST['new_floor'])) {
+                    $wpdb->insert($table, array('floor_name' => sanitize_text_field($_POST['new_floor'])));
+                }
+                if (isset($_POST['delete_floor'])) {
+                    $wpdb->delete($table, array('id' => intval($_POST['delete_floor'])));
+                }
+            } elseif ($type === 'cleaners') {
+                $table = $wpdb->prefix . 'olama_cleaning_cleaners';
+                if (!empty($_POST['new_cleaner'])) {
+                    $wpdb->insert($table, array('cleaner_name' => sanitize_text_field($_POST['new_cleaner'])));
+                }
+                if (isset($_POST['delete_cleaner'])) {
+                    $wpdb->delete($table, array('id' => intval($_POST['delete_cleaner'])));
+                }
+            } elseif ($type === 'slots') {
+                $table = $wpdb->prefix . 'olama_cleaning_slots';
+                if (!empty($_POST['new_slot'])) {
+                    $wpdb->insert($table, array('slot_time' => sanitize_text_field($_POST['new_slot'])));
+                }
+                if (isset($_POST['delete_slot'])) {
+                    $wpdb->delete($table, array('id' => intval($_POST['delete_slot'])));
+                }
+            } elseif ($type === 'assignments') {
+                $table = $wpdb->prefix . 'olama_cleaning_assignments';
+                $floor_id = intval($_POST['floor_id']);
+                $cleaner_id = intval($_POST['cleaner_id']);
+                
+            } elseif ($type === 'assignments') {
+                $table = $wpdb->prefix . 'olama_cleaning_assignments';
+                $floor_id = intval($_POST['floor_id']);
+                $cleaner_id = intval($_POST['cleaner_id']);
+                $supervisor_id = intval($_POST['supervisor_id'] ?? 0);
+                
+                // Clear existing and re-insert
+                $wpdb->delete($table, array('floor_id' => $floor_id));
+                if ($cleaner_id || $supervisor_id) {
+                    $wpdb->insert($table, array(
+                        'floor_id' => $floor_id, 
+                        'cleaner_id' => $cleaner_id,
+                        'supervisor_id' => $supervisor_id
+                    ));
+                }
+            }
+
+            wp_redirect(admin_url('admin.php?page=olama-school-follow-up&tab=cleaning&view=config&section=' . $type));
             exit;
         }
     }

@@ -61,6 +61,9 @@ $pending_plans = Olama_School_Admin::get_pending_plans_for_review();
 $coverage_data = Olama_School_Admin::get_weekly_coverage_data();
 $attendance_date = isset($_GET['attendance_date']) ? sanitize_text_field($_GET['attendance_date']) : current_time('Y-m-d');
 $attendance_stats = Olama_School_Admin::get_student_attendance_stats($attendance_date);
+
+$cleaning_date = isset($_GET['cleaning_date']) ? sanitize_text_field($_GET['cleaning_date']) : current_time('Y-m-d');
+$cleaning_stats = Olama_School_Admin::get_cleaning_dashboard_stats($cleaning_date);
 ?>
 <div class="wrap olama-school-wrap">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
@@ -328,6 +331,92 @@ $attendance_stats = Olama_School_Admin::get_student_attendance_stats($attendance
                             </div>
                         <?php endforeach; ?>
                     </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    
+    <!-- Toilet Cleaning Monitoring Card -->
+    <?php if ($is_admin || $is_supervisor): ?>
+        <div style="margin-bottom: 30px;">
+            <div style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                <h2
+                    style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px;">
+                    <span class="dashicons dashicons-admin-tools" style="color: #dba617;"></span>
+                    <?php echo Olama_School_Helpers::translate('Toilet Cleaning Monitoring'); ?>
+                    <form method="get" action="" style="margin-right: auto; display: flex; align-items: center; gap: 10px;">
+                        <input type="hidden" name="page" value="olama-school">
+                        <div class="olama-date-shortcuts" style="display: flex; gap: 5px;">
+                            <a href="<?php echo add_query_arg('cleaning_date', date('Y-m-d', strtotime('-1 day'))); ?>" 
+                               class="button button-small <?php echo $cleaning_date === date('Y-m-d', strtotime('-1 day')) ? 'button-primary' : ''; ?>"><?php echo Olama_School_Helpers::translate('Yesterday'); ?></a>
+                            <a href="<?php echo add_query_arg('cleaning_date', date('Y-m-d')); ?>" 
+                               class="button button-small <?php echo $cleaning_date === date('Y-m-d') ? 'button-primary' : ''; ?>"><?php echo Olama_School_Helpers::translate('Today'); ?></a>
+                        </div>
+                        <input type="date" name="cleaning_date" value="<?php echo esc_attr($cleaning_date); ?>" onchange="this.form.submit()" style="height: 28px; padding: 0 8px; font-size: 13px;">
+                    </form>
+                </h2>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; margin-top: 20px;">
+                    
+                    <!-- Floors Status -->
+                    <div style="border-right: 1px solid #f0f0f1; padding-right: 20px;">
+                        <h4 style="margin-top: 0; font-size: 0.9em; text-transform: uppercase; color: #666;">
+                            <?php echo Olama_School_Helpers::translate('Status by Floor'); ?></h4>
+                        <div style="max-height: 250px; overflow-y: auto; padding-right:10px;">
+                            <?php foreach ($cleaning_stats['floor_stats'] as $fs): ?>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f6f7f7;">
+                                    <span style="font-weight: 600; font-size: 0.9em;"><?php echo esc_html($fs['label']); ?></span>
+                                    <?php if ($fs['status'] === 'completed'): ?>
+                                        <span style="background: #e7ffef; color: #00a32a; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.8em;"><?php echo Olama_School_Helpers::translate('Completed'); ?></span>
+                                    <?php elseif ($fs['status'] === 'partial'): ?>
+                                        <span style="background: #fff8e5; color: #854d0e; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.8em;"><?php echo $fs['completed'] . '/' . $fs['total']; ?></span>
+                                    <?php else: ?>
+                                        <span style="background: #f6f7f7; color: #999; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.8em;"><?php echo Olama_School_Helpers::translate('Pending'); ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- Supervisors Status -->
+                    <div style="border-right: 1px solid #f0f0f1; padding-right: 20px;">
+                        <h4 style="margin-top: 0; font-size: 0.9em; text-transform: uppercase; color: #666;">
+                            <?php echo Olama_School_Helpers::translate('Supervisor Status'); ?></h4>
+                        <div style="max-height: 250px; overflow-y: auto; padding-right:10px;">
+                            <?php if (!empty($cleaning_stats['supervisors'])): ?>
+                                <?php foreach ($cleaning_stats['supervisors'] as $sid => $ss): ?>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f6f7f7;">
+                                        <span style="font-weight: 600; font-size: 0.9em;"><?php echo esc_html($ss['name']); ?></span>
+                                        <?php if ($ss['completed'] >= $ss['total'] && $ss['total'] > 0): ?>
+                                            <span style="background: #e7ffef; color: #00a32a; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.8em;"><?php echo Olama_School_Helpers::translate('Completed'); ?></span>
+                                        <?php else: ?>
+                                            <span style="background: #fff8e5; color: #854d0e; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.8em;"><?php echo Olama_School_Helpers::translate('In Progress'); ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <p style="text-align: center; color: #999; padding-top: 20px;"><?php echo Olama_School_Helpers::translate('No supervisors assigned'); ?></p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Overall Completion Chart -->
+                    <div style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <?php 
+                        $pct = $cleaning_stats['percentage'];
+                        $color = '#dba617';
+                        ?>
+                        <div style="width: 120px; height: 120px; margin-bottom: 15px; border-radius: 50%; background: conic-gradient(<?php echo $color; ?> <?php echo $pct; ?>%, #f0f0f1 0); position: relative; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
+                            <div style="width: 90px; height: 90px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                                <span style="font-size: 1.4em; font-weight: 800; color: #1d2327;"><?php echo $pct; ?>%</span>
+                            </div>
+                        </div>
+                        <h4 style="margin: 0; font-size: 0.9em; color: #1d2327;"><?php echo Olama_School_Helpers::translate('Total Cleaning Tasks'); ?></h4>
+                        <div style="font-size: 0.75em; color: #666; margin-top: 5px;">
+                            <?php echo sprintf(Olama_School_Helpers::translate('%d of %d slots checked'), $cleaning_stats['completed_tasks'], $cleaning_stats['total_tasks']); ?>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
