@@ -1553,7 +1553,7 @@ class Olama_School_Helpers
         'Approve Video' => 'اعتماد الفيديو',
         'Student Attendance' => 'حضور الطلاب',
         'Employee Shifts' => 'مناوبات الموظفين',
-        'Follow Up' => 'متابعة الحضور والدوام',
+        'Follow Up' => 'المتابعة',
         'Transportation' => 'النقل والمواصلات',
         'Manage Buses' => 'إدارة الحافلات',
         'Access Supervision' => 'الوصول للإشراف',
