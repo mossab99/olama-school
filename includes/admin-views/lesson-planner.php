@@ -484,7 +484,8 @@ if ($edit_plan) {
 
                 <!-- Stage Tabs -->
                 <div class="lp-stage-tabs" style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:20px;">
-                    <?php $stage_colors = array('#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#10b981');
+                    <?php 
+                    $stage_colors = array('#3b82f6', '#f59e0b', '#ec4899', '#10b981'); // Adjusted colors for 4 stages
                     $i = 0;
                     foreach ($lp_stages_config as $sk => $sdata): ?>
                         <button type="button" class="lp-stage-tab <?php echo $i === 0 ? 'active' : ''; ?>"
@@ -563,40 +564,44 @@ if ($edit_plan) {
                     <?php $i++; endforeach; ?>
             </div>
 
-            <!-- Section 4: Resources -->
+            <!-- Section 4: Resources & Reflections -->
             <div class="olama-card lp-section"
                 style="background:#fff;padding:25px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:20px;">
                 <h3 class="lp-section-title"
                     style="margin-top:0;color:#1e293b;border-bottom:2px solid #e2e8f0;padding-bottom:10px;">
-                    <span class="dashicons dashicons-admin-tools"
-                        style="margin-right:8px;color:#0ea5e9;"></span><?php echo $t('Teaching Resources'); ?>
+                    <span class="dashicons dashicons-category"
+                        style="margin-right:8px;color:#0ea5e9;"></span><?php echo $t('Resources & Reflection'); ?>
                 </h3>
-                <textarea name="resources" rows="3" style="width:100%;" class="lp-compliance-field"
-                    placeholder="<?php echo esc_attr($t('Teaching materials, technology, and resources...')); ?>"><?php echo esc_textarea($edit_plan ? $edit_plan->resources : ''); ?></textarea>
-            </div>
 
-            <!-- Section 5: Self-Reflection -->
-            <div class="olama-card lp-section"
-                style="background:#fff;padding:25px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:20px;">
-                <h3 class="lp-section-title"
-                    style="margin-top:0;color:#1e293b;border-bottom:2px solid #e2e8f0;padding-bottom:10px;">
-                    <span class="dashicons dashicons-testimonial"
-                        style="margin-right:8px;color:#6366f1;"></span><?php echo $t('Self-Reflection'); ?>
-                </h3>
-                <textarea name="self_reflection" rows="3" style="width:100%;" class="lp-compliance-field"
-                    placeholder="<?php echo esc_attr($t('Were the learning outcomes achieved? What would you change?')); ?>"><?php echo esc_textarea($edit_plan ? $edit_plan->self_reflection : ''); ?></textarea>
-            </div>
+                <div class="lp-res-tabs" style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:20px;">
+                    <button type="button" class="lp-res-tab active" data-res="teaching_resources"
+                            style="padding:10px 18px;border:none;background:#f8fafc;cursor:pointer;font-weight:600;font-size:13px;color:#0ea5e9;border-bottom:3px solid #0ea5e9;transition:all 0.2s;">
+                        <?php echo $t('Teaching Resources'); ?>
+                    </button>
+                    <button type="button" class="lp-res-tab" data-res="self_reflection"
+                            style="padding:10px 18px;border:none;background:transparent;cursor:pointer;font-weight:600;font-size:13px;color:#64748b;border-bottom:3px solid transparent;transition:all 0.2s;">
+                        <?php echo $t('Self-Reflection'); ?>
+                    </button>
+                    <button type="button" class="lp-res-tab" data-res="homework"
+                            style="padding:10px 18px;border:none;background:transparent;cursor:pointer;font-weight:600;font-size:13px;color:#64748b;border-bottom:3px solid transparent;transition:all 0.2s;">
+                        <?php echo $t('Homework'); ?>
+                    </button>
+                </div>
 
-            <!-- Section 6: Homework -->
-            <div class="olama-card lp-section"
-                style="background:#fff;padding:25px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:20px;">
-                <h3 class="lp-section-title"
-                    style="margin-top:0;color:#1e293b;border-bottom:2px solid #e2e8f0;padding-bottom:10px;">
-                    <span class="dashicons dashicons-clipboard"
-                        style="margin-right:8px;color:#14b8a6;"></span><?php echo $t('Homework'); ?>
-                </h3>
-                <textarea name="homework" rows="3" style="width:100%;" class="lp-compliance-field"
-                    placeholder="<?php echo esc_attr($t('Homework assignment details...')); ?>"><?php echo esc_textarea($edit_plan ? $edit_plan->homework : ''); ?></textarea>
+                <div class="lp-res-panel" data-res="teaching_resources">
+                    <textarea name="resources" rows="4" style="width:100%;" class="lp-compliance-field"
+                        placeholder="<?php echo esc_attr($t('Teaching materials, technology, and resources...')); ?>"><?php echo esc_textarea($edit_plan ? $edit_plan->resources : ''); ?></textarea>
+                </div>
+
+                <div class="lp-res-panel" data-res="self_reflection" style="display:none;">
+                    <textarea name="self_reflection" rows="4" style="width:100%;" class="lp-compliance-field"
+                        placeholder="<?php echo esc_attr($t('Were the learning outcomes achieved? What would you change?')); ?>"><?php echo esc_textarea($edit_plan ? $edit_plan->self_reflection : ''); ?></textarea>
+                </div>
+
+                <div class="lp-res-panel" data-res="homework" style="display:none;">
+                    <textarea name="homework" rows="4" style="width:100%;" class="lp-compliance-field"
+                        placeholder="<?php echo esc_attr($t('Homework assignment details...')); ?>"><?php echo esc_textarea($edit_plan ? $edit_plan->homework : ''); ?></textarea>
+                </div>
             </div>
 
             <!-- Form Footer -->
@@ -674,8 +679,8 @@ if ($edit_plan) {
 <script>
     jQuery(document).ready(function ($) {
         var lpConfig = <?php echo wp_json_encode($lp_config); ?>;
-        var stageColors = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#10b981'];
-        var stageKeys = ['preparation', 'engagement', 'explanation', 'elaboration', 'closing'];
+        var stageColors = ['#3b82f6', '#f59e0b', '#ec4899', '#10b981'];
+        var stageKeys = Object.keys(lpConfig.stages);
 
         // === Stage Tabs ===
         $('.lp-stage-tab').on('click', function () {
@@ -687,6 +692,16 @@ if ($edit_plan) {
             $(this).addClass('active').css({ background: '#f8fafc', color: stageColors[idx], borderBottom: '3px solid ' + stageColors[idx] });
             $('.lp-stage-panel').hide();
             $('.lp-stage-panel[data-stage="' + stage + '"]').show();
+        });
+
+        // === Resource Tabs ===
+        $('.lp-res-tab').on('click', function() {
+            var res = $(this).data('res');
+            var color = '#0ea5e9';
+            $('.lp-res-tab').removeClass('active').css({ background: 'transparent', color: '#64748b', borderBottom: '3px solid transparent' });
+            $(this).addClass('active').css({ background: '#f8fafc', color: color, borderBottom: '3px solid ' + color });
+            $('.lp-res-panel').hide();
+            $('.lp-res-panel[data-res="' + res + '"]').show();
         });
 
         // === Cascading Dropdowns: Grade → Section → Subject → Unit → Lesson → Auto-fill ===
@@ -889,18 +904,18 @@ if ($edit_plan) {
                 if (panel.find('select[name="stage[' + sk + '][assessment_strategy]"]').val()) assessCount++;
                 if (panel.find('select[name="stage[' + sk + '][assessment_tool]"]').val()) toolCount++;
             });
-            score += Math.round(w.stages_teacher_action * (teacherCount / 5));
-            score += Math.round(w.stages_learner_action * (learnerCount / 5));
+            score += Math.round(w.stages_teacher_action * (teacherCount / stageKeys.length));
+            score += Math.round(w.stages_learner_action * (learnerCount / stageKeys.length));
             var totalTime = 0; $('.lp-time-input').each(function () { totalTime += parseInt($(this).val()) || 0; });
             var periodDuration2 = parseInt($('#lp-period-duration').val()) || 45;
             var expectedTime = (parseInt($('#lp-num-classes').val()) || 1) * periodDuration2;
             if (totalTime === expectedTime && expectedTime > 0) score += w.time_distribution;
             else if (totalTime > 0 && expectedTime > 0) score += Math.round(w.time_distribution * Math.min(totalTime, expectedTime) / Math.max(totalTime, expectedTime));
-            score += Math.round(w.teaching_strategy * (strategyCount / 5));
-            score += Math.round(w.assessment_strategy * (assessCount / 5));
-            score += Math.round(w.assessment_tool * (toolCount / 5));
-            details.push((teacherCount === 5 ? '✅' : '⚠️') + ' <?php echo esc_js($t('Teacher Actions')); ?> (' + teacherCount + '/5)');
-            details.push((learnerCount === 5 ? '✅' : '⚠️') + ' <?php echo esc_js($t('Learner Actions')); ?> (' + learnerCount + '/5)');
+            score += Math.round(w.teaching_strategy * (strategyCount / stageKeys.length));
+            score += Math.round(w.assessment_strategy * (assessCount / stageKeys.length));
+            score += Math.round(w.assessment_tool * (toolCount / stageKeys.length));
+            details.push((teacherCount === stageKeys.length ? '✅' : '⚠️') + ' <?php echo esc_js($t('Teacher Actions')); ?> (' + teacherCount + '/' + stageKeys.length + ')');
+            details.push((learnerCount === stageKeys.length ? '✅' : '⚠️') + ' <?php echo esc_js($t('Learner Actions')); ?> (' + learnerCount + '/' + stageKeys.length + ')');
             details.push((totalTime === expectedTime ? '✅' : '⚠️') + ' <?php echo esc_js($t('Time')); ?> (' + totalTime + '/' + expectedTime + ')');
 
             // 8-10. Text fields

@@ -20,24 +20,14 @@ class Olama_Lesson_Planner_Config
     public static function get_stages()
     {
         return array(
-            'preparation' => array(
-                'label_en' => 'Preparation',
-                'label_ar' => 'التهيئة',
-                'description_ar' => 'تنفذ في بداية الدرس لجذب انتباه الطلاب وربط الدرس بمعارفهم السابقة وتحفيز فضولهم.',
-                'description_en' => 'Carried out at the beginning of the lesson to capture students\' attention and connect to prior knowledge.',
+            'prep_engagement' => array(
+                'label_en' => 'Preparation & Engagement',
+                'label_ar' => 'التهيئة والانخراط',
+                'description_ar' => 'تنفذ في بداية الدرس لجذب انتباه الطلاب وربط الدرس بمعارفهم السابقة وتحفيز فضولهم وانخراطهم ذهنياً وعاطفياً مع المحتوى.',
+                'description_en' => 'Carried out at the beginning of the lesson to capture students\' attention, connect to prior knowledge, and engage them mentally and emotionally.',
                 'hints' => array(
-                    'ar' => array('طرح أسئلة مثيرة للتفكير', 'عرض صورة أو فيديو قصير', 'نشاط عملي بسيط', 'قصة أو سيناريو واقعي'),
-                    'en' => array('Thought-provoking questions', 'Picture or short video', 'Simple hands-on activity', 'Real-life story or scenario'),
-                ),
-            ),
-            'engagement' => array(
-                'label_en' => 'Engagement',
-                'label_ar' => 'الانخراط',
-                'description_ar' => 'يبدأ الطلاب بالتفاعل ذهنياً وعاطفياً مع المحتوى والمشاركة الفعّالة.',
-                'description_en' => 'Students begin engaging mentally and emotionally with the content and start participating.',
-                'hints' => array(
-                    'ar' => array('مناقشة جماعية قصيرة', 'عصف ذهني حول الموضوع', 'نشاط تعاوني لاستنتاج العنوان', 'عرض وتحليل موقف واقعي'),
-                    'en' => array('Short group discussion', 'Brainstorming the topic', 'Cooperative activity', 'Analyze a real-life situation'),
+                    'ar' => array('طرح أسئلة مثيرة للتفكير', 'عصف ذهني حول الموضوع', 'عرض صورة أو فيديو قصير', 'نشاط عملي بسيط أو قصة واقعية'),
+                    'en' => array('Thought-provoking questions', 'Brainstorming the topic', 'Picture or short video', 'Simple hands-on activity or real-life story'),
                 ),
             ),
             'explanation' => array(

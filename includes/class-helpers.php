@@ -1437,6 +1437,13 @@ class Olama_School_Helpers
         'Teacher Plan Coverage' => 'تغطية خطط المعلم',
         'Schedule Coverage' => 'تغطية الجدول',
         '%d / %d Lessons Covered' => 'تم تغطية %d / %d درس',
+        'Resources & Reflection' => 'المصادر والتأمل الذاتي',
+        'Preparation & Engagement' => 'التهيئة والانخراط',
+        'Explanation & Interpretation' => 'الشرح والتفسير',
+        'Elaboration & Differentiation' => 'التوسع والتمايز',
+        'Teaching Strategy' => 'استراتيجية التدريس',
+        'Assessment Strategy' => 'استراتيجية التقويم',
+        'Assessment Tool' => 'أداة التقويم',
         // Permissions & Roles
         'Submenu / Tab Permission' => 'صلاحية القائمة الفرعية / التبويب',
         'Supervisor (Custom)' => 'مشرف (مخصص)',

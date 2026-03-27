@@ -216,7 +216,10 @@ class Olama_School_Lesson_Planner
         $weights = Olama_Lesson_Planner_Config::get_compliance_weights();
         $score = 0;
 
-        $stage_keys = array('preparation', 'engagement', 'explanation', 'elaboration', 'closing');
+        $stages_config = Olama_Lesson_Planner_Config::get_stages();
+        $stage_keys = array_keys($stages_config);
+        $num_stages = count($stage_keys);
+        
         $stages = $data['stages'] ?? array();
         $num_classes = intval($data['number_of_classes'] ?? 1);
 
@@ -236,30 +239,30 @@ class Olama_School_Lesson_Planner
             }
         }
 
-        // 2. All 5 stages have teacher_action (20pts)
+        // 2. All stages have teacher_action (20pts)
         $stages_with_teacher = 0;
         foreach ($stage_keys as $key) {
             if (!empty($stages[$key]['teacher_action'])) {
                 $stages_with_teacher++;
             }
         }
-        if ($stages_with_teacher === 5) {
+        if ($stages_with_teacher === $num_stages) {
             $score += $weights['stages_teacher_action'];
         } elseif ($stages_with_teacher > 0) {
-            $score += intval($weights['stages_teacher_action'] * ($stages_with_teacher / 5));
+            $score += intval($weights['stages_teacher_action'] * ($stages_with_teacher / $num_stages));
         }
 
-        // 3. All 5 stages have learner_action (15pts)
+        // 3. All stages have learner_action (15pts)
         $stages_with_learner = 0;
         foreach ($stage_keys as $key) {
             if (!empty($stages[$key]['learner_action'])) {
                 $stages_with_learner++;
             }
         }
-        if ($stages_with_learner === 5) {
+        if ($stages_with_learner === $num_stages) {
             $score += $weights['stages_learner_action'];
         } elseif ($stages_with_learner > 0) {
-            $score += intval($weights['stages_learner_action'] * ($stages_with_learner / 5));
+            $score += intval($weights['stages_learner_action'] * ($stages_with_learner / $num_stages));
         }
 
         // 4. Time distribution = classes × 45 (10pts)
@@ -282,7 +285,9 @@ class Olama_School_Lesson_Planner
                 $stages_with_strategy++;
             }
         }
-        $score += intval($weights['teaching_strategy'] * ($stages_with_strategy / 5));
+        if ($num_stages > 0) {
+            $score += intval($weights['teaching_strategy'] * ($stages_with_strategy / $num_stages));
+        }
 
         // 6. Assessment strategy per stage (10pts)
         $stages_with_assessment = 0;
@@ -291,7 +296,9 @@ class Olama_School_Lesson_Planner
                 $stages_with_assessment++;
             }
         }
-        $score += intval($weights['assessment_strategy'] * ($stages_with_assessment / 5));
+        if ($num_stages > 0) {
+            $score += intval($weights['assessment_strategy'] * ($stages_with_assessment / $num_stages));
+        }
 
         // 7. Assessment tool per stage (5pts)
         $stages_with_tool = 0;
@@ -300,7 +307,9 @@ class Olama_School_Lesson_Planner
                 $stages_with_tool++;
             }
         }
-        $score += intval($weights['assessment_tool'] * ($stages_with_tool / 5));
+        if ($num_stages > 0) {
+            $score += intval($weights['assessment_tool'] * ($stages_with_tool / $num_stages));
+        }
 
         // 8. Resources not empty (5pts)
         if (!empty($data['resources'])) {
