@@ -5215,7 +5215,7 @@ class Olama_School_Admin
     public function handle_cleaning_config_save()
     {
         if (isset($_POST['olama_save_cleaning_config']) && check_admin_referer('olama_save_cleaning_config')) {
-            if (!current_user_can('manage_options')) {
+            if (!Olama_School_Permissions::can('olama_configure_cleaning')) {
                 wp_die(__('Unauthorized', 'olama-school'));
             }
 
