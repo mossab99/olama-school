@@ -602,6 +602,17 @@ class Olama_School_Admin
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['olama_lesson_plan_save'])) {
             check_admin_referer('olama_lesson_plan_nonce', 'olama_lesson_plan_nonce');
 
+            $plan_id = isset($_POST['plan_id']) ? intval($_POST['plan_id']) : 0;
+
+            // Security check: Only allow owners or admins/supervisors to edit
+            if ($plan_id > 0) {
+                $is_admin_priv = Olama_School_Permissions::can('olama_manage_evaluation_mgmt') || Olama_School_Permissions::can('olama_approve_plans');
+                $existing = Olama_School_Lesson_Planner::get_plan($plan_id, $is_admin_priv ? 0 : get_current_user_id());
+                if (!$existing) {
+                    wp_die(__('You do not have permission to edit this lesson plan.', 'olama-school'));
+                }
+            }
+
             $stage_keys = array('preparation', 'engagement', 'explanation', 'elaboration', 'closing');
             $stages_data = array();
             $ts_used = array();
@@ -632,7 +643,7 @@ class Olama_School_Admin
                 'id' => isset($_POST['plan_id']) ? intval($_POST['plan_id']) : 0,
                 'academic_year_id' => intval($_POST['academic_year_id']),
                 'semester_id' => intval($_POST['semester_id']),
-                'teacher_id' => get_current_user_id(),
+                'teacher_id' => ($plan_id > 0 && isset($existing)) ? $existing->teacher_id : get_current_user_id(),
                 'subject_id' => intval($_POST['subject_id']),
                 'grade_id' => intval($_POST['grade_id']),
                 'section_id' => intval($_POST['section_id']),
@@ -680,9 +691,17 @@ class Olama_School_Admin
 
         // 3. Handle GET delete
         if (isset($_GET['lp_action']) && $_GET['lp_action'] === 'delete' && isset($_GET['plan_id'])) {
-            check_admin_referer('olama_lp_delete_' . $_GET['plan_id']);
-            Olama_School_Lesson_Planner::delete_plan(intval($_GET['plan_id']));
-            wp_redirect(admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner&message=lp_deleted'));
+            $plan_id = intval($_GET['plan_id']);
+            check_admin_referer('olama_lp_delete_' . $plan_id);
+
+            $is_admin_priv = Olama_School_Permissions::can('olama_manage_evaluation_mgmt') || Olama_School_Permissions::can('olama_approve_plans');
+            $success = Olama_School_Lesson_Planner::delete_plan($plan_id, $is_admin_priv ? 0 : get_current_user_id());
+
+            if ($success) {
+                wp_redirect(admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner&message=lp_deleted'));
+            } else {
+                wp_redirect(admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner&message=' . urlencode(__('Error deleting lesson plan or permission denied.', 'olama-school'))));
+            }
             exit;
         }
     }

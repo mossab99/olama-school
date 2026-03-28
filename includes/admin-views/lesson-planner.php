@@ -7,7 +7,7 @@ if (!defined('ABSPATH'))
     exit;
 
 $current_user_id = get_current_user_id();
-$is_admin = Olama_School_Permissions::can('olama_manage_evaluation_mgmt') || Olama_School_Permissions::can('olama_manage_lesson_planner') || Olama_School_Permissions::can('olama_approve_plans');
+$is_admin = Olama_School_Permissions::can('olama_manage_evaluation_mgmt') || Olama_School_Permissions::can('olama_approve_plans');
 $academic = new Olama_School_Academic();
 $years = $academic->get_years();
 $active_year = $academic->get_active_year();
@@ -57,7 +57,7 @@ $edit_plan_id = isset($_GET['plan_id']) ? intval($_GET['plan_id']) : 0;
 $edit_plan = null;
 
 if ($mode === 'edit' && $edit_plan_id) {
-    $edit_plan = Olama_School_Lesson_Planner::get_plan($edit_plan_id);
+    $edit_plan = Olama_School_Lesson_Planner::get_plan($edit_plan_id, $is_admin ? 0 : $current_user_id);
     if ($edit_plan) {
         $selected_grade_id = $edit_plan->grade_id;
         $selected_section_id = $edit_plan->section_id;
@@ -78,6 +78,9 @@ if ($mode === 'edit' && $edit_plan_id) {
                 $selected_section_id
             ));
         }
+    } else {
+        $mode = 'list';
+        echo '<div class="notice notice-error"><p>' . $t('Lesson plan not found or you do not have permission to access it.') . '</p></div>';
     }
 }
 

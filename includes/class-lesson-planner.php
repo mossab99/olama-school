@@ -75,12 +75,20 @@ class Olama_School_Lesson_Planner
     /**
      * Get a single lesson plan by ID
      */
-    public static function get_plan($id)
+    public static function get_plan($id, $teacher_id = 0)
     {
         global $wpdb;
         $table = "{$wpdb->prefix}olama_lesson_plans";
 
-        return $wpdb->get_row($wpdb->prepare(
+        $where = "WHERE lp.id = %d";
+        $params = array(intval($id));
+
+        if ($teacher_id > 0) {
+            $where .= " AND lp.teacher_id = %d";
+            $params[] = intval($teacher_id);
+        }
+
+        $query = $wpdb->prepare(
             "SELECT lp.*, 
                     s.subject_name, 
                     g.grade_name, 
@@ -95,9 +103,11 @@ class Olama_School_Lesson_Planner
                 LEFT JOIN {$wpdb->users} u ON lp.teacher_id = u.ID
                 LEFT JOIN {$wpdb->prefix}olama_curriculum_units cu ON lp.unit_id = cu.id
                 LEFT JOIN {$wpdb->prefix}olama_curriculum_lessons cl ON lp.lesson_id = cl.id
-            WHERE lp.id = %d",
-            $id
-        ));
+            $where",
+            ...$params
+        );
+
+        return $wpdb->get_row($query);
     }
 
     /**
@@ -187,13 +197,15 @@ class Olama_School_Lesson_Planner
     /**
      * Delete a lesson plan by ID
      */
-    public static function delete_plan($id)
+    public static function delete_plan($id, $teacher_id = 0)
     {
         global $wpdb;
-        return $wpdb->delete(
-            "{$wpdb->prefix}olama_lesson_plans",
-            array('id' => intval($id))
-        );
+        $table = "{$wpdb->prefix}olama_lesson_plans";
+        $where = array('id' => intval($id));
+        if ($teacher_id > 0) {
+            $where['teacher_id'] = intval($teacher_id);
+        }
+        return $wpdb->delete($table, $where);
     }
 
     /**
