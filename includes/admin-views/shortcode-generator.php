@@ -58,6 +58,9 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 <option value="family_performance">
                     <?php _e('Family Performance', 'olama-school'); ?>
                 </option>
+                <option value="online_exams">
+                    <?php echo Olama_School_Helpers::translate('Online Exams'); ?>
+                </option>
                 <option value="logged_teacher_schedule">
                     <?php _e('Today\'s Teaching Schedule', 'olama-school'); ?>
                 </option>
@@ -214,7 +217,7 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 $('#gen-week-wrapper').hide();
                 $('#gen-exam-wrapper').hide();
                 $('#gen-schedule-type-wrapper').hide();
-            } else if (type === 'family_performance' || type === 'logged_teacher_schedule' || type === 'logged_user_shifts' || type === 'supervisor_visits') {
+            } else if (type === 'family_performance' || type === 'online_exams' || type === 'logged_teacher_schedule' || type === 'logged_user_shifts' || type === 'supervisor_visits') {
                 $('#gen-semester').closest('div').show();
                 $('#gen-grade').closest('div').hide();
                 $('#gen-section').closest('div').hide();
@@ -240,8 +243,8 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
             }
 
             if (type !== 'stationary') {
-                if (type === 'family_performance' || type === 'logged_teacher_schedule' || type === 'logged_user_shifts') {
-                    if (semester && type === 'family_performance') shortcode += ' semester="' + semester + '"';
+                if (type === 'family_performance' || type === 'online_exams' || type === 'logged_teacher_schedule' || type === 'logged_user_shifts') {
+                    if (semester && (type === 'family_performance' || type === 'online_exams')) shortcode += ' semester="' + semester + '"';
                 } else {
                     if (semester) shortcode += ' semester="' + semester + '"';
                     if (grade) shortcode += ' grade="' + grade + '"';

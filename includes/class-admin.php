@@ -3320,6 +3320,37 @@ class Olama_School_Admin
                                 <tr>
                                     <th colspan="2" style="padding-top: 30px;">
                                         <h3 style="margin:0; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+                                            <?php echo Olama_School_Helpers::translate('Family Gateway Settings'); ?>
+                                        </h3>
+                                    </th>
+                                </tr>
+                                <tr valign="top">
+                                    <th scope="row"><?php echo Olama_School_Helpers::translate('Evaluation Page URL'); ?></th>
+                                    <td><input type="text" name="olama_school_settings[fg_page_evaluation]"
+                                            value="<?php echo esc_attr($settings['fg_page_evaluation'] ?? '/family-evaluation/'); ?>"
+                                            class="regular-text" /></td>
+                                </tr>
+                                <tr valign="top">
+                                    <th scope="row"><?php echo Olama_School_Helpers::translate('Exams Page URL'); ?></th>
+                                    <td><input type="text" name="olama_school_settings[fg_page_exams]"
+                                            value="<?php echo esc_attr($settings['fg_page_exams'] ?? '/online-exams/'); ?>"
+                                            class="regular-text" /></td>
+                                </tr>
+                                <tr valign="top">
+                                    <th scope="row"><?php echo Olama_School_Helpers::translate('Weekly Plan Page URL'); ?></th>
+                                    <td><input type="text" name="olama_school_settings[fg_page_weekly_plan]"
+                                            value="<?php echo esc_attr($settings['fg_page_weekly_plan'] ?? '/weekly-plan/'); ?>"
+                                            class="regular-text" /></td>
+                                </tr>
+                                <tr valign="top">
+                                    <th scope="row"><?php echo Olama_School_Helpers::translate('Exam Schedule Page URL'); ?></th>
+                                    <td><input type="text" name="olama_school_settings[fg_page_exam_schedule]"
+                                            value="<?php echo esc_attr($settings['fg_page_exam_schedule'] ?? '/exam-schedule/'); ?>"
+                                            class="regular-text" /></td>
+                                </tr>
+                                <tr>
+                                    <th colspan="2" style="padding-top: 30px;">
+                                        <h3 style="margin:0; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
                                             <?php _e('Security Settings', 'olama-school'); ?>
                                         </h3>
                                     </th>

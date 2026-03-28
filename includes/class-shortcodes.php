@@ -25,6 +25,7 @@ class Olama_School_Shortcodes
         add_shortcode('olama_logged_user_shifts', array($this, 'render_logged_user_shifts_shortcode'));
         add_shortcode('force_login', array($this, 'render_force_login_shortcode'));
         add_shortcode('olama_family_gateway', array($this, 'render_family_gateway_shortcode'));
+        add_shortcode('olama_online_exams', array($this, 'render_online_exams_shortcode'));
         add_shortcode('olama_supervisor_visits', array($this, 'render_supervisor_visit_schedule_shortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_shortcode_assets'));
     }
@@ -4383,7 +4384,7 @@ class Olama_School_Shortcodes
         $services = array(
             array(
                 'icon' => 'assignment',
-                'title' => 'تقرير التقييم',
+                'title' => Olama_School_Helpers::translate('Evaluation Report'),
                 'subtitle' => 'Evaluation Report',
                 'url' => $page_evaluation,
                 'color' => '#0d9488',
@@ -4391,7 +4392,7 @@ class Olama_School_Shortcodes
             ),
             array(
                 'icon' => 'quiz',
-                'title' => 'الاختبارات الإلكترونية',
+                'title' => Olama_School_Helpers::translate('Online Exams'),
                 'subtitle' => 'Online Exams',
                 'url' => $page_exams,
                 'color' => '#6366f1',
@@ -4399,7 +4400,7 @@ class Olama_School_Shortcodes
             ),
             array(
                 'icon' => 'event_note',
-                'title' => 'الخطة الأسبوعية',
+                'title' => Olama_School_Helpers::translate('Weekly Plan'),
                 'subtitle' => 'Weekly Plan',
                 'url' => $page_weekly_plan,
                 'color' => '#0284c7',
@@ -4409,7 +4410,7 @@ class Olama_School_Shortcodes
             ),
             array(
                 'icon' => 'calendar_month',
-                'title' => 'جدول الاختبارات',
+                'title' => Olama_School_Helpers::translate('Exam Schedule'),
                 'subtitle' => 'Exam Schedule',
                 'url' => $page_exam_schedule,
                 'color' => '#ea580c',
@@ -4742,5 +4743,23 @@ class Olama_School_Shortcodes
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Shortcode: [olama_online_exams]
+     * Alias for [olama_exam] from the Exam Engine plugin.
+     */
+    public function render_online_exams_shortcode($atts)
+    {
+        if (!is_user_logged_in()) {
+            return '<div class="olama-error">' . Olama_School_Helpers::translate('Please log in to access your exams.') . '</div>';
+        }
+
+        // This relies on the olama-exam-engine plugin being active.
+        if (shortcode_exists('olama_exam')) {
+            return do_shortcode('[olama_exam]');
+        }
+
+        return '<div class="olama-error">' . Olama_School_Helpers::translate('Exam Engine plugin is not active.') . '</div>';
     }
 }
