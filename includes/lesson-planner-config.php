@@ -214,8 +214,8 @@ class Olama_Lesson_Planner_Config
     {
         return array(
             'outcomes_with_verb' => 15,  // ≥1 outcome with verb + content + level
-            'stages_teacher_action' => 20,  // All 5 stages have teacher_action
-            'stages_learner_action' => 15,  // All 5 stages have learner_action
+            'stages_teacher_action' => 20,  // All 4 stages have teacher_action
+            'stages_learner_action' => 15,  // All 4 stages have learner_action
             'time_distribution' => 10,  // Time sums to classes × 45
             'teaching_strategy' => 10,  // Teaching strategy selected per stage
             'assessment_strategy' => 10,  // Assessment strategy selected per stage

@@ -613,7 +613,7 @@ class Olama_School_Admin
                 }
             }
 
-            $stage_keys = array('preparation', 'engagement', 'explanation', 'elaboration', 'closing');
+            $stage_keys = array_keys(Olama_Lesson_Planner_Config::get_stages());
             $stages_data = array();
             $ts_used = array();
             $as_used = array();
