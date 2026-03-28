@@ -7,6 +7,7 @@ if (!defined('ABSPATH'))
     exit;
 
 $current_user_id = get_current_user_id();
+global $wpdb;
 $is_admin = Olama_School_Permissions::can('olama_manage_evaluation_mgmt') || Olama_School_Permissions::can('olama_approve_plans');
 $academic = new Olama_School_Academic();
 $years = $academic->get_years();
@@ -42,7 +43,6 @@ if ($selected_grade_id && $selected_section_id) {
     if ($is_admin) {
         $subjects = $subject_obj->get_subjects();
     } else {
-        global $wpdb;
         $subjects = $wpdb->get_results($wpdb->prepare(
             "SELECT DISTINCT s.* FROM {$wpdb->prefix}olama_subjects s INNER JOIN {$wpdb->prefix}olama_teacher_assignments ta ON s.id = ta.subject_id WHERE ta.teacher_id = %d AND ta.grade_id = %d AND ta.section_id = %d ORDER BY s.subject_name",
             $current_user_id,
