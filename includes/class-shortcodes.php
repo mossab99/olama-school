@@ -19,6 +19,7 @@ class Olama_School_Shortcodes
         add_shortcode('olama_teachers_office_hours', array($this, 'render_teachers_office_hours_shortcode'));
         add_shortcode('olama_stationary', array($this, 'render_stationary_shortcode'));
         add_shortcode('olama_exam_report', array($this, 'render_exam_report_shortcode'));
+        add_shortcode('olama_online_exams_schedule', array($this, 'render_exam_report_shortcode'));
         add_shortcode('olama_attendance', array($this, 'render_attendance_shortcode'));
         add_shortcode('olama_family_performance', array($this, 'render_family_performance_shortcode'));
         add_shortcode('olama_logged_teacher_schedule', array($this, 'render_logged_teacher_schedule_shortcode'));
@@ -278,8 +279,12 @@ class Olama_School_Shortcodes
         ), $atts, 'olama_weekly_plan');
 
         $section_id = intval($atts['section']);
+        if (!$section_id && isset($_GET['section_id'])) {
+            $section_id = intval($_GET['section_id']);
+        }
+
         if (!$section_id) {
-            return '<div class="olama-error">' . __('Please specify a valid section ID in the shortcode.', 'olama-school') . '</div>';
+            return '<div class="olama-error">' . Olama_School_Helpers::translate('Please specify a valid section ID in the shortcode.') . '</div>';
         }
 
         // Resolve Semester ID for header/filtering
@@ -736,6 +741,10 @@ class Olama_School_Shortcodes
         ), $atts, 'olama_exam_report');
 
         $grade_id = intval($atts['grade']);
+        if (!$grade_id && isset($_GET['grade_id'])) {
+            $grade_id = intval($_GET['grade_id']);
+        }
+
         if (!$grade_id) {
             return '<div class="olama-error">' . Olama_School_Helpers::translate('Please specify a valid grade ID in the shortcode.') . '</div>';
         }
@@ -2951,10 +2960,19 @@ class Olama_School_Shortcodes
 
         // Get family's students
         $students = Olama_School_Family::get_family_students($family_uid);
+        
+        // Filter by student_uid if provided via attribute or query string
+        $target_uid = $atts['uid'] ?? $atts['student_uid'] ?? ($_GET['student_uid'] ?? '');
+        if (!empty($target_uid)) {
+            $students = array_filter($students, function($s) use ($target_uid) {
+                return $s->student_uid === $target_uid;
+            });
+        }
+
         if (empty($students)) {
             return '<div class="olama-fp-login-msg" dir="rtl" style="text-align:center;padding:40px 20px;background:#fefce8;border-radius:16px;color:#854d0e;font-weight:700;font-family:Tajawal,sans-serif;">' .
                 '<span class="material-icons" style="font-size:48px;display:block;margin:0 auto 12px;opacity:.6;">school</span>' .
-                Olama_School_Helpers::translate('No students found for this family.') . '</div>';
+                Olama_School_Helpers::translate('No matching student found for this family.') . '</div>';
         }
 
         // Build data for each student
@@ -4349,10 +4367,14 @@ class Olama_School_Shortcodes
 
             // -- Age --
             $age = '';
-            if (!empty($student->dob)) {
-                $dob = new DateTime($student->dob);
-                $now = new DateTime();
-                $age = $now->diff($dob)->y;
+            if (!empty($student->dob) && $student->dob !== '0000-00-00') {
+                try {
+                    $dob = new DateTime($student->dob);
+                    $now = new DateTime();
+                    $age = $now->diff($dob)->y;
+                } catch (Exception $e) {
+                    $age = ''; // Ignore malformed dates
+                }
             }
 
             $students_data[] = array(
@@ -4381,44 +4403,65 @@ class Olama_School_Shortcodes
         }
 
         // ── Services array ──────────────────────────────────────
-        $services = array(
-            array(
-                'icon' => 'assignment',
-                'title' => Olama_School_Helpers::translate('Evaluation Report'),
-                'subtitle' => 'Evaluation Report',
-                'url' => $page_evaluation,
-                'color' => '#0d9488',
-                'gradient' => 'linear-gradient(135deg, #0d9488, #14b8a6)',
-            ),
-            array(
-                'icon' => 'quiz',
-                'title' => Olama_School_Helpers::translate('Online Exams'),
-                'subtitle' => 'Online Exams',
-                'url' => $page_exams,
-                'color' => '#6366f1',
-                'gradient' => 'linear-gradient(135deg, #6366f1, #818cf8)',
-            ),
-            array(
-                'icon' => 'event_note',
-                'title' => Olama_School_Helpers::translate('Weekly Plan'),
-                'subtitle' => 'Weekly Plan',
-                'url' => $page_weekly_plan,
-                'color' => '#0284c7',
-                'gradient' => 'linear-gradient(135deg, #0284c7, #38bdf8)',
-                'param' => 'section_id',
-                'param_key' => 'section_id',
-            ),
-            array(
-                'icon' => 'calendar_month',
-                'title' => Olama_School_Helpers::translate('Exam Schedule'),
-                'subtitle' => 'Exam Schedule',
-                'url' => $page_exam_schedule,
-                'color' => '#ea580c',
-                'gradient' => 'linear-gradient(135deg, #ea580c, #fb923c)',
-                'param' => 'grade',
-                'param_key' => 'grade_id',
-            ),
+        $service_palette = array(
+            array('color' => '#0d9488', 'gradient' => 'linear-gradient(135deg, #0d9488, #14b8a6)'),
+            array('color' => '#6366f1', 'gradient' => 'linear-gradient(135deg, #6366f1, #818cf8)'),
+            array('color' => '#0284c7', 'gradient' => 'linear-gradient(135deg, #0284c7, #38bdf8)'),
+            array('color' => '#ea580c', 'gradient' => 'linear-gradient(135deg, #ea580c, #fb923c)'),
+            array('color' => '#7c3aed', 'gradient' => 'linear-gradient(135deg, #7c3aed, #a78bfa)'),
+            array('color' => '#db2777', 'gradient' => 'linear-gradient(135deg, #db2777, #f472b6)'),
         );
+
+        $configured_services = $settings['fg_services'] ?? array();
+        $services = array();
+        $is_ar = Olama_School_Helpers::is_arabic();
+
+        if (is_array($configured_services) && !empty($configured_services)) {
+            foreach ($configured_services as $idx => $s) {
+                if (!is_array($s)) continue;
+
+                // Ignore services that haven't been configured properly or are placeholders
+                $sc = $s['shortcode'] ?? '';
+                if (empty($sc) || $sc === '[shortcode_tag]') continue;
+
+                $style = $service_palette[$idx % count($service_palette)];
+                
+                // Title detection with fallback
+                $title_ar = $s['title_ar'] ?? '';
+                $title_en = $s['title_en'] ?? '';
+                $title = $is_ar ? ($title_ar ?: $title_en) : ($title_en ?: $title_ar);
+                
+                // Auto-detect parameters based on shortcode
+                $param = '';
+                $param_key = '';
+                if (!empty($sc)) {
+                    // Extract tag to check existence
+                    $tag = preg_replace('/\[([^\s\]]+).*\]/', '$1', $sc);
+                    if (!shortcode_exists($tag)) {
+                        continue;
+                    }
+
+                    if (strpos($sc, 'weekly_plan') !== false) {
+                        $param = 'section_id';
+                        $param_key = 'section_id';
+                    } elseif (strpos($sc, 'exam_report') !== false || strpos($sc, 'exam_schedule') !== false || strpos($sc, 'olama_exam') !== false || strpos($sc, 'online_exams_schedule') !== false || strpos($sc, 'family_performance') !== false) {
+                        $param = 'grade_id'; // Fixed to use grade_id to match gateway output
+                        $param_key = 'grade_id';
+                    }
+                }
+
+                $services[] = array(
+                    'icon'      => !empty($s['icon']) ? $s['icon'] : 'extension',
+                    'title'     => $title ?: Olama_School_Helpers::translate('Service'),
+                    'subtitle'  => $title_en,
+                    'url'       => $s['url'] ?? '#',
+                    'color'     => $style['color'],
+                    'gradient'  => $style['gradient'],
+                    'param'     => $param,
+                    'param_key' => $param_key
+                );
+            }
+        }
 
         // ── Render ──────────────────────────────────────────────
         ob_start();
@@ -4445,11 +4488,17 @@ class Olama_School_Shortcodes
             .fg-meta-pill .material-icons{font-size:15px;opacity:.8}
 
             /* Student Tabs */
-            .fg-tabs{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 0 12px;margin-bottom:4px}
+            .fg-tabs{display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 0 16px;margin:0 -4px 12px}
             .fg-tabs::-webkit-scrollbar{display:none}
-            .fg-tab{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:16px;border:2px solid #e5e9ef;background:#fff;cursor:pointer;transition:all .25s ease;white-space:nowrap;flex-shrink:0;font-family:'Tajawal',sans-serif}
-            .fg-tab:hover{border-color:#d1d5db;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-            .fg-tab.active{border-color:#0d9488;background:#f0fdfa;box-shadow:0 4px 16px rgba(13,148,136,.15)}
+            .fg-tab{display:flex;align-items:center;gap:10px;padding:12px 20px;border-radius:18px;border:2px solid #e2e8f0;background:#fff;cursor:pointer;transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);white-space:nowrap;flex-shrink:0;font-family:'Tajawal',sans-serif;box-shadow:0 2px 4px rgba(0,0,0,0.02)}
+            .fg-tab:hover{border-color:#cbd5e1;background:#f8fafc;transform:translateY(-2px)}
+            .fg-tab.active{border-color:#0d9488;background:#f0fdfa;box-shadow:0 10px 15px -3px rgba(13,148,136,0.15)}
+            @media (max-width: 639px) {
+                .fg-tabs { flex-direction: column; overflow: visible; padding: 0; }
+                .fg-tab { width: 100%; box-sizing: border-box; }
+                .fg-hero { padding: 24px 20px; border-radius: 20px; }
+                .fg-hero-title { font-size: 1.4rem; }
+            }
             .fg-tab-avatar{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:#fff;flex-shrink:0}
             .fg-tab-info{display:flex;flex-direction:column}
             .fg-tab-name{font-size:.92rem;font-weight:800;color:#1e293b;line-height:1.2}
@@ -4614,7 +4663,7 @@ class Olama_School_Shortcodes
                 <div class="fg-timetable-section">
                     <div class="fg-timetable-header">
                         <span class="material-icons">view_timeline</span>
-                        <?php echo Olama_School_Helpers::translate("Today's Schedule"); ?> — <?php echo esc_html($day_names_ar[$today_name] ?? $today_name); ?>
+                        <?php echo Olama_School_Helpers::translate("جدول اليوم"); ?> — <?php echo esc_html($day_names_ar[$today_name] ?? $today_name); ?>
                     </div>
                     <?php if (!empty($sd['timetable'])): ?>
                         <div class="fg-timetable-grid">
@@ -4632,22 +4681,28 @@ class Olama_School_Shortcodes
                         </div>
                     <?php endif; ?>
                 </div>
-
-                <!-- Service Cards -->
                 <div class="fg-services-title">
                     <span class="material-icons">apps</span>
-                    <?php echo Olama_School_Helpers::translate('Services'); ?>
+                    <?php echo Olama_School_Helpers::translate('Individual Student Reports'); ?>
                 </div>
                 <div class="fg-services">
                     <?php foreach ($services as $svc):
                         $url = $svc['url'];
-                        // Append student-specific params if defined
-                        if (isset($svc['param_key'])) {
-                            $val = '';
-                            if ($svc['param_key'] === 'section_id') $val = $sd['enrollment']->section_id;
-                            elseif ($svc['param_key'] === 'grade_id') $val = $sd['grade']->id;
-                            $url = add_query_arg($svc['param'] ?? $svc['param_key'], $val, $url);
-                        }
+
+                        // Always append student_uid for specific filtering
+                        $url = add_query_arg('student_uid', $sd['student']->student_uid, $url);
+                // Append student-specific params if defined
+                if (!empty($svc['param_key'])) {
+                    $val = '';
+                    if ($svc['param_key'] === 'section_id' && isset($sd['enrollment'])) {
+                        $val = $sd['enrollment']->section_id;
+                    } elseif ($svc['param_key'] === 'grade_id' && isset($sd['grade'])) {
+                        $val = $sd['grade']->id;
+                    }
+                    if ($val) {
+                        $url = add_query_arg($svc['param'] ?: $svc['param_key'], $val, $url);
+                    }
+                }
                     ?>
                         <a class="fg-service" href="<?php echo esc_url($url); ?>">
                             <div class="fg-service-icon" style="background:<?php echo esc_attr($svc['gradient']); ?>">

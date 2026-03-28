@@ -3179,6 +3179,7 @@ class Olama_School_Admin
 
         $tabs_config = array(
             'general' => array('label' => __('General Settings', 'olama-school'), 'cap' => 'olama_manage_settings_general'),
+            'family_gateway' => array('label' => Olama_School_Helpers::translate('Family Gateway'), 'cap' => 'olama_manage_settings_general'),
             'shortcode' => array('label' => __('Shortcode Generator', 'olama-school'), 'cap' => 'olama_manage_settings_shortcode'),
             'backup' => array('label' => __('Backup & Restore', 'olama-school'), 'cap' => 'manage_options'),
         );
@@ -3320,37 +3321,6 @@ class Olama_School_Admin
                                 <tr>
                                     <th colspan="2" style="padding-top: 30px;">
                                         <h3 style="margin:0; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
-                                            <?php echo Olama_School_Helpers::translate('Family Gateway Settings'); ?>
-                                        </h3>
-                                    </th>
-                                </tr>
-                                <tr valign="top">
-                                    <th scope="row"><?php echo Olama_School_Helpers::translate('Evaluation Page URL'); ?></th>
-                                    <td><input type="text" name="olama_school_settings[fg_page_evaluation]"
-                                            value="<?php echo esc_attr($settings['fg_page_evaluation'] ?? '/family-evaluation/'); ?>"
-                                            class="regular-text" /></td>
-                                </tr>
-                                <tr valign="top">
-                                    <th scope="row"><?php echo Olama_School_Helpers::translate('Exams Page URL'); ?></th>
-                                    <td><input type="text" name="olama_school_settings[fg_page_exams]"
-                                            value="<?php echo esc_attr($settings['fg_page_exams'] ?? '/online-exams/'); ?>"
-                                            class="regular-text" /></td>
-                                </tr>
-                                <tr valign="top">
-                                    <th scope="row"><?php echo Olama_School_Helpers::translate('Weekly Plan Page URL'); ?></th>
-                                    <td><input type="text" name="olama_school_settings[fg_page_weekly_plan]"
-                                            value="<?php echo esc_attr($settings['fg_page_weekly_plan'] ?? '/weekly-plan/'); ?>"
-                                            class="regular-text" /></td>
-                                </tr>
-                                <tr valign="top">
-                                    <th scope="row"><?php echo Olama_School_Helpers::translate('Exam Schedule Page URL'); ?></th>
-                                    <td><input type="text" name="olama_school_settings[fg_page_exam_schedule]"
-                                            value="<?php echo esc_attr($settings['fg_page_exam_schedule'] ?? '/exam-schedule/'); ?>"
-                                            class="regular-text" /></td>
-                                </tr>
-                                <tr>
-                                    <th colspan="2" style="padding-top: 30px;">
-                                        <h3 style="margin:0; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
                                             <?php _e('Security Settings', 'olama-school'); ?>
                                         </h3>
                                     </th>
@@ -3372,6 +3342,8 @@ class Olama_School_Admin
                         </table>
                         <?php submit_button(); ?>
                     </form>
+                <?php elseif ($active_tab === 'family_gateway'): ?>
+                    <?php $this->render_family_gateway_settings_content(); ?>
                 <?php elseif ($active_tab === 'backup'): ?>
                     <?php $this->render_backup_settings_content(); ?>
                 <?php else: ?>
@@ -5563,5 +5535,161 @@ class Olama_School_Admin
         }
 
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/report-detailed-attendance.php';
+    }
+
+    /**
+     * Render Family Gateway Settings Content
+     */
+    public function render_family_gateway_settings_content()
+    {
+        $settings = get_option('olama_school_settings', array());
+        $is_admin = current_user_can('manage_options');
+
+        // Default Services if none exist
+        $default_services = array(
+            array(
+                'title_ar' => 'تقرير التقييم',
+                'title_en' => 'Evaluation Report',
+                'url' => '/family-evaluation/',
+                'icon' => 'assignment',
+                'shortcode' => '[olama_family_performance]'
+            ),
+            array(
+                'title_ar' => 'الاختبارات الإلكترونية',
+                'title_en' => 'Online Exams',
+                'url' => '/online-exams/',
+                'icon' => 'quiz',
+                'shortcode' => '[olama_online_exams]'
+            ),
+            array(
+                'title_ar' => 'الخطة الأسبوعية',
+                'title_en' => 'Weekly Plan',
+                'url' => '/weekly-plan/',
+                'icon' => 'event_note',
+                'shortcode' => '[olama_weekly_plan]'
+            ),
+            array(
+                'title_ar' => 'جدول الاختبارات',
+                'title_en' => 'Exam Schedule',
+                'url' => '/exam-schedule/',
+                'icon' => 'calendar_month',
+                'shortcode' => '[olama_exam_report]'
+            )
+        );
+
+        $services = $settings['fg_services'] ?? $default_services;
+        ?>
+        <form method="post" action="options.php">
+            <?php
+            settings_fields('olama_school_settings_group');
+            ?>
+            <div class="olama-card" style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h2 style="margin: 0; font-weight: 700; color: #1e293b;"><?php echo Olama_School_Helpers::translate('Gateway Services Management'); ?></h2>
+                    <button type="button" class="button button-primary" id="add-fg-service">
+                        <span class="dashicons dashicons-plus-alt" style="margin-top: 4px; margin-right: 5px;"></span>
+                        <?php echo Olama_School_Helpers::translate('Add New Service'); ?>
+                    </button>
+                </div>
+
+                <div id="fg-services-container">
+                    <?php foreach ($services as $index => $service): ?>
+                        <div class="fg-service-row" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px; position: relative;">
+                            <button type="button" class="remove-fg-service" style="position: absolute; top: 10px; left: 10px; background: none; border: none; color: #ef4444; cursor: pointer;" title="<?php echo Olama_School_Helpers::translate('Remove'); ?>">
+                                <span class="dashicons dashicons-no-alt"></span>
+                            </button>
+
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                                <div>
+                                    <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #475569;"><?php echo Olama_School_Helpers::translate('Service Title (Arabic)'); ?></label>
+                                    <input type="text" name="olama_school_settings[fg_services][<?php echo $index; ?>][title_ar]" value="<?php echo esc_attr($service['title_ar']); ?>" class="widefat" />
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #475569;"><?php echo Olama_School_Helpers::translate('Service Title (English)'); ?></label>
+                                    <input type="text" name="olama_school_settings[fg_services][<?php echo $index; ?>][title_en]" value="<?php echo esc_attr($service['title_en']); ?>" class="widefat" />
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #475569;"><?php echo Olama_School_Helpers::translate('Page URL'); ?></label>
+                                    <input type="text" name="olama_school_settings[fg_services][<?php echo $index; ?>][url]" value="<?php echo esc_attr($service['url']); ?>" class="widefat" placeholder="/example-page/" />
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #475569;"><?php echo Olama_School_Helpers::translate('Material Icon'); ?></label>
+                                        <input type="text" name="olama_school_settings[fg_services][<?php echo $index; ?>][icon]" value="<?php echo esc_attr($service['icon']); ?>" class="widefat" placeholder="quiz" />
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #6366f1;"><?php echo Olama_School_Helpers::translate('Required Shortcode'); ?></label>
+                                        <input type="text" name="olama_school_settings[fg_services][<?php echo $index; ?>][shortcode]" value="<?php echo esc_attr($service['shortcode']); ?>" class="widefat" style="border-color: #a5b4fc; background: #f5f3ff;" placeholder="[shortcode_tag]" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: left;">
+                    <?php submit_button(); ?>
+                </div>
+            </div>
+
+            <script>
+                jQuery(document).ready(function($) {
+                    var serviceIndex = <?php echo count($services); ?>;
+                    
+                    $('#add-fg-service').on('click', function() {
+                        var template = `
+                            <div class="fg-service-row" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px; position: relative; opacity: 0; transform: translateY(10px); transition: all 0.3s ease;">
+                                <button type="button" class="remove-fg-service" style="position: absolute; top: 10px; left: 10px; background: none; border: none; color: #ef4444; cursor: pointer;">
+                                    <span class="dashicons dashicons-no-alt"></span>
+                                </button>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                                    <div>
+                                        <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #475569;"><?php echo Olama_School_Helpers::translate('Service Title (Arabic)'); ?></label>
+                                        <input type="text" name="olama_school_settings[fg_services][${serviceIndex}][title_ar]" value="" class="widefat" />
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #475569;"><?php echo Olama_School_Helpers::translate('Service Title (English)'); ?></label>
+                                        <input type="text" name="olama_school_settings[fg_services][${serviceIndex}][title_en]" value="" class="widefat" />
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #475569;"><?php echo Olama_School_Helpers::translate('Page URL'); ?></label>
+                                        <input type="text" name="olama_school_settings[fg_services][${serviceIndex}][url]" value="" class="widefat" placeholder="/example-page/" />
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                        <div>
+                                            <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #475569;"><?php echo Olama_School_Helpers::translate('Material Icon'); ?></label>
+                                            <input type="text" name="olama_school_settings[fg_services][${serviceIndex}][icon]" value="assignment" class="widefat" />
+                                        </div>
+                                        <div>
+                                            <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #6366f1;"><?php echo Olama_School_Helpers::translate('Required Shortcode'); ?></label>
+                                            <input type="text" name="olama_school_settings[fg_services][${serviceIndex}][shortcode]" value="" class="widefat" style="border-color: #a5b4fc; background: #f5f3ff;" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        var $row = $(template);
+                        $('#fg-services-container').append($row);
+                        
+                        // Force layout then animate
+                        setTimeout(function() {
+                            $row.css({ 'opacity': '1', 'transform': 'translateY(0)' });
+                        }, 50);
+                        
+                        serviceIndex++;
+                    });
+                    
+                    $(document).on('click', '.remove-fg-service', function() {
+                        if (confirm('<?php echo esc_js(Olama_School_Helpers::translate('Are you sure you want to remove this service?')); ?>')) {
+                            $(this).closest('.fg-service-row').fadeOut(300, function() {
+                                $(this).remove();
+                            });
+                        }
+                    });
+                });
+            </script>
+        </form>
+        <?php
     }
 }
