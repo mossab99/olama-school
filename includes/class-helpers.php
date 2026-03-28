@@ -864,6 +864,7 @@ class Olama_School_Helpers
         'Assign a cleaner to each floor for automatic selection during checkup.' => 'تعيين عامل لكل طابق للاختيار التلقائي أثناء التفتيش.',
         'Assign' => 'تعيين',
         '%d of %d slots checked' => 'تم فحص %d من أصل %d فترة',
+        'Configure Cleaning Settings' => 'إعدادات وحدة النظافة',
         'Please complete the setup to start using the cleaning module.' => 'يرجى إكمال الإعدادات للبدء باستخدام وحدة النظافة.',
         'Not Assigned' => 'غير محدد',
         'Plan Load Management' => 'إدارة حدود الخطط الأسبوعية',

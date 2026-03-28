@@ -567,7 +567,7 @@ if ($section_id && $active_year && $can_manage_attendance) {
             $config_section = isset($_GET['section']) ? sanitize_text_field($_GET['section']) : 'items';
             
             // Manage Setup Access
-            $can_configure = current_user_can('manage_options');
+            $can_configure = Olama_School_Permissions::can('olama_configure_cleaning');
             
             if ($view === 'config' && $can_configure): 
                 include OLAMA_SCHOOL_PATH . 'includes/admin-views/follow-up-cleaning-config.php';
