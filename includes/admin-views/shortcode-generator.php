@@ -70,6 +70,9 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 <option value="supervisor_visits">
                     <?php _e('Supervisor Visits', 'olama-school'); ?>
                 </option>
+                <option value="family_number_lookup">
+                    <?php echo Olama_School_Helpers::translate('Family Number Lookup'); ?>
+                </option>
             </select>
         </div>
         <div>
@@ -219,6 +222,13 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 $('#gen-schedule-type-wrapper').hide();
             } else if (type === 'family_performance' || type === 'online_exams' || type === 'logged_teacher_schedule' || type === 'logged_user_shifts' || type === 'supervisor_visits') {
                 $('#gen-semester').closest('div').show();
+                $('#gen-grade').closest('div').hide();
+                $('#gen-section').closest('div').hide();
+                $('#gen-week-wrapper').hide();
+                $('#gen-exam-wrapper').hide();
+                $('#gen-schedule-type-wrapper').hide();
+            } else if (type === 'family_number_lookup') {
+                $('#gen-semester').closest('div').hide();
                 $('#gen-grade').closest('div').hide();
                 $('#gen-section').closest('div').hide();
                 $('#gen-week-wrapper').hide();

@@ -1711,6 +1711,15 @@ class Olama_School_Helpers
         'Reject' => 'رفض',
         'Part' => 'جزء',
         'Lesson' => 'درس',
+        'Family Number Lookup' => 'البحث عن رقم العائلة',
+        'Find Your Family Number' => 'اعرف رقم عائلتك',
+        'Enter your name to retrieve your portal access number' => 'أدخل اسمك لاسترجاع رقم الدخول الخاص بك',
+        'Parent Name' => 'اسم ولي الأمر',
+        'Start typing your name...' => 'ابدأ بكتابة اسمك...',
+        'Your Family Number is:' => 'رقم عائلتك هو:',
+        'Copy Number' => 'نسخ الرقم',
+        'Copied!' => 'تم النسخ!',
+        'Search term too short' => 'كلمة البحث قصيرة جداً',
         );
 
         return $map[$text] ?? $text;

@@ -28,6 +28,7 @@ class Olama_School_Shortcodes
         add_shortcode('olama_family_gateway', array($this, 'render_family_gateway_shortcode'));
         add_shortcode('olama_online_exams', array($this, 'render_online_exams_shortcode'));
         add_shortcode('olama_supervisor_visits', array($this, 'render_supervisor_visit_schedule_shortcode'));
+        add_shortcode('olama_family_number_lookup', array($this, 'render_family_number_lookup_shortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_shortcode_assets'));
     }
 
@@ -4816,5 +4817,305 @@ class Olama_School_Shortcodes
         }
 
         return '<div class="olama-error">' . Olama_School_Helpers::translate('Exam Engine plugin is not active.') . '</div>';
+    }
+
+    /**
+     * Shortcode: [olama_family_number_lookup]
+     * Provides a form for parents to find their family number by name.
+     */
+    public function render_family_number_lookup_shortcode($atts)
+    {
+        ob_start();
+?>
+        <div class="olama-family-lookup-wrapper" dir="rtl">
+            <div class="lookup-card">
+                <div class="lookup-header">
+                    <span class="material-icons lookup-icon">person_search</span>
+                    <h2><?php echo Olama_School_Helpers::translate('Find Your Family Number'); ?></h2>
+                    <p><?php echo Olama_School_Helpers::translate('Enter your name to retrieve your portal access number'); ?></p>
+                </div>
+
+                <div class="lookup-body">
+                    <div class="input-group">
+                        <label for="family_name_search"><?php echo Olama_School_Helpers::translate('Parent Name'); ?></label>
+                        <div class="search-input-wrapper">
+                            <input type="text" id="family_name_search" autocomplete="off" placeholder="<?php echo Olama_School_Helpers::translate('Start typing your name...'); ?>">
+                            <div id="lookup-suggestions" class="suggestions-dropdown" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <div id="lookup-result" class="lookup-result-area" style="display: none;">
+                        <div class="result-label"><?php echo Olama_School_Helpers::translate('Your Family Number is:'); ?></div>
+                        <div class="result-number"></div>
+                        <button type="button" class="copy-result-btn" id="copy-family-number">
+                            <span class="material-icons">content_copy</span>
+                            <?php echo Olama_School_Helpers::translate('Copy Number'); ?>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                .olama-family-lookup-wrapper {
+                    font-family: 'Tajawal', 'Inter', sans-serif;
+                    max-width: 500px;
+                    margin: 20px auto;
+                }
+
+                .lookup-card {
+                    background: #ffffff;
+                    border-radius: 16px;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+                    padding: 30px;
+                    border: 1px solid #edf2f7;
+                }
+
+                .lookup-header {
+                    text-align: center;
+                    margin-bottom: 25px;
+                }
+
+                .lookup-icon {
+                    font-size: 48px;
+                    color: #2563eb;
+                    margin-bottom: 15px;
+                }
+
+                .lookup-header h2 {
+                    margin: 0 0 8px 0;
+                    color: #1e293b;
+                    font-size: 1.4rem;
+                }
+
+                .lookup-header p {
+                    margin: 0;
+                    color: #64748b;
+                    font-size: 0.95rem;
+                }
+
+                .input-group {
+                    margin-bottom: 20px;
+                }
+
+                .input-group label {
+                    display: block;
+                    font-weight: 600;
+                    color: #475569;
+                    margin-bottom: 10px;
+                    font-size: 0.9rem;
+                }
+
+                .search-input-wrapper {
+                    position: relative;
+                }
+
+                #family_name_search {
+                    width: 100%;
+                    padding: 12px 15px;
+                    border: 2px solid #e2e8f0;
+                    border-radius: 10px;
+                    font-size: 1rem;
+                    transition: all 0.2s;
+                    box-sizing: border-box;
+                }
+
+                #family_name_search:focus {
+                    outline: none;
+                    border-color: #2563eb;
+                    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+                }
+
+                .suggestions-dropdown {
+                    position: absolute;
+                    top: 100%;
+                    left: 0;
+                    right: 0;
+                    background: white;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 10px;
+                    margin-top: 5px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    z-index: 100;
+                    max-height: 200px;
+                    overflow-y: auto;
+                }
+
+                .suggestion-item {
+                    padding: 10px 15px;
+                    cursor: pointer;
+                    border-bottom: 1px solid #f1f5f9;
+                    transition: background 0.2s;
+                }
+
+                .suggestion-item:last-child {
+                    border-bottom: none;
+                }
+
+                .suggestion-item:hover {
+                    background: #f8fafc;
+                }
+
+                .suggestion-info {
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .suggestion-name {
+                    font-weight: 600;
+                    color: #1e293b;
+                    font-size: 0.9rem;
+                }
+
+                .suggestion-uid {
+                    font-size: 0.8rem;
+                    color: #64748b;
+                    margin-top: 2px;
+                }
+
+                .lookup-result-area {
+                    background: #f0f7ff;
+                    border: 2px dashed #2563eb;
+                    border-radius: 12px;
+                    padding: 20px;
+                    text-align: center;
+                    margin-top: 10px;
+                    animation: olamaSlideUp 0.3s ease-out;
+                }
+
+                @keyframes olamaSlideUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(10px);
+                    }
+
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                .result-label {
+                    color: #2563eb;
+                    font-weight: 700;
+                    margin-bottom: 10px;
+                    font-size: 1rem;
+                }
+
+                .result-number {
+                    font-size: 2rem;
+                    font-weight: 800;
+                    color: #1e293b;
+                    margin-bottom: 15px;
+                    letter-spacing: 2px;
+                }
+
+                .copy-result-btn {
+                    background: white;
+                    border: 1px solid #cbd5e1;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    color: #475569;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s;
+                }
+
+                .copy-result-btn:hover {
+                    background: #f8fafc;
+                    border-color: #94a3b8;
+                }
+
+                .copy-result-btn .material-icons {
+                    font-size: 18px;
+                }
+            </style>
+
+            <script>
+                jQuery(document).ready(function($) {
+                    var $input = $('#family_name_search');
+                    var $suggestions = $('#lookup-suggestions');
+                    var $resultArea = $('#lookup-result');
+                    var searchTimeout;
+
+                    $input.on('input', function() {
+                        var term = $(this).val();
+
+                        clearTimeout(searchTimeout);
+
+                        if (term.length < 2) {
+                            $suggestions.hide();
+                            return;
+                        }
+
+                        searchTimeout = setTimeout(function() {
+                            $.ajax({
+                                url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                                data: {
+                                    action: 'olama_lookup_family_number',
+                                    search: term
+                                },
+                                success: function(response) {
+                                    if (response.success && response.data.length > 0) {
+                                        var html = '';
+                                        $.each(response.data, function(i, item) {
+                                            html += '<div class="suggestion-item" data-uid="' + item.family_uid + '" data-name="' + item.family_name + '">';
+                                            html += '<div class="suggestion-info">';
+                                            html += '<span class="suggestion-name">' + item.family_name + '</span>';
+                                            html += '<span class="suggestion-uid">' + item.family_uid + '</span>';
+                                            html += '</div></div>';
+                                        });
+                                        $suggestions.html(html).show();
+                                    } else {
+                                        $suggestions.hide();
+                                    }
+                                }
+                            });
+                        }, 300);
+                    });
+
+                    $(document).on('click', '.suggestion-item', function() {
+                        var uid = $(this).data('uid');
+                        var name = $(this).data('name');
+
+                        $input.val(name);
+                        $suggestions.hide();
+
+                        $resultArea.find('.result-number').text(uid);
+                        $resultArea.show();
+                    });
+
+                    // Hide suggestions when clicking outside
+                    $(document).on('click', function(e) {
+                        if (!$(e.target).closest('.search-input-wrapper').length) {
+                            $suggestions.hide();
+                        }
+                    });
+
+                    $('#copy-family-number').on('click', function() {
+                        var num = $resultArea.find('.result-number').text();
+                        var $temp = $('<input>');
+                        $('body').append($temp);
+                        $temp.val(num).select();
+                        document.execCommand('copy');
+                        $temp.remove();
+
+                        var $btn = $(this);
+                        var originalHtml = $btn.html();
+                        $btn.html('<span class="material-icons">check</span> <?php echo Olama_School_Helpers::translate('Copied!'); ?>');
+                        $btn.css('color', '#10b981');
+                        
+                        setTimeout(function() {
+                            $btn.html(originalHtml);
+                            $btn.css('color', '#475569');
+                        }, 2000);
+                    });
+                });
+            </script>
+        </div>
+<?php
+        return ob_get_clean();
     }
 }

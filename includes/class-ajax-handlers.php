@@ -94,6 +94,10 @@ class Olama_School_Ajax_Handlers
         add_action('wp_ajax_olama_lp_get_units', array($this, 'lp_get_units'));
         add_action('wp_ajax_olama_lp_get_timeline_lessons', array($this, 'lp_get_timeline_lessons'));
         add_action('wp_ajax_olama_lp_get_teacher_subjects', array($this, 'lp_get_teacher_subjects'));
+
+        // Family Lookup AJAX Handler
+        add_action('wp_ajax_olama_lookup_family_number', array($this, 'lookup_family_number'));
+        add_action('wp_ajax_nopriv_olama_lookup_family_number', array($this, 'lookup_family_number'));
     }
 
     // ==========================================
@@ -1592,5 +1596,32 @@ class Olama_School_Ajax_Handlers
                 'academic_year_id' => $academic_year_id
             )
         ));
+    }
+
+    /**
+     * AJAX handler for looking up family number by name or UID
+     */
+    public function lookup_family_number()
+    {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        global $wpdb;
+
+        $search = isset($_REQUEST['search']) ? sanitize_text_field($_REQUEST['search']) : '';
+        if (strlen($search) < 2) {
+            wp_send_json_error(array('message' => Olama_School_Helpers::translate('Search term too short')));
+        }
+
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT family_name, family_uid FROM {$wpdb->prefix}olama_families 
+             WHERE family_name LIKE %s OR family_uid LIKE %s 
+             ORDER BY family_name ASC LIMIT 10",
+            '%' . $wpdb->esc_like($search) . '%',
+            '%' . $wpdb->esc_like($search) . '%'
+        ));
+
+        wp_send_json_success($results);
     }
 }
