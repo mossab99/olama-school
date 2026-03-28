@@ -4749,7 +4749,7 @@ class Olama_School_Admin
     /**
      * Get teaching schedule for a specific day
      */
-    public static function get_teacher_daily_schedule($teacher_id, $day_name = null)
+    public static function get_teacher_daily_schedule($teacher_id, $day_name = null, $selected_date = null)
     {
         global $wpdb;
 
@@ -4757,7 +4757,6 @@ class Olama_School_Admin
             $day_name = date('l'); // Today's English day name
         }
 
-        $active_year = Olama_School_Academic::get_active_year();
         if (!$selected_date) {
             $selected_date = date('Y-m-d'); // Today's date
         }

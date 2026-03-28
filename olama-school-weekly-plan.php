@@ -77,7 +77,7 @@ function olama_school_cron_schedules($schedules)
 {
     $schedules['weekly'] = array(
         'interval' => 604800, // 7 days in seconds
-        'display' => __('Once Weekly', 'olama-school'),
+        'display' => 'Once Weekly', // Label for UI
     );
     return $schedules;
 }
@@ -176,7 +176,7 @@ function olama_school_init()
         error_log('[OLAMA CRON] Self-healed: re-scheduled ' . $recurrence . ' backup event.');
     }
 }
-add_action('plugins_loaded', 'olama_school_init');
+add_action('init', 'olama_school_init', 5);
 
 /**
  * Check for DB Reset Action
