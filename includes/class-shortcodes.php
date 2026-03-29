@@ -4413,7 +4413,7 @@ class Olama_School_Shortcodes
             array('color' => '#db2777', 'gradient' => 'linear-gradient(135deg, #db2777, #f472b6)'),
         );
 
-        $configured_services = $settings['fg_services'] ?? array();
+        $configured_services = $settings['fg_services'] ?? Olama_School_Helpers::get_default_gateway_services();
         $services = array();
         $is_ar = Olama_School_Helpers::is_arabic();
 
@@ -4438,7 +4438,10 @@ class Olama_School_Shortcodes
                 if (!empty($sc)) {
                     // Extract tag to check existence
                     $tag = preg_replace('/\[([^\s\]]+).*\]/', '$1', $sc);
-                    if (!shortcode_exists($tag)) {
+                    // On some production servers, shortcode_exists might be unreliable if called too early or in specific contexts
+                    // We only skip if it's definitely NOT registered AND not one of our known internal tags
+                    $our_tags = ['olama_family_performance', 'olama_online_exams', 'olama_weekly_plan', 'olama_exam_report', 'olama_online_exams_schedule'];
+                    if (!shortcode_exists($tag) && !in_array($tag, $our_tags)) {
                         continue;
                     }
 

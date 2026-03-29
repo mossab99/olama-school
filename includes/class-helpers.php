@@ -11,6 +11,43 @@ if (!defined('ABSPATH')) {
 class Olama_School_Helpers
 {
     /**
+     * Get default services for the Family Gateway
+     */
+    public static function get_default_gateway_services()
+    {
+        return array(
+            array(
+                'title_ar' => 'تقرير التقييم',
+                'title_en' => 'Evaluation Report',
+                'url' => '/family-evaluation/',
+                'icon' => 'assignment',
+                'shortcode' => '[olama_family_performance]'
+            ),
+            array(
+                'title_ar' => 'الاختبارات الإلكترونية',
+                'title_en' => 'Online Exams',
+                'url' => '/online-exams/',
+                'icon' => 'quiz',
+                'shortcode' => '[olama_online_exams]'
+            ),
+            array(
+                'title_ar' => 'الخطة الأسبوعية',
+                'title_en' => 'Weekly Plan',
+                'url' => '/weekly-plan/',
+                'icon' => 'event_note',
+                'shortcode' => '[olama_weekly_plan]'
+            ),
+            array(
+                'title_ar' => 'جدول الاختبارات',
+                'title_en' => 'Exam Schedule',
+                'url' => '/exam-schedule/',
+                'icon' => 'calendar_month',
+                'shortcode' => '[olama_exam_report]'
+            )
+        );
+    }
+
+    /**
      * Get user display name safely
      */
     public static function get_user_display_name($user_id)

@@ -5563,37 +5563,7 @@ class Olama_School_Admin
         $settings = get_option('olama_school_settings', array());
         $is_admin = current_user_can('manage_options');
 
-        // Default Services if none exist
-        $default_services = array(
-            array(
-                'title_ar' => 'تقرير التقييم',
-                'title_en' => 'Evaluation Report',
-                'url' => '/family-evaluation/',
-                'icon' => 'assignment',
-                'shortcode' => '[olama_family_performance]'
-            ),
-            array(
-                'title_ar' => 'الاختبارات الإلكترونية',
-                'title_en' => 'Online Exams',
-                'url' => '/online-exams/',
-                'icon' => 'quiz',
-                'shortcode' => '[olama_online_exams]'
-            ),
-            array(
-                'title_ar' => 'الخطة الأسبوعية',
-                'title_en' => 'Weekly Plan',
-                'url' => '/weekly-plan/',
-                'icon' => 'event_note',
-                'shortcode' => '[olama_weekly_plan]'
-            ),
-            array(
-                'title_ar' => 'جدول الاختبارات',
-                'title_en' => 'Exam Schedule',
-                'url' => '/exam-schedule/',
-                'icon' => 'calendar_month',
-                'shortcode' => '[olama_exam_report]'
-            )
-        );
+        $default_services = Olama_School_Helpers::get_default_gateway_services();
 
         $services = $settings['fg_services'] ?? $default_services;
         ?>
