@@ -741,44 +741,63 @@ class Olama_School_Shortcodes
             'exam' => '', // semester_exam_id
         ), $atts, 'olama_exam_report');
 
+        $student_uid = sanitize_text_field($_GET['student_uid'] ?? '');
+        $student_context = null;
         $grade_id = intval($atts['grade']);
-        if (!$grade_id && isset($_GET['grade_id'])) {
-            $grade_id = intval($_GET['grade_id']);
+
+        // 1. Try resolving via Student Context (Direct Resolver)
+        if ($student_uid) {
+            $student_context = Olama_School_Exam::get_student_specific_exams($student_uid);
+            if ($student_context) {
+                $grade_id = $student_context['grade_id'];
+                $year_id = $student_context['year_id'];
+                $semester_id = $student_context['semester_id'];
+                $semester_exam_id = $student_context['semester_exam_id'];
+                $exams = $student_context['exams'];
+                error_log("Olama: Resolved Student Context for $student_uid (Grade: $grade_id)");
+            }
         }
 
-        if (!$grade_id) {
-            return '<div class="olama-error">' . Olama_School_Helpers::translate('Please specify a valid grade ID in the shortcode.') . '</div>';
-        }
+        // 2. Fallback to standard Grade/Year/Semester resolution if no student context
+        if (!$student_context) {
+            if (!$grade_id && isset($_GET['grade_id'])) {
+                $grade_id = intval($_GET['grade_id']);
+            }
 
-        // Resolve Year ID
-        $year_id = $atts['year'];
-        if ($year_id === 'active' || empty($year_id)) {
-            $active_year = Olama_School_Academic::get_active_year();
-            $year_id = $active_year ? $active_year->id : 0;
-        } else {
-            $year_id = intval($year_id);
-        }
+            if (!$grade_id) {
+                return '<div class="olama-error">' . Olama_School_Helpers::translate('Please specify a valid grade ID in the shortcode.') . '</div>';
+            }
 
-        // Resolve Semester ID
-        $semester_id = $atts['semester'];
-        if ($semester_id === 'active' || empty($semester_id)) {
-            $active_sem = Olama_School_Academic::get_active_semester($year_id);
-            $semester_id = $active_sem ? $active_sem->id : 0;
-        } else {
-            $semester_id = intval($semester_id);
-        }
+            // Resolve Year ID
+            $year_id = $atts['year'];
+            if ($year_id === 'active' || empty($year_id)) {
+                $active_year = Olama_School_Academic::get_active_year();
+                $year_id = $active_year ? $active_year->id : 0;
+            } else {
+                $year_id = intval($year_id);
+            }
 
-        $semester_exam_id = $atts['exam'];
-        if ($semester_exam_id === 'active') {
-            $active_exam = Olama_School_Academic::get_active_exam($semester_id);
-            $semester_exam_id = $active_exam ? $active_exam->id : 0;
-        } else {
-            $semester_exam_id = intval($semester_exam_id);
-        }
+            // Resolve Semester ID
+            $semester_id = $atts['semester'];
+            if ($semester_id === 'active' || empty($semester_id)) {
+                $active_sem = Olama_School_Academic::get_active_semester($year_id);
+                $semester_id = $active_sem ? $active_sem->id : 0;
+            } else {
+                $semester_id = intval($semester_id);
+            }
 
-        error_log("Olama: Filters - Year: $year_id, Sem: $semester_id, Grade: $grade_id, Exam: $semester_exam_id");
-        // Fetch Approved Exams
-        $exams = Olama_School_Exam::get_exams($year_id, $semester_id, $grade_id, 0, $semester_exam_id);
+            $semester_exam_id = $atts['exam'];
+            if ($semester_exam_id === 'active') {
+                $active_exam = Olama_School_Academic::get_active_exam($semester_id);
+                $semester_exam_id = $active_exam ? $active_exam->id : 0;
+            } else {
+                $semester_exam_id = intval($semester_exam_id);
+            }
+
+            error_log("Olama: Filters - Year: $year_id, Sem: $semester_id, Grade: $grade_id, Exam: $semester_exam_id");
+            // Fetch Approved Exams
+            $exams = Olama_School_Exam::get_exams($year_id, $semester_id, $grade_id, 0, $semester_exam_id);
+        }
 
         // Filter for approved/published only if not admin
         $is_admin = Olama_School_Permissions::can('olama_view_reports_summary');
@@ -787,8 +806,12 @@ class Olama_School_Shortcodes
         });
 
         if (empty($approved_exams)) {
+            $msg = Olama_School_Helpers::translate('No approved exams found for the selected criteria.');
+            if ($student_context) {
+                $msg = sprintf(Olama_School_Helpers::translate('No approved exams found for student: %s'), $student_context['student_name']);
+            }
             return '<div class="olama-no-plans" style="padding: 30px; background: #fff1f2; border: 1px solid #fecaca; border-radius: 8px; color: #b91c1c; text-align: center; font-weight: 600;">' .
-                Olama_School_Helpers::translate('No approved exams found for the selected criteria.') .
+                $msg .
                 '</div>';
         }
 
@@ -851,11 +874,23 @@ class Olama_School_Shortcodes
             <!-- Illustrated Header -->
             <div class="plan-header-v2" style="background: linear-gradient(145deg, #818cf8 0%, #6366f1 100%);">
                 <div class="header-content">
-                    <h1 class="header-title" style="color: #ffffff;">
-                        <?php echo Olama_School_Helpers::translate('جدول الاختبارات'); ?>
+                    <h1 class="header-title" style="color: #ffffff; font-size: 2.2rem; margin-bottom: 15px;">
+                        <?php 
+                        if ($student_context) {
+                            echo sprintf(Olama_School_Helpers::translate('Exam Schedule for %s'), esc_html($student_context['student_name']));
+                        } else {
+                            echo Olama_School_Helpers::translate('Exam Schedule'); 
+                        }
+                        ?>
                     </h1>
-                    <div class="header-subtitle">
-                        <?php echo $grade ? esc_html($grade->grade_name) : ''; ?>
+                    <div class="header-subtitle" style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(5px); padding: 8px 20px; border-radius: 50px; display: inline-flex; align-items: center; gap: 10px; font-weight: 500;">
+                        <?php if ($student_context): ?>
+                            <span style="font-size: 1.1rem; border-right: 1px solid rgba(255,255,255,0.3); padding-right: 10px;"><?php echo esc_html($grade->grade_name); ?></span>
+                        <?php else: ?>
+                            <span style="font-size: 1.1rem; border-right: 1px solid rgba(255,255,255,0.3); padding-right: 10px;"><?php echo $grade ? esc_html($grade->grade_name) : ''; ?></span>
+                        <?php endif; ?>
+                        
+                        <span style="opacity: 0.9;"><?php echo esc_html($semester_exam ? $semester_exam->exam_name : ''); ?></span>
                     </div>
                 </div>
                 <!-- Academic Year & Info Bar -->

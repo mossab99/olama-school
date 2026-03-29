@@ -10,6 +10,69 @@ if (!defined('ABSPATH')) {
 class Olama_School_Exam
 {
     /**
+     * Get student specific exams (Direct Resolver)
+     */
+    public static function get_student_specific_exams($student_uid)
+    {
+        global $wpdb;
+
+        // 1. Get active year
+        $active_year = Olama_School_Academic::get_active_year();
+        if (!$active_year) return null;
+        $year_id = $active_year->id;
+
+        // 2. Get student enrollment context
+        $enrollment = $wpdb->get_row($wpdb->prepare(
+            "SELECT e.*, s.student_name, sec.grade_id 
+             FROM {$wpdb->prefix}olama_student_enrollment e 
+             JOIN {$wpdb->prefix}olama_students s ON e.student_uid = s.student_uid
+             JOIN {$wpdb->prefix}olama_sections sec ON e.section_id = sec.id
+             WHERE s.student_uid = %s AND e.academic_year_id = %d",
+            $student_uid, $year_id
+        ));
+
+        if (!$enrollment) return null;
+
+        // 3. Get active semester
+        $active_sem = Olama_School_Academic::get_active_semester($year_id);
+        if (!$active_sem) return null;
+        $semester_id = $active_sem->id;
+
+        // 4. Get active Master Exam (if any)
+        $active_master = Olama_School_Academic::get_active_exam($semester_id);
+        $semester_exam_id = $active_master ? $active_master->id : 0;
+
+        // 5. Fetch exams for this grade
+        $all_grade_exams = self::get_exams($year_id, $semester_id, $enrollment->grade_id, 0, $semester_exam_id);
+
+        // 6. Filter by section subjects (ensure student actually takes these subjects)
+        $section_subjects = $wpdb->get_col($wpdb->prepare(
+            "SELECT DISTINCT subject_id FROM {$wpdb->prefix}olama_teacher_assignments 
+             WHERE section_id = %d AND academic_year_id = %d",
+            $enrollment->section_id, $year_id
+        ));
+
+        if (!empty($section_subjects)) {
+            $filtered_exams = array_filter($all_grade_exams, function($e) use ($section_subjects) {
+                return in_array($e->subject_id, $section_subjects);
+            });
+            $exams = array_values($filtered_exams);
+        } else {
+            $exams = $all_grade_exams;
+        }
+
+        return array(
+            'student_name' => $enrollment->student_name,
+            'grade_id'     => $enrollment->grade_id,
+            'section_id'   => $enrollment->section_id,
+            'year_id'      => $year_id,
+            'semester_id'  => $semester_id,
+            'semester_exam_id' => $semester_exam_id,
+            'exams'        => $exams
+        );
+    }
+
+    /**
      * Get exams based on filters
      */
     public static function get_exams($year_id, $semester_id, $grade_id, $subject_id = 0, $semester_exam_id = 0)

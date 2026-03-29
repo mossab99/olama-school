@@ -1366,6 +1366,8 @@ class Olama_School_Helpers
         'Exam Name' => 'اسم الامتحان',
         'Delete this exam?' => 'حذف هذا الامتحان؟',
         'Exam Schedule' => 'جدول الامتحانات',
+        'Exam Schedule for %s' => 'جدول الاختبارات لـ: %s',
+        'No approved exams found for student: %s' => 'لا توجد اختبارات معتمدة للطالب: %s',
         'Evaluation' => 'التقييم',
         'Material' => 'المادة',
         'Date' => 'التاريخ',
