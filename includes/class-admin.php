@@ -835,12 +835,10 @@ class Olama_School_Admin
     }
 
     /**
-     * AJAX: Restore Database (Uses the uploaded temporary file)
+     * AJAX: Restore Database (Multi-Stage Processing)
      */
     public function ajax_restore_database()
     {
-        error_log('[OLAMA RESTORE] ajax_restore_database called (Chunked Mode)');
-
         $nonce = $_POST['nonce'] ?? '';
         if (!wp_verify_nonce($nonce, 'olama_backup_action')) {
             wp_send_json_error(__('Security check failed.', 'olama-school'));
@@ -851,26 +849,46 @@ class Olama_School_Admin
         }
 
         $upload_id = sanitize_key($_POST['upload_id'] ?? '');
+        $step = sanitize_key($_POST['step'] ?? 'init');
         $temp_file = Olama_School_Backup::get_backup_storage_dir() . 'tmp/restore_' . $upload_id . '.json';
 
         if (!$upload_id || !file_exists($temp_file)) {
             wp_send_json_error(__('Restoration file not found on server.', 'olama-school'));
         }
 
-        // Read the file from disk (Memory safe if we were using a streamer, but here we still read it)
+        // Increase limits for processing
+        @set_time_limit(300);
+        @ini_set('memory_limit', '1024M');
+
         $json_data = file_get_contents($temp_file);
 
-        // Call the single, robust restore function
-        $result = Olama_School_Backup::restore_backup($json_data);
+        if ($step === 'get_index') {
+            $index = Olama_School_Backup::get_restore_index($json_data);
+            if (is_wp_error($index)) {
+                wp_send_json_error($index->get_error_message());
+            }
+            wp_send_json_success($index);
+        } elseif ($step === 'restore_table') {
+            $part_id = $_POST['part_id'] ?? '';
+            $table_name = $_POST['table_name'] ?? '';
 
-        // Cleanup temporary file
-        @unlink($temp_file);
+            if (!$table_name) {
+                wp_send_json_error(__('Table name missing.', 'olama-school'));
+            }
 
-        if (is_wp_error($result)) {
-            wp_send_json_error($result->get_error_message());
+            $result = Olama_School_Backup::restore_single_table($json_data, $part_id, $table_name);
+
+            if (is_wp_error($result)) {
+                wp_send_json_error($result->get_error_message());
+            }
+
+            wp_send_json_success(sprintf(__('Restored table %s', 'olama-school'), $table_name));
+        } elseif ($step === 'finalize') {
+            @unlink($temp_file);
+            wp_send_json_success(__('Restoration completed successfully!', 'olama-school'));
         }
 
-        wp_send_json_success(__('Database restored successfully!', 'olama-school'));
+        wp_send_json_error(__('Invalid step.', 'olama-school'));
     }
 
 
@@ -1112,26 +1130,75 @@ class Olama_School_Admin
                     }
 
                     function startRestore() {
-                        $progressBar.css('width', '100%').css('background', '#2271b1');
-                        $statusText.text('<?php _e('Restoring database, please wait...', 'olama-school'); ?>');
+                        addLog('<?php _e('Analyzing backup file...', 'olama-school'); ?>');
+                        $statusText.text('<?php _e('Preparing database restoration...', 'olama-school'); ?>');
 
                         $.post(ajaxurl, {
                             action: 'olama_initiate_restore',
                             upload_id: upload_id,
+                            step: 'get_index',
                             nonce: nonce
                         }, function (response) {
                             if (response.success) {
-                                $statusText.text('<?php _e('Restoration Complete!', 'olama-school'); ?>');
-                                addLog(response.data, 'success');
-                                alert(response.data);
-                                location.reload();
+                                const index = response.data;
+                                addLog('<?php _e('Backup analysis complete.', 'olama-school'); ?> ' + index.length + ' tables found.', 'success');
+                                restoreTables(index, 0);
                             } else {
-                                addLog('<?php _e('Restoration Error:', 'olama-school'); ?> ' + response.data, 'error');
+                                addLog('<?php _e('Index Error:', 'olama-school'); ?> ' + response.data, 'error');
                                 resetUI();
                             }
                         }).fail(function () {
-                            addLog('<?php _e('Server timeout or crash during restoration.', 'olama-school'); ?>', 'error');
+                            addLog('<?php _e('Server timeout during analysis.', 'olama-school'); ?>', 'error');
                             resetUI();
+                        });
+                    }
+
+                    function restoreTables(index, i) {
+                        if (i >= index.length) {
+                            finalizeRestore();
+                            return;
+                        }
+
+                        const item = index[i];
+                        const progress = Math.round((i / index.length) * 100);
+                        $progressBar.css('width', progress + '%').css('background', '#2271b1');
+                        $statusText.text('<?php _e('Restoring table:', 'olama-school'); ?> ' + item.table + ' (' + (i + 1) + '/' + index.length + ')');
+
+                        $.post(ajaxurl, {
+                            action: 'olama_initiate_restore',
+                            upload_id: upload_id,
+                            step: 'restore_table',
+                            part_id: item.part,
+                            table_name: item.table,
+                            nonce: nonce
+                        }, function (response) {
+                            if (response.success) {
+                                addLog(response.data);
+                                restoreTables(index, i + 1);
+                            } else {
+                                addLog('<?php _e('Error in table', 'olama-school'); ?> ' + item.table + ': ' + response.data, 'error');
+                                resetUI();
+                            }
+                        }).fail(function () {
+                            // Automatically retry once if it's a network glitch
+                            addLog('<?php _e('Network glitch on table:', 'olama-school'); ?> ' + item.table + '. Retrying...', 'error');
+                            setTimeout(() => restoreTables(index, i), 1000);
+                        });
+                    }
+
+                    function finalizeRestore() {
+                        $progressBar.css('width', '100%');
+                        $statusText.text('<?php _e('Finalizing restoration...', 'olama-school'); ?>');
+
+                        $.post(ajaxurl, {
+                            action: 'olama_initiate_restore',
+                            upload_id: upload_id,
+                            step: 'finalize',
+                            nonce: nonce
+                        }, function (response) {
+                            addLog(response.data, 'success');
+                            alert(response.data);
+                            location.reload();
                         });
                     }
 

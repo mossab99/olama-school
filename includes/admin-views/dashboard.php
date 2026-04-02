@@ -38,6 +38,7 @@ if ($is_teacher) {
     $teacher_progress = Olama_School_Admin::get_teacher_subjects_progress($user_id);
     $teacher_shifts = Olama_School_Shifts::get_teacher_weekly_shifts($user_id);
     $upcoming_visits = \Olama\Services\SupervisorVisitService::get_teacher_upcoming_visits($user_id);
+    $recent_evaluations = \Olama\Services\SupervisorVisitService::get_teacher_completed_visits($user_id);
 }
 
 // Recent Activity
@@ -606,6 +607,46 @@ $cleaning_stats = Olama_School_Admin::get_cleaning_dashboard_stats($cleaning_dat
                 </div>
             <?php endif; ?>
 
+            <!-- Recent Evaluations (New) -->
+            <?php if ($is_teacher && !empty($recent_evaluations)): ?>
+                <div style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px;">
+                    <h2 style="margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #f0f0f1; display: flex; align-items: center; gap: 10px;">
+                        <span class="dashicons dashicons-analytics" style="color: #10b981;"></span>
+                        <?php _e('Recent Evaluation Reports', 'olama-school'); ?>
+                    </h2>
+                    <div style="margin-top: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <?php foreach ($recent_evaluations as $eval): ?>
+                                <div style="padding: 15px; background: #f9f9f9; border-radius: 8px; border-right: 4px solid #10b981;">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                        <div style="font-weight: 700; color: #1d2327;">
+                                            <?php echo date('Y-m-d', strtotime($eval->visit_date)); ?>
+                                        </div>
+                                        <div style="background: #e7ffef; color: #00a32a; font-size: 0.85em; padding: 4px 10px; border-radius: 12px; font-weight: 800;">
+                                            <?php echo number_format($eval->final_score, 1); ?>%
+                                        </div>
+                                    </div>
+                                    <div style="margin-bottom: 10px;">
+                                        <span style="font-size: 0.9em; font-weight: 600; color: #1e293b;"><?php echo esc_html($eval->subject_name); ?></span>
+                                        <div style="font-size: 0.8em; color: #64748b;"><?php echo esc_html($eval->grade_name . ' - ' . $eval->section_name); ?></div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="font-size: 0.8em; color: #64748b;">
+                                            <?php printf(__('By %s', 'olama-school'), esc_html($eval->supervisor_name)); ?>
+                                        </div>
+                                        <button type="button" class="button button-small olama-view-teacher-report" 
+                                                data-id="<?php echo $eval->id; ?>" 
+                                                style="color:#10b981; border-color:#10b981; background:transparent; font-weight: 600;">
+                                            <?php _e('View Report', 'olama-school'); ?>
+                                        </button>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <!-- My Shifts (New Feature) -->
             <?php if ($is_teacher && !empty($teacher_shifts)): ?>
                 <div style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
@@ -921,6 +962,78 @@ $cleaning_stats = Olama_School_Admin::get_cleaning_dashboard_stats($cleaning_dat
         background: #fffcfc;
     }
 </style>
+
+<?php if ($is_teacher): ?>
+<!-- Teacher Evaluation Report Modal -->
+<div id="olama-teacher-report-modal" class="olama-modal" style="display:none;">
+    <div class="olama-modal-content" style="max-width: 950px; width: 95%; max-height: 90vh; overflow-y: auto;">
+        <div class="olama-modal-header" style="position: sticky; top: 0; background: #fff; z-index: 10; border-bottom: 1px solid #e2e8f0; padding: 15px 25px;">
+            <h3 style="margin:0; font-size: 1.25em; display: flex; align-items: center; gap: 10px;">
+                <span class="dashicons dashicons-analytics" style="color: #10b981;"></span>
+                <?php _e('Supervisor Evaluation Report', 'olama-school'); ?>
+            </h3>
+            <span class="olama-modal-close" style="cursor:pointer; font-size: 24px; color: #64748b;">&times;</span>
+        </div>
+        <div class="olama-modal-body" id="olama-teacher-report-content" style="padding: 25px;">
+            <div style="text-align:center; padding: 40px;">
+                <span class="spinner is-active" style="float:none; margin:0;"></span>
+                <p><?php _e('Loading report details...', 'olama-school'); ?></p>
+            </div>
+        </div>
+        <div class="olama-modal-footer" style="padding: 15px 25px; border-top: 1px solid #e2e8f0; text-align: right; background: #f8fafc;">
+            <button type="button" class="button olama-modal-close-btn"><?php _e('Close', 'olama-school'); ?></button>
+            <button type="button" class="button button-primary" onclick="window.print();" style="background:#6366f1; border-color:#6366f1;">
+                <span class="dashicons dashicons-printer" style="margin-top:4px; margin-right:4px;"></span>
+                <?php _e('Print Report', 'olama-school'); ?>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .olama-modal { position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+    .olama-modal-content { background: #fff; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); animation: olamaModalFadeIn 0.3s ease-out; position: relative; }
+    @keyframes olamaModalFadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    .olama-modal-header { display: flex; justify-content: space-between; align-items: center; }
+</style>
+
+<script>
+jQuery(document).ready(function($) {
+    $(document).on('click', '.olama-view-teacher-report', function() {
+        const visitId = $(this).data('id');
+        $('#olama-teacher-report-modal').show();
+        $('#olama-teacher-report-content').html(`
+            <div style="text-align:center; padding: 40px;">
+                <span class="spinner is-active" style="float:none; margin:0;"></span>
+                <p><?php _e('Loading report details...', 'olama-school'); ?></p>
+            </div>
+        `);
+
+        $.post(ajaxurl, {
+            action: 'olama_get_teacher_evaluation_report',
+            visit_id: visitId,
+            nonce: '<?php echo wp_create_nonce("olama_admin_nonce"); ?>'
+        }, function(res) {
+            if (res.success) {
+                $('#olama-teacher-report-content').html(res.data.html);
+            } else {
+                $('#olama-teacher-report-content').html('<div class="notice notice-error" style="margin:0;"><p>' + (res.data || 'Error loading report') + '</p></div>');
+            }
+        });
+    });
+
+    $(document).on('click', '.olama-modal-close, .olama-modal-close-btn', function() {
+        $('#olama-teacher-report-modal').hide();
+    });
+
+    $(window).on('click', function(event) {
+        if ($(event.target).is('#olama-teacher-report-modal')) {
+            $('#olama-teacher-report-modal').hide();
+        }
+    });
+});
+</script>
+<?php endif; ?>
 
 <?php
 // Clear cache on refresh

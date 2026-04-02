@@ -9,6 +9,7 @@ if (!defined('ABSPATH'))
 $current_user_id = get_current_user_id();
 global $wpdb;
 $is_admin = Olama_School_Permissions::can('olama_manage_evaluation_mgmt') || Olama_School_Permissions::can('olama_approve_plans');
+$is_teacher = Olama_School_Permissions::can('olama_manage_lesson_planner');
 $academic = new Olama_School_Academic();
 $years = $academic->get_years();
 $active_year = $academic->get_active_year();
@@ -251,8 +252,9 @@ if ($edit_plan) {
                             <th><?php echo $t('Grade'); ?> / <?php echo $t('Section'); ?></th>
                             <th><?php echo $t('Date'); ?></th>
                             <th style="width:100px;"><?php echo $t('Compliance'); ?></th>
+                            <th style="width:105px;"><?php echo $t('Eval Score'); ?></th>
                             <th style="width:80px;"><?php echo $t('Status'); ?></th>
-                            <th style="width:120px;"><?php echo $t('Actions'); ?></th>
+                            <th style="width:150px;"><?php echo $t('Actions'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -260,6 +262,14 @@ if ($edit_plan) {
                             $cs = intval($plan->compliance_score ?? 0);
                             $cs_color = $cs >= 80 ? '#10b981' : ($cs >= 50 ? '#f59e0b' : '#ef4444');
                             $cs_bg = $cs >= 80 ? '#dcfce7' : ($cs >= 50 ? '#fef3c7' : '#fef2f2');
+                                     // Check for completed visit
+                                    $visit = $wpdb->get_row($wpdb->prepare(
+                                        "SELECT v.id, v.final_score FROM {$wpdb->prefix}olama_supervisor_visits v
+                                         JOIN {$wpdb->prefix}olama_schedule s ON v.schedule_id = s.id
+                                         WHERE v.unit_id = %d AND v.lesson_id = %d AND s.section_id = %d AND s.subject_id = %d AND v.status = 'completed'
+                                         LIMIT 1",
+                                        $plan->unit_id, $plan->lesson_id, $plan->section_id, $plan->subject_id
+                                    ));
                             ?>
                             <tr>
                                 <td><?php echo $idx + 1; ?></td>
@@ -275,12 +285,32 @@ if ($edit_plan) {
                                 <td><span
                                         style="background:<?php echo $cs_bg; ?>;color:<?php echo $cs_color; ?>;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;"><?php echo $cs; ?>%</span>
                                 </td>
+                                <td>
+                                     <?php 
+                                     if ($visit && !is_null($visit->final_score)): 
+                                         $fs = floatval($visit->final_score);
+                                         $fs_color = $fs >= 80 ? '#10b981' : ($fs >= 50 ? '#f59e0b' : '#ef4444');
+                                         $fs_bg = $fs >= 80 ? '#dcfce7' : ($fs >= 50 ? '#fef3c7' : '#fef2f2');
+                                         ?>
+                                         <span style="background:<?php echo $fs_bg; ?>;color:<?php echo $fs_color; ?>;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;"><?php echo number_format($fs, 1); ?>%</span>
+                                     <?php else: echo '-'; endif; ?>
+                                </td>
                                 <td><?php if ($plan->status === 'final'): ?><span
                                             style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;"><?php echo $t('Final'); ?></span>
                                     <?php else: ?><span
                                             style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;"><?php echo $t('Draft'); ?></span><?php endif; ?>
                                 </td>
                                 <td>
+                                    <?php 
+                                    if ($visit): ?>
+                                        <button type="button" class="button button-small olama-view-teacher-report" 
+                                                data-id="<?php echo $visit->id; ?>" 
+                                                title="<?php echo esc_attr($t('Show Results')); ?>"
+                                                style="color:#10b981; border-color:#10b981; background: #f0fdf4;">
+                                            <span class="dashicons dashicons-analytics" style="font-size:16px;width:16px;height:16px;margin-top:3px;"></span>
+                                            <span style="font-weight: 600;"><?php echo $t('Results'); ?></span>
+                                        </button>
+                                    <?php endif; ?>
                                     <a href="<?php echo admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner&lp_action=edit&plan_id=' . $plan->id); ?>"
                                         class="button button-small"><span class="dashicons dashicons-edit"
                                             style="font-size:16px;width:16px;height:16px;margin-top:3px;"></span></a>
@@ -947,3 +977,77 @@ if ($edit_plan) {
         $('.lp-assessment-strategy').each(function () { if ($(this).val()) $(this).trigger('change'); });
     });
 </script>
+
+
+
+<?php if (true): // Always render modal for teachers and admins ?>
+<!-- Teacher Evaluation Report Modal -->
+<div id="olama-teacher-report-modal" class="olama-modal" style="display:none;">
+    <div class="olama-modal-content" style="max-width: 950px; width: 95%; max-height: 90vh; overflow-y: auto;">
+        <div class="olama-modal-header" style="position: sticky; top: 0; background: #fff; z-index: 10; border-bottom: 1px solid #e2e8f0; padding: 15px 25px;">
+            <h3 style="margin:0; font-size: 1.25em; display: flex; align-items: center; gap: 10px;">
+                <span class="dashicons dashicons-analytics" style="color: #10b981;"></span>
+                <?php _e("Supervisor Evaluation Report", "olama-school"); ?>
+            </h3>
+            <span class="olama-modal-close" style="cursor:pointer; font-size: 24px; color: #64748b;">&times;</span>
+        </div>
+        <div class="olama-modal-body" id="olama-teacher-report-content" style="padding: 25px;">
+            <div style="text-align:center; padding: 40px;">
+                <span class="spinner is-active" style="float:none; margin:0;"></span>
+                <p><?php _e("Loading report details...", "olama-school"); ?></p>
+            </div>
+        </div>
+        <div class="olama-modal-footer" style="padding: 15px 25px; border-top: 1px solid #e2e8f0; text-align: right; background: #f8fafc;">
+            <button type="button" class="button olama-modal-close-btn"><?php _e("Close", "olama-school"); ?></button>
+            <button type="button" class="button button-primary" onclick="window.print();" style="background:#6366f1; border-color:#6366f1;">
+                <span class="dashicons dashicons-printer" style="margin-top:4px; margin-right:4px;"></span>
+                <?php _e("Print Report", "olama-school"); ?>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .olama-modal { position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+    .olama-modal-content { background: #fff; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,1), 0 10px 10px -5px rgba(0,0,0,1); animation: olamaModalFadeIn 0.3s ease-out; position: relative; }
+    @keyframes olamaModalFadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    .olama-modal-header { display: flex; justify-content: space-between; align-items: center; }
+</style>
+
+<script>
+jQuery(document).ready(function($) {
+    $(document).on("click", ".olama-view-teacher-report", function() {
+        const visitId = $(this).data("id");
+        $("#olama-teacher-report-modal").show();
+        $("#olama-teacher-report-content").html(`
+            <div style="text-align:center; padding: 40px;">
+                <span class="spinner is-active" style="float:none; margin:0;"></span>
+                <p><?php _e("Loading report details...", "olama-school"); ?></p>
+            </div>
+        `);
+
+        $.post(ajaxurl, {
+            action: "olama_get_teacher_evaluation_report",
+            visit_id: visitId,
+            nonce: "<?php echo wp_create_nonce("olama_admin_nonce"); ?>"
+        }, function(res) {
+            if (res.success) {
+                $("#olama-teacher-report-content").html(res.data.html);
+            } else {
+                $("#olama-teacher-report-content").html("<div class=\"notice notice-error\" style=\"margin:0;\"><p>" + (res.data || "Error loading report") + "</p></div>");
+            }
+        });
+    });
+
+    $(document).on("click", ".olama-modal-close, .olama-modal-close-btn", function() {
+        $("#olama-teacher-report-modal").hide();
+    });
+
+    $(window).on("click", function(event) {
+        if ($(event.target).is("#olama-teacher-report-modal")) {
+            $("#olama-teacher-report-modal").hide();
+        }
+    });
+});
+</script>
+<?php endif; ?>

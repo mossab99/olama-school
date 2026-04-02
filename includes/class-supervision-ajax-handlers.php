@@ -13,6 +13,7 @@ class Olama_School_Supervision_Ajax_Handlers
         add_action('wp_ajax_olama_delete_supervisor_visit', array($this, 'delete_supervisor_visit'));
         add_action('wp_ajax_olama_get_supervisor_evaluation_modal', array($this, 'get_supervisor_evaluation_modal'));
         add_action('wp_ajax_olama_save_supervisor_evaluation_modal', array($this, 'save_supervisor_evaluation_modal'));
+        add_action('wp_ajax_olama_get_teacher_evaluation_report', array($this, 'get_teacher_evaluation_report'));
         add_action('wp_ajax_olama_save_supervisor_assignment', array($this, 'save_supervisor_assignment'));
         add_action('wp_ajax_olama_delete_supervisor_assignment', array($this, 'delete_supervisor_assignment'));
     }
@@ -523,6 +524,185 @@ class Olama_School_Supervision_Ajax_Handlers
         ], ['id' => $visit_id]);
 
         wp_send_json_success();
+    }
+
+    /**
+     * AJAX: Get Teacher Evaluation Report (Read-only)
+     */
+    public function get_teacher_evaluation_report()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        $visit_id = isset($_POST['visit_id']) ? intval($_POST['visit_id']) : 0;
+        if (!$visit_id) {
+            wp_send_json_error(__('Invalid parameters', 'olama-school'));
+        }
+
+        global $wpdb;
+
+        // 1. Fetch Visit & Context Details
+        $visit = $wpdb->get_row($wpdb->prepare(
+            "SELECT v.*, s.day_name, s.period_number, s.section_id, s.semester_id, s.subject_id,
+                    sec.section_name, sec.academic_year_id, g.grade_name, g.id as grade_id, sub.subject_name,
+                    u.display_name as supervisor_name
+             FROM {$wpdb->prefix}olama_supervisor_visits v
+             JOIN {$wpdb->prefix}olama_schedule s ON v.schedule_id = s.id
+             JOIN {$wpdb->prefix}olama_sections sec ON s.section_id = sec.id
+             JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id
+             JOIN {$wpdb->prefix}olama_subjects sub ON s.subject_id = sub.id
+             JOIN {$wpdb->users} u ON v.supervisor_id = u.ID
+             WHERE v.id = %d",
+            $visit_id
+        ));
+
+        if (!$visit) {
+            wp_send_json_error(__('Visit not found.', 'olama-school'));
+        }
+
+        // Security Check: Only the assigned teacher or admins should see this
+        $teacher_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT ta.teacher_id 
+             FROM {$wpdb->prefix}olama_teacher_assignments ta
+             WHERE ta.section_id = %d AND ta.subject_id = %d AND ta.academic_year_id = %d 
+             LIMIT 1",
+            $visit->section_id,
+            $visit->subject_id,
+            $visit->academic_year_id
+        ));
+
+        $current_uid = get_current_user_id();
+        $is_admin = current_user_can('manage_options');
+        $is_assigned = ($teacher_id && $current_uid == $teacher_id);
+        
+        // Alternative: Check if this user owns the lesson plan for this visit context
+        $is_plan_owner = false;
+        if (!$is_assigned && !$is_admin) {
+            $is_plan_owner = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}olama_lesson_plans 
+                 WHERE section_id = %d AND subject_id = %d AND unit_id = %d AND lesson_id = %d AND teacher_id = %d 
+                 LIMIT 1",
+                $visit->section_id, $visit->subject_id, $visit->unit_id, $visit->lesson_id, $current_uid
+            ));
+        }
+
+        if (!$is_admin && !$is_assigned && !$is_plan_owner) {
+            wp_send_json_error(__('Unauthorized.', 'olama-school'));
+        }
+
+        $active_year = Olama_School_Academic::get_active_year();
+        $semesters = Olama_School_Academic::get_semesters($visit->academic_year_id);
+        $semester_name = '';
+        foreach ($semesters as $sem) {
+            if ($sem->id == $visit->semester_id)
+                $semester_name = $sem->semester_name;
+        }
+
+        // Fetch Evaluation Record and Scores
+        $record = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}olama_ev_records WHERE related_entity_id = %d AND related_entity_type = 'supervisor_visit'",
+            $visit_id
+        ));
+
+        if (!$record) {
+             wp_send_json_error(__('Evaluation details not found.', 'olama-school'));
+        }
+
+        $scores = Olama_School_EV_Record::get_scores($record->id);
+        $template_id = $record->template_id;
+        $template = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_ev_templates WHERE id = %d", $template_id));
+        $curriculum = Olama_School_EV_Curriculum::get_full_curriculum($template_id);
+        $score_config = Olama_School_EV_Template::get_score_config($template_id);
+
+        ob_start();
+        ?>
+        <div class="olama-teacher-report-wrap" style="direction: <?php echo Olama_School_Helpers::is_arabic() ? 'rtl' : 'ltr'; ?>;">
+            <!-- Header Info -->
+            <div class="eval-part1-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                <div class="eval-info-box" style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <label style="display:block; font-size:11px; color:#64748b; text-transform:uppercase; margin-bottom:5px;"><?php _e('Academic Year', 'olama-school'); ?></label>
+                    <div style="font-weight:700;"><?php echo esc_html($active_year->year_name ?? ''); ?></div>
+                </div>
+                <div class="eval-info-box" style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <label style="display:block; font-size:11px; color:#64748b; text-transform:uppercase; margin-bottom:5px;"><?php _e('Semester', 'olama-school'); ?></label>
+                    <div style="font-weight:700;"><?php echo esc_html($semester_name); ?></div>
+                </div>
+                <div class="eval-info-box" style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <label style="display:block; font-size:11px; color:#64748b; text-transform:uppercase; margin-bottom:5px;"><?php _e('Subject', 'olama-school'); ?></label>
+                    <div style="font-weight:700;"><?php echo esc_html($visit->subject_name); ?></div>
+                </div>
+                <div class="eval-info-box" style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <label style="display:block; font-size:11px; color:#64748b; text-transform:uppercase; margin-bottom:5px;"><?php _e('Supervisor', 'olama-school'); ?></label>
+                    <div style="font-weight:700; color:#2271b1;"><?php echo esc_html($visit->supervisor_name); ?></div>
+                </div>
+                <div class="eval-info-box" style="background:#f0fdf4; padding:12px; border-radius:8px; border:1px solid #bbf7d0; text-align:center;">
+                    <label style="display:block; font-size:11px; color:#166534; text-transform:uppercase; margin-bottom:5px;"><?php _e('Final Score', 'olama-school'); ?></label>
+                    <div style="font-size:1.4em; font-weight:800; color:#15803d;"><?php echo number_format($visit->final_score, 1); ?>%</div>
+                </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div style="margin-bottom: 30px; background: #fffbeb; padding: 20px; border-radius: 12px; border: 1px solid #fef3c7;">
+                <h4 style="margin-top: 0; color: #92400e; display: flex; align-items: center; gap: 8px;">
+                    <span class="dashicons dashicons-testimonial" style="color: #d97706;"></span>
+                    <?php echo Olama_School_Helpers::translate('Supervisor Comments'); ?>
+                </h4>
+                <div style="line-height: 1.6; color: #78350f; white-space: pre-wrap;"><?php echo esc_html($record->supervisor_comments ?: __('No comments provided.', 'olama-school')); ?></div>
+            </div>
+
+            <!-- Evaluation Detail -->
+            <h3 style="margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;"><?php echo esc_html($template->template_name); ?></h3>
+            
+            <div class="ev-report-content">
+                <?php foreach ($curriculum as $domain): ?>
+                    <div class="ev-domain-section" style="margin-bottom: 30px;">
+                        <div style="background: #1e293b; color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: 600; margin-bottom: 15px;">
+                            <?php echo esc_html($domain->title_ar); ?>
+                        </div>
+
+                        <?php foreach ($domain->categories as $category): ?>
+                            <div style="margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                                <div style="background: #f1f5f9; padding: 10px 15px; font-weight: 600; color: #334155;">
+                                    <?php echo esc_html($category->title_ar); ?>
+                                </div>
+                                <div style="padding: 0 15px;">
+                                    <?php foreach ($category->indicators as $indicator): 
+                                        $score_row = $scores[$indicator->id] ?? null;
+                                        $score_val = $score_row ? $score_row->score : null;
+                                        ?>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                                            <div style="flex: 1; padding-right: 20px;">
+                                                <?php echo esc_html($indicator->indicator_text); ?>
+                                            </div>
+                                            <div style="display: flex; gap: 8px;">
+                                                <?php
+                                                $i = 0;
+                                                foreach ($score_config as $val => $label) {
+                                                    $i++;
+                                                    $is_active = ($score_val == $val);
+                                                    if (!$is_active) continue; // Only show the selected one in read-only mode, or show all with grayscale?
+                                                    
+                                                    $color = '#94a3b8';
+                                                    if ($i === 1) $color = '#10b981';
+                                                    elseif ($i === count($score_config)) $color = '#ef4444';
+                                                    elseif ($i === 2) $color = '#f59e0b';
+                                                    ?>
+                                                    <span style="background: <?php echo $color; ?>; color: #fff; padding: 4px 12px; border-radius: 15px; font-size: 11px; font-weight: 700;">
+                                                        <?php echo esc_html(Olama_School_Helpers::translate($label)); ?>
+                                                    </span>
+                                                <?php } ?>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php
+        $html = ob_get_clean();
+        wp_send_json_success(['html' => $html]);
     }
 
     /**

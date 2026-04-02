@@ -216,106 +216,100 @@ class Olama_School_Backup
     }
 
     /**
-     * Restore backup data from Multi-Part JSON
+     * Get an index of all tables in the backup JSON
      */
-    public static function restore_backup($json_data)
+    public static function get_restore_index($json_data)
+    {
+        $data = json_decode($json_data, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return new WP_Error('invalid_json', __('Invalid JSON format.', 'olama-school'));
+        }
+
+        $index = array();
+        if (isset($data['parts']) && is_array($data['parts'])) {
+            // New multi-part format
+            foreach ($data['parts'] as $part_id => $part) {
+                if (isset($part['tables']) && is_array($part['tables'])) {
+                    foreach (array_keys($part['tables']) as $table) {
+                        $index[] = array('part' => $part_id, 'table' => $table);
+                    }
+                }
+            }
+        } elseif (isset($data['tables']) && is_array($data['tables'])) {
+            // Legacy format
+            foreach (array_keys($data['tables']) as $table) {
+                $index[] = array('part' => 'legacy', 'table' => $table);
+            }
+        }
+
+        return $index;
+    }
+
+    /**
+     * Restore a single specific table from the backup JSON
+     */
+    public static function restore_single_table($json_data, $part_id, $table_name)
     {
         global $wpdb;
-
-        error_log('[OLAMA RESTORE] Multi-Part restore_backup() started');
-
-        // Increase limits for large datasets
-        @set_time_limit(900); // 15 minutes
-        @ini_set('memory_limit', '1024M');
-
-        $json_data = trim($json_data);
         $data = json_decode($json_data, true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return new WP_Error('invalid_backup', __('Invalid backup file format (JSON error): ', 'olama-school') . json_last_error_msg());
-        }
-
-        // Support both old format (direct tables key) and new format (parts key)
-        $parts = array();
-        if (isset($data['parts']) && is_array($data['parts'])) {
-            $parts = $data['parts'];
-        } elseif (isset($data['tables']) && is_array($data['tables'])) {
-            // Legacy support
-            $parts['legacy_backup'] = array('tables' => $data['tables']);
-        }
-
-        if (empty($parts)) {
-            return new WP_Error('invalid_backup', __('Invalid backup file format (No data found).', 'olama-school'));
+        // Find the rows
+        $rows = array();
+        if ($part_id === 'legacy') {
+            $rows = $data['tables'][$table_name] ?? array();
+        } else {
+            $rows = $data['parts'][$part_id]['tables'][$table_name] ?? array();
         }
 
         $current_user_id = get_current_user_id();
+        $full_table_name = $wpdb->prefix . $table_name;
 
-        // Disable FK checks and start transaction
-        $wpdb->query('SET FOREIGN_KEY_CHECKS=0');
-        $wpdb->query('START TRANSACTION');
-
-        try {
-            foreach ($parts as $part_id => $part) {
-                if (!isset($part['tables']) || !is_array($part['tables'])) continue;
-
-                error_log('[OLAMA RESTORE] Processing Part: ' . $part_id);
-
-                foreach ($part['tables'] as $table => $rows) {
-                    $full_table_name = $wpdb->prefix . $table;
-
-                    // Check if table exists
-                    if ($wpdb->get_var("SHOW TABLES LIKE '$full_table_name'") !== $full_table_name) {
-                        error_log('[OLAMA RESTORE] Skipping table (not found in DB): ' . $table);
-                        continue;
-                    }
-
-                    // Wipe table with Admin-Preservation logic
-                    if ($table === 'users') {
-                        $wpdb->query($wpdb->prepare("DELETE FROM $full_table_name WHERE ID != %d", $current_user_id));
-                    } else if ($table === 'usermeta') {
-                        $wpdb->query($wpdb->prepare("DELETE FROM $full_table_name WHERE user_id != %d", $current_user_id));
-                    } else {
-                        $wpdb->query("DELETE FROM $full_table_name");
-                        $wpdb->query("ALTER TABLE $full_table_name AUTO_INCREMENT = 1");
-                    }
-
-                    // Filter rows for Admin-Preservation
-                    if ($table === 'users') {
-                        $rows = array_filter($rows, function ($r) use ($current_user_id) {
-                            return (int)$r['ID'] !== (int)$current_user_id;
-                        });
-                    } else if ($table === 'usermeta') {
-                        $rows = array_filter($rows, function ($r) use ($current_user_id) {
-                            return (int)$r['user_id'] !== (int)$current_user_id;
-                        });
-                        // IMPORTANT: Unset the primary key umeta_id to let the local database
-                        // assign a new unique ID, avoiding collisions with the kept admin's meta.
-                        $rows = array_map(function ($r) {
-                            unset($r['umeta_id']);
-                            return $r;
-                        }, $rows);
-                    }
-
-                    if (!empty($rows)) {
-                        $batch_size = 1000;
-                        $batches = array_chunk($rows, $batch_size);
-                        foreach ($batches as $batch) {
-                            $result = self::batch_insert($full_table_name, $batch);
-                            if ($result === false) throw new Exception($wpdb->last_error);
-                        }
-                    }
-                    error_log('[OLAMA RESTORE] Restored ' . $table);
-                }
-            }
-            $wpdb->query('COMMIT');
-        } catch (Exception $e) {
-            $wpdb->query('ROLLBACK');
-            error_log('[OLAMA RESTORE ERROR] ' . $e->getMessage());
-            return new WP_Error('restore_failed', __('Database restoration failed: ', 'olama-school') . $e->getMessage());
-        } finally {
-            $wpdb->query('SET FOREIGN_KEY_CHECKS=1');
+        // Check if table exists
+        if ($wpdb->get_var("SHOW TABLES LIKE '$full_table_name'") !== $full_table_name) {
+            return true; // Not a fatal error, just skip
         }
 
+        // Disable FK checks for single operation
+        $wpdb->query('SET FOREIGN_KEY_CHECKS=0');
+
+        try {
+            // Wipe & Preserve
+            if ($table_name === 'users') {
+                $wpdb->query($wpdb->prepare("DELETE FROM $full_table_name WHERE ID != %d", $current_user_id));
+                $rows = array_filter($rows, function ($r) use ($current_user_id) {
+                    return (int)$r['ID'] !== (int)$current_user_id;
+                });
+            } else if ($table_name === 'usermeta') {
+                $wpdb->query($wpdb->prepare("DELETE FROM $full_table_name WHERE user_id != %d", $current_user_id));
+                $rows = array_filter($rows, function ($r) use ($current_user_id) {
+                    return (int)$r['user_id'] !== (int)$current_user_id;
+                });
+                
+                // Sanitation: unset umeta_id to avoid primary key collisions with the current admin
+                $rows = array_map(function ($r) {
+                    unset($r['umeta_id']);
+                    return $r;
+                }, $rows);
+            } else {
+                $wpdb->query("DELETE FROM $full_table_name");
+                $wpdb->query("ALTER TABLE $full_table_name AUTO_INCREMENT = 1");
+            }
+
+            // Batch insert the rows
+            if (!empty($rows)) {
+                $batch_size = 500;
+                $batches = array_chunk($rows, $batch_size);
+                foreach ($batches as $batch) {
+                    $result = self::batch_insert($full_table_name, $batch);
+                    if ($result === false) throw new Exception($wpdb->last_error);
+                }
+            }
+        } catch (Exception $e) {
+            $wpdb->query('SET FOREIGN_KEY_CHECKS=1');
+            return new WP_Error('table_failed', __('Error restoring table ', 'olama-school') . $table_name . ': ' . $e->getMessage());
+        }
+
+        $wpdb->query('SET FOREIGN_KEY_CHECKS=1');
         return true;
     }
 

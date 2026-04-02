@@ -114,4 +114,34 @@ class SupervisorVisitService
 
         return $wpdb->get_results($sql);
     }
+
+    /**
+     * Retrieves recent completed supervisor visits for a specific teacher.
+     * 
+     * @param int $teacher_id
+     * @param int $limit
+     * @return array
+     */
+    public static function get_teacher_completed_visits($teacher_id, $limit = 5)
+    {
+        global $wpdb;
+
+        $sql = $wpdb->prepare(
+            "SELECT v.*, s.day_name, s.period_number, sub.subject_name, sec.section_name, g.grade_name, u.display_name as supervisor_name
+             FROM {$wpdb->prefix}olama_supervisor_visits v
+             JOIN {$wpdb->prefix}olama_schedule s ON v.schedule_id = s.id
+             JOIN {$wpdb->prefix}olama_subjects sub ON s.subject_id = sub.id
+             JOIN {$wpdb->prefix}olama_sections sec ON s.section_id = sec.id
+             JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id
+             JOIN {$wpdb->users} u ON v.supervisor_id = u.ID
+             JOIN {$wpdb->prefix}olama_teacher_assignments ta ON (s.section_id = ta.section_id AND s.subject_id = ta.subject_id)
+             WHERE ta.teacher_id = %d AND v.status = 'completed'
+             ORDER BY v.visit_date DESC
+             LIMIT %d",
+            $teacher_id,
+            $limit
+        );
+
+        return $wpdb->get_results($sql);
+    }
 }
