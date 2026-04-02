@@ -15,6 +15,7 @@ class Olama_School_Backup
     public static function get_plugin_tables()
     {
         return array(
+            // --- Core Setup ---
             'olama_settings',
             'olama_academic_years',
             'olama_semesters',
@@ -25,35 +26,68 @@ class Olama_School_Backup
             'olama_student_enrollment',
             'olama_subjects',
             'olama_teachers',
-            'olama_exams',
-            'olama_exam_attachments',
+            
+            // --- Evaluations & Supervision ---
             'olama_ev_templates',
             'olama_ev_domains',
             'olama_ev_categories',
             'olama_ev_indicators',
             'olama_ev_records',
             'olama_ev_scores',
+            'olama_supervisor_visits',
+            'olama_supervisor_assignments',
+            
+            // --- Academic Planning ---
             'olama_plans',
             'olama_plan_questions',
             'olama_templates',
+            'olama_lesson_plans',
             'olama_schedule',
             'olama_curriculum_units',
             'olama_curriculum_lessons',
             'olama_curriculum_questions',
-            'olama_logs',
             'olama_academic_events',
             'olama_teacher_assignments',
             'olama_teacher_office_hours',
-            'olama_user_preferences',
-            'olama_notifications',
+            
+            // --- Exams (Internal/Manual) ---
+            'olama_exams',
+            'olama_exam_attachments',
             'olama_semester_exams',
             'olama_stationary',
+            
+            // --- Exam Engine (Online) ---
+            'olama_exam_question_categories',
+            'olama_exam_questions',
+            'olama_exam_exams',
+            'olama_exam_attempts',
+            'olama_exam_essay_grades',
+            'olama_exam_placement_info',
+            
+            // --- Student Services ---
             'olama_attendance',
+            'olama_attendance_sheets',
+            'olama_transport_buses',
+            'olama_student_bus_assignments',
+            
+            // --- Staff Shifts & Cleaning ---
             'olama_shifts_locations',
             'olama_shifts_time_slots',
             'olama_shifts_periods',
             'olama_shifts',
-            'olama_shifts_assignments'
+            'olama_shifts_assignments',
+            'olama_shifts_schedule',
+            'olama_cleaning_logs',
+            'olama_cleaning_items',
+            'olama_cleaning_floors',
+            'olama_cleaning_cleaners',
+            'olama_cleaning_slots',
+            'olama_cleaning_assignments',
+            
+            // --- Logs & Preferences ---
+            'olama_user_preferences',
+            'olama_notifications',
+            'olama_logs',
         );
     }
 
@@ -183,6 +217,12 @@ class Olama_School_Backup
         try {
             foreach ($tables as $table) {
                 $full_table_name = $wpdb->prefix . $table;
+
+                // Check if table exists before clearing
+                if ($wpdb->get_var("SHOW TABLES LIKE '$full_table_name'") !== $full_table_name) {
+                    error_log('[OLAMA RESTORE] Skipping table (not found in DB): ' . $table);
+                    continue;
+                }
 
                 // Wipe table (DELETE avoids auto-commit)
                 error_log('[OLAMA RESTORE] Clearing table: ' . $table);
