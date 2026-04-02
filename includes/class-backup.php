@@ -113,7 +113,7 @@ class Olama_School_Backup
         );
 
         // --- PART 1: Olama School Core ---
-        if (class_exists('Olama_School_DB')) {
+        if (class_exists('Olama_School_DB') && method_exists('Olama_School_DB', 'get_tables')) {
             $tables = Olama_School_DB::get_tables();
             // Include core user data in the main plugin part
             $tables[] = 'users';
@@ -126,7 +126,7 @@ class Olama_School_Backup
         }
 
         // --- PART 2: Olama Exam Engine ---
-        if (class_exists('Olama_Exam_DB')) {
+        if (class_exists('Olama_Exam_DB') && method_exists('Olama_Exam_DB', 'get_tables')) {
             $tables = Olama_Exam_DB::get_tables();
             $backup_data['parts']['olama_exam_engine'] = array(
                 'label' => 'Olama Exam Engine',
