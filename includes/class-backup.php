@@ -288,6 +288,12 @@ class Olama_School_Backup
                         $rows = array_filter($rows, function ($r) use ($current_user_id) {
                             return (int)$r['user_id'] !== (int)$current_user_id;
                         });
+                        // IMPORTANT: Unset the primary key umeta_id to let the local database
+                        // assign a new unique ID, avoiding collisions with the kept admin's meta.
+                        $rows = array_map(function ($r) {
+                            unset($r['umeta_id']);
+                            return $r;
+                        }, $rows);
                     }
 
                     if (!empty($rows)) {
