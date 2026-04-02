@@ -9,6 +9,66 @@ if (!defined('ABSPATH')) {
 
 class Olama_School_DB
 {
+	/**
+	 * Get all tables managed by this plugin
+	 */
+	public static function get_tables()
+	{
+		return array(
+			'olama_settings',
+			'olama_academic_years',
+			'olama_semesters',
+			'olama_grades',
+			'olama_sections',
+			'olama_subjects',
+			'olama_teachers',
+			'olama_families',
+			'olama_students',
+			'olama_student_enrollment',
+			'olama_plans',
+			'olama_plan_questions',
+			'olama_templates',
+			'olama_schedule',
+			'olama_curriculum_units',
+			'olama_curriculum_lessons',
+			'olama_curriculum_questions',
+			'olama_logs',
+			'olama_transport_buses',
+			'olama_student_bus_assignments',
+			'olama_academic_events',
+			'olama_teacher_assignments',
+			'olama_teacher_office_hours',
+			'olama_exams',
+			'olama_user_preferences',
+			'olama_notifications',
+			'olama_ev_templates',
+			'olama_ev_domains',
+			'olama_ev_categories',
+			'olama_ev_indicators',
+			'olama_ev_records',
+			'olama_ev_scores',
+			'olama_semester_exams',
+			'olama_stationary',
+			'olama_exam_attachments',
+			'olama_attendance',
+			'olama_attendance_sheets',
+			'olama_shifts_locations',
+			'olama_shifts_time_slots',
+			'olama_shifts_schedule',
+			'olama_shifts_periods',
+			'olama_shifts',
+			'olama_shifts_assignments',
+			'olama_lesson_plans',
+			'olama_supervisor_visits',
+			'olama_supervisor_assignments',
+			'olama_cleaning_logs',
+			'olama_cleaning_items',
+			'olama_cleaning_floors',
+			'olama_cleaning_cleaners',
+			'olama_cleaning_slots',
+			'olama_cleaning_assignments'
+		);
+	}
 
 	/**
 	 * Create database tables

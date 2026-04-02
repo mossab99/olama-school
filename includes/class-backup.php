@@ -88,35 +88,71 @@ class Olama_School_Backup
             'olama_user_preferences',
             'olama_notifications',
             'olama_logs',
+
+            // --- Core User Tables (Added for data integrity between environments) ---
+            'users',
+            'usermeta'
         );
     }
 
     /**
-     * Generate backup data
+     * Generate backup data as multi-part JSON
      */
     public static function generate_backup()
     {
         // Increase resource limits for large databases
-        @set_time_limit(300);
-        @ini_set('memory_limit', '512M');
+        @set_time_limit(600);
+        @ini_set('memory_limit', '1024M');
 
         global $wpdb;
-        $tables = self::get_plugin_tables();
         $backup_data = array(
             'version' => OLAMA_SCHOOL_VERSION,
             'timestamp' => current_time('mysql'),
             'site_url' => get_site_url(),
-            'tables' => array()
+            'parts' => array()
         );
+
+        // --- PART 1: Olama School Core ---
+        if (class_exists('Olama_School_DB')) {
+            $tables = Olama_School_DB::get_tables();
+            // Include core user data in the main plugin part
+            $tables[] = 'users';
+            $tables[] = 'usermeta';
+
+            $backup_data['parts']['olama_school'] = array(
+                'label' => 'Olama School Core & Users',
+                'tables' => self::collect_tables_data($tables)
+            );
+        }
+
+        // --- PART 2: Olama Exam Engine ---
+        if (class_exists('Olama_Exam_DB')) {
+            $tables = Olama_Exam_DB::get_tables();
+            $backup_data['parts']['olama_exam_engine'] = array(
+                'label' => 'Olama Exam Engine',
+                'tables' => self::collect_tables_data($tables)
+            );
+        }
+
+        return $backup_data;
+    }
+
+    /**
+     * Helper to collect data for a list of tables
+     */
+    private static function collect_tables_data($tables)
+    {
+        global $wpdb;
+        $data = array();
 
         foreach ($tables as $table) {
             $full_table_name = $wpdb->prefix . $table;
             if ($wpdb->get_var("SHOW TABLES LIKE '$full_table_name'") === $full_table_name) {
-                $backup_data['tables'][$table] = $wpdb->get_results("SELECT * FROM $full_table_name", ARRAY_A);
+                $data[$table] = $wpdb->get_results("SELECT * FROM $full_table_name", ARRAY_A);
             }
         }
 
-        return $backup_data;
+        return $data;
     }
 
     /**
@@ -180,101 +216,100 @@ class Olama_School_Backup
     }
 
     /**
-     * Restore backup data from JSON (Legacy / Full)
+     * Restore backup data from Multi-Part JSON
      */
     public static function restore_backup($json_data)
     {
         global $wpdb;
 
-        error_log('[OLAMA RESTORE] restore_backup() started');
+        error_log('[OLAMA RESTORE] Multi-Part restore_backup() started');
 
         // Increase limits for large datasets
-        @set_time_limit(600); // 10 minutes
-        @ini_set('memory_limit', '512M');
+        @set_time_limit(900); // 15 minutes
+        @ini_set('memory_limit', '1024M');
 
-        error_log('[OLAMA RESTORE] Parsing JSON data (' . strlen($json_data) . ' bytes)');
         $json_data = trim($json_data);
         $data = json_decode($json_data, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            error_log('[OLAMA RESTORE] JSON decode error: ' . json_last_error_msg());
             return new WP_Error('invalid_backup', __('Invalid backup file format (JSON error): ', 'olama-school') . json_last_error_msg());
         }
 
-        if (!$data || !isset($data['tables'])) {
-            error_log('[OLAMA RESTORE] Invalid backup format - missing tables key');
-            return new WP_Error('invalid_backup', __('Invalid backup file format (Missing tables key).', 'olama-school'));
+        // Support both old format (direct tables key) and new format (parts key)
+        $parts = array();
+        if (isset($data['parts']) && is_array($data['parts'])) {
+            $parts = $data['parts'];
+        } elseif (isset($data['tables']) && is_array($data['tables'])) {
+            // Legacy support
+            $parts['legacy_backup'] = array('tables' => $data['tables']);
         }
 
-        error_log('[OLAMA RESTORE] JSON parsed successfully. Tables in backup: ' . count($data['tables']));
-        $tables = self::get_plugin_tables();
+        if (empty($parts)) {
+            return new WP_Error('invalid_backup', __('Invalid backup file format (No data found).', 'olama-school'));
+        }
+
+        $current_user_id = get_current_user_id();
 
         // Disable FK checks and start transaction
-        error_log('[OLAMA RESTORE] Disabling FK checks, starting transaction');
         $wpdb->query('SET FOREIGN_KEY_CHECKS=0');
         $wpdb->query('START TRANSACTION');
 
         try {
-            foreach ($tables as $table) {
-                $full_table_name = $wpdb->prefix . $table;
+            foreach ($parts as $part_id => $part) {
+                if (!isset($part['tables']) || !is_array($part['tables'])) continue;
 
-                // Check if table exists before clearing
-                if ($wpdb->get_var("SHOW TABLES LIKE '$full_table_name'") !== $full_table_name) {
-                    error_log('[OLAMA RESTORE] Skipping table (not found in DB): ' . $table);
-                    continue;
-                }
+                error_log('[OLAMA RESTORE] Processing Part: ' . $part_id);
 
-                // Wipe table (DELETE avoids auto-commit)
-                error_log('[OLAMA RESTORE] Clearing table: ' . $table);
-                $wpdb->query("DELETE FROM $full_table_name");
-                $wpdb->query("ALTER TABLE $full_table_name AUTO_INCREMENT = 1");
+                foreach ($part['tables'] as $table => $rows) {
+                    $full_table_name = $wpdb->prefix . $table;
 
-                if (isset($data['tables'][$table]) && is_array($data['tables'][$table])) {
-                    $rows = $data['tables'][$table];
-                    $row_count = count($rows);
-                    error_log('[OLAMA RESTORE] Inserting ' . $row_count . ' rows into: ' . $table);
-
-                    if ($row_count > 0) {
-                        // Use batch insert for performance (1000 rows per batch)
-                        $batch_size = 1000;
-                        $batches = array_chunk($rows, $batch_size);
-                        $batch_num = 0;
-
-                        foreach ($batches as $batch) {
-                            $batch_num++;
-                            $result = self::batch_insert($full_table_name, $batch);
-
-                            if ($result === false) {
-                                error_log('[OLAMA RESTORE] Batch insert failed at batch ' . $batch_num . ' in ' . $table . ': ' . $wpdb->last_error);
-                                throw new Exception($wpdb->last_error);
-                            }
-
-                            // Log progress for large tables
-                            if ($row_count > 500 && $batch_num % 10 === 0) {
-                                error_log('[OLAMA RESTORE] Progress: ' . ($batch_num * $batch_size) . '/' . $row_count . ' rows in ' . $table);
-                            }
-                        }
+                    // Check if table exists
+                    if ($wpdb->get_var("SHOW TABLES LIKE '$full_table_name'") !== $full_table_name) {
+                        error_log('[OLAMA RESTORE] Skipping table (not found in DB): ' . $table);
+                        continue;
                     }
 
-                    error_log('[OLAMA RESTORE] Completed table: ' . $table . ' (' . $row_count . ' rows)');
-                    // Free up memory for processed table
-                    unset($data['tables'][$table]);
-                } else {
-                    error_log('[OLAMA RESTORE] Table not in backup or empty: ' . $table);
+                    // Wipe table with Admin-Preservation logic
+                    if ($table === 'users') {
+                        $wpdb->query($wpdb->prepare("DELETE FROM $full_table_name WHERE ID != %d", $current_user_id));
+                    } else if ($table === 'usermeta') {
+                        $wpdb->query($wpdb->prepare("DELETE FROM $full_table_name WHERE user_id != %d", $current_user_id));
+                    } else {
+                        $wpdb->query("DELETE FROM $full_table_name");
+                        $wpdb->query("ALTER TABLE $full_table_name AUTO_INCREMENT = 1");
+                    }
+
+                    // Filter rows for Admin-Preservation
+                    if ($table === 'users') {
+                        $rows = array_filter($rows, function ($r) use ($current_user_id) {
+                            return (int)$r['ID'] !== (int)$current_user_id;
+                        });
+                    } else if ($table === 'usermeta') {
+                        $rows = array_filter($rows, function ($r) use ($current_user_id) {
+                            return (int)$r['user_id'] !== (int)$current_user_id;
+                        });
+                    }
+
+                    if (!empty($rows)) {
+                        $batch_size = 1000;
+                        $batches = array_chunk($rows, $batch_size);
+                        foreach ($batches as $batch) {
+                            $result = self::batch_insert($full_table_name, $batch);
+                            if ($result === false) throw new Exception($wpdb->last_error);
+                        }
+                    }
+                    error_log('[OLAMA RESTORE] Restored ' . $table);
                 }
             }
-            error_log('[OLAMA RESTORE] All tables restored, committing transaction');
             $wpdb->query('COMMIT');
         } catch (Exception $e) {
-            error_log('[OLAMA RESTORE] Exception caught: ' . $e->getMessage());
             $wpdb->query('ROLLBACK');
-            error_log('[OLAMA RESTORE ERROR] Backup restoration failed: ' . $e->getMessage());
+            error_log('[OLAMA RESTORE ERROR] ' . $e->getMessage());
             return new WP_Error('restore_failed', __('Database restoration failed: ', 'olama-school') . $e->getMessage());
         } finally {
             $wpdb->query('SET FOREIGN_KEY_CHECKS=1');
         }
 
-        error_log('[OLAMA RESTORE] restore_backup() completed successfully');
         return true;
     }
 
