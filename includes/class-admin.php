@@ -55,6 +55,7 @@ class Olama_School_Admin
         add_action('wp_ajax_olama_approve_evaluation', array($this, 'ajax_approve_evaluation'));
         add_action('wp_ajax_olama_save_supervisor_comments', array($this, 'ajax_save_supervisor_comments'));
         add_action('wp_ajax_olama_bulk_approve_evaluations', array($this, 'ajax_bulk_approve_evaluations'));
+        add_action('wp_ajax_olama_upload_backup_chunk', array($this, 'ajax_upload_backup_chunk'));
         add_action('wp_ajax_olama_initiate_restore', array($this, 'ajax_restore_database'));
         add_action('admin_init', array($this, 'restrict_teacher_access'));
         add_action('admin_post_olama_save_office_hours', array($this, 'handle_office_hours_save'));
@@ -782,48 +783,93 @@ class Olama_School_Admin
     }
 
     /**
-     * AJAX: Restore Database (Simplified - Single Request)
+     * AJAX: Upload Backup Chunk (1MB slices)
      */
-    public function ajax_restore_database()
+    public function ajax_upload_backup_chunk()
     {
-        error_log('[OLAMA RESTORE] ajax_restore_database called');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied.', 'olama-school'));
+        }
 
         $nonce = $_POST['nonce'] ?? '';
         if (!wp_verify_nonce($nonce, 'olama_backup_action')) {
-            error_log('[OLAMA RESTORE] Nonce verification failed');
-            wp_send_json_error(__('Security check failed (Invalid nonce).', 'olama-school'));
+            wp_send_json_error(__('Security check failed.', 'olama-school'));
+        }
+
+        $chunk = $_FILES['chunk'] ?? null;
+        $chunk_index = intval($_POST['chunk_index'] ?? 0);
+        $total_chunks = intval($_POST['total_chunks'] ?? 0);
+        $filename = sanitize_file_name($_POST['filename'] ?? 'upload.json');
+        $upload_id = sanitize_key($_POST['upload_id'] ?? '');
+
+        if (!$chunk || !$upload_id) {
+            wp_send_json_error(__('Missing chunk or upload ID.', 'olama-school'));
+        }
+
+        // Use a secure temp directory
+        $temp_dir = Olama_School_Backup::get_backup_storage_dir() . 'tmp/';
+        if (!file_exists($temp_dir)) {
+            wp_mkdir_p($temp_dir);
+        }
+
+        $temp_file = $temp_dir . 'restore_' . $upload_id . '.json';
+
+        // Append chunk to file
+        $out = fopen($temp_file, $chunk_index === 0 ? 'wb' : 'ab');
+        $in = fopen($chunk['tmp_name'], 'rb');
+
+        if ($out && $in) {
+            while ($buff = fread($in, 4096)) {
+                fwrite($out, $buff);
+            }
+            fclose($in);
+            fclose($out);
+        } else {
+            wp_send_json_error(__('Failed to write chunk to disk.', 'olama-school'));
+        }
+
+        wp_send_json_success(array(
+            'chunk_index' => $chunk_index,
+            'is_last' => ($chunk_index === $total_chunks - 1)
+        ));
+    }
+
+    /**
+     * AJAX: Restore Database (Uses the uploaded temporary file)
+     */
+    public function ajax_restore_database()
+    {
+        error_log('[OLAMA RESTORE] ajax_restore_database called (Chunked Mode)');
+
+        $nonce = $_POST['nonce'] ?? '';
+        if (!wp_verify_nonce($nonce, 'olama_backup_action')) {
+            wp_send_json_error(__('Security check failed.', 'olama-school'));
         }
 
         if (!current_user_can('manage_options')) {
-            error_log('[OLAMA RESTORE] Permission check failed');
             wp_send_json_error(__('Insufficient permissions.', 'olama-school'));
         }
 
-        if (empty($_FILES['backup_file']['tmp_name']) || $_FILES['backup_file']['error'] !== UPLOAD_ERR_OK) {
-            $error_code = $_FILES['backup_file']['error'] ?? 'Unknown error';
-            error_log('[OLAMA RESTORE] File upload error: ' . $error_code);
-            wp_send_json_error(__('No file uploaded or upload error. Error code: ', 'olama-school') . $error_code);
+        $upload_id = sanitize_key($_POST['upload_id'] ?? '');
+        $temp_file = Olama_School_Backup::get_backup_storage_dir() . 'tmp/restore_' . $upload_id . '.json';
+
+        if (!$upload_id || !file_exists($temp_file)) {
+            wp_send_json_error(__('Restoration file not found on server.', 'olama-school'));
         }
 
-        error_log('[OLAMA RESTORE] File received: ' . $_FILES['backup_file']['name']);
-        $json_data = file_get_contents($_FILES['backup_file']['tmp_name']);
-        error_log('[OLAMA RESTORE] JSON data length: ' . strlen($json_data));
+        // Read the file from disk (Memory safe if we were using a streamer, but here we still read it)
+        $json_data = file_get_contents($temp_file);
 
         // Call the single, robust restore function
-        error_log('[OLAMA RESTORE] Calling Olama_School_Backup::restore_backup()');
         $result = Olama_School_Backup::restore_backup($json_data);
-        error_log('[OLAMA RESTORE] restore_backup() returned');
 
-        if (ob_get_length()) {
-            ob_clean();
-        }
+        // Cleanup temporary file
+        @unlink($temp_file);
 
         if (is_wp_error($result)) {
-            error_log('[OLAMA RESTORE] Error: ' . $result->get_error_message());
             wp_send_json_error($result->get_error_message());
         }
 
-        error_log('[OLAMA RESTORE] Success!');
         wp_send_json_success(__('Database restored successfully!', 'olama-school'));
     }
 
@@ -1013,42 +1059,88 @@ class Olama_School_Admin
                     $fileInput.prop('disabled', true);
                     $progressContainer.show();
                     $log.empty();
-                    addLog('<?php _e('Starting restoration process...', 'olama-school'); ?>');
-                    $progressBar.css('width', '50%');
-                    $statusText.text('<?php _e('Restoring database, please wait...', 'olama-school'); ?>');
 
-                    const formData = new FormData();
-                    formData.append('action', 'olama_initiate_restore');
-                    formData.append('backup_file', file);
-                    formData.append('nonce', '<?php echo wp_create_nonce("olama_backup_action"); ?>');
+                    const upload_id = Date.now() + '-' + Math.floor(Math.random() * 1000);
+                    const chunk_size = 1024 * 1024; // 1MB chunks
+                    const total_chunks = Math.ceil(file.size / chunk_size);
+                    const nonce = '<?php echo wp_create_nonce("olama_backup_action"); ?>';
 
-                    const ajax_url = (typeof ajaxurl !== 'undefined') ? ajaxurl : '<?php echo admin_url('admin-ajax.php'); ?>';
+                    addLog('<?php _e('Starting chunked upload...', 'olama-school'); ?>');
 
-                    $.ajax({
-                        url: ajax_url,
-                        type: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        success: function (response) {
+                    function uploadChunk(index) {
+                        const start = index * chunk_size;
+                        const end = Math.min(start + chunk_size, file.size);
+                        const chunk = file.slice(start, end);
+
+                        const formData = new FormData();
+                        formData.append('action', 'olama_upload_backup_chunk');
+                        formData.append('chunk', chunk);
+                        formData.append('chunk_index', index);
+                        formData.append('total_chunks', total_chunks);
+                        formData.append('upload_id', upload_id);
+                        formData.append('filename', file.name);
+                        formData.append('nonce', nonce);
+
+                        const progress = Math.round((index / total_chunks) * 100);
+                        $progressBar.css('width', progress + '%');
+                        $statusText.text('<?php _e('Uploading...', 'olama-school'); ?> ' + progress + '%');
+
+                        $.ajax({
+                            url: ajaxurl,
+                            type: 'POST',
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            success: function (response) {
+                                if (response.success) {
+                                    if (index + 1 < total_chunks) {
+                                        uploadChunk(index + 1);
+                                    } else {
+                                        addLog('<?php _e('Upload complete! Preparing database...', 'olama-school'); ?>', 'success');
+                                        startRestore();
+                                    }
+                                } else {
+                                    addLog('<?php _e('Upload Error:', 'olama-school'); ?> ' + response.data, 'error');
+                                    resetUI();
+                                }
+                            },
+                            error: function () {
+                                addLog('<?php _e('Network error during upload.', 'olama-school'); ?>', 'error');
+                                resetUI();
+                            }
+                        });
+                    }
+
+                    function startRestore() {
+                        $progressBar.css('width', '100%').css('background', '#2271b1');
+                        $statusText.text('<?php _e('Restoring database, please wait...', 'olama-school'); ?>');
+
+                        $.post(ajaxurl, {
+                            action: 'olama_initiate_restore',
+                            upload_id: upload_id,
+                            nonce: nonce
+                        }, function (response) {
                             if (response.success) {
-                                $progressBar.css('width', '100%');
                                 $statusText.text('<?php _e('Restoration Complete!', 'olama-school'); ?>');
                                 addLog(response.data, 'success');
                                 alert(response.data);
                                 location.reload();
                             } else {
-                                addLog('<?php _e('Error:', 'olama-school'); ?> ' + response.data, 'error');
-                                $startButton.prop('disabled', false);
-                                $fileInput.prop('disabled', false);
+                                addLog('<?php _e('Restoration Error:', 'olama-school'); ?> ' + response.data, 'error');
+                                resetUI();
                             }
-                        },
-                        error: function (jqXHR, textStatus, errorThrown) {
-                            addLog('<?php _e('Network Error:', 'olama-school'); ?> ' + textStatus + ' - ' + errorThrown, 'error');
-                            $startButton.prop('disabled', false);
-                            $fileInput.prop('disabled', false);
-                        }
-                    });
+                        }).fail(function () {
+                            addLog('<?php _e('Server timeout or crash during restoration.', 'olama-school'); ?>', 'error');
+                            resetUI();
+                        });
+                    }
+
+                    function resetUI() {
+                        $startButton.prop('disabled', false);
+                        $fileInput.prop('disabled', false);
+                    }
+
+                    uploadChunk(0);
                 });
             });
         </script>
