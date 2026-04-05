@@ -5446,21 +5446,21 @@ class Olama_School_Admin
                 $table = $wpdb->prefix . 'olama_cleaning_assignments';
                 $floor_id = intval($_POST['floor_id']);
                 $cleaner_id = intval($_POST['cleaner_id']);
-                
-            } elseif ($type === 'assignments') {
-                $table = $wpdb->prefix . 'olama_cleaning_assignments';
-                $floor_id = intval($_POST['floor_id']);
-                $cleaner_id = intval($_POST['cleaner_id']);
                 $supervisor_id = intval($_POST['supervisor_id'] ?? 0);
                 
                 // Clear existing and re-insert
                 $wpdb->delete($table, array('floor_id' => $floor_id));
                 if ($cleaner_id || $supervisor_id) {
-                    $wpdb->insert($table, array(
+                    $insert_data = array(
                         'floor_id' => $floor_id, 
-                        'cleaner_id' => $cleaner_id,
-                        'supervisor_id' => $supervisor_id
-                    ));
+                        'cleaner_id' => $cleaner_id, // NOT NULL in DB, 0 is safe
+                    );
+                    if ($supervisor_id) {
+                        $insert_data['supervisor_id'] = $supervisor_id;
+                    } else {
+                        $insert_data['supervisor_id'] = null; // DEFAULT NULL
+                    }
+                    $wpdb->insert($table, $insert_data);
                 }
             }
 

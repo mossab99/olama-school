@@ -22,8 +22,9 @@ class Olama_School_Permissions
         // Skip if capabilities already initialized and exams caps are added
         $initialized = get_option('olama_school_caps_version') === OLAMA_SCHOOL_VERSION;
         $exams_added = get_option('olama_school_exams_caps_added');
+        $roles_exist = get_role('supervisor') && get_role('teacher') && get_role('assistant');
 
-        if ($initialized && $exams_added) {
+        if ($initialized && $exams_added && $roles_exist) {
             return;
         }
 
@@ -177,9 +178,15 @@ class Olama_School_Permissions
      */
     public static function add_capabilities()
     {
-        // Ensure teacher role exists
+        // Ensure custom roles exist
         if (!get_role('teacher')) {
             add_role('teacher', __('Teacher', 'olama-school'), get_role('author')->capabilities);
+        }
+        if (!get_role('supervisor')) {
+            add_role('supervisor', __('Supervisor', 'olama-school'), get_role('editor')->capabilities);
+        }
+        if (!get_role('assistant')) {
+            add_role('assistant', __('Assistant', 'olama-school'), get_role('author')->capabilities);
         }
 
         $all_groups = self::get_all_capabilities();

@@ -211,7 +211,7 @@ if (!isset($sections[$section])) {
                                         <select name="cleaner_id" style="width:100%;">
                                             <option value=""><?php echo Olama_School_Helpers::translate('Not Assigned'); ?></option>
                                             <?php foreach ($cleaners as $cl): ?>
-                                                <option value="<?php echo $cl->id; ?>" <?php selected($assignment && $assignment->cleaner_id, $cl->id); ?>><?php echo esc_html($cl->cleaner_name); ?></option>
+                                                <option value="<?php echo $cl->id; ?>" <?php selected($assignment ? $assignment->cleaner_id : '', $cl->id); ?>><?php echo esc_html($cl->cleaner_name); ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </td>
@@ -219,7 +219,7 @@ if (!isset($sections[$section])) {
                                         <select name="supervisor_id" style="width:100%;">
                                             <option value=""><?php echo Olama_School_Helpers::translate('Not Assigned'); ?></option>
                                             <?php foreach ($supervisors as $sv): ?>
-                                                <option value="<?php echo $sv->ID; ?>" <?php selected($assignment && $assignment->supervisor_id, $sv->ID); ?>><?php echo esc_html($sv->display_name); ?></option>
+                                                <option value="<?php echo $sv->ID; ?>" <?php selected($assignment ? $assignment->supervisor_id : '', $sv->ID); ?>><?php echo esc_html($sv->display_name); ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </td>

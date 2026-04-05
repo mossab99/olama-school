@@ -323,6 +323,9 @@ class Olama_School_Helpers
      */
     public static function translate($text)
     {
+        if ($text === null) {
+            return '';
+        }
         $text = trim($text);
         if (!self::is_arabic()) {
             return $text;
