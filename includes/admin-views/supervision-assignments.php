@@ -16,8 +16,8 @@ $grades = Olama_School_Grade::get_grades();
 
 // Get valid supervisors (users with supervisor role or specific capability)
 $supervisors = get_users(array(
-    'role__in' => array('administrator', 'editor', 'supervisor'),
-    'fields' => array('ID', 'display_name')
+    'role__in' => array('supervisor', 'olama_supervisor', 'administrator', 'school_manager', 'editor'),
+    'number' => -1
 ));
 
 // Filter assignments

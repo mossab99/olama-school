@@ -77,7 +77,7 @@ if (!empty($current_month_weeks)) {
 $selected_week_start = $_GET['week_start'] ?? $current_week_start;
 $selected_supervisor_id = !empty($_GET['supervisor_id']) ? intval($_GET['supervisor_id']) : 0;
 
-$supervisors = get_users(['role__in' => ['olama_supervisor', 'administrator', 'school_manager']]);
+$supervisors = get_users(['role__in' => ['supervisor', 'olama_supervisor', 'administrator', 'school_manager', 'editor'], 'number' => -1]);
 
 // --- Section 1: Dashboard Top Weekly Plan Global Stats ---
 $week_stats_global = [

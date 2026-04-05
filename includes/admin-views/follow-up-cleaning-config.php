@@ -196,7 +196,7 @@ if (!isset($sections[$section])) {
                         <?php 
                         $floors = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_cleaning_floors WHERE is_active = 1");
                         $cleaners = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_cleaning_cleaners WHERE is_active = 1");
-                        $supervisors = get_users(array('role__in' => array('supervisor', 'administrator'))); // Include admin for testing
+                        $supervisors = get_users(array('role__in' => array('supervisor', 'olama_supervisor', 'administrator', 'school_manager', 'editor'), 'number' => -1)); 
                         foreach ($floors as $fl): 
                             $assignment = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}olama_cleaning_assignments WHERE floor_id = %d", $fl->id));
                         ?>
