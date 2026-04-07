@@ -364,16 +364,48 @@ $cleaning_stats = Olama_School_Admin::get_cleaning_dashboard_stats($cleaning_dat
                         <h4 style="margin-top: 0; font-size: 0.9em; text-transform: uppercase; color: #666;">
                             <?php echo Olama_School_Helpers::translate('Status by Floor'); ?></h4>
                         <div style="max-height: 250px; overflow-y: auto; padding-right:10px;">
+                            <div style="display: flex; padding-bottom: 5px; border-bottom: 2px solid #eee; margin-bottom: 5px; font-size: 0.75em; color: #999; font-weight: 700; text-transform: uppercase;">
+                                <div style="flex: 2;"><?php echo Olama_School_Helpers::translate('Floor Name'); ?></div>
+                                <div style="flex: 2; display: flex; justify-content: center; gap: 4px;">
+                                    <?php foreach ($cleaning_stats['slots'] as $idx => $s): ?>
+                                        <span title="<?php echo esc_attr($s->slot_time); ?>">T<?php echo $idx + 1; ?></span>
+                                    <?php endforeach; ?>
+                                </div>
+                                <div style="flex: 1; text-align: center;"><?php echo Olama_School_Helpers::translate('Ratio'); ?></div>
+                            </div>
                             <?php foreach ($cleaning_stats['floor_stats'] as $fs): ?>
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f6f7f7;">
-                                    <span style="font-weight: 600; font-size: 0.9em;"><?php echo esc_html($fs['label']); ?></span>
-                                    <?php if ($fs['status'] === 'completed'): ?>
-                                        <span style="background: #e7ffef; color: #00a32a; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.8em;"><?php echo Olama_School_Helpers::translate('Completed'); ?></span>
-                                    <?php elseif ($fs['status'] === 'partial'): ?>
-                                        <span style="background: #fff8e5; color: #854d0e; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.8em;"><?php echo $fs['completed'] . '/' . $fs['total']; ?></span>
-                                    <?php else: ?>
-                                        <span style="background: #f6f7f7; color: #999; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.8em;"><?php echo Olama_School_Helpers::translate('Pending'); ?></span>
-                                    <?php endif; ?>
+                                <div style="display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f6f7f7;">
+                                    <div style="flex: 2; font-weight: 600; font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?php echo esc_attr($fs['label']); ?>">
+                                        <?php echo esc_html($fs['label']); ?>
+                                    </div>
+                                    <div style="flex: 2; display: flex; justify-content: center; gap: 4px;">
+                                        <?php foreach ($cleaning_stats['slots'] as $s): ?>
+                                            <?php 
+                                            $sd = isset($fs['slot_details'][(int)$s->id]) ? $fs['slot_details'][(int)$s->id] : null;
+                                            $visited = $sd && $sd['visited'];
+                                            
+                                            // Build enhanced tooltip
+                                            $tooltip = Olama_School_Helpers::translate('Time Slot') . ': ' . $s->slot_time . "\n";
+                                            $tooltip .= Olama_School_Helpers::translate('Supervisor') . ': ' . ($sd ? $sd['supervisor'] : 'N/A') . "\n";
+                                            $tooltip .= Olama_School_Helpers::translate('Status') . ': ' . ($visited ? Olama_School_Helpers::translate('Visited') : Olama_School_Helpers::translate('Pending'));
+                                            
+                                            // Ontime Check
+                                            if ($visited && isset($sd['entry_time'])) {
+                                                $ontime_label = $sd['is_ontime'] ? Olama_School_Helpers::translate('Yes') : Olama_School_Helpers::translate('No');
+                                                $tooltip .= "\n" . Olama_School_Helpers::translate('Ontime') . ': ' . $ontime_label . ' [' . $sd['entry_time'] . ']';
+                                            }
+
+                                            if ($visited && !empty($sd['missing'])) {
+                                                $tooltip .= "\n\n" . Olama_School_Helpers::translate('Missing Tasks') . ":\n- " . implode("\n- ", $sd['missing']);
+                                            }
+                                            ?>
+                                            <div style="width: 10px; height: 10px; border-radius: 50%; background: <?php echo $visited ? '#10b981' : '#ef4444'; ?>; box-shadow: inset 0 0 2px rgba(0,0,0,0.1); cursor: help;" 
+                                                 title="<?php echo esc_attr($tooltip); ?>"></div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <div style="flex: 1; text-align: center; font-weight: 700; font-size: 0.85em; color: #1d2327;">
+                                        <?php echo $fs['ratio']; ?>%
+                                    </div>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -384,15 +416,21 @@ $cleaning_stats = Olama_School_Admin::get_cleaning_dashboard_stats($cleaning_dat
                         <h4 style="margin-top: 0; font-size: 0.9em; text-transform: uppercase; color: #666;">
                             <?php echo Olama_School_Helpers::translate('Supervisor Status'); ?></h4>
                         <div style="max-height: 250px; overflow-y: auto; padding-right:10px;">
+                            <div style="display: flex; padding-bottom: 5px; border-bottom: 2px solid #eee; margin-bottom: 5px; font-size: 0.75em; color: #999; font-weight: 700; text-transform: uppercase;">
+                                <div style="flex: 2;"><?php echo Olama_School_Helpers::translate('Supervisor'); ?></div>
+                                <div style="flex: 1; text-align: center;"><?php echo Olama_School_Helpers::translate('Req'); ?></div>
+                                <div style="flex: 1; text-align: center;"><?php echo Olama_School_Helpers::translate('Done'); ?></div>
+                                <div style="flex: 1; text-align: center;"><?php echo Olama_School_Helpers::translate('%'); ?></div>
+                            </div>
                             <?php if (!empty($cleaning_stats['supervisors'])): ?>
                                 <?php foreach ($cleaning_stats['supervisors'] as $sid => $ss): ?>
-                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f6f7f7;">
-                                        <span style="font-weight: 600; font-size: 0.9em;"><?php echo esc_html($ss['name']); ?></span>
-                                        <?php if ($ss['completed'] >= $ss['total'] && $ss['total'] > 0): ?>
-                                            <span style="background: #e7ffef; color: #00a32a; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.8em;"><?php echo Olama_School_Helpers::translate('Completed'); ?></span>
-                                        <?php else: ?>
-                                            <span style="background: #fff8e5; color: #854d0e; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 0.8em;"><?php echo Olama_School_Helpers::translate('In Progress'); ?></span>
-                                        <?php endif; ?>
+                                    <div style="display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f6f7f7;">
+                                        <div style="flex: 2; font-weight: 600; font-size: 0.85em;"><?php echo esc_html($ss['name']); ?></div>
+                                        <div style="flex: 1; text-align: center; font-size: 0.85em; font-weight: 600; color: #64748b;"><?php echo $ss['total']; ?></div>
+                                        <div style="flex: 1; text-align: center; font-size: 0.85em; font-weight: 700; color: #10b981;"><?php echo $ss['completed']; ?></div>
+                                        <div style="flex: 1; text-align: center; font-weight: 800; font-size: 0.85em; color: <?php echo $ss['ratio'] >= 100 ? '#10b981' : ($ss['ratio'] > 0 ? '#f59e0b' : '#ef4444'); ?>;">
+                                            <?php echo $ss['ratio']; ?>%
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>

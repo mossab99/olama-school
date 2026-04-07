@@ -155,9 +155,9 @@ function olama_school_init()
     // Initialize Permissions (ensure caps are updated if code changes)
     Olama_School_Permissions::init();
 
-    // Initialize Admin
+    // Initialize Admin Components
+    new Olama_School_Admin();
     if (is_admin()) {
-        new Olama_School_Admin();
         new Olama_School_Ajax_Handlers();
         new Olama_School_Supervision_Ajax_Handlers();
     }

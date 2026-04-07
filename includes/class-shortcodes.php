@@ -5177,26 +5177,47 @@ class Olama_School_Shortcodes
 
         global $wpdb;
 
-        $floors_list = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_cleaning_floors WHERE is_active = 1");
+        $user_id = get_current_user_id();
+        
+        // 1. Get floors assigned to this user (Supervisor)
+        $assigned_floors = $wpdb->get_results($wpdb->prepare(
+            "SELECT f.* FROM {$wpdb->prefix}olama_cleaning_floors f 
+            JOIN {$wpdb->prefix}olama_cleaning_assignments a ON a.floor_id = f.id 
+            WHERE a.supervisor_id = %d AND f.is_active = 1",
+            $user_id
+        ));
+
+        // 2. Determine floor list based on assignment or admin status
+        if (!empty($assigned_floors)) {
+            // If user (even admin) is assigned specific floors, show ONLY those
+            $floors_list = $assigned_floors;
+        } elseif (current_user_can('manage_options')) {
+            // Real admin with no specific floor assignments - show all for oversight
+            $floors_list = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_cleaning_floors WHERE is_active = 1");
+        } else {
+            // Not an admin and no assignments - no floors available
+            $floors_list = array();
+        }
+
+        if (empty($floors_list)) {
+            return '<div class="olama-error notice notice-error" style="padding: 15px; background: #fee2e2; border-right: 4px solid #ef4444; border-radius: 8px; color: #991b1b; margin: 20px 0;">' . Olama_School_Helpers::translate('Access Denied: You have no assigned floors.') . '</div>';
+        }
+
         $slots_list = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_cleaning_slots WHERE is_active = 1");
         $items_list = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_cleaning_items WHERE is_active = 1");
 
-        if (empty($floors_list) || empty($slots_list) || empty($items_list)) {
+        if (empty($slots_list) || empty($items_list)) {
             return '<div class="olama-info">' . Olama_School_Helpers::translate('Cleaning module is not fully configured.') . '</div>';
         }
 
-        $floor_id = intval($atts['floor_id']);
-        if (!$floor_id && isset($_GET['floor_id'])) {
-            $floor_id = intval($_GET['floor_id']);
-        }
-        if (!$floor_id && !empty($floors_list)) {
+        $floor_ids = wp_list_pluck($floors_list, 'id');
+        $floor_id = isset($_GET['floor_id']) ? intval($_GET['floor_id']) : (isset($atts['floor_id']) ? intval($atts['floor_id']) : $floors_list[0]->id);
+
+        if (!in_array($floor_id, $floor_ids)) {
             $floor_id = $floors_list[0]->id;
         }
 
-        $slot_id = isset($_GET['slot_id']) ? intval($_GET['slot_id']) : 0;
-        if (!$slot_id && !empty($slots_list)) {
-            $slot_id = $slots_list[0]->id;
-        }
+        $slot_id = isset($_GET['slot_id']) ? intval($_GET['slot_id']) : $slots_list[0]->id;
 
         $cleaning_date = isset($_GET['cleaning_date']) ? sanitize_text_field($_GET['cleaning_date']) : current_time('Y-m-d');
 
@@ -5220,6 +5241,22 @@ class Olama_School_Shortcodes
         $checkpoints = $cleaning_log ? json_decode($cleaning_log->checkpoints_data, true) : array();
         $logged_staff_name = Olama_School_Helpers::get_user_display_name(get_current_user_id());
         $active_year = Olama_School_Academic::get_active_year();
+
+        // Progress calculation for the current supervisor
+        $total_assigned_floors = count($floors_list);
+        $total_slots_count = count($slots_list);
+        $total_assigned_visits = $total_assigned_floors * $total_slots_count;
+
+        $assigned_floor_ids = wp_list_pluck($floors_list, 'id');
+        $completed_visits_count = 0;
+        if (!empty($assigned_floor_ids)) {
+            $completed_visits_count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}olama_cleaning_logs 
+                WHERE cleaning_date = %s AND floor_id IN (" . implode(',', array_map('intval', $assigned_floor_ids)) . ")",
+                $cleaning_date
+            ));
+        }
+        $completion_ratio = $total_assigned_visits > 0 ? round(($completed_visits_count / $total_assigned_visits) * 100) : 0;
 
         ob_start();
         ?>
@@ -5264,6 +5301,50 @@ class Olama_School_Shortcodes
                 </form>
             </div>
 
+            <!-- Progress Bar -->
+            <div class="cleaning-progress-container" style="background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="font-weight: 700; color: #1e293b; font-size: 0.95rem;">
+                        <span class="dashicons dashicons-performance" style="margin-top: 2px; margin-left: 5px; color: #3b82f6;"></span>
+                        <?php echo Olama_School_Helpers::translate('Your Daily Progress'); ?>
+                    </span>
+                    <span style="font-weight: 800; color: #3b82f6; font-size: 1rem;">
+                        <?php echo $completed_visits_count; ?> / <?php echo $total_assigned_visits; ?> 
+                        <span style="font-size: 0.8rem; color: #64748b; font-weight: 600; margin-right: 5px;">(<?php echo $completion_ratio; ?>%)</span>
+                    </span>
+                </div>
+                <div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 10px; overflow: hidden;">
+                    <div style="width: <?php echo $completion_ratio; ?>%; height: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); border-radius: 10px; transition: width 0.5s ease-out;"></div>
+                </div>
+
+                <?php 
+                // Entry status calculation
+                $selected_slot_obj = null;
+                foreach($slots_list as $s) if ((int)$s->id === (int)$slot_id) $selected_slot_obj = $s;
+                
+                $now_ts = current_time('timestamp');
+                $slot_ts = strtotime($cleaning_date . ' ' . ($selected_slot_obj ? $selected_slot_obj->slot_time : '00:00'));
+                $actual_ts = $cleaning_log ? strtotime($cleaning_log->created_at) : $now_ts;
+                
+                $time_diff_mins = round(($actual_ts - $slot_ts) / 60);
+                $is_delayed = ($time_diff_mins > 10);
+                $status_label = $is_delayed ? Olama_School_Helpers::translate('Delay') : Olama_School_Helpers::translate('Ontime');
+                $status_color = $is_delayed ? '#ef4444' : '#10b981';
+                ?>
+                <div style="margin-top: 15px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;">
+                    <span style="color: #64748b;"><?php echo Olama_School_Helpers::translate('Entry Status:'); ?></span>
+                    <span style="color: <?php echo $status_color; ?>; background: <?php echo $is_delayed ? '#fef2f2' : '#f0fdf4'; ?>; padding: 4px 12px; border-radius: 20px; border: 1px solid <?php echo $is_delayed ? '#fecaca' : '#bbf7d0'; ?>; display: flex; align-items: center; gap: 5px;">
+                        <span class="dashicons dashicons-clock" style="font-size: 16px; width: 16px; height: 16px; color: <?php echo $status_color; ?>;"></span>
+                        <?php echo $status_label; ?> - 
+                        <?php echo $is_delayed ? Olama_School_Helpers::translate('No') : Olama_School_Helpers::translate('Yes'); ?> 
+                        [<?php echo date('H:i', $actual_ts); ?>]
+                        <?php if ($is_delayed && $time_diff_mins > 0): ?>
+                            <span style="font-weight: 800; margin-right: 5px;">(<?php echo $time_diff_mins; ?> <?php echo Olama_School_Helpers::translate('mins delay'); ?>)</span>
+                        <?php endif; ?>
+                    </span>
+                </div>
+            </div>
+
             <div class="cleaning-form-card" style="background: #fff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #eef2f7;">
                 <form method="post" action="">
                     <?php wp_nonce_field('olama_save_cleaning_log'); ?>
@@ -5276,7 +5357,8 @@ class Olama_School_Shortcodes
                     <input type="hidden" name="cleaning_date" value="<?php echo esc_attr($cleaning_date); ?>">
                     <input type="hidden" name="redirect_to" value="<?php 
                         $current_url = home_url(add_query_arg(null, null)); 
-                        echo esc_url(remove_query_arg(array('message', 'floor_id', 'slot_id', 'cleaning_date'), $current_url)); 
+                        // We must keep floor, slot, date to ensure we land back on SAME context
+                        echo esc_url($current_url); 
                     ?>">
 
                     <div style="text-align: center; margin-bottom: 30px;">

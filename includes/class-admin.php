@@ -34,8 +34,8 @@ class Olama_School_Admin
         add_action('admin_init', array($this, 'handle_kg_report_print'));
         add_action('admin_init', array($this, 'handle_family_actions'));
         add_action('admin_init', array($this, 'handle_lesson_planner_actions'));
-        add_action('admin_init', array($this, 'handle_attendance_save'));
-        add_action('admin_init', array($this, 'handle_cleaning_save'));
+        add_action('init', array($this, 'handle_attendance_save'));
+        add_action('init', array($this, 'handle_cleaning_save'));
         add_action('admin_init', array($this, 'handle_cleaning_config_save'));
         add_action('wp_ajax_olama_save_attendance', array($this, 'ajax_save_attendance'));
         add_action('wp_ajax_olama_mark_all_present', array($this, 'ajax_mark_all_present'));
@@ -4840,7 +4840,24 @@ class Olama_School_Admin
 
         $floors = $wpdb->get_results("SELECT id, floor_name FROM {$wpdb->prefix}olama_cleaning_floors WHERE is_active = 1");
         $slots = $wpdb->get_results("SELECT id, slot_time FROM {$wpdb->prefix}olama_cleaning_slots WHERE is_active = 1");
-        $assignments = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_cleaning_assignments");
+        $items = $wpdb->get_results("SELECT id, item_name FROM {$wpdb->prefix}olama_cleaning_items WHERE is_active = 1");
+        
+        $items_map = array();
+        foreach($items as $it) $items_map[(int)$it->id] = $it->item_name;
+
+        // Only count assignments for active floors
+        $assignments = $wpdb->get_results("
+            SELECT a.* FROM {$wpdb->prefix}olama_cleaning_assignments a
+            JOIN {$wpdb->prefix}olama_cleaning_floors f ON a.floor_id = f.id
+            WHERE f.is_active = 1
+        ");
+
+        $assignments_map = array();
+        foreach($assignments as $as) {
+            if ($as->supervisor_id) {
+                $assignments_map[(int)$as->floor_id] = Olama_School_Helpers::get_user_display_name($as->supervisor_id);
+            }
+        }
 
         $date = $date ?: current_time('Y-m-d');
         $total_slots = count($slots);
@@ -4848,23 +4865,68 @@ class Olama_School_Admin
 
         // Current logs for the day
         $logs = $wpdb->get_results($wpdb->prepare(
-            "SELECT floor_id, slot_id FROM {$wpdb->prefix}olama_cleaning_logs WHERE cleaning_date = %s",
+            "SELECT floor_id, slot_id, checkpoints_data, created_at FROM {$wpdb->prefix}olama_cleaning_logs WHERE cleaning_date = %s",
             $date
         ));
 
-        // 1. Floor statuses
+        // 1. Floor statuses (including individual slots)
         $floor_stats = array();
         foreach ($floors as $fl) {
+            $floor_logs = array();
             $completed_on_floor = 0;
+            $floor_slot_details = array();
+
+            // Init slots for this floor
+            foreach($slots as $s) {
+                $floor_slot_details[(int)$s->id] = array(
+                    'visited' => false,
+                    'supervisor' => isset($assignments_map[(int)$fl->id]) ? $assignments_map[(int)$fl->id] : 'N/A',
+                    'missing' => array(),
+                    'time' => $s->slot_time,
+                    'entry_time' => null,
+                    'is_ontime' => false
+                );
+            }
+
             foreach ($logs as $log) {
                 if ((int) $log->floor_id === (int) $fl->id) {
                     $completed_on_floor++;
+                    $floor_logs[] = (int)$log->slot_id;
+                    
+                    if (isset($floor_slot_details[(int)$log->slot_id])) {
+                        $floor_slot_details[(int)$log->slot_id]['visited'] = true;
+                        
+                        // Actual Entry Time reporting
+                        $actual_time = date('H:i', strtotime($log->created_at));
+                        $floor_slot_details[(int)$log->slot_id]['entry_time'] = $actual_time;
+                        
+                        $scheduled_time = $floor_slot_details[(int)$log->slot_id]['time'];
+                        $scheduled_ts = strtotime($date . ' ' . $scheduled_time);
+                        $actual_ts = strtotime($log->created_at);
+                        
+                        // Ontime = within 60 minutes of the starting slot
+                        $floor_slot_details[(int)$log->slot_id]['is_ontime'] = (abs($actual_ts - $scheduled_ts) <= 3600);
+
+                        $cp = json_decode($log->checkpoints_data, true);
+                        if (is_array($cp)) {
+                            foreach($cp as $item_id => $status) {
+                                if ($status === 'not_done' && isset($items_map[(int)$item_id])) {
+                                    $floor_slot_details[(int)$log->slot_id]['missing'][] = $items_map[(int)$item_id];
+                                }
+                            }
+                        }
+                    }
                 }
             }
+            
             $floor_stats[] = array(
+                'id' => $fl->id,
                 'label' => $fl->floor_name,
                 'total' => $total_slots,
                 'completed' => $completed_on_floor,
+                'visited_slots' => $floor_logs,
+                'slot_details' => $floor_slot_details,
+                'ratio' => $total_slots > 0 ? round(($completed_on_floor / $total_slots) * 100) : 0,
                 'status' => ($completed_on_floor >= $total_slots) ? 'completed' : (($completed_on_floor > 0) ? 'partial' : 'pending')
             );
         }
@@ -4890,11 +4952,17 @@ class Olama_School_Admin
                 }
             }
         }
+        
+        // Finalize supervisor ratios
+        foreach($supervisor_tasks as $sid => &$st) {
+            $st['ratio'] = $st['total'] > 0 ? round(($st['completed'] / $st['total']) * 100) : 0;
+        }
 
         $completed_total = count($logs);
 
         return array(
             'date' => $date,
+            'slots' => $slots,
             'total_tasks' => $total_tasks,
             'completed_tasks' => $completed_total,
             'percentage' => $total_tasks > 0 ? round(($completed_total / $total_tasks) * 100) : 0,
