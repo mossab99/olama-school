@@ -5376,7 +5376,7 @@ class Olama_School_Admin
                 $wpdb->insert($table, $data);
             }
 
-            $redirect_url = admin_url('admin.php?page=olama-school-follow-up&tab=cleaning');
+            $redirect_url = isset($_POST['redirect_to']) ? sanitize_text_field($_POST['redirect_to']) : admin_url('admin.php?page=olama-school-follow-up&tab=cleaning');
             $redirect_url = add_query_arg(array(
                 'floor_id' => $floor_id,
                 'cleaning_date' => $cleaning_date,

@@ -73,6 +73,9 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 <option value="family_number_lookup">
                     <?php echo Olama_School_Helpers::translate('Family Number Lookup'); ?>
                 </option>
+                <option value="cleaning_form">
+                    <?php echo Olama_School_Helpers::translate('Cleaning Form'); ?>
+                </option>
             </select>
         </div>
         <div>
@@ -158,6 +161,21 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 </option>
             </select>
         </div>
+        <div id="gen-floor-wrapper" style="display: none;">
+            <label style="display: block; font-weight: 600; color: #475569; margin-bottom: 8px; font-size: 0.9rem;">
+                <?php echo Olama_School_Helpers::translate('Cleaning Floor'); ?>
+            </label>
+            <select id="gen-floor" style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                <option value="0"><?php echo Olama_School_Helpers::translate('-- All Floors/Selectable --'); ?></option>
+                <?php
+                global $wpdb;
+                $floors = $wpdb->get_results("SELECT id, floor_name FROM {$wpdb->prefix}olama_cleaning_floors WHERE is_active = 1");
+                foreach ($floors as $f) {
+                    echo '<option value="' . $f->id . '">' . esc_html($f->floor_name) . '</option>';
+                }
+                ?>
+            </select>
+        </div>
     </div>
 
     <div
@@ -234,6 +252,15 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 $('#gen-week-wrapper').hide();
                 $('#gen-exam-wrapper').hide();
                 $('#gen-schedule-type-wrapper').hide();
+                $('#gen-floor-wrapper').hide();
+            } else if (type === 'cleaning_form') {
+                $('#gen-semester').closest('div').hide();
+                $('#gen-grade').closest('div').hide();
+                $('#gen-section').closest('div').hide();
+                $('#gen-week-wrapper').hide();
+                $('#gen-exam-wrapper').hide();
+                $('#gen-schedule-type-wrapper').hide();
+                $('#gen-floor-wrapper').show();
             } else {
                 $('#gen-semester').closest('div').show();
                 $('#gen-grade').closest('div').show();
@@ -252,7 +279,12 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 shortcode += ' year="' + selectedYearId + '"';
             }
 
-            if (type !== 'stationary') {
+            if (type === 'cleaning_form') {
+                var floorId = $('#gen-floor').val();
+                if (floorId && floorId !== '0') {
+                    shortcode += ' floor_id="' + floorId + '"';
+                }
+            } else if (type !== 'stationary') {
                 if (type === 'family_performance' || type === 'online_exams' || type === 'logged_teacher_schedule' || type === 'logged_user_shifts') {
                     if (semester && (type === 'family_performance' || type === 'online_exams')) shortcode += ' semester="' + semester + '"';
                 } else {
@@ -343,7 +375,7 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
             });
         });
 
-        $('#gen-section, #gen-week, #gen-exam, #gen-schedule-type').on('change', updateShortcode);
+        $('#gen-section, #gen-week, #gen-exam, #gen-schedule-type, #gen-floor').on('change', updateShortcode);
 
         $('#copy-shortcode').on('click', function () {
             var text = $('#generated-shortcode').text().trim();
