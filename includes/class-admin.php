@@ -5171,8 +5171,8 @@ class Olama_School_Admin
      */
     public function restrict_teacher_access()
     {
-        // Don't restrict if user is an administrator
-        if (current_user_can('manage_options')) {
+        // Don't restrict if user is an administrator or staff member
+        if (Olama_School_Permissions::can('olama_view_dashboard') || current_user_can('manage_options')) {
             return;
         }
 
@@ -5206,7 +5206,7 @@ class Olama_School_Admin
         }
 
         $wp_admin_bar->remove_node('wp-logo');
-        $wp_admin_bar->remove_node('site-name');
+        // Keep site-name visible so staff can navigate back to the dashboard
         $wp_admin_bar->remove_node('comments');
         $wp_admin_bar->remove_node('new-content');
     }
