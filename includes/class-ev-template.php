@@ -105,6 +105,17 @@ class Olama_School_EV_Template
     public static function delete_template($id)
     {
         global $wpdb;
+
+        // Prevent deletion if there are related evaluation records
+        $record_count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_ev_records WHERE template_id = %d",
+            $id
+        ));
+
+        if ($record_count > 0) {
+            return 'has_records';
+        }
+
         // Delete child structures
         $domains = Olama_School_EV_Curriculum::get_domains($id);
         foreach ($domains as $domain) {

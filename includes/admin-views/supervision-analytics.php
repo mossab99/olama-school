@@ -88,7 +88,7 @@ $teacher_stats = $wpdb->get_results($wpdb->prepare(
             style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-left: 4px solid #3b82f6;">
             <div
                 style="color: #64748b; font-size: 14px; font-weight: 600; text-transform: uppercase; margin-bottom: 10px;">
-                <?php _e('Total Scheduled Visits', 'olama-school'); ?>
+                <p class="stat-label"><?php echo Olama_School_Helpers::translate('Total Scheduled Visits'); ?></p>
             </div>
             <div style="font-size: 32px; font-weight: 800; color: #1e293b;">
                 <?php echo intval($total_visits); ?>
@@ -99,7 +99,7 @@ $teacher_stats = $wpdb->get_results($wpdb->prepare(
             style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-left: 4px solid #10b981;">
             <div
                 style="color: #64748b; font-size: 14px; font-weight: 600; text-transform: uppercase; margin-bottom: 10px;">
-                <?php _e('Completed Visits', 'olama-school'); ?>
+                <p class="stat-label"><?php echo Olama_School_Helpers::translate('Completed Visits'); ?></p>
             </div>
             <div style="font-size: 32px; font-weight: 800; color: #1e293b;">
                 <?php echo intval($completed_visits); ?>
@@ -110,7 +110,7 @@ $teacher_stats = $wpdb->get_results($wpdb->prepare(
             style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-left: 4px solid #8b5cf6;">
             <div
                 style="color: #64748b; font-size: 14px; font-weight: 600; text-transform: uppercase; margin-bottom: 10px;">
-                <?php _e('Average Score', 'olama-school'); ?>
+                <?php echo Olama_School_Helpers::translate('Average Score'); ?>
             </div>
             <div style="font-size: 32px; font-weight: 800; color: #1e293b;">
                 <?php echo number_format((float) ($avg_score ?? 0), 1); ?>%
@@ -121,19 +121,19 @@ $teacher_stats = $wpdb->get_results($wpdb->prepare(
     <div class="olama-card"
         style="background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
         <h3>
-            <?php _e('Performance by Grade', 'olama-school'); ?>
+            <?php echo Olama_School_Helpers::translate('Performance by Grade'); ?>
         </h3>
         <table class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
                     <th>
-                        <?php _e('Grade', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Grade'); ?>
                     </th>
                     <th>
-                        <?php _e('Visits', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Visits'); ?>
                     </th>
                     <th>
-                        <?php _e('Average Score', 'olama-school'); ?>
+                        <?php echo Olama_School_Helpers::translate('Average Score'); ?>
                     </th>
                 </tr>
             </thead>
@@ -165,7 +165,7 @@ $teacher_stats = $wpdb->get_results($wpdb->prepare(
                 <?php else: ?>
                     <tr>
                         <td colspan="3" style="text-align: center; color: #64748b; font-style: italic; padding: 20px;">
-                            <?php _e('No data available.', 'olama-school'); ?>
+                            <?php echo Olama_School_Helpers::translate('No data available.'); ?>
                         </td>
                     </tr>
                 <?php endif; ?>
@@ -177,13 +177,6 @@ $teacher_stats = $wpdb->get_results($wpdb->prepare(
     <div class="olama-card"
         style="background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-top: 30px;">
         <h3>
-            <?php _e('Performance by Supervisor', 'olama-school'); ?>
-        </h3>
-        <table class="wp-list-table widefat fixed striped">
-            <thead>
-                <tr>
-                    <th>
-                        <?php _e('Supervisor', 'olama-school'); ?>
                     </th>
                     <th>
                         <?php _e('Total Planned Visits', 'olama-school'); ?>
@@ -244,24 +237,14 @@ $teacher_stats = $wpdb->get_results($wpdb->prepare(
     <!-- Performance by Teacher Section -->
     <div class="olama-card"
         style="background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-top: 30px; margin-bottom: 30px;">
-        <h3>
-            <?php _e('Performance by Teacher', 'olama-school'); ?>
-        </h3>
+        <h3><?php echo Olama_School_Helpers::translate('Performance by Teacher'); ?></h3>
         <table class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
-                    <th>
-                        <?php _e('Teacher', 'olama-school'); ?>
-                    </th>
-                    <th>
-                        <?php _e('Visits', 'olama-school'); ?>
-                    </th>
-                    <th>
-                        <?php _e('Completed', 'olama-school'); ?>
-                    </th>
-                    <th>
-                        <?php _e('Average Score', 'olama-school'); ?>
-                    </th>
+                    <th style="width: 30%;"><?php echo Olama_School_Helpers::translate('Teacher'); ?></th>
+                    <th style="width: 20%; text-align: center;"><?php echo Olama_School_Helpers::translate('Visits'); ?></th>
+                    <th style="width: 20%; text-align: center;"><?php echo Olama_School_Helpers::translate('Completed'); ?></th>
+                    <th style="width: 30%;"><?php echo Olama_School_Helpers::translate('Average Score'); ?></th>
                 </tr>
             </thead>
             <tbody>

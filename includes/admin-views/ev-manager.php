@@ -8,14 +8,18 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="olama-ev-mgmt-wrap">
-    <?php if (isset($_GET['message'])): ?>
-        <div class="notice notice-success is-dismissible" style="margin-left: 0; margin-right: 0;">
+    <?php if (isset($_GET['message'])): 
+        $msg = sanitize_text_field($_GET['message']);
+        $notice_class = (strpos($msg, 'error') !== false) ? 'notice-error' : 'notice-success';
+    ?>
+        <div class="notice <?php echo $notice_class; ?> is-dismissible" style="margin-left: 0; margin-right: 0;">
             <p>
                 <?php
-                $msg = sanitize_text_field($_GET['message']);
                 if ($msg === 'orphans_removed') {
                     $count = isset($_GET['count']) ? intval($_GET['count']) : 0;
                     echo sprintf(Olama_School_Helpers::translate('%d orphaned evaluation records were removed successfully.'), $count);
+                } elseif ($msg === 'ev_error_has_records') {
+                    echo Olama_School_Helpers::translate('Cannot delete this evaluation because it already has student records.');
                 } else {
                     echo Olama_School_Helpers::translate($msg);
                 }

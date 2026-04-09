@@ -234,7 +234,7 @@ $visits = $wpdb->get_results(
                             <td>
                                 <span
                                     style="background: <?php echo $status_color; ?>15; color: <?php echo $status_color; ?>; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 11px;">
-                                    <?php echo esc_html($status_label); ?>
+                                    <?php echo esc_html(Olama_School_Helpers::translate($status_label)); ?>
                                 </span>
                             </td>
                             <td>

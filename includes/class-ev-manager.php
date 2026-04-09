@@ -118,7 +118,11 @@ class Olama_School_EV_Manager
                     $url = remove_query_arg('template_id', $url);
                 }
 
-                $url = add_query_arg('message', 'ev_success', $url);
+                if ($result === 'has_records') {
+                    $url = add_query_arg('message', 'ev_error_has_records', $url);
+                } else {
+                    $url = add_query_arg('message', 'ev_success', $url);
+                }
             }
             wp_redirect($url);
             exit;
