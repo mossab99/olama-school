@@ -350,48 +350,9 @@ class Olama_School_Supervision_Ajax_Handlers
                                     <?php endforeach; ?>
                                 </div>
                             </div>
-                            <?php foreach ($category->indicators as $indicator):
-                                $score_row = $scores[$indicator->id] ?? null;
-                                $score_val = $score_row ? $score_row->score : null;
-                                ?>
-                                <div class="ev-indicator-row">
-                                    <div style="width: 50%; padding-right: 20px;">
-                                        <?php echo esc_html($indicator->indicator_text); ?>
-                                        <?php if ($indicator->is_critical): ?>
-                                            <span style="color: #ef4444; font-size: 11px; font-weight: bold; margin-left: 5px;">*
-                                                Critical</span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="ev-scoring-options">
-                                        <?php
-                                        $total_levels = count($score_config);
-                                        $i = 0;
-                                        foreach ($score_config as $val => $label) {
-                                            $i++;
-                                            $is_active = ($score_val == $val);
-                                            $color_class = 'not-mastered';
-                                            if ($i === 1)
-                                                $color_class = 'mastered';
-                                            elseif ($i === $total_levels)
-                                                $color_class = 'not-mastered';
-                                            elseif ($i === 2 && $total_levels > 2)
-                                                $color_class = 'partial';
-                                            ?>
-                                            <label
-                                                class="ev-score-option <?php echo $color_class; ?> <?php echo $is_active ? 'active' : ''; ?>">
-                                                <input type="radio" name="scores[<?php echo $indicator->id; ?>]" value="<?php echo $val; ?>"
-                                                    <?php checked($score_val, $val); ?> required>
-                                                <span><?php echo esc_html(Olama_School_Helpers::translate($label)); ?></span>
-                                            </label>
-                                        <?php } ?>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
                 <?php endforeach; ?>
-                </div>
-            <?php endforeach; ?>
             </div>
 
             <div style="margin-top: 30px; text-align: right; border-top: 1px solid #e2e8f0; padding-top: 20px;">
