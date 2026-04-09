@@ -31,6 +31,7 @@ class Olama_School_Admin
         add_action('admin_init', array($this, 'handle_teacher_settings_save'));
         add_action('admin_init', array($this, 'handle_kg_curriculum_actions'));
         add_action('admin_init', array($this, 'handle_kg_evaluation_save'));
+        add_action('admin_init', array($this, 'handle_kg_session_save'));
         add_action('admin_init', array($this, 'handle_kg_report_print'));
         add_action('admin_init', array($this, 'handle_family_actions'));
         add_action('admin_init', array($this, 'handle_lesson_planner_actions'));
@@ -57,6 +58,8 @@ class Olama_School_Admin
         add_action('wp_ajax_olama_bulk_approve_evaluations', array($this, 'ajax_bulk_approve_evaluations'));
         add_action('wp_ajax_olama_upload_backup_chunk', array($this, 'ajax_upload_backup_chunk'));
         add_action('wp_ajax_olama_initiate_restore', array($this, 'ajax_restore_database'));
+        add_action('wp_ajax_olama_save_kg_session', array($this, 'ajax_save_kg_session'));
+
         add_action('admin_init', array($this, 'restrict_teacher_access'));
         add_action('admin_post_olama_save_office_hours', array($this, 'handle_office_hours_save'));
         add_action('admin_bar_menu', array($this, 'clean_teacher_admin_bar'), 999);
@@ -719,6 +722,245 @@ class Olama_School_Admin
     }
 
     /**
+     * Render KG Management Page
+     */
+    public function render_kg_management_page()
+    {
+        if (!Olama_School_Permissions::can('olama_access_evaluation')) {
+            wp_die(__('You do not have sufficient permissions to access this page.', 'olama-school'));
+        }
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/kg-management.php';
+    }
+
+    /**
+     * AJAX Save KG Session Data
+     */
+    public function ajax_save_kg_session()
+    {
+        check_ajax_referer('olama_admin_nonce', 'nonce');
+
+        if (!Olama_School_Permissions::can('olama_access_evaluation')) {
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
+        }
+
+        $session_type = sanitize_text_field($_POST['session_type']);
+        $semester_id = intval($_POST['semester_id']);
+        $data = $_POST['data'] ?? [];
+
+        if (!$semester_id || empty($data)) {
+            wp_send_json_error(__('Missing data', 'olama-school'));
+        }
+
+        global $wpdb;
+        $active_year = Olama_School_Academic::get_active_year();
+        $year_id = $active_year ? $active_year->id : 0;
+
+        // Ensure tables exist before saving (Direct creation check for robustness)
+        $charset_collate = $wpdb->get_charset_collate();
+        
+        $wpdb->query("CREATE TABLE IF NOT EXISTS {$wpdb->prefix}olama_kg_photo_session (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            academic_year_id mediumint(9) NOT NULL,
+            semester_id mediumint(9) NOT NULL,
+            student_uid varchar(50) NOT NULL,
+            attended_session tinyint(1) DEFAULT 0 NOT NULL,
+            fees_collected varchar(50) DEFAULT NULL,
+            photo_received tinyint(1) DEFAULT 0 NOT NULL,
+            updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY  student_semester (student_uid, semester_id)
+        ) $charset_collate;");
+
+        $wpdb->query("CREATE TABLE IF NOT EXISTS {$wpdb->prefix}olama_kg_graduation_session (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            academic_year_id mediumint(9) NOT NULL,
+            semester_id mediumint(9) NOT NULL,
+            student_uid varchar(50) NOT NULL,
+            participate tinyint(1) DEFAULT 0 NOT NULL,
+            fees varchar(50) DEFAULT NULL,
+            custom_fees varchar(50) DEFAULT NULL,
+            updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY  student_semester (student_uid, semester_id)
+        ) $charset_collate;");
+
+        $success = true;
+        if ($session_type === 'photo') {
+            $table = $wpdb->prefix . 'olama_kg_photo_session';
+            foreach ($data as $item) {
+                $uid = sanitize_text_field($item['student_uid']);
+                if (empty($uid)) continue;
+
+                $update_data = array(
+                    'academic_year_id' => $year_id,
+                    'semester_id' => $semester_id,
+                    'student_uid' => $uid,
+                    'attended_session' => intval($item['attended_session']),
+                    'fees_collected' => sanitize_text_field($item['fees_collected']),
+                    'photo_received' => intval($item['photo_received']),
+                );
+
+                $exists = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM $table WHERE student_uid = %s AND semester_id = %d",
+                    $uid, $semester_id
+                ));
+
+                if ($exists) {
+                    $result = $wpdb->update($table, $update_data, array('id' => $exists));
+                } else {
+                    $result = $wpdb->insert($table, $update_data);
+                }
+
+                if ($result === false) {
+                    $success = false;
+                    error_log('KG Photo Save Error for ' . $uid . ': ' . $wpdb->last_error);
+                }
+            }
+        } elseif ($session_type === 'graduation') {
+            $table = $wpdb->prefix . 'olama_kg_graduation_session';
+            foreach ($data as $item) {
+                $uid = sanitize_text_field($item['student_uid']);
+                if (empty($uid)) continue;
+
+                $update_data = array(
+                    'academic_year_id' => $year_id,
+                    'semester_id' => $semester_id,
+                    'student_uid' => $uid,
+                    'participate' => intval($item['participate']),
+                    'fees' => sanitize_text_field($item['fees']),
+                    'custom_fees' => sanitize_text_field($item['custom_fees']),
+                );
+
+                $exists = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM $table WHERE student_uid = %s AND semester_id = %d",
+                    $uid, $semester_id
+                ));
+
+                if ($exists) {
+                    $result = $wpdb->update($table, $update_data, array('id' => $exists));
+                } else {
+                    $result = $wpdb->insert($table, $update_data);
+                }
+
+                if ($result === false) {
+                    $success = false;
+                    error_log('KG Graduation Save Error for ' . $uid . ': ' . $wpdb->last_error);
+                }
+            }
+        }
+
+        if (!$success) {
+            wp_send_json_error(__('Database error: ', 'olama-school') . $wpdb->last_error);
+        }
+
+        wp_send_json_success();
+    }
+
+    /**
+     * Handle KG Session bulk save (admin_init pattern, same as handle_exam_save)
+     */
+    public function handle_kg_session_save()
+    {
+        if (!isset($_POST['olama_save_kg_session'])) {
+            return;
+        }
+
+        if (!check_admin_referer('olama_kg_session_save', 'olama_kg_nonce')) {
+            return;
+        }
+
+        $session_type   = sanitize_text_field($_POST['session_type'] ?? '');
+        $semester_id    = intval($_POST['semester_id'] ?? 0);
+        $grade_id       = intval($_POST['grade_id'] ?? 0);
+        $section_id     = intval($_POST['section_id'] ?? 0);
+        $kg_data        = isset($_POST['kg_data']) ? $_POST['kg_data'] : array();
+
+        if ($semester_id && !empty($session_type) && !empty($kg_data)) {
+            global $wpdb;
+
+            $active_year = Olama_School_Academic::get_active_year();
+            $year_id     = $active_year ? $active_year->id : 0;
+
+            $table = ($session_type === 'photo')
+                ? $wpdb->prefix . 'olama_kg_photo_session'
+                : $wpdb->prefix . 'olama_kg_graduation_session';
+
+            // Ensure table exists
+            $charset_collate = $wpdb->get_charset_collate();
+            if ($session_type === 'photo') {
+                $wpdb->query("CREATE TABLE IF NOT EXISTS $table (
+                    id mediumint(9) NOT NULL AUTO_INCREMENT,
+                    academic_year_id mediumint(9) NOT NULL,
+                    semester_id mediumint(9) NOT NULL,
+                    student_uid varchar(50) NOT NULL,
+                    attended_session tinyint(1) DEFAULT 0 NOT NULL,
+                    fees_collected varchar(50) DEFAULT NULL,
+                    photo_received tinyint(1) DEFAULT 0 NOT NULL,
+                    updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY student_semester (student_uid, semester_id)
+                ) $charset_collate;");
+            } else {
+                $wpdb->query("CREATE TABLE IF NOT EXISTS $table (
+                    id mediumint(9) NOT NULL AUTO_INCREMENT,
+                    academic_year_id mediumint(9) NOT NULL,
+                    semester_id mediumint(9) NOT NULL,
+                    student_uid varchar(50) NOT NULL,
+                    participate tinyint(1) DEFAULT 0 NOT NULL,
+                    fees varchar(50) DEFAULT NULL,
+                    custom_fees varchar(50) DEFAULT NULL,
+                    updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY student_semester (student_uid, semester_id)
+                ) $charset_collate;");
+            }
+
+            foreach ($kg_data as $uid => $item) {
+                $uid = sanitize_text_field($uid);
+                if (empty($uid)) continue;
+
+                $row = array(
+                    'academic_year_id' => $year_id,
+                    'semester_id'      => $semester_id,
+                    'student_uid'      => $uid,
+                );
+
+                if ($session_type === 'photo') {
+                    $row['attended_session'] = isset($item['attended_session']) ? intval($item['attended_session']) : 0;
+                    $row['fees_collected']   = sanitize_text_field($item['fees_collected'] ?? '');
+                    $row['photo_received']   = isset($item['photo_received']) ? intval($item['photo_received']) : 0;
+                } else {
+                    $row['participate']  = isset($item['participate']) ? intval($item['participate']) : 0;
+                    $row['fees']         = sanitize_text_field($item['fees'] ?? '');
+                    $row['custom_fees']  = sanitize_text_field($item['custom_fees'] ?? '');
+                }
+
+                $exists = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM $table WHERE student_uid = %s AND semester_id = %d",
+                    $uid, $semester_id
+                ));
+
+                if ($exists) {
+                    $wpdb->update($table, $row, array('id' => $exists));
+                } else {
+                    $wpdb->insert($table, $row);
+                }
+            }
+        }
+
+        $redirect_url = admin_url('admin.php?page=olama-school-kg');
+        $redirect_url = add_query_arg(array(
+            'tab'        => $session_type === 'photo' ? 'photo_session' : 'graduation_session',
+            'grade_id'   => $grade_id,
+            'section_id' => $section_id,
+            'kg_saved'   => '1',
+        ), $redirect_url);
+
+        wp_redirect($redirect_url);
+        exit;
+    }
+
+    /**
      * Handle Backup and Restore Actions
      */
     public function handle_backup_restore_actions()
@@ -1343,6 +1585,15 @@ class Olama_School_Admin
             'olama_access_users_mgmt',
             'olama-school-users',
             array($this, 'render_users_page')
+        );
+
+        add_submenu_page(
+            'olama-school',
+            Olama_School_Helpers::translate('KG الروضة'),
+            Olama_School_Helpers::translate('KG الروضة'),
+            'olama_access_evaluation',
+            'olama-school-kg',
+            array($this, 'render_kg_management_page')
         );
 
         add_submenu_page(

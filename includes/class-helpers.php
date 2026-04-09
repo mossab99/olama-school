@@ -708,6 +708,28 @@ class Olama_School_Helpers
         'Update Section' => 'تحديث الشعبة',
         'Room' => 'الغرفة',
         'No sections defined for this grade.' => 'لم يتم تحديد شعب لهذا الصف.',
+        'Material Icon' => 'أيقونة (Material Icon)',
+        'KG الروضة' => 'KG الروضة',
+        'Photo Session' => 'جلسة التصوير',
+        'Graduation Session' => 'حفل التخرج',
+        'Attended Session' => 'حضر الجلسة',
+        'Photo Fees Collected' => 'الرسوم المحصلة للصور',
+        'Received Photo' => 'استلم الصور',
+        'Participating' => 'مشارك',
+        'Fees' => 'الرسوم',
+        'Custom Fees' => 'رسوم إضافية',
+        'Apply to All' => 'تطبيق على الكل',
+        'Apply Fees' => 'تطبيق الرسوم',
+        'Apply Custom' => 'تطبيق الإضافي',
+        'Toggle All Participating' => 'تحديد الكل مشارك',
+        'Toggle All Attended' => 'تحديد الكل حاضر',
+        'Default Fees' => 'الرسوم الافتراضية',
+        'Default Custom Fees' => 'الرسوم الإضافية الافتراضية',
+        'Please select a grade and section to list students.' => 'يرجى تحديد الصف والشعبة لعرض الطلاب.',
+        'Bulk Actions & Defaults' => 'العمليات الجماعية والافتراضية',
+        'Save All Changes' => 'حفظ جميع التغييرات',
+        'No students found in this section.' => 'لا يوجد طلاب في هذه الشعبة.',
+        'Last Updated' => 'آخر تحديث',
         'Edit Grade' => 'تعديل الصف',
         'Grade Level' => 'مستوى الصف',
         'Periods per Day' => 'عدد الحصص في اليوم',
@@ -1808,6 +1830,53 @@ class Olama_School_Helpers
         'Copy Number' => 'نسخ الرقم',
         'Copied!' => 'تم النسخ!',
         'Search term too short' => 'كلمة البحث قصيرة جداً',
+        // ── KG الروضة ────────────────────────────────────────────────
+        'KG الروضة'                                          => 'الروضة',
+        'Manage and track KG sessions'                       => 'إدارة متابعة جلسات الروضة والتصوير والتخرج',
+
+        // Tabs
+        'Photo Session'                                      => 'جلسة التصوير',
+        'Graduation Session'                                 => 'حفل التخرج',
+
+        // Header badges
+        'Academic Year'                                      => 'العام الدراسي',
+        'Semester'                                           => 'الفصل الدراسي',
+
+        // Filter
+        'Selection Required'                                 => 'يرجى الاختيار',
+        'Please select a grade and section above to manage students.' => 'الرجاء اختيار الصف والشعبة أعلاه لعرض الطلاب.',
+        'No Students Found'                                  => 'لا يوجد طلاب',
+        'There are no students enrolled in the selected section.' => 'لا يوجد طلاب مقيدون في هذه الشعبة.',
+
+        // Table headers – photo
+        'Attended Session'                                   => 'حضر الجلسة',
+        'Photo Fees Collected'                               => 'تم تحصيل رسوم التصوير',
+        'Received Photo'                                     => 'استلم الصور',
+        'Last Updated'                                       => 'آخر تحديث',
+
+        // Table headers – graduation
+        'Participating'                                      => 'يشارك في حفل التخرج',
+        'Fees'                                               => 'الرسوم',
+        'Custom Fees'                                        => 'رسوم إضافية',
+
+        // Bulk controls
+        'Default Fees'                                       => 'الرسوم الافتراضية',
+        'Default Custom Fees'                                => 'الرسوم الإضافية الافتراضية',
+        'Apply to All'                                       => 'تطبيق على الجميع',
+        'Apply Fees'                                         => 'تطبيق الرسوم',
+        'Apply Custom'                                       => 'تطبيق الإضافية',
+        'Apply'                                              => 'تطبيق',
+        'Toggle All Attended'                                => 'تبديل حضور الجميع',
+        'Toggle All Participating'                           => 'تبديل مشاركة الجميع',
+        'Bulk Actions & Defaults'                            => 'الإجراءات الجماعية والقيم الافتراضية',
+        'Save All Changes'                                   => 'حفظ جميع التغييرات',
+
+        // Legacy / alternate keys still referenced elsewhere
+        'Please select a grade and section to list students.' => 'يرجى اختيار الصف والشعبة لعرض الطلاب.',
+        'No students found in this section.'                 => 'لا يوجد طلاب في هذه الشعبة.',
+        'Error: No active semester found.'                   => 'خطأ: لا يوجد فصل دراسي نشط.',
+        'Saved successfully'                                 => 'تم الحفظ بنجاح',
+
         );
 
         return $map[$text] ?? $text;

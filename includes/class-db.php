@@ -66,7 +66,9 @@ class Olama_School_DB
 			'olama_cleaning_floors',
 			'olama_cleaning_cleaners',
 			'olama_cleaning_slots',
-			'olama_cleaning_assignments'
+			'olama_cleaning_assignments',
+			'olama_kg_photo_session',
+			'olama_kg_graduation_session'
 		);
 	}
 
@@ -787,6 +789,32 @@ class Olama_School_DB
 				PRIMARY KEY  (id),
 				KEY  floor_cleaner (floor_id,cleaner_id),
 				KEY  supervisor_id (supervisor_id)
+			) $charset_collate;",
+
+			'olama_kg_photo_session' => "CREATE TABLE {$wpdb->prefix}olama_kg_photo_session (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
+				academic_year_id bigint(20) NOT NULL,
+				semester_id bigint(20) NOT NULL,
+				student_uid varchar(50) NOT NULL,
+				attended_session tinyint(1) DEFAULT 0 NOT NULL,
+				fees_collected varchar(50) DEFAULT NULL,
+				photo_received tinyint(1) DEFAULT 0 NOT NULL,
+				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY  student_semester (student_uid, semester_id)
+			) $charset_collate;",
+
+			'olama_kg_graduation_session' => "CREATE TABLE {$wpdb->prefix}olama_kg_graduation_session (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
+				academic_year_id bigint(20) NOT NULL,
+				semester_id bigint(20) NOT NULL,
+				student_uid varchar(50) NOT NULL,
+				participate tinyint(1) DEFAULT 0 NOT NULL,
+				fees varchar(50) DEFAULT NULL,
+				custom_fees varchar(50) DEFAULT NULL,
+				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY  student_semester (student_uid, semester_id)
 			) $charset_collate;"
 
 

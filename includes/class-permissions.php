@@ -170,6 +170,14 @@ class Olama_School_Permissions
                     'olama_view_supervision_analytics' => __('Analytics', 'olama-school'),
                 )
             ),
+            'kg' => array(
+                'label' => __('KG الروضة', 'olama-school'),
+                'caps' => array(
+                    'olama_access_kg' => __('Access KG Module', 'olama-school'),
+                    'olama_manage_kg_photo_session' => __('Photo Session', 'olama-school'),
+                    'olama_manage_kg_graduation_session' => __('Graduation Session', 'olama-school'),
+                )
+            ),
         );
     }
 
