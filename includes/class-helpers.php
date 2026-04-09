@@ -847,6 +847,8 @@ class Olama_School_Helpers
         'Select Semester' => 'اختر الفصل الدراسي',
         'Choose Grade...' => 'اختر الصف...',
         'Select Grade first...' => 'اختر الصف أولاً...',
+        'All Grades' => 'جميع الصفوف',
+        'All Sections' => 'جميع الشعب',
         'Load Timeline' => 'تحميل الخط الزمني',
         'Clear All Dates' => 'مسح جميع التواريخ',
         'Save All Dates' => 'حفظ جميع التواريخ',

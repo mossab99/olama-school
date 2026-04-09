@@ -74,9 +74,9 @@ if (!empty($current_month_weeks)) {
 
 // Grades and Sections
 $grades = Olama_School_Grade::get_grades();
-$selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : ($grades[0]->id ?? 0);
-$sections = Olama_School_Section::get_by_grade($selected_grade_id);
-$selected_section_id = isset($_GET['section_id']) ? intval($_GET['section_id']) : ($sections[0]->id ?? 0);
+$selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : 0;
+$sections = $selected_grade_id ? Olama_School_Section::get_by_grade($selected_grade_id) : [];
+$selected_section_id = isset($_GET['section_id']) ? intval($_GET['section_id']) : 0;
 
 $week_range = Olama_School_Helpers::get_week_range($week_start);
 
@@ -95,7 +95,7 @@ $where_sql = implode(' AND ', $where_clauses);
 
 $visits = $wpdb->get_results(
     "SELECT v.*, s.day_name, s.period_number, sec.section_name, g.grade_name, sub.subject_name, u.display_name as supervisor_name,
-            e.id as evaluation_id, e.status as evaluation_status, e.template_id
+            e.id as evaluation_id, e.status as evaluation_status, e.template_id, tu.display_name as teacher_name
      FROM {$wpdb->prefix}olama_supervisor_visits v
      JOIN {$wpdb->prefix}olama_schedule s ON v.schedule_id = s.id
      JOIN {$wpdb->prefix}olama_sections sec ON s.section_id = sec.id
@@ -103,6 +103,8 @@ $visits = $wpdb->get_results(
      JOIN {$wpdb->prefix}olama_subjects sub ON s.subject_id = sub.id
      JOIN {$wpdb->users} u ON v.supervisor_id = u.ID
      LEFT JOIN {$wpdb->prefix}olama_ev_records e ON e.related_entity_id = v.id AND e.related_entity_type = 'supervisor_visit'
+     LEFT JOIN {$wpdb->prefix}olama_teacher_assignments ta ON ta.section_id = sec.id AND ta.subject_id = s.subject_id AND ta.academic_year_id = sec.academic_year_id
+     LEFT JOIN {$wpdb->users} tu ON ta.teacher_id = tu.ID
      WHERE {$where_sql}
      ORDER BY v.visit_date DESC"
 );
@@ -129,6 +131,7 @@ $visits = $wpdb->get_results(
                 <div class="olama-filter-item" style="flex:1; min-width:150px;">
                     <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:6px;"><?php _e('Grade', 'olama-school'); ?></label>
                     <select name="grade_id" onchange="this.form.submit()" style="width:100%;">
+                        <option value="0" <?php selected($selected_grade_id, 0); ?>><?php echo Olama_School_Helpers::translate('All Grades'); ?></option>
                         <?php foreach ($grades as $g): ?>
                             <option value="<?php echo $g->id; ?>" <?php selected($selected_grade_id, $g->id); ?>><?php echo esc_html($g->grade_name); ?></option>
                         <?php endforeach; ?>
@@ -138,6 +141,7 @@ $visits = $wpdb->get_results(
                 <div class="olama-filter-item" style="flex:1; min-width:150px;">
                     <label style="display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:6px;"><?php _e('Section', 'olama-school'); ?></label>
                     <select name="section_id" onchange="this.form.submit()" style="width:100%;">
+                        <option value="0" <?php selected($selected_section_id, 0); ?>><?php echo Olama_School_Helpers::translate('All Sections'); ?></option>
                         <?php foreach ($sections as $s): ?>
                             <option value="<?php echo $s->id; ?>" <?php selected($selected_section_id, $s->id); ?>><?php echo esc_html($s->section_name); ?></option>
                         <?php endforeach; ?>
@@ -192,6 +196,9 @@ $visits = $wpdb->get_results(
                         <?php _e('Subject', 'olama-school'); ?>
                     </th>
                     <th>
+                        <?php echo Olama_School_Helpers::translate('Teacher'); ?>
+                    </th>
+                    <th>
                         <?php _e('Status', 'olama-school'); ?>
                     </th>
                     <th>
@@ -220,6 +227,9 @@ $visits = $wpdb->get_results(
                             </td>
                             <td>
                                 <?php echo esc_html($v->subject_name); ?>
+                            </td>
+                            <td style="font-weight: 500; color: #1e293b;">
+                                <?php echo esc_html($v->teacher_name ?: __('Not Assigned', 'olama-school')); ?>
                             </td>
                             <td>
                                 <span
@@ -258,7 +268,7 @@ $visits = $wpdb->get_results(
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="7" style="text-align: center; font-style: italic; color: #64748b; padding: 20px;">
+                        <td colspan="8" style="text-align: center; font-style: italic; color: #64748b; padding: 20px;">
                             <?php _e('No visits planned yet.', 'olama-school'); ?>
                         </td>
                     </tr>
