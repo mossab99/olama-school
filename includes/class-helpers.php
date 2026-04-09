@@ -849,6 +849,7 @@ class Olama_School_Helpers
         'Select Grade first...' => 'اختر الصف أولاً...',
         'All Grades' => 'جميع الصفوف',
         'All Sections' => 'جميع الشعب',
+        'Semester Total' => 'مجموع الفصل',
         'Load Timeline' => 'تحميل الخط الزمني',
         'Clear All Dates' => 'مسح جميع التواريخ',
         'Save All Dates' => 'حفظ جميع التواريخ',

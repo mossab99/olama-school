@@ -236,6 +236,32 @@ foreach ($assignments_raw as $ar) {
         $assignments_map[$ar->grade_id][] = $ar->supervisor_name;
     }
 }
+
+// Fetch Semester Visit Counts per Section
+$selected_sem_obj = null;
+foreach ($semesters as $sem) {
+    if ($sem->id == $selected_semester_id) {
+        $selected_sem_obj = $sem;
+        break;
+    }
+}
+$sem_start = $selected_sem_obj ? $selected_sem_obj->start_date : null;
+$sem_end = $selected_sem_obj ? $selected_sem_obj->end_date : null;
+
+$sem_vc_map = [];
+if ($sem_start && $sem_end) {
+    $sem_visit_counts = $wpdb->get_results($wpdb->prepare(
+        "SELECT s.section_id, COUNT(*) as visit_count
+         FROM {$wpdb->prefix}olama_supervisor_visits v
+         JOIN {$wpdb->prefix}olama_schedule s ON v.schedule_id = s.id
+         WHERE v.visit_date BETWEEN %s AND %s
+         GROUP BY s.section_id",
+        $sem_start, $sem_end
+    ));
+    foreach ($sem_visit_counts as $svc) {
+        $sem_vc_map[$svc->section_id] = $svc->visit_count;
+    }
+}
 ?>
 
 <div class="olama-supervision-reports-dashboard">
@@ -409,7 +435,8 @@ foreach ($assignments_raw as $ar) {
                     <th><?php _e('Section', 'olama-school'); ?></th>
                     <th><?php _e('Assigned Supervisors', 'olama-school'); ?></th>
                     <th><?php _e('Supervisor Visits', 'olama-school'); ?></th>
-                    <th><?php _e('Total Visits (Grade-Section)', 'olama-school'); ?></th>
+                    <th><?php _e('Total Visits (Selected Week)', 'olama-school'); ?></th>
+                    <th><?php echo Olama_School_Helpers::translate('Semester Total'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -471,13 +498,18 @@ foreach ($assignments_raw as $ar) {
                                             <?php echo $total_sec_visits; ?>
                                         </span>
                                     </td>
+                                    <td rowspan="<?php echo $row_count; ?>" style="vertical-align: middle; text-align: center;">
+                                        <span style="font-size: 18px; font-weight: 800; color: <?php echo ($sem_vc_map[$sec->section_id] ?? 0) > 0 ? '#6366f1' : '#94a3b8'; ?>;">
+                                            <?php echo $sem_vc_map[$sec->section_id] ?? 0; ?>
+                                        </span>
+                                    </td>
                                 <?php endif; ?>
                             </tr>
                         <?php $is_first = false; endforeach; ?>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="5" style="text-align: center; color: #64748b; padding: 15px;"><?php _e('No sections found.', 'olama-school'); ?></td>
+                        <td colspan="6" style="text-align: center; color: #64748b; padding: 15px;"><?php _e('No sections found.', 'olama-school'); ?></td>
                     </tr>
                 <?php endif; ?>
             </tbody>
