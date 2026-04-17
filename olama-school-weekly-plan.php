@@ -66,6 +66,8 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-backup.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ajax-handlers.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-supervision-ajax-handlers.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-shortcodes.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-exam-hall.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-exam-hall-ajax.php';
 
 // Service Layer
 require_once OLAMA_SCHOOL_PATH . 'includes/Services/ScheduleValidatorService.php';

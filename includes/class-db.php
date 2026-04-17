@@ -68,7 +68,11 @@ class Olama_School_DB
 			'olama_cleaning_slots',
 			'olama_cleaning_assignments',
 			'olama_kg_photo_session',
-			'olama_kg_graduation_session'
+			'olama_kg_graduation_session',
+			'olama_exam_halls',
+			'olama_exam_hall_assignments',
+			'olama_exam_hall_attendance',
+			'olama_exam_hall_notes'
 		);
 	}
 
@@ -815,8 +819,64 @@ class Olama_School_DB
 				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
 				UNIQUE KEY  student_semester (student_uid, semester_id)
-			) $charset_collate;"
+			) $charset_collate;",
 
+			'olama_exam_halls' => "CREATE TABLE {$wpdb->prefix}olama_exam_halls (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				hall_name varchar(100) NOT NULL,
+				capacity smallint(6) NOT NULL DEFAULT 30,
+				academic_year_id mediumint(9) NOT NULL,
+				is_active tinyint(1) DEFAULT 1 NOT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				KEY  academic_year_id (academic_year_id)
+			) $charset_collate;",
+
+			'olama_exam_hall_assignments' => "CREATE TABLE {$wpdb->prefix}olama_exam_hall_assignments (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				hall_id mediumint(9) NOT NULL,
+				student_id mediumint(9) NOT NULL,
+				student_uid varchar(50) DEFAULT NULL,
+				academic_year_id mediumint(9) NOT NULL,
+				seat_number smallint(6) DEFAULT NULL,
+				assigned_by bigint(20) UNSIGNED DEFAULT NULL,
+				assigned_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY  student_year (student_id, academic_year_id),
+				KEY  hall_id (hall_id),
+				KEY  academic_year_id (academic_year_id),
+				KEY  student_uid (student_uid)
+			) $charset_collate;",
+
+			'olama_exam_hall_attendance' => "CREATE TABLE {$wpdb->prefix}olama_exam_hall_attendance (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				hall_id mediumint(9) NOT NULL,
+				student_id mediumint(9) NOT NULL,
+				student_uid varchar(50) DEFAULT NULL,
+				exam_date date NOT NULL,
+				session_label varchar(100) DEFAULT '' NOT NULL,
+				status varchar(20) DEFAULT 'present' NOT NULL,
+				recorded_by bigint(20) UNSIGNED DEFAULT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY  session_student (hall_id, student_id, exam_date, session_label),
+				KEY  hall_id (hall_id),
+				KEY  exam_date (exam_date)
+			) $charset_collate;",
+
+			'olama_exam_hall_notes' => "CREATE TABLE {$wpdb->prefix}olama_exam_hall_notes (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				hall_id mediumint(9) NOT NULL,
+				student_id mediumint(9) NOT NULL,
+				student_uid varchar(50) DEFAULT NULL,
+				exam_date date NOT NULL,
+				note_type varchar(50) DEFAULT 'ملتزم' NOT NULL,
+				note_text text DEFAULT NULL,
+				recorded_by bigint(20) UNSIGNED DEFAULT NULL,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				KEY  hall_student_date (hall_id, student_id, exam_date)
+			) $charset_collate;"
 
 		);
 
@@ -1291,6 +1351,17 @@ class Olama_School_DB
 
 		// 8. One-time Migration: Shift rating mapping and scores
 		$this->migrate_evaluation_ratings();
+
+		// 9. Exam Hall Distribution – add semester_id to module tables
+		if ($wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}olama_exam_hall_assignments'") === "{$wpdb->prefix}olama_exam_hall_assignments") {
+			$this->ensure_column_exists('olama_exam_hall_assignments', 'semester_id', 'mediumint(9) NOT NULL DEFAULT 0 AFTER academic_year_id');
+		}
+		if ($wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}olama_exam_hall_attendance'") === "{$wpdb->prefix}olama_exam_hall_attendance") {
+			$this->ensure_column_exists('olama_exam_hall_attendance', 'semester_id', 'mediumint(9) NOT NULL DEFAULT 0 AFTER academic_year_id');
+		}
+		if ($wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}olama_exam_hall_notes'") === "{$wpdb->prefix}olama_exam_hall_notes") {
+			$this->ensure_column_exists('olama_exam_hall_notes', 'semester_id', 'mediumint(9) NOT NULL DEFAULT 0 AFTER exam_date');
+		}
 	}
 
 	/**

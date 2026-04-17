@@ -60,6 +60,9 @@ class Olama_School_Admin
         add_action('wp_ajax_olama_initiate_restore', array($this, 'ajax_restore_database'));
         add_action('wp_ajax_olama_save_kg_session', array($this, 'ajax_save_kg_session'));
 
+        // Exam Hall Distribution AJAX
+        new Olama_Exam_Hall_Ajax();
+
         add_action('admin_init', array($this, 'restrict_teacher_access'));
         add_action('admin_post_olama_save_office_hours', array($this, 'handle_office_hours_save'));
         add_action('admin_bar_menu', array($this, 'clean_teacher_admin_bar'), 999);
@@ -1613,6 +1616,15 @@ class Olama_School_Admin
             'olama-school-settings',
             array($this, 'render_settings_page')
         );
+
+        add_submenu_page(
+            'olama-school',
+            Olama_School_Helpers::translate('Exam Hall Distribution'),
+            Olama_School_Helpers::translate('Exam Hall Distribution'),
+            'olama_access_exam_halls',
+            'olama-school-exam-halls',
+            array($this, 'render_exam_hall_distribution_page')
+        );
     }
 
     /**
@@ -1652,6 +1664,63 @@ class Olama_School_Admin
         ));
 
         $page = $_GET['page'] ?? '';
+
+        // Exam Hall Distribution assets
+        if ($page === 'olama-school-exam-halls') {
+            $active_year = Olama_School_Academic::get_active_year();
+            $year_id     = $active_year ? $active_year->id : 0;
+            $halls       = $year_id ? Olama_Exam_Hall::get_halls($year_id) : [];
+            $grades      = Olama_School_Grade::get_grades();
+
+            // Active semester
+            $active_semester    = null;
+            $active_semester_id = 0;
+            if ($year_id) {
+                global $wpdb;
+                $active_semester = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}olama_semesters
+                     WHERE academic_year_id = %d AND is_active = 1 LIMIT 1",
+                    $year_id
+                ));
+                $active_semester_id = $active_semester ? $active_semester->id : 0;
+            }
+
+            $sections_by_grade = [];
+            foreach ($grades as $g) {
+                $secs = Olama_School_Section::get_by_grade($g->id, $year_id);
+                if (!empty($secs)) {
+                    $sections_by_grade[$g->id] = array_map(function($s) {
+                        return ['id' => $s->id, 'section_name' => $s->section_name];
+                    }, $secs);
+                }
+            }
+
+            wp_enqueue_style(
+                'olama-exam-hall-style',
+                OLAMA_SCHOOL_URL . 'assets/css/exam-hall.css',
+                ['olama-admin-style'],
+                OLAMA_SCHOOL_VERSION
+            );
+            wp_enqueue_script(
+                'olama-exam-hall-script',
+                OLAMA_SCHOOL_URL . 'assets/js/exam-hall.js',
+                ['jquery'],
+                OLAMA_SCHOOL_VERSION,
+                true
+            );
+            wp_localize_script('olama-exam-hall-script', 'olamaExamHall', [
+                'ajaxUrl'      => admin_url('admin-ajax.php'),
+                'nonce'        => wp_create_nonce('olama_exam_hall_nonce'),
+                'yearId'       => (string) $year_id,
+                'yearName'     => $active_year ? $active_year->year_name : '',
+                'semesterId'   => (string) $active_semester_id,
+                'semesterName' => $active_semester ? ($active_semester->semester_name ?? '') : '',
+                'isAdmin'      => Olama_School_Permissions::can('olama_manage_exam_halls') ? '1' : '0',
+                'isArabic'     => Olama_School_Helpers::is_arabic() ? '1' : '0',
+                'halls'        => $halls,
+                'sections'     => $sections_by_grade,
+            ]);
+        }
 
         if ($page === 'olama-school-plans') {
             wp_enqueue_script('olama-plan-script', OLAMA_SCHOOL_URL . 'assets/js/plan.js', array('jquery'), OLAMA_SCHOOL_VERSION, true);
@@ -6157,5 +6226,13 @@ class Olama_School_Admin
             </script>
         </form>
         <?php
+    }
+
+    /**
+     * Render Exam Hall Distribution Page
+     */
+    public function render_exam_hall_distribution_page()
+    {
+        include OLAMA_SCHOOL_PATH . 'includes/admin-views/exam-hall-distribution.php';
     }
 }

@@ -178,6 +178,14 @@ class Olama_School_Permissions
                     'olama_manage_kg_graduation_session' => __('Graduation Session', 'olama-school'),
                 )
             ),
+            'exam_halls' => array(
+                'label' => __('Exam Hall Distribution', 'olama-school'),
+                'caps' => array(
+                    'olama_access_exam_halls'      => __('Access Exam Hall Module', 'olama-school'),
+                    'olama_manage_exam_halls'      => __('Manage Halls & Distribution (Admin)', 'olama-school'),
+                    'olama_manage_hall_attendance' => __('Record Attendance & Behavior Notes', 'olama-school'),
+                )
+            ),
         );
     }
 
@@ -249,7 +257,10 @@ class Olama_School_Permissions
                                 'olama_configure_cleaning',
                                 'olama_manage_lesson_planner',
                                 'olama_access_media_library',
-                                'olama_media_upload_video'
+                                'olama_media_upload_video',
+                                // Exam Hall – teachers can view & record attendance/notes
+                                'olama_access_exam_halls',
+                                'olama_manage_hall_attendance',
                             );
                             if (in_array($cap, $teacher_caps)) {
                                 $role->add_cap($cap);
