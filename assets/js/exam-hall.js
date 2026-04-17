@@ -532,18 +532,35 @@
     /**
      * Open a rich HTML print report in a new tab.
      * @param {number|null} filterHallId – when set, only print that one hall.
+     * @param {Array|null} overrideHalls – list of hall objects
+     * @param {Object|null} overrideAssignments – { hall_id: [studentObjs] }
      */
-    function buildPrintReport(filterHallId) {
-        const gradeName   = h($('#eh-filter-grade option:selected').text().trim());
-        const sectionName = h($('#eh-filter-section option:selected').text().trim());
+    function buildPrintReport(filterHallId, overrideHalls = null, overrideAssignments = null) {
+        let gradeName     = h($('#eh-filter-grade option:selected').text().trim());
+        let sectionName   = h($('#eh-filter-section option:selected').text().trim());
         const yearName    = h(olamaExamHall.yearName    || '');
         const semName     = h(olamaExamHall.semesterName || '');
         const today       = new Date().toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric' });
         const schoolName  = h(document.querySelector('#wpadminbar .ab-item') ? (document.title.length > 4 ? document.title.split(/[–\-|]/)[0].trim() : '') : '');
 
-        const halls = filterHallId
-            ? EH.canvas.halls.filter(hall => parseInt(hall.id) === parseInt(filterHallId))
-            : EH.canvas.halls;
+        if (overrideAssignments) {
+            // Global report - don't use specific grade/section names in subheader
+            gradeName = '';
+            sectionName = '';
+        }
+
+        let assignments = overrideAssignments || EH.canvas.assignments;
+        let halls = [];
+        
+        if (overrideHalls) {
+            halls = filterHallId 
+                ? overrideHalls.filter(h => parseInt(h.id) === parseInt(filterHallId))
+                : overrideHalls;
+        } else {
+            halls = filterHallId
+                ? EH.canvas.halls.filter(hall => parseInt(hall.id) === parseInt(filterHallId))
+                : EH.canvas.halls;
+        }
 
         if (!halls.length) { toast('لا توجد بيانات للطباعة', 'error'); return; }
 
@@ -551,7 +568,7 @@
         let hallsHtml = '';
 
         halls.forEach((hall, hallIdx) => {
-            const rawList = EH.canvas.assignments[hall.id] || [];
+            const rawList = assignments[hall.id] || [];
             // Sort by seat number, then name
             const students = rawList.slice().sort((a, b) => {
                 const sa = parseInt(a.seat_number) || 9999;
@@ -629,167 +646,151 @@
 <meta charset="UTF-8">
 <title>${subTitle}</title>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body {
     font-family: 'Segoe UI', Tahoma, 'Arial', sans-serif;
-    font-size: 13px; color: #111; background: #fff; direction: rtl;
+    font-size: 12px; color: #000; background: #fff; direction: rtl;
   }
+  
   /* ── Report Header ── */
   .report-header {
-    text-align: center; padding: 22px 30px 16px;
-    border-bottom: 3px solid #1a73e8; margin-bottom: 0;
+    text-align: center; padding: 15px 20px;
+    border-bottom: 2px solid #000; margin-bottom: 10px;
   }
-  .school-logo { font-size: 32px; margin-bottom: 4px; }
-  .school-name { font-size: 20px; font-weight: 800; color: #1a1a2e; margin-bottom: 4px; }
-  .report-title { font-size: 17px; font-weight: 700; color: #1a73e8; margin-bottom: 12px; }
+  .school-name { font-size: 18px; font-weight: 800; margin-bottom: 5px; }
+  .report-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; text-decoration: underline; }
   .meta-row {
-    display: flex; justify-content: center; gap: 16px;
-    flex-wrap: wrap; font-size: 12px;
+    display: flex; justify-content: center; gap: 10px;
+    font-size: 11px;
   }
   .meta-chip {
-    background: #f0f4ff; border: 1px solid #c4d4f5; border-radius: 14px;
-    padding: 4px 14px; color: #374151;
+    border: 1px solid #ccc; border-radius: 4px;
+    padding: 2px 8px; background: #f9f9f9;
   }
+
   /* ── Context Bar ── */
   .context-bar {
-    background: linear-gradient(135deg,#1a73e8,#0d47a1);
-    color: #fff; padding: 10px 24px;
-    display: flex; gap: 24px; align-items: center;
-    flex-wrap: wrap; font-size: 13px; margin-bottom: 22px;
+    background: #f0f0f0; border: 1px solid #ddd;
+    padding: 8px 15px; margin: 0 20px 15px;
+    display: flex; gap: 20px; align-items: center;
+    justify-content: center; border-radius: 4px;
   }
-  .context-bar strong { font-size: 15px; }
+  .context-bar strong { font-size: 14px; }
+
   /* ── Hall Section ── */
-  .hall-section { margin: 0 20px 30px; }
-  .hall-section.page-top { page-break-before: auto; }
+  .hall-section { margin: 0 20px 25px; page-break-inside: avoid; }
   .hall-header {
     display: flex; justify-content: space-between; align-items: center;
-    background: linear-gradient(135deg,#1a73e8,#0d47a1);
-    color: #fff; padding: 11px 18px;
-    border-radius: 10px 10px 0 0;
+    background: #333; color: #fff; padding: 8px 12px;
+    border: 1px solid #333;
   }
-  .hall-title { font-size: 16px; font-weight: 700; }
-  .hall-chips { display: flex; gap: 10px; font-size: 12px; }
-  .chip {
-    background: rgba(255,255,255,.2); border-radius: 12px;
-    padding: 2px 10px; white-space: nowrap;
-  }
-  .chip.assigned { background: rgba(34,197,94,.3); }
-  .chip.fill     { background: rgba(251,191,36,.3); }
+  .hall-title { font-size: 15px; font-weight: 700; }
+  .hall-chips { display: flex; gap: 10px; font-size: 11px; }
+  .chip { background: rgba(255,255,255,0.2); padding: 1px 6px; border-radius: 3px; }
+
   /* ── Student Table ── */
   .student-table {
     width: 100%; border-collapse: collapse;
-    border: 1px solid #d1d5db;
-    border-radius: 0 0 8px 8px; overflow: hidden;
+    border: 1px solid #000;
   }
-  .student-table thead tr { background: #e8f0fe; }
   .student-table th {
-    padding: 9px 12px; text-align: right;
-    font-size: 12px; font-weight: 700; color: #1a1a2e;
-    border: 1px solid #c4d4f5;
+    padding: 6px 8px; text-align: right;
+    font-size: 11px; font-weight: 700;
+    background: #eee; border: 1px solid #000;
   }
   .student-table td {
-    padding: 8px 12px; border: 1px solid #e5e7eb;
-    font-size: 13px; vertical-align: middle;
+    padding: 5px 8px; border: 1px solid #000;
+    font-size: 12px;
   }
-  .student-table tr.alt td { background: #f0f4ff; }
-  .student-table tbody tr:hover td { background: #e8f0fe; }
+  .student-table tr.alt td { background: #fafafa; }
   .student-table td.seat {
-    text-align: center; font-weight: 800;
-    color: #1a73e8; font-size: 14px; width: 55px;
+    text-align: center; font-weight: 800; width: 45px;
   }
-  .student-table td.name { font-weight: 600; min-width: 180px; }
-  .student-table td.sig  { min-width: 100px; border-bottom: 1px solid #9ca3af; }
-  .student-table td.empty-row { text-align:center; color:#9ca3af; padding: 20px; }
-  .th-seat { width: 55px; text-align: center; }
-  .th-sm   { width: 80px; }
-  .th-sig  { width: 110px; }
+  .student-table td.name { font-weight: 600; }
+  .student-table td.sig  { width: 120px; }
   .student-table tfoot td {
-    background: #f8fafc; font-size: 12px;
-    border-top: 2px solid #d1d5db;
+    background: #eee; font-weight: bold; padding: 6px 8px;
+    border: 1px solid #000;
   }
-  /* ── Summary Box ── */
+
+  /* ── Summary & Footer ── */
   .summary-box {
-    margin: 10px 20px 30px;
-    padding: 14px 20px;
-    background: #f0fdf4; border: 2px solid #86efac; border-radius: 10px;
-    display: flex; gap: 30px; flex-wrap: wrap; font-size: 13px;
+    margin: 10px 20px; padding: 10px;
+    border: 1px solid #000; background: #f9f9f9;
+    display: flex; gap: 25px; font-size: 12px;
   }
-  .summary-box .sval { font-size: 20px; font-weight: 800; color: #166534; display: block; }
-  .summary-box .slbl { font-size: 11px; color: #4b7c59; }
-  /* ── Footer ── */
+  .summary-box .sval { font-weight: 800; }
   .report-footer {
-    text-align: center; margin: 20px; padding: 12px 0;
-    border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af;
+    text-align: center; margin: 20px; padding-top: 10px;
+    border-top: 1px dashed #ccc; font-size: 10px; color: #666;
   }
-  /* ── Print ── */
+
   @media print {
-    @page { size: A4 portrait; margin: 12mm 10mm; }
-    .hall-section { page-break-inside: avoid; }
-    .hall-section.page-top { page-break-before: always; }
+    @page { size: A4 portrait; margin: 10mm; }
     .no-print { display: none !important; }
-    body { font-size: 12px; }
+    .hall-section.page-top { page-break-before: always; }
+    body { font-size: 11px; }
   }
-  /* ── Screen only ── */
+
   @media screen {
-    body { background: #f3f4f6; padding: 0 0 40px; }
-    .report-header { background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.08); }
-    .hall-section { background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.07); overflow:hidden; }
-    .summary-box { box-shadow:0 2px 8px rgba(0,0,0,.05); }
+    body { background: #e0e0e0; padding-bottom: 50px; }
+    .page-container {
+      background: #fff; width: 210mm; margin: 20px auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2); min-height: 297mm;
+    }
     .print-btn-bar {
-      position: sticky; top: 0; z-index: 100;
-      background: #1a1a2e; color:#fff;
-      padding: 10px 24px;
+      position: sticky; top: 0; z-index: 1000;
+      background: #2c3e50; color: #fff; padding: 10px 20px;
       display: flex; justify-content: space-between; align-items: center;
     }
     .print-btn {
-      background: #1a73e8; color:#fff; border:none; border-radius:8px;
-      padding: 8px 22px; font-size:14px; font-weight:700; cursor:pointer;
+      background: #27ae60; color: #fff; border: none; padding: 8px 16px;
+      border-radius: 4px; cursor: pointer; font-weight: bold;
     }
-    .print-btn:hover { background:#0d47a1; }
     .close-btn {
-      background: #374151; color:#fff; border:none; border-radius:8px;
-      padding: 8px 18px; font-size:13px; cursor:pointer; margin-right: 8px;
+      background: #e74c3c; color: #fff; border: none; padding: 8px 16px;
+      border-radius: 4px; cursor: pointer; margin-right: 10px;
     }
   }
 </style>
 </head>
 <body>
   <div class="print-btn-bar no-print">
-    <span style="font-size:15px;font-weight:600;">🖨 معاينة الطباعة — ${subTitle}</span>
+    <span style="font-weight:bold;">🖨 معاينة التقارير / Print Preview</span>
     <div>
-      <button class="close-btn" onclick="window.close()">✕ إغلاق</button>
-      <button class="print-btn" onclick="window.print()">🖨 طباعة الآن</button>
+      <button class="close-btn" onclick="window.close()">إغلاق / Close</button>
+      <button class="print-btn" onclick="window.print()">طباعة / Print</button>
     </div>
   </div>
 
-  <div class="report-header">
-    <div class="school-logo">🏫</div>
-    ${schoolName ? '<div class="school-name">' + schoolName + '</div>' : ''}
-    <div class="report-title">${subTitle}</div>
-    <div class="meta-row">
-      <span class="meta-chip">📅 العام الدراسي: ${yearName}</span>
-      <span class="meta-chip">📚 الفصل: ${semName}</span>
-      <span class="meta-chip">🗓 تاريخ الطباعة: ${today}</span>
+  <div class="page-container">
+    <div class="report-header">
+      <div class="school-name">${schoolName}</div>
+      <div class="report-title">${subTitle}</div>
+      <div class="meta-row">
+        <span class="meta-chip">العام: ${yearName}</span>
+        <span class="meta-chip">الفصل: ${semName}</span>
+        <span class="meta-chip">التاريخ: ${today}</span>
+      </div>
+    </div>
+
+    ${contextLine}
+
+    ${hallsHtml}
+
+    <div class="summary-box">
+      <div>طلاب: <span class="sval">${totalStudents}</span></div>
+      <div>قاعات: <span class="sval">${halls.length}</span></div>
+      <div>سعة: <span class="sval">${halls.reduce((s,h) => s + parseInt(h.capacity||0), 0)}</span></div>
+    </div>
+
+    <div class="report-footer">
+      نظام توزيع قاعات الاختبار - ${new Date().toLocaleString('ar-SA')}
     </div>
   </div>
-
-  ${contextLine}
-
-  ${hallsHtml}
-
-  <div class="summary-box">
-    <div><span class="sval">${totalStudents}</span><span class="slbl">إجمالي الطلاب الموزعين</span></div>
-    <div><span class="sval">${halls.length}</span><span class="slbl">عدد القاعات</span></div>
-    <div><span class="sval">${halls.reduce((s,h) => s + parseInt(h.capacity||0), 0)}</span><span class="slbl">إجمالي السعة</span></div>
-  </div>
-
-  <div class="report-footer">
-    تم إعداد هذا الكشف بواسطة نظام الإدارة المدرسية &nbsp;|&nbsp; ${new Date().toLocaleString('ar-SA')}
-  </div>
-
-  <script>window.addEventListener('afterprint', function(){ /* optional */ });<\/script>
 </body>
 </html>`;
+
 
         const popup = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
         if (!popup) { toast('يرجى السماح بالنوافذ المنبثقة / Allow popups', 'error', 5000); return; }
@@ -798,13 +799,64 @@
         popup.document.close();
     }
 
-    // Full canvas print button
-    $(document).on('click', '#btn-eh-print', function () {
-        if (!EH.canvas.halls.length) { toast('لا توجد قاعات على القماش / No halls on canvas', 'error'); return; }
+    // Print Section (Current context)
+    $(document).on('click', '#btn-eh-print-section', function () {
+        if (!EH.canvas.gradeId && !EH.canvas.sectionId) {
+            toast('اختر الصف والشعبة أولاً / Select grade & section', 'error');
+            return;
+        }
         buildPrintReport(null);
     });
 
-    // Per-hall print button (on each hall card)
+    // Print All Halls on Canvas
+    $(document).on('click', '#btn-eh-print-all-halls', function () {
+        if (!EH.canvas.halls.length) { toast('لا توجد قاعات على القماش', 'error'); return; }
+        buildPrintReport(null);
+    });
+
+    // Print Hall (Show selection modal)
+    $(document).on('click', '#btn-eh-print-hall-select', function () {
+        const $list = $('#eh-hall-print-list').empty();
+        if (!EH.allHalls.length) {
+            $list.html('<p>لا توجد قاعات مضافة.</p>');
+        } else {
+            EH.allHalls.forEach(h => {
+                const $item = $('<div class="eh-hall-picker-item">').append(
+                    $('<div>').append($('<strong>').text(h.hall_name), $('<small>').text(' (' + h.capacity + ')')),
+                    $('<button class="button btn-do-print-hall">').text('🖨 طباعة').data('hall-id', h.id)
+                );
+                $list.append($item);
+            });
+        }
+        $('#eh-hall-print-modal').addClass('active');
+    });
+
+    $(document).on('click', '.btn-do-print-hall', function() {
+        const hallId = $(this).data('hall-id');
+        $('#eh-hall-print-modal').removeClass('active');
+        
+        // Fetch specific hall data globally
+        ajax('olama_eh_get_global_report', {}, function(err, data) {
+            if (err) { toast(err, 'error'); return; }
+            const halls = EH.allHalls;
+            buildPrintReport(hallId, halls, data.assignments);
+        });
+    });
+
+    // Print All Sections (Global)
+    $(document).on('click', '#btn-eh-print-all-sections', function () {
+        const $btn = $(this).prop('disabled', true);
+        ajax('olama_eh_get_global_report', {}, function(err, data) {
+            $btn.prop('disabled', false);
+            if (err) { toast(err, 'error'); return; }
+            
+            // Build unique hall list from assignments if needed, 
+            // but usually EH.allHalls is sufficient
+            buildPrintReport(null, EH.allHalls, data.assignments);
+        });
+    });
+
+    // Per-hall print button (already exists on card header)
     $(document).on('click', '.btn-eh-print-hall', function (e) {
         e.stopPropagation();
         const hallId = $(this).data('hall-id');

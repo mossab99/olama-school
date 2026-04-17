@@ -306,6 +306,46 @@ class Olama_Exam_Hall
     }
 
     /**
+     * Get ALL assignments for the year/semester (unfiltered by canvas).
+     */
+    public static function get_all_assignments($academic_year_id, $semester_id = 0)
+    {
+        global $wpdb;
+        $year_id = intval($academic_year_id);
+        $sem_id  = intval($semester_id);
+        
+        $sem_clause = '';
+        if ($sem_id) {
+            if (self::has_semester_col()) {
+                $sem_clause = $wpdb->prepare(" AND a.semester_id = %d", $sem_id);
+            }
+        }
+
+        $rows = $wpdb->get_results(
+            "SELECT a.hall_id, a.student_id, a.seat_number, a.student_uid,
+                    s.student_name,
+                    sec.grade_id, e.section_id,
+                    g.grade_name, sec.section_name,
+                    h.hall_name, h.capacity
+             FROM {$wpdb->prefix}olama_exam_hall_assignments a
+             JOIN {$wpdb->prefix}olama_students s ON s.id = a.student_id
+             JOIN {$wpdb->prefix}olama_exam_halls h ON h.id = a.hall_id
+             LEFT JOIN {$wpdb->prefix}olama_student_enrollment e
+                ON e.student_id = a.student_id AND e.academic_year_id = a.academic_year_id
+             LEFT JOIN {$wpdb->prefix}olama_sections sec ON sec.id = e.section_id
+             LEFT JOIN {$wpdb->prefix}olama_grades g ON g.id = sec.grade_id
+             WHERE a.academic_year_id = $year_id $sem_clause
+             ORDER BY h.hall_name ASC, a.seat_number ASC, s.student_name ASC"
+        );
+
+        $map = [];
+        foreach ($rows as $r) {
+            $map[$r->hall_id][] = $r;
+        }
+        return $map;
+    }
+
+    /**
      * Legacy: get all unassigned students for a year (used when no canvas filter).
      * Grade route: enrollment → sections → grades.
      */

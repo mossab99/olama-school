@@ -22,6 +22,7 @@ class Olama_Exam_Hall_Ajax
             'olama_eh_save_note',
             'olama_eh_delete_note',
             'olama_eh_clear_context',
+            'olama_eh_get_global_report',
         ];
 
         foreach ($actions as $action) {
@@ -300,5 +301,16 @@ class Olama_Exam_Hall_Ajax
         Olama_Exam_Hall::delete_note($note_id);
 
         wp_send_json_success(['message' => __('Note deleted.', 'olama-school')]);
+    }
+
+    // ── get_global_report ───────────────────────────────────────────────────
+    public function get_global_report()
+    {
+        $this->check();
+        $year_id     = $this->year_id();
+        $semester_id = $this->semester_id();
+
+        $assignments = Olama_Exam_Hall::get_all_assignments($year_id, $semester_id);
+        wp_send_json_success(['assignments' => $assignments]);
     }
 }

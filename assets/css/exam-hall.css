@@ -639,6 +639,81 @@
 #eh-student-panel.drag-over { border-color: #f97316 !important; box-shadow: 0 0 0 3px rgba(249,115,22,.25); }
 
 /* ---- Responsive ---- */
+/* ---- Premium Buttons & Grid ---- */
+.eh-btn-premium {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.eh-btn-premium.primary,
+.eh-btn-premium.auto { background: #2563eb; color: #fff; border-color: #2563eb; }
+.eh-btn-premium.primary:hover,
+.eh-btn-premium.auto:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(37,99,235,0.2); }
+
+.eh-btn-premium.secondary { background: #f3f4f6; color: #374151; border-color: #d1d5db; }
+.eh-btn-premium.secondary:hover { background: #e5e7eb; border-color: #9ca3af; transform: translateY(-1px); }
+
+.eh-btn-premium.clear { background: #fff; color: #ef4444; border: 1px solid #fecaca; }
+.eh-btn-premium.clear:hover { background: #fef2f2; border-color: #ef4444; transform: translateY(-1px); }
+
+.eh-btn-premium:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+.eh-print-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+.eh-report-btn {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: right;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.eh-report-btn:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+    box-shadow: 0 4px 12px rgba(37,99,235,0.08);
+}
+.eh-report-btn .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #4b5563;
+}
+.eh-report-btn:hover .dashicons { color: #2563eb; }
+.eh-report-btn .lbl { font-weight: 700; color: #1f2937; font-size: 13px; }
+.eh-report-btn .sub { font-size: 11px; color: #6b7280; font-weight: 400; }
+
+#eh-hall-print-list .eh-hall-picker-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+}
+#eh-hall-print-list .eh-hall-picker-item:last-child { border-bottom: none; }
+#eh-hall-print-list strong { color: #1a73e8; font-size: 14px; }
+#eh-hall-print-list small { color: #6b7280; margin-right: 5px; }
+
+@media (max-width: 1000px) {
+    .eh-planning-steps .eh-step { border-right: none !important; padding-right: 0 !important; border-bottom: 1px solid #eee; padding-bottom: 14px; }
+    .eh-planning-steps .eh-step:last-child { border-bottom: none; }
+}
+
 @media (max-width: 900px) {
     .eh-planning-steps { flex-direction: column; }
     .eh-planning-steps .eh-step:not(:last-child) { border-right: none; border-bottom: 1px solid #e5e7eb; padding-right: 0; padding-bottom: 12px; }

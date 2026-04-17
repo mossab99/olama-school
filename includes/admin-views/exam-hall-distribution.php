@@ -146,7 +146,7 @@ $total_assigned = $year_id ? (int) $wpdb->get_var($wpdb->prepare(
         <div class="eh-step">
             <div class="eh-step-num">١</div>
             <div class="eh-step-body">
-                <label class="eh-step-label">اختر الصف والشعبة</label>
+                <label class="eh-step-label">اختر الصف والشعبة / Context</label>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                     <select id="eh-filter-grade" class="eh-step-select">
                         <option value="">-- الصف / Grade --</option>
@@ -157,8 +157,9 @@ $total_assigned = $year_id ? (int) $wpdb->get_var($wpdb->prepare(
                     <select id="eh-filter-section" class="eh-step-select">
                         <option value="">-- الشعبة / Section --</option>
                     </select>
-                    <button id="btn-eh-load-students" class="button button-secondary eh-step-btn">
-                        <span class="dashicons dashicons-search"></span> تحميل الطلاب
+                    <button id="btn-eh-load-students" class="eh-btn-premium secondary">
+                        <span class="dashicons dashicons-search"></span>
+                        <span class="btn-text">تحميل الطلاب (Load)</span>
                     </button>
                 </div>
             </div>
@@ -167,10 +168,11 @@ $total_assigned = $year_id ? (int) $wpdb->get_var($wpdb->prepare(
         <div class="eh-step">
             <div class="eh-step-num">٢</div>
             <div class="eh-step-body">
-                <label class="eh-step-label">أضف القاعات للقماش</label>
+                <label class="eh-step-label">إضافة القاعات / Halls setup</label>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                    <button id="btn-eh-add-hall" class="button button-primary eh-step-btn" <?php echo empty($halls) ? 'disabled' : ''; ?>>
-                        <span class="dashicons dashicons-plus-alt2"></span> إضافة قاعة
+                    <button id="btn-eh-add-hall" class="eh-btn-premium primary" <?php echo empty($halls) ? 'disabled' : ''; ?>>
+                        <span class="dashicons dashicons-plus-alt2"></span>
+                        <span class="btn-text">إضافة قاعة (Add)</span>
                     </button>
                     <div id="eh-canvas-badges" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
                 </div>
@@ -180,23 +182,60 @@ $total_assigned = $year_id ? (int) $wpdb->get_var($wpdb->prepare(
         <div class="eh-step">
             <div class="eh-step-num">٣</div>
             <div class="eh-step-body">
-                <label class="eh-step-label">وزّع الطلاب</label>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <button id="btn-eh-auto-distribute" class="btn-eh-auto">
-                        <span class="dashicons dashicons-randomize btn-text"></span>
-                        <span class="btn-text">توزيع تلقائي</span>
+                <label class="eh-step-label">الإجراءات والتقارير / Actions & Reports</label>
+                
+                <!-- ROW 1: Execution Controls -->
+                <div style="display:flex;gap:8px;margin-bottom:12px;">
+                    <button id="btn-eh-auto-distribute" class="eh-btn-premium auto">
+                        <span class="dashicons dashicons-randomize"></span>
+                        <span class="btn-text">توزيع تلقائي (Auto)</span>
                         <span class="eh-spinner"></span>
                     </button>
-                    <button id="btn-eh-clear-all" class="btn-eh-clear">
-                        <span class="dashicons dashicons-no-alt"></span> مسح التوزيع
+                    <button id="btn-eh-clear-all" class="eh-btn-premium clear" title="مسح التوزيع">
+                        <span class="dashicons dashicons-no-alt"></span>
+                        <span class="btn-text">مسح الطلاب الموزعين (Clear)</span>
                     </button>
-                    <button id="btn-eh-print" class="btn-eh-print">
-                        <span class="dashicons dashicons-printer"></span> طباعة
+                </div>
+
+                <!-- ROW 2: Report Grid -->
+                <div class="eh-print-grid">
+                    <button id="btn-eh-print-section" class="eh-report-btn">
+                        <span class="dashicons dashicons-printer"></span>
+                        <div class="lbl">طباعة الشعبة</div>
+                        <div class="sub">Current Section</div>
+                    </button>
+                    <button id="btn-eh-print-hall-select" class="eh-report-btn">
+                        <span class="dashicons dashicons-building"></span>
+                        <div class="lbl">طباعة قاعة</div>
+                        <div class="sub">Specific Hall</div>
+                    </button>
+                    <button id="btn-eh-print-all-halls" class="eh-report-btn">
+                        <span class="dashicons dashicons-grid-view"></span>
+                        <div class="lbl">كافة القاعات</div>
+                        <div class="sub">All Canvas Halls</div>
+                    </button>
+                    <button id="btn-eh-print-all-sections" class="eh-report-btn">
+                        <span class="dashicons dashicons-groups"></span>
+                        <div class="lbl">كل الشعب</div>
+                        <div class="sub">Global Report</div>
                     </button>
                 </div>
             </div>
         </div>
 
+    </div>
+
+    <!-- Modal: Hall Selection for Printing -->
+    <div id="eh-hall-print-modal" class="eh-modal-overlay">
+        <div class="eh-modal">
+            <div class="eh-modal-header">
+                <h3>🏛 اختر القاعة للطباعة</h3>
+                <button type="button" class="eh-modal-close">&times;</button>
+            </div>
+            <div class="eh-modal-body" id="eh-hall-print-list">
+                <!-- Hall list injected via JS -->
+            </div>
+        </div>
     </div>
 
     <!-- Print header -->
@@ -450,7 +489,7 @@ $total_assigned = $year_id ? (int) $wpdb->get_var($wpdb->prepare(
 <div class="eh-modal-overlay" id="eh-hall-picker-modal">
     <div class="eh-modal" style="max-width:460px;">
         <button class="eh-modal-close" type="button">✕</button>
-        <h3><span class="dashicons dashicons-building" style="color:#1a73e8;"></span> اختر قاعة للإضافة للقماش</h3>
+        <h3><span class="dashicons dashicons-building" style="color:#1a73e8;"></span> اختر قاعة لاضافة الطلاب</h3>
         <div id="eh-hall-picker-list" style="max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-top:12px;">
             <!-- Populated by JS -->
         </div>
