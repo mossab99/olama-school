@@ -1704,7 +1704,7 @@ class Olama_School_Admin
             wp_enqueue_script(
                 'olama-exam-hall-script',
                 OLAMA_SCHOOL_URL . 'assets/js/exam-hall.js',
-                ['jquery'],
+                ['jquery', 'jquery-ui-sortable'],
                 OLAMA_SCHOOL_VERSION,
                 true
             );

@@ -304,6 +304,12 @@ class Olama_School_Permissions
             return true;
         }
 
+        // Supervisors have full access to all olama modules
+        $user = get_userdata($user_id);
+        if ($user && in_array('supervisor', (array) $user->roles) && strpos($capability, 'olama_') === 0) {
+            return true;
+        }
+
         return user_can($user_id, $capability);
     }
 

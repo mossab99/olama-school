@@ -23,6 +23,7 @@
             halls:      [],   // [{id, hall_name, capacity}] on canvas
             students:   [],   // all students from selected grade/section
             assignments:{},   // { hall_id: [studentObj, ...] }
+            invigilators:{},   // { hall_id: [invigilatorObj, ...] }
         },
         dragSrc: null,
     };
@@ -157,7 +158,7 @@
             return;
         }
         students.forEach((s, i) => $body.append(makeStudentCard(s, '')));
-        bindDraggable($body.find('.eh-student-item'));
+        bindDragDrop();
     }
 
     /* ─── Render: canvas grid ─────────────────────────────────────────────────── */
@@ -178,8 +179,7 @@
             $grid.append(makeHallCard(hall, students));
         });
 
-        bindHallDrop($('.eh-hall-card'));
-        bindRemoveButtons();
+        bindDragDrop();
     }
 
     function makeHallCard(hall, students) {
@@ -203,9 +203,17 @@
                 : ''
         );
         $card.append($('<div class="eh-hall-card-header">').append(
-            $('<h3>').html('<span class="dashicons dashicons-building" style="color:#fff;font-size:16px;"></span> ' + esc(hall.hall_name)),
+            $('<div>').append(
+                $('<h3>').html('<span class="dashicons dashicons-building" style="color:#fff;font-size:16px;"></span> ' + esc(hall.hall_name)),
+                $('<div style="margin-top:6px;">').append(
+                    $('<div class="eh-hall-inv-list">').attr('data-hall-id', hall.id).css({ 'margin-top': '2px', 'display': 'flex', 'gap': '4px', 'flex-wrap': 'wrap' })
+                )
+            ),
             $headerRight
         ));
+
+        // Trigger load for this hall's invigilators
+        loadInvigilators(hall.id);
 
         // Body
         const $body = $('<div class="eh-hall-card-body">').toggleClass('is-empty', !cnt);
@@ -227,7 +235,7 @@
     function makeStudentCard(s, seat) {
         const id   = s.id || s.student_id;
         const meta = [s.grade_name, s.section_name].filter(Boolean).join(' › ');
-        return $('<div class="eh-student-item" draggable="' + (EH.isAdmin ? 'true' : 'false') + '">')
+        return $('<div class="eh-student-item">')
             .attr({ 'data-student-id': id, 'data-student-name': s.student_name })
             .append(
                 $('<span class="seat-badge">').text(seat || ''),
@@ -237,6 +245,18 @@
                 ),
                 EH.isAdmin ? $('<button class="btn-remove-student" type="button" title="Unassign">✕</button>') : ''
             );
+    }
+
+    /* ─── Helpers ─────────────────────────────────────────────────────────────── */
+    function getUnassignedList() {
+        const assignedIds = new Set();
+        Object.values(EH.canvas.assignments).forEach(list => list.forEach(s => assignedIds.add(parseInt(s.id || s.student_id))));
+        return EH.canvas.students.filter(s => !assignedIds.has(parseInt(s.id || s.student_id)));
+    }
+
+    function findStudentObj(sid) {
+        sid = parseInt(sid);
+        return EH.canvas.students.find(s => parseInt(s.id || s.student_id) === sid);
     }
 
     function esc(str) {
@@ -338,133 +358,158 @@
         saveState();
     });
 
-    /* ─── Drag & Drop ─────────────────────────────────────────────────────────── */
-    function bindDraggable($items) {
+    /* ─── Drag & Drop (jQuery UI Draggable/Droppable) ─────────────────────────── */
+    // HTML5 native D&D is unreliable with dynamic/delegated events.
+    // jQuery UI Draggable/Droppable (already bundled with WordPress) is used instead.
+
+    EH.dragSrc = null; // { studentId, fromHallId }
+
+    function bindDragDrop() {
         if (!EH.isAdmin) return;
-        $items.off('dragstart dragend').on('dragstart', function (e) {
-            EH.dragSrc = {
-                studentId:  $(this).data('student-id'),
-                fromHallId: $(this).closest('.eh-hall-card').data('hall-id') || 'unassigned',
-                $el:        $(this),
-            };
-            $(this).addClass('dragging');
-            e.originalEvent.dataTransfer.effectAllowed = 'move';
-        }).on('dragend', function () {
-            $(this).removeClass('dragging');
+
+        // Check if jQuery UI Sortable is available
+        if (typeof $.fn.sortable === 'undefined') {
+            console.error('Olama Exam Hall: jQuery UI Sortable NOT found!');
+            return;
+        }
+
+        const $lists = $('#eh-student-panel-body, .eh-hall-card-body');
+        
+        // Destroy existing sortable instances if they exist to prevent duplication
+        $lists.each(function() {
+            if ($(this).hasClass('ui-sortable')) {
+                $(this).sortable('destroy');
+            }
         });
-    }
 
-    function bindHallDrop($cards) {
-        if (!EH.isAdmin) return;
-        $cards.off('dragover dragleave drop')
-            .on('dragover', function (e) { e.preventDefault(); $(this).addClass('drag-over'); })
-            .on('dragleave', function ()  { $(this).removeClass('drag-over'); })
-            .on('drop', function (e) {
-                e.preventDefault();
-                $(this).removeClass('drag-over');
-                if (!EH.dragSrc) return;
+        $lists.sortable({
+            connectWith: '#eh-student-panel-body, .eh-hall-card-body',
+            items: '.eh-student-item',
+            placeholder: 'eh-student-item sortable-placeholder',
+            tolerance: 'pointer',
+            cursor: 'grabbing',
+            helper: 'clone',
+            appendTo: 'body',
+            zIndex: 999999,
+            start: function(event, ui) {
+                ui.item.addClass('dragging');
+                ui.placeholder.css({
+                    'visibility': 'visible',
+                    'background-color': 'rgba(255,255,255,0.5)',
+                    'border': '2px dashed #94a3b8',
+                    'height': ui.item.outerHeight()
+                });
+            },
+            stop: function(event, ui) {
+                ui.item.removeClass('dragging');
+            },
+            receive: function(event, ui) {
+                const $item = ui.item;
+                const sid = parseInt($item.attr('data-student-id'));
+                const $targetList = $(this);
+                const $sourceList = ui.sender;
 
-                const toHallId = parseInt($(this).data('hall-id'));
-                const fromId   = EH.dragSrc.fromHallId;
-                if (toHallId === fromId) return;
+                const toHallId = $targetList.closest('.eh-hall-card').attr('data-hall-id') || 'unassigned';
+                const fromId = $sourceList.closest('.eh-hall-card').attr('data-hall-id') || 'unassigned';
 
-                const hall = EH.canvas.halls.find(h => parseInt(h.id) === toHallId);
-                const cnt  = (EH.canvas.assignments[toHallId] || []).length;
-                if (hall && cnt >= parseInt(hall.capacity)) {
-                    toast('القاعة ممتلئة / Hall is full', 'error');
+                if (String(toHallId) === String(fromId)) return;
+
+                const student = findStudentObj(sid);
+                if (!student) {
+                    toast('خطأ: الطالب غير موجود', 'error');
+                    $(ui.sender).sortable('cancel');
                     return;
                 }
 
-                const sid     = parseInt(EH.dragSrc.studentId);
-                const student = findStudentObj(sid, fromId);
-                if (!student) return;
+                if (toHallId !== 'unassigned') {
+                    const hall = EH.canvas.halls.find(h => parseInt(h.id) === parseInt(toHallId));
+                    const currentCount = (EH.canvas.assignments[toHallId] || []).length;
+                    
+                    if (hall && currentCount >= parseInt(hall.capacity)) {
+                        toast('القاعة ممتلئة / Hall is full', 'error');
+                        $(ui.sender).sortable('cancel');
+                        return;
+                    }
+                }
 
-                // Optimistic move
+                // Update state
                 if (fromId !== 'unassigned') {
                     EH.canvas.assignments[fromId] = (EH.canvas.assignments[fromId] || [])
                         .filter(s => parseInt(s.id || s.student_id) !== sid);
                 }
-                if (!EH.canvas.assignments[toHallId]) EH.canvas.assignments[toHallId] = [];
-                EH.canvas.assignments[toHallId].push(student);
+                
+                if (toHallId !== 'unassigned') {
+                    if (!EH.canvas.assignments[toHallId]) EH.canvas.assignments[toHallId] = [];
+                    EH.canvas.assignments[toHallId].push(student);
+                }
 
-                renderCanvas();
-                renderUnassigned(getUnassignedList());
-                updateStats();
+                // Defer re-render to allow sortable to finish its DOM manipulation safely
+                setTimeout(() => {
+                    renderCanvas();
+                    renderUnassigned(getUnassignedList());
+                    updateStats();
+                }, 50);
 
-                // Persist
-                ajax('olama_eh_move_student', { hall_id: toHallId, student_id: sid }, function (err) {
+                const action = toHallId === 'unassigned' ? 'olama_eh_remove_student' : 'olama_eh_move_student';
+                const data = toHallId === 'unassigned' ? { student_id: sid } : { hall_id: toHallId, student_id: sid };
+
+                ajax(action, data, function (err) {
                     if (err) { toast(err, 'error'); loadStudents(); }
                     else toast('تم النقل ✓', 'success');
                 });
-                EH.dragSrc = null;
-            });
-    }
-
-    function bindRemoveButtons() {
-        if (!EH.isAdmin) return;
-        $(document).off('click.eh-rm', '.btn-remove-student').on('click.eh-rm', '.btn-remove-student', function (e) {
-            e.stopPropagation();
-            const $item  = $(this).closest('.eh-student-item');
-            const sid    = parseInt($item.data('student-id'));
-            const hallId = $item.closest('.eh-hall-card').data('hall-id');
-            if (!hallId) return;
-
-            EH.canvas.assignments[hallId] = (EH.canvas.assignments[hallId] || [])
-                .filter(s => parseInt(s.id || s.student_id) !== sid);
-
-            renderCanvas();
-            renderUnassigned(getUnassignedList());
-            updateStats();
-
-            ajax('olama_eh_remove_student', { student_id: sid }, err => {
-                if (err) toast(err, 'error');
-            });
+            }
         });
     }
 
-    // Unassigned panel drop zone
-    function bindUnassignedDrop() {
+    // ── Remove student button (✕) ──────────────────────────────────────────────
+    $(document).on('click', '.btn-remove-student', function (e) {
         if (!EH.isAdmin) return;
-        $('#eh-student-panel').off('dragover dragleave drop')
-            .on('dragover', function (e) { e.preventDefault(); $(this).addClass('drag-over'); })
-            .on('dragleave', function ()  { $(this).removeClass('drag-over'); })
-            .on('drop', function (e) {
-                e.preventDefault();
-                $(this).removeClass('drag-over');
-                if (!EH.dragSrc || EH.dragSrc.fromHallId === 'unassigned') return;
+        e.stopPropagation();
+        const $item  = $(this).closest('.eh-student-item');
+        const sid    = parseInt($item.attr('data-student-id'));
+        const hallId = parseInt($item.closest('.eh-hall-card').attr('data-hall-id'));
+        if (!hallId) return;
 
-                const sid    = parseInt(EH.dragSrc.studentId);
-                const fromId = EH.dragSrc.fromHallId;
+        EH.canvas.assignments[hallId] = (EH.canvas.assignments[hallId] || [])
+            .filter(s => parseInt(s.id || s.student_id) !== sid);
 
-                EH.canvas.assignments[fromId] = (EH.canvas.assignments[fromId] || [])
-                    .filter(s => parseInt(s.id || s.student_id) !== sid);
+        renderCanvas();
+        renderUnassigned(getUnassignedList());
+        updateStats();
 
-                renderCanvas();
-                renderUnassigned(getUnassignedList());
-                updateStats();
+        ajax('olama_eh_remove_student', { student_id: sid }, err => {
+            if (err) toast(err, 'error');
+        });
+    });
 
-                ajax('olama_eh_remove_student', { student_id: sid }, err => {
-                    if (err) { toast(err, 'error'); loadStudents(); }
-                    else toast('أُعيد للقائمة / Returned', 'info');
-                });
-                EH.dragSrc = null;
-            });
-    }
+    function findStudentObj(id) {
+        const sid = parseInt(id);
+        if (isNaN(sid)) return null;
 
-    function findStudentObj(id, fromHallId) {
-        if (fromHallId === 'unassigned') {
-            return EH.canvas.students.find(s => parseInt(s.id) === id) || null;
+        // Master list is the most reliable source for the student object
+        if (Array.isArray(EH.canvas.students)) {
+            const found = EH.canvas.students.find(s => parseInt(s.id || s.student_id) === sid);
+            if (found) return found;
         }
-        const arr = EH.canvas.assignments[fromHallId] || [];
-        return arr.find(s => parseInt(s.id || s.student_id) === id) || null;
+
+        // Fallback to assignments search
+        for (const hId in EH.canvas.assignments) {
+            const found = EH.canvas.assignments[hId].find(s => parseInt(s.id || s.student_id) === sid);
+            if (found) return found;
+        }
+
+        return null;
     }
 
     function getUnassignedList() {
         const assignedSet = new Set();
         Object.values(EH.canvas.assignments).forEach(arr =>
-            arr.forEach(s => assignedSet.add(parseInt(s.id || s.student_id)))
+            arr.forEach(s => {
+                const id = parseInt(s.id || s.student_id);
+                if (!isNaN(id)) assignedSet.add(id);
+            })
         );
-        return EH.canvas.students.filter(s => !assignedSet.has(parseInt(s.id)));
+        return EH.canvas.students.filter(s => !assignedSet.has(parseInt(s.id || s.student_id)));
     }
 
     /* ─── Auto Distribute ─────────────────────────────────────────────────────── */
@@ -921,16 +966,125 @@
             $g.append($('<div class="eh-hall-manage-card">').append(
                 $('<div class="hall-name">').html('<span class="dashicons dashicons-building" style="color:#1a73e8;"></span> ' + esc(h.hall_name)),
                 $('<div class="hall-cap">').text('السعة: ' + h.capacity + ' طالب'),
+                $('<div style="margin-top:8px;">').append(
+                    $('<span class="eh-hall-inv-label">').text('المراقبون:'),
+                    $('<div class="eh-hall-inv-list" data-hall-id="' + h.id + '">').html('<small style="color:#94a3b8;">جاري تحميل المراقبين...</small>')
+                ),
                 $('<div class="hall-actions">').append(
                     $('<button class="button btn-eh-edit-hall">').attr({ 'data-hall-id': h.id, 'data-hall-name': h.hall_name, 'data-hall-cap': h.capacity })
                         .html('<span class="dashicons dashicons-edit"></span> تعديل'),
+                    $('<button class="button btn-eh-manage-invigilators">').attr({ 'data-hall-id': h.id, 'data-hall-name': h.hall_name })
+                        .html('<span class="dashicons dashicons-id-alt"></span> المراقبين'),
                     $('<button class="button btn-eh-delete-hall">').attr({ 'data-hall-id': h.id, 'data-hall-name': h.hall_name })
                         .css({ color: '#dc2626' })
                         .html('<span class="dashicons dashicons-trash"></span> حذف')
                 )
             ));
+            // Trigger load for this hall's invigilators
+            loadInvigilators(h.id);
         });
     }
+
+    /* ─── Invigilators Logic ─────────────────────────────────────────────────── */
+    function loadInvigilators(hallId) {
+        // Show cached if available
+        if (EH.canvas.invigilators[hallId]) {
+            updateInvDisplay(hallId, EH.canvas.invigilators[hallId]);
+        }
+
+        ajax('olama_eh_get_invigilators', { hall_id: hallId }, function (err, data) {
+            if (err) return;
+            EH.canvas.invigilators[hallId] = data.assigned || [];
+            updateInvDisplay(hallId, data.assigned || []);
+        });
+    }
+
+    function updateInvDisplay(hallId, assigned) {
+        // Update the badge in management grid
+        const $list = $('.eh-hall-inv-list[data-hall-id="' + hallId + '"]').empty();
+        if (assigned && assigned.length) {
+            assigned.forEach(inv => {
+                $list.append($('<span class="eh-hall-inv-badge">').text(inv.display_name));
+            });
+        } else {
+            $list.html('<small style="color:#94a3b8;">لا يوجد مراقبون</small>');
+        }
+
+        // Also update canvas if present
+        const $canvasList = $('#eh-hall-' + hallId + ' .eh-hall-inv-list').empty();
+        if (assigned && assigned.length) {
+            assigned.forEach(inv => {
+                $canvasList.append($('<span class="eh-hall-inv-badge">').text(inv.display_name));
+            });
+        }
+    }
+
+    $(document).on('click', '.btn-eh-manage-invigilators', function () {
+        const hallId = $(this).data('hall-id');
+        const name   = $(this).data('hall-name');
+        $('#eh-inv-hall-name').text(name);
+        $('#btn-eh-add-invigilator').data('hall-id', hallId);
+        
+        const $modal = $('#eh-invigilator-modal').addClass('active');
+        const $list  = $('#eh-inv-current-list').html('<p style="text-align:center;width:100%;"><span class="spinner is-active" style="float:none;"></span></p>');
+        const $picker = $('#eh-inv-picker').empty().append('<option value="">-- اختر المعلم / الإداري --</option>');
+
+        ajax('olama_eh_get_invigilators', { hall_id: hallId }, function (err, data) {
+            if (err) { toast(err, 'error'); return; }
+            
+            // Render current
+            $list.empty();
+            if (!data.assigned || !data.assigned.length) {
+                $list.html('<p style="color:#94a3b8;font-size:13px;">لا يوجد مراقبون حالياً</p>');
+            } else {
+                data.assigned.forEach(inv => {
+                    $list.append(
+                        $('<div class="eh-inv-tag">').append(
+                            $('<span>').text(inv.display_name),
+                            $('<button class="btn-remove-inv">✕</button>').data({ hall_id: hallId, inv_id: inv.invigilator_id })
+                        )
+                    );
+                });
+            }
+
+            // Populate picker
+            const assignedIds = (data.all_assigned || []).map(a => parseInt(a.invigilator_id));
+            (data.available || []).forEach(u => {
+                const isAssigned = assignedIds.includes(parseInt(u.ID));
+                const $opt = $('<option>').val(u.ID).text(u.display_name + (isAssigned ? ' (موزع مسبقاً)' : ''));
+                if (isAssigned) $opt.prop('disabled', true);
+                $picker.append($opt);
+            });
+        });
+    });
+
+    $(document).on('click', '#btn-eh-add-invigilator', function () {
+        const hallId = $(this).data('hall-id');
+        const invId  = $('#eh-inv-picker').val();
+        if (!invId) { toast('اختر مراقباً أولاً', 'error'); return; }
+
+        const $btn = $(this).prop('disabled', true);
+        ajax('olama_eh_assign_invigilator', { hall_id: hallId, invigilator_id: invId }, function (err, data) {
+            $btn.prop('disabled', false);
+            if (err) { toast(err, 'error'); return; }
+            toast(data.message, 'success');
+            $('.btn-eh-manage-invigilators[data-hall-id="' + hallId + '"]').click(); // Refresh modal
+            loadInvigilators(hallId); // Refresh background cards
+        });
+    });
+
+    $(document).on('click', '.btn-remove-inv', function () {
+        const hallId = $(this).data('hall_id');
+        const invId  = $(this).data('inv_id');
+        if (!confirm('إزالة هذا المراقب؟')) return;
+
+        ajax('olama_eh_remove_invigilator', { hall_id: hallId, invigilator_id: invId }, function (err, data) {
+            if (err) { toast(err, 'error'); return; }
+            toast(data.message, 'info');
+            $('.btn-eh-manage-invigilators[data-hall-id="' + hallId + '"]').click(); // Refresh modal
+            loadInvigilators(hallId); // Refresh background cards
+        });
+    });
 
     /* ─── Attendance Tab ──────────────────────────────────────────────────────── */
     $(document).on('change', '#eh-att-hall', function () {
@@ -1045,7 +1199,6 @@
         if ($('#eh-notes-date').length && !$('#eh-notes-date').val()) $('#eh-notes-date').val(today);
 
         if ($('#eh-canvas-grid').length) {
-            bindUnassignedDrop();
             // Restore previous canvas if any
             const restored = restoreState();
             renderCanvas();

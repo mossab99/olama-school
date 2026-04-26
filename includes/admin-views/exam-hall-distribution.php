@@ -41,6 +41,13 @@ $total_assigned = $year_id ? (int) $wpdb->get_var($wpdb->prepare(
      WHERE academic_year_id = %d AND semester_id = %d",
     $year_id, $active_semester_id
 )) : 0;
+
+// Fetch all assigned invigilators for this context
+$all_invigilators = Olama_Exam_Hall::get_all_assigned_invigilators($year_id, $active_semester_id);
+$inv_by_hall = [];
+foreach ($all_invigilators as $inv) {
+    $inv_by_hall[$inv->hall_id][] = $inv->display_name;
+}
 ?>
 
 <div class="wrap olama-school-wrap eh-module-wrap">
@@ -460,6 +467,23 @@ $total_assigned = $year_id ? (int) $wpdb->get_var($wpdb->prepare(
                 <div class="hall-name"><span class="dashicons dashicons-building" style="color:#1a73e8;"></span> <?php echo esc_html($h->hall_name); ?></div>
                 <div class="hall-cap">السعة: <strong><?php echo $h->capacity; ?></strong> طالب</div>
                 <div style="font-size:12px;color:#6b7280;">الموزعون: <strong style="color:#1a73e8;"><?php echo $cnt; ?></strong></div>
+                
+                <!-- Invigilators List -->
+                <div style="margin-top:10px;">
+                    <span class="eh-hall-inv-label">المراقبون:</span>
+                    <div class="eh-hall-inv-list" data-hall-id="<?php echo $h->id; ?>">
+                        <?php 
+                        $hall_invs = $inv_by_hall[$h->id] ?? [];
+                        if (!empty($hall_invs)): 
+                            foreach ($hall_invs as $name): ?>
+                                <span class="eh-hall-inv-badge"><?php echo esc_html($name); ?></span>
+                            <?php endforeach;
+                        else: ?>
+                            <small style="color:#94a3b8;">لا يوجد مراقبون</small>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
                 <div class="eh-hall-progress">
                     <div class="eh-hall-progress-fill <?php echo $pct >= 100 ? 'full' : ''; ?>" style="width:<?php echo $pct; ?>%;"></div>
                 </div>
@@ -468,6 +492,9 @@ $total_assigned = $year_id ? (int) $wpdb->get_var($wpdb->prepare(
                             data-hall-name="<?php echo esc_attr($h->hall_name); ?>"
                             data-hall-cap="<?php echo $h->capacity; ?>">
                         <span class="dashicons dashicons-edit"></span> تعديل
+                    </button>
+                    <button class="button btn-eh-manage-invigilators" data-hall-id="<?php echo $h->id; ?>" data-hall-name="<?php echo esc_attr($h->hall_name); ?>">
+                        <span class="dashicons dashicons-id-alt"></span> المراقبين
                     </button>
                     <button class="button btn-eh-delete-hall" style="color:#dc2626;"
                             data-hall-id="<?php echo $h->id; ?>"
@@ -516,5 +543,33 @@ $total_assigned = $year_id ? (int) $wpdb->get_var($wpdb->prepare(
                 <span class="eh-spinner"></span>
             </button>
         </form>
+    </div>
+</div>
+
+<!-- ════ MODAL: Manage Invigilators ════════════════════════════════════════ -->
+<div class="eh-modal-overlay" id="eh-invigilator-modal">
+    <div class="eh-modal" style="max-width:500px;">
+        <button class="eh-modal-close" type="button">✕</button>
+        <h3><span class="dashicons dashicons-id-alt" style="color:#1a73e8;"></span> إدارة المراقبين: <span id="eh-inv-hall-name"></span></h3>
+        
+        <div class="eh-inv-current-section">
+            <h4 style="margin:0 0 10px;font-size:14px;border-bottom:1px solid #eee;padding-bottom:5px;">المراقبون الحاليون (بحد أقصى ٣)</h4>
+            <div id="eh-inv-current-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px;min-height:40px;">
+                <!-- Current invigilators tags -->
+            </div>
+        </div>
+
+        <div class="eh-inv-select-section">
+            <h4 style="margin:0 0 10px;font-size:14px;">إضافة مراقب جديد</h4>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <select id="eh-inv-picker" style="flex:1;height:38px;">
+                    <option value="">-- اختر المعلم / الإداري --</option>
+                </select>
+                <button id="btn-eh-add-invigilator" class="button button-primary" style="height:38px;">
+                    إضافة
+                </button>
+            </div>
+            <p style="font-size:11px;color:#6b7280;">* لا يمكن للمراقب أن يكون في أكثر من قاعة في نفس الوقت.</p>
+        </div>
     </div>
 </div>

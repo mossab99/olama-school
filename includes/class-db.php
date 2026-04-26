@@ -696,9 +696,9 @@ class Olama_School_DB
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
-				KEY  year_semester (academic_year_id,semester_id),
-				KEY  teacher_id (teacher_id),
-				KEY  section_subject_date (section_id,subject_id,start_date)
+				KEY year_semester (academic_year_id,semester_id),
+				KEY teacher_id (teacher_id),
+				KEY section_subject_date (section_id,subject_id,start_date)
 			) $charset_collate;",
 
 			'olama_supervisor_visits' => "CREATE TABLE {$wpdb->prefix}olama_supervisor_visits (
@@ -851,6 +851,7 @@ class Olama_School_DB
 			'olama_exam_hall_attendance' => "CREATE TABLE {$wpdb->prefix}olama_exam_hall_attendance (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				hall_id mediumint(9) NOT NULL,
+				academic_year_id mediumint(9) NOT NULL,
 				student_id mediumint(9) NOT NULL,
 				student_uid varchar(50) DEFAULT NULL,
 				exam_date date NOT NULL,
@@ -1357,6 +1358,7 @@ class Olama_School_DB
 			$this->ensure_column_exists('olama_exam_hall_assignments', 'semester_id', 'mediumint(9) NOT NULL DEFAULT 0 AFTER academic_year_id');
 		}
 		if ($wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}olama_exam_hall_attendance'") === "{$wpdb->prefix}olama_exam_hall_attendance") {
+			$this->ensure_column_exists('olama_exam_hall_attendance', 'academic_year_id', 'mediumint(9) NOT NULL AFTER hall_id');
 			$this->ensure_column_exists('olama_exam_hall_attendance', 'semester_id', 'mediumint(9) NOT NULL DEFAULT 0 AFTER academic_year_id');
 		}
 		if ($wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}olama_exam_hall_notes'") === "{$wpdb->prefix}olama_exam_hall_notes") {

@@ -28,19 +28,65 @@ class Olama_Exam_Hall
         self::$migrated = true;
 
         global $wpdb;
-        $map = [
-            'olama_exam_hall_assignments' => 'semester_id mediumint(9) NOT NULL DEFAULT 0 AFTER academic_year_id',
-            'olama_exam_hall_attendance'  => 'semester_id mediumint(9) NOT NULL DEFAULT 0 AFTER academic_year_id',
-            'olama_exam_hall_notes'       => 'semester_id mediumint(9) NOT NULL DEFAULT 0 AFTER exam_date',
+
+        // Map: table_base => [ col_to_add => col_definition, after_col => hint or null ]
+        $migrations = [
+            'olama_exam_hall_assignments' => [
+                'col'   => 'semester_id',
+                'def'   => 'semester_id mediumint(9) NOT NULL DEFAULT 0',
+                'after' => 'academic_year_id',
+            ],
+            'olama_exam_hall_attendance'  => [
+                'col'   => 'semester_id',
+                'def'   => 'semester_id mediumint(9) NOT NULL DEFAULT 0',
+                'after' => 'academic_year_id',   // may not exist – handled below
+            ],
+            'olama_exam_hall_notes'       => [
+                'col'   => 'semester_id',
+                'def'   => 'semester_id mediumint(9) NOT NULL DEFAULT 0',
+                'after' => 'exam_date',
+            ],
         ];
-        foreach ($map as $base => $coldef) {
+
+        foreach ($migrations as $base => $m) {
             $table = $wpdb->prefix . $base;
+
+            // Skip if table doesn't exist yet
             if ($wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table) continue;
-            $exists = $wpdb->get_results("SHOW COLUMNS FROM $table LIKE 'semester_id'");
-            if (empty($exists)) {
-                $wpdb->query("ALTER TABLE $table ADD COLUMN $coldef");
+
+            // Skip if column already exists
+            if (!empty($wpdb->get_results("SHOW COLUMNS FROM $table LIKE '{$m['col']}'"))) continue;
+
+            // Check if the AFTER reference column exists in this table
+            $after_clause = '';
+            if (!empty($m['after'])) {
+                $ref_exists = $wpdb->get_results("SHOW COLUMNS FROM $table LIKE '{$m['after']}'");
+                if (!empty($ref_exists)) {
+                    $after_clause = " AFTER {$m['after']}";
+                }
             }
+
+            $wpdb->query("ALTER TABLE $table ADD COLUMN {$m['def']}{$after_clause}");
         }
+
+        // Create invigilators table if missing
+        $inv_table = $wpdb->prefix . 'olama_exam_hall_invigilators';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$inv_table'") !== $inv_table) {
+            $charset = $wpdb->get_charset_collate();
+            $wpdb->query("CREATE TABLE $inv_table (
+                id bigint(20) NOT NULL AUTO_INCREMENT,
+                hall_id mediumint(9) NOT NULL,
+                invigilator_id bigint(20) NOT NULL,
+                academic_year_id mediumint(9) NOT NULL,
+                semester_id mediumint(9) NOT NULL DEFAULT 0,
+                assigned_by bigint(20) NOT NULL,
+                created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY  (id),
+                UNIQUE KEY inv_context (invigilator_id, academic_year_id, semester_id),
+                KEY hall_context (hall_id, academic_year_id, semester_id)
+            ) $charset");
+        }
+
         // Refresh the cached flag after migration
         self::$has_sem_col = null;
     }
@@ -479,25 +525,21 @@ class Olama_Exam_Hall
      * @param bool  $clear         Clear existing canvas assignments first
      * @return array|WP_Error
      */
-    public static function auto_distribute($year_id, $semester_id = 0, array $hall_ids = [], $grade_id = 0, $section_id = 0, $clear = true)
-    {   // Run schema migration first so semester_id column exists before any INSERT
-        self::maybe_migrate();
-
+    public static function auto_distribute($year_id, $semester_id, $hall_ids, $grade_id = 0, $section_id = 0, $clear = false)
+    {
         global $wpdb;
-
-        // 1. Get canvas halls
-        if (empty($hall_ids)) {
-            return new WP_Error('no_halls', __('No halls selected on canvas. Add halls first.', 'olama-school'));
+        $all_halls = self::get_halls($year_id);
+        $halls     = [];
+        
+        $target_ids = array_map('intval', $hall_ids);
+        foreach ($all_halls as $h) {
+            if (in_array(intval($h->id), $target_ids)) {
+                $halls[] = $h;
+            }
         }
 
-        $ph    = implode(',', array_fill(0, count($hall_ids), '%d'));
-        $halls = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_exam_halls WHERE id IN ($ph) AND is_active = 1",
-            array_map('intval', $hall_ids)
-        ));
-
         if (empty($halls)) {
-            return new WP_Error('no_halls', __('No valid halls found.', 'olama-school'));
+            return new WP_Error('no_halls', __('No valid halls found for distribution.', 'olama-school'));
         }
 
         // 2. Get students (grade/section filter)
@@ -521,7 +563,7 @@ class Olama_Exam_Hall
              LEFT JOIN {$wpdb->prefix}olama_grades g ON g.id = sec.grade_id
              WHERE 1=1 $extra_where
              ORDER BY g.grade_name, sec.section_name, s.student_name",
-            array_merge([$year_id], $extra_vals)
+            array_merge([intval($year_id)], $extra_vals)
         ));
 
         if (empty($students)) {
@@ -737,5 +779,103 @@ class Olama_Exam_Hall
             'غائب'  => 'غائب (Absent)',
             'أخرى'  => 'أخرى (Other)',
         ];
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+    // INVIGILATORS (المراقبين)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Get invigilators assigned to a specific hall.
+     */
+    public static function get_hall_invigilators($hall_id, $year_id, $semester_id = 0)
+    {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT i.*, u.display_name 
+             FROM {$wpdb->prefix}olama_exam_hall_invigilators i
+             JOIN {$wpdb->users} u ON u.ID = i.invigilator_id
+             WHERE i.hall_id = %d AND i.academic_year_id = %d AND i.semester_id = %d",
+            $hall_id,
+            $year_id,
+            $semester_id
+        ));
+    }
+
+    /**
+     * Assign an invigilator to a hall.
+     */
+    public static function assign_invigilator($hall_id, $invigilator_id, $year_id, $semester_id = 0)
+    {
+        self::maybe_migrate();
+        global $wpdb;
+        $table = $wpdb->prefix . 'olama_exam_hall_invigilators';
+
+        // 1. Check if already in another hall
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT hall_id FROM $table WHERE invigilator_id = %d AND academic_year_id = %d AND semester_id = %d",
+            $invigilator_id,
+            $year_id,
+            $semester_id
+        ));
+
+        if ($existing) {
+            if ($existing == $hall_id) return true; // Already there
+            $hall = self::get_hall($existing);
+            return new WP_Error('already_assigned', sprintf(
+                __('Invigilator is already assigned to hall "%s".', 'olama-school'),
+                $hall ? $hall->hall_name : '#' . $existing
+            ));
+        }
+
+        // 2. Check hall limit (up to 3)
+        $count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table WHERE hall_id = %d AND academic_year_id = %d AND semester_id = %d",
+            $hall_id,
+            $year_id,
+            $semester_id
+        ));
+
+        if ($count >= 3) {
+            return new WP_Error('limit_reached', __('Maximum 3 invigilators allowed per hall.', 'olama-school'));
+        }
+
+        // 3. Insert
+        return $wpdb->insert($table, [
+            'hall_id'          => $hall_id,
+            'invigilator_id'   => $invigilator_id,
+            'academic_year_id' => $year_id,
+            'semester_id'      => $semester_id,
+            'assigned_by'      => get_current_user_id()
+        ], ['%d', '%d', '%d', '%d', '%d']);
+    }
+
+    /**
+     * Remove an invigilator from a hall.
+     */
+    public static function remove_invigilator($hall_id, $invigilator_id, $year_id, $semester_id = 0)
+    {
+        global $wpdb;
+        return $wpdb->delete($wpdb->prefix . 'olama_exam_hall_invigilators', [
+            'hall_id'          => $hall_id,
+            'invigilator_id'   => $invigilator_id,
+            'academic_year_id' => $year_id,
+            'semester_id'      => $semester_id,
+        ], ['%d', '%d', '%d', '%d']);
+    }
+
+    /**
+     * Get all assigned invigilators for the context (to highlight or filter).
+     */
+    public static function get_all_assigned_invigilators($year_id, $semester_id = 0)
+    {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT i.invigilator_id, i.hall_id, u.display_name 
+             FROM {$wpdb->prefix}olama_exam_hall_invigilators i
+             JOIN {$wpdb->users} u ON u.ID = i.invigilator_id
+             WHERE i.academic_year_id = %d AND i.semester_id = %d",
+            $year_id,
+            $semester_id
+        ));
     }
 }

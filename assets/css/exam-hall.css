@@ -217,6 +217,7 @@
 .eh-unassigned-body {
     padding: 10px;
     max-height: 400px;
+    min-height: 120px;
     overflow-y: auto;
 }
 
@@ -720,3 +721,52 @@
     .eh-work-area { flex-direction: column; }
     .eh-work-area .eh-unassigned-panel { width: 100%; }
 }
+
+/* --------------------  Invigilators (المراقبين)  -------------------- */
+.eh-inv-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-weight: 500;
+}
+.eh-inv-tag .btn-remove-inv {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+}
+.eh-inv-tag .btn-remove-inv:hover { color: #ef4444; }
+
+.eh-hall-inv-list {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.eh-hall-inv-badge {
+    font-size: 11px;
+    background: #f0f9ff;
+    color: #0284c7;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #bae6fd;
+    font-weight: 600;
+}
+.eh-hall-inv-label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 700;
+    margin-bottom: 2px;
+    display: block;
+}
+
+[dir="rtl"] .eh-inv-tag .btn-remove-inv { margin-left: 0; margin-right: 4px; }

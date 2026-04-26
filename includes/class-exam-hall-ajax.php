@@ -23,6 +23,9 @@ class Olama_Exam_Hall_Ajax
             'olama_eh_delete_note',
             'olama_eh_clear_context',
             'olama_eh_get_global_report',
+            'olama_eh_get_invigilators',
+            'olama_eh_assign_invigilator',
+            'olama_eh_remove_invigilator',
         ];
 
         foreach ($actions as $action) {
@@ -312,5 +315,71 @@ class Olama_Exam_Hall_Ajax
 
         $assignments = Olama_Exam_Hall::get_all_assignments($year_id, $semester_id);
         wp_send_json_success(['assignments' => $assignments]);
+    }
+
+    // ── INVIGILATORS ─────────────────────────────────────────────────────────
+
+    public function get_invigilators()
+    {
+        $this->check();
+        $year_id     = $this->year_id();
+        $semester_id = $this->semester_id();
+        $hall_id     = intval($_POST['hall_id'] ?? 0);
+
+        $available    = Olama_School_Teacher::get_teachers();
+        $assigned     = Olama_Exam_Hall::get_hall_invigilators($hall_id, $year_id, $semester_id);
+        $all_assigned = Olama_Exam_Hall::get_all_assigned_invigilators($year_id, $semester_id);
+
+        wp_send_json_success([
+            'available'    => $available,
+            'assigned'     => $assigned,
+            'all_assigned' => $all_assigned,
+        ]);
+    }
+
+    public function assign_invigilator()
+    {
+        $this->check_admin();
+        $year_id        = $this->year_id();
+        $semester_id    = $this->semester_id();
+        $hall_id        = intval($_POST['hall_id'] ?? 0);
+        $invigilator_id = intval($_POST['invigilator_id'] ?? 0);
+
+        if (!$hall_id || !$invigilator_id) {
+            wp_send_json_error(['message' => __('Missing data.', 'olama-school')]);
+        }
+
+        $result = Olama_Exam_Hall::assign_invigilator($hall_id, $invigilator_id, $year_id, $semester_id);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
+        }
+
+        $assigned = Olama_Exam_Hall::get_hall_invigilators($hall_id, $year_id, $semester_id);
+        wp_send_json_success([
+            'message'  => __('Invigilator assigned.', 'olama-school'),
+            'assigned' => $assigned
+        ]);
+    }
+
+    public function remove_invigilator()
+    {
+        $this->check_admin();
+        $year_id        = $this->year_id();
+        $semester_id    = $this->semester_id();
+        $hall_id        = intval($_POST['hall_id'] ?? 0);
+        $invigilator_id = intval($_POST['invigilator_id'] ?? 0);
+
+        if (!$hall_id || !$invigilator_id) {
+            wp_send_json_error(['message' => __('Missing data.', 'olama-school')]);
+        }
+
+        Olama_Exam_Hall::remove_invigilator($hall_id, $invigilator_id, $year_id, $semester_id);
+
+        $assigned = Olama_Exam_Hall::get_hall_invigilators($hall_id, $year_id, $semester_id);
+        wp_send_json_success([
+            'message'  => __('Invigilator removed.', 'olama-school'),
+            'assigned' => $assigned
+        ]);
     }
 }
