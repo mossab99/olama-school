@@ -72,7 +72,8 @@ class Olama_School_DB
 			'olama_exam_halls',
 			'olama_exam_hall_assignments',
 			'olama_exam_hall_attendance',
-			'olama_exam_hall_notes'
+			'olama_exam_hall_notes',
+			'olama_exam_hall_invigilators'
 		);
 	}
 
@@ -877,8 +878,19 @@ class Olama_School_DB
 				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
 				KEY  hall_student_date (hall_id, student_id, exam_date)
-			) $charset_collate;"
+			) $charset_collate;",
 
+			'olama_exam_hall_invigilators' => "CREATE TABLE {$wpdb->prefix}olama_exam_hall_invigilators (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL,
+				hall_id mediumint(9) NOT NULL,
+				invigilator_id bigint(20) UNSIGNED NOT NULL,
+				assigned_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY hall_invigilator (hall_id, invigilator_id, academic_year_id, semester_id),
+				KEY year_semester (academic_year_id, semester_id)
+			) $charset_collate;"
 		);
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -1091,10 +1103,44 @@ class Olama_School_DB
 				$table_name,
 				$key_info['old_key']
 			));
-
+ 
 			if ($old_key_exists) {
 				$wpdb->query("ALTER TABLE $table_name DROP INDEX {$key_info['old_key']}");
 				$wpdb->query("ALTER TABLE $table_name ADD UNIQUE KEY {$key_info['new_key']} ({$key_info['new_columns']})");
+			}
+		}
+ 
+		// Ensure Exam Hall Invigilators table exists (Production Fix)
+		$invigilators_table = $wpdb->prefix . 'olama_exam_hall_invigilators';
+		if ($wpdb->get_var("SHOW TABLES LIKE '$invigilators_table'") !== $invigilators_table) {
+			$charset_collate = $wpdb->get_charset_collate();
+			$wpdb->query("CREATE TABLE $invigilators_table (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL,
+				hall_id mediumint(9) NOT NULL,
+				invigilator_id bigint(20) UNSIGNED NOT NULL,
+				assigned_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY hall_invigilator (hall_id, invigilator_id, academic_year_id, semester_id),
+				KEY year_semester (academic_year_id, semester_id)
+			) $charset_collate;");
+		}
+
+		// Ensure Exam Hall Attendance table has required columns (Production Fix)
+		$attendance_table = $wpdb->prefix . 'olama_exam_hall_attendance';
+		if ($wpdb->get_var("SHOW TABLES LIKE '$attendance_table'") === $attendance_table) {
+			$attendance_cols = $wpdb->get_results("SHOW COLUMNS FROM $attendance_table");
+			$att_col_names = wp_list_pluck($attendance_cols, 'Field');
+
+			if (!in_array('academic_year_id', $att_col_names)) {
+				$wpdb->query("ALTER TABLE $attendance_table ADD COLUMN academic_year_id mediumint(9) NOT NULL AFTER hall_id");
+				$wpdb->query("ALTER TABLE $attendance_table ADD KEY academic_year_id (academic_year_id)");
+			}
+
+			if (!in_array('semester_id', $att_col_names)) {
+				$wpdb->query("ALTER TABLE $attendance_table ADD COLUMN semester_id mediumint(9) NOT NULL DEFAULT 0 AFTER academic_year_id");
+				$wpdb->query("ALTER TABLE $attendance_table ADD KEY semester_id (semester_id)");
 			}
 		}
 
