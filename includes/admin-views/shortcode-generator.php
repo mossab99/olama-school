@@ -76,6 +76,9 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 <option value="cleaning_form">
                     <?php echo Olama_School_Helpers::translate('Cleaning Form'); ?>
                 </option>
+                <option value="student-section-pswd">
+                    <?php echo Olama_School_Helpers::translate('Student Family Report'); ?>
+                </option>
             </select>
         </div>
         <div>
@@ -261,6 +264,13 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
                 $('#gen-exam-wrapper').hide();
                 $('#gen-schedule-type-wrapper').hide();
                 $('#gen-floor-wrapper').show();
+            } else if (type === 'student-section-pswd') {
+                $('#gen-semester').closest('div').show();
+                $('#gen-grade').closest('div').show();
+                $('#gen-section').closest('div').show();
+                $('#gen-week-wrapper').hide();
+                $('#gen-exam-wrapper').hide();
+                $('#gen-schedule-type-wrapper').hide();
             } else {
                 $('#gen-semester').closest('div').show();
                 $('#gen-grade').closest('div').show();
@@ -271,7 +281,11 @@ $weeks = Olama_School_Academic::get_academic_weeks($selected_year_id);
             }
 
             // Generate shortcode based on type
-            var shortcode = '[olama_' + type;
+            var shortcode_name = type;
+            if (type !== 'student-section-pswd') {
+                shortcode_name = 'olama_' + type;
+            }
+            var shortcode = '[' + shortcode_name;
 
             if (selectedYearId == activeYearId) {
                 shortcode += ' year="active"';

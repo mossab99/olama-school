@@ -30,6 +30,7 @@ class Olama_School_Shortcodes
         add_shortcode('olama_supervisor_visits', array($this, 'render_supervisor_visit_schedule_shortcode'));
         add_shortcode('olama_family_number_lookup', array($this, 'render_family_number_lookup_shortcode'));
         add_shortcode('olama_cleaning_form', array($this, 'render_cleaning_form_shortcode'));
+        add_shortcode('student-section-pswd', array($this, 'render_student_section_pswd_shortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_shortcode_assets'));
     }
 
@@ -5441,6 +5442,414 @@ class Olama_School_Shortcodes
                 .olama-btn-save-cleaning:hover { transform: translateY(-2px); background: #1d4ed8; box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4); }
                 .olama-btn-save-cleaning:active { transform: translateY(0); }
             </style>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Shortcode: [student-section-pswd]
+     * Details: Student Name - Family Number - Mother Phone
+     */
+    public function render_student_section_pswd_shortcode($atts)
+    {
+        $atts = shortcode_atts(array(
+            'year' => 'active',
+            'semester' => 'active',
+            'grade' => '',
+            'section' => '',
+        ), $atts, 'student-section-pswd');
+
+        $academic_year_id = $atts['year'];
+        if ($academic_year_id === 'active' || empty($academic_year_id)) {
+            $active_year = Olama_School_Academic::get_active_year();
+            $academic_year_id = $active_year ? $active_year->id : 0;
+        } else {
+            $academic_year_id = intval($academic_year_id);
+        }
+
+        // Allow front-end overrides
+        $grade_id = isset($_GET['report_grade']) ? intval($_GET['report_grade']) : intval($atts['grade']);
+        $section_id = isset($_GET['report_section']) ? intval($_GET['report_section']) : intval($atts['section']);
+
+        $year_obj = Olama_School_Academic::get_year($academic_year_id);
+        $year_name = $year_obj ? $year_obj->year_name : '2025 - 2026';
+
+        $semester_id = $atts['semester'];
+        if ($semester_id === 'active' || empty($semester_id)) {
+            $active_semester = Olama_School_Academic::get_active_semester($academic_year_id);
+            $semester_id = $active_semester ? $active_semester->id : 0;
+        } else {
+            $semester_id = intval($semester_id);
+        }
+
+        $semester_obj = Olama_School_Academic::get_semester($semester_id);
+        $semester_name = $semester_obj ? $semester_obj->semester_name : Olama_School_Helpers::translate('Semester');
+
+        $grade_obj = $grade_id ? Olama_School_Grade::get_grade($grade_id) : null;
+        $section_obj = $section_id ? Olama_School_Section::get_section($section_id) : null;
+
+        $grades = Olama_School_Grade::get_grades();
+        $sections = $grade_id ? Olama_School_Section::get_sections($grade_id) : array();
+
+        global $wpdb;
+        $query = "SELECT s.student_name, f.family_uid, f.mother_mobile 
+                  FROM {$wpdb->prefix}olama_students s 
+                  JOIN {$wpdb->prefix}olama_student_enrollment e ON s.student_uid = e.student_uid 
+                  JOIN {$wpdb->prefix}olama_families f ON s.family_id = f.family_uid 
+                  WHERE e.academic_year_id = %d";
+        $params = array($academic_year_id);
+
+        if ($section_id) {
+            $query .= " AND e.section_id = %d";
+            $params[] = $section_id;
+        } elseif ($grade_id) {
+            $query .= " AND e.section_id IN (SELECT id FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d)";
+            $params[] = $grade_id;
+        }
+
+        $query .= " ORDER BY s.student_name ASC";
+        $students = ($grade_id || $section_id) ? $wpdb->get_results($wpdb->prepare($query, ...$params)) : array();
+
+        ob_start();
+        ?>
+        <div class="olama-student-pswd-report" dir="rtl">
+            <style>
+                .olama-student-pswd-report {
+                    font-family: 'Tajawal', sans-serif;
+                    background: #f8fafc;
+                    padding: 20px;
+                    border-radius: 16px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+                    max-width: 1000px;
+                    margin: 20px auto;
+                }
+                .pswd-header {
+                    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+                    color: white;
+                    padding: 30px;
+                    border-radius: 12px;
+                    margin-bottom: 25px;
+                    position: relative;
+                    overflow: hidden;
+                }
+                .pswd-header::after {
+                    content: '';
+                    position: absolute;
+                    top: -50%;
+                    right: -20%;
+                    width: 300px;
+                    height: 300px;
+                    background: rgba(255,255,255,0.1);
+                    border-radius: 50%;
+                }
+                .pswd-title {
+                    font-size: 1.8rem;
+                    font-weight: 800;
+                    margin: 0 0 10px 0;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    position: relative;
+                    z-index: 1;
+                }
+                .pswd-meta {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 20px;
+                    font-size: 0.95rem;
+                    opacity: 0.9;
+                    position: relative;
+                    z-index: 1;
+                }
+                .meta-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+                .report-filters {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 20px;
+                    background: white;
+                    padding: 20px;
+                    border-radius: 12px;
+                    margin-bottom: 25px;
+                    border: 1px solid #e2e8f0;
+                }
+                .filter-group label {
+                    display: block;
+                    font-weight: 700;
+                    color: #475569;
+                    margin-bottom: 8px;
+                    font-size: 0.9rem;
+                }
+                .filter-group select {
+                    width: 100%;
+                    padding: 10px;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    font-family: inherit;
+                    color: #1e293b;
+                    outline: none;
+                    transition: border-color 0.2s;
+                }
+                .filter-group select:focus {
+                    border-color: #0d9488;
+                }
+                .pswd-table-container {
+                    background: white;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    border: 1px solid #e2e8f0;
+                }
+                .pswd-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    text-align: right;
+                }
+                .pswd-table th {
+                    background: #f1f5f9;
+                    color: #475569;
+                    font-weight: 700;
+                    padding: 15px 20px;
+                    font-size: 0.9rem;
+                    text-transform: uppercase;
+                    border-bottom: 2px solid #e2e8f0;
+                }
+                .pswd-table td {
+                    padding: 15px 20px;
+                    border-bottom: 1px solid #f1f5f9;
+                    color: #1e293b;
+                    font-size: 1rem;
+                }
+                .pswd-table tr:last-child td {
+                    border-bottom: none;
+                }
+                .pswd-table tr:hover td {
+                    background: #f0fdfa;
+                }
+                .family-num {
+                    font-family: 'Inter', sans-serif;
+                    font-weight: 700;
+                    color: #0d9488;
+                    background: #f0fdfa;
+                    padding: 4px 10px;
+                    border-radius: 6px;
+                    display: inline-block;
+                }
+                .mother-phone {
+                    font-family: 'Inter', sans-serif;
+                    color: #0d9488;
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                }
+                .no-results {
+                    padding: 60px 40px;
+                    text-align: center;
+                    color: #64748b;
+                }
+                .no-results .material-icons {
+                    font-size: 4rem;
+                    margin-bottom: 20px;
+                    opacity: 0.2;
+                    color: #0d9488;
+                }
+
+                @media (max-width: 640px) {
+                    .olama-student-pswd-report {
+                        padding: 10px;
+                    }
+                    .pswd-header {
+                        padding: 20px;
+                    }
+                    .pswd-title {
+                        font-size: 1.4rem;
+                    }
+                    .pswd-table {
+                        display: none;
+                    }
+                    .mobile-stack-view {
+                        display: block;
+                    }
+                }
+                @media (min-width: 641px) {
+                    .mobile-stack-view {
+                        display: none;
+                    }
+                }
+            </style>
+
+            <header class="pswd-header">
+                <h1 class="pswd-title">
+                    <span class="material-icons">assignment_ind</span>
+                    <?php echo Olama_School_Helpers::translate('Student Family Report'); ?>
+                </h1>
+                <div class="pswd-meta">
+                    <div class="meta-item">
+                        <span class="material-icons" style="font-size: 18px;">calendar_today</span>
+                        <?php echo esc_html($year_name); ?>
+                    </div>
+                    <div class="meta-item">
+                        <span class="material-icons" style="font-size: 18px;">event</span>
+                        <?php echo esc_html($semester_name); ?>
+                    </div>
+                </div>
+            </header>
+
+            <form class="report-filters" method="get">
+                <?php
+                // Preserve existing query params if any
+                foreach ($_GET as $key => $value) {
+                    if (!in_array($key, array('report_grade', 'report_section'))) {
+                        echo '<input type="hidden" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
+                    }
+                }
+                ?>
+                <div class="filter-group">
+                    <label><?php echo Olama_School_Helpers::translate('Select Grade'); ?></label>
+                    <select name="report_grade" id="report-grade-select">
+                        <option value=""><?php echo Olama_School_Helpers::translate('-- Select Grade --'); ?></option>
+                        <?php foreach ($grades as $g): ?>
+                            <option value="<?php echo $g->id; ?>" <?php selected($grade_id, $g->id); ?>>
+                                <?php echo esc_html($g->grade_name); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><?php echo Olama_School_Helpers::translate('Select Section'); ?></label>
+                    <select name="report_section" id="report-section-select" <?php echo empty($sections) ? 'disabled' : ''; ?>>
+                        <option value=""><?php echo Olama_School_Helpers::translate('-- Select Section --'); ?></option>
+                        <?php foreach ($sections as $s): ?>
+                            <option value="<?php echo $s->id; ?>" <?php selected($section_id, $s->id); ?>>
+                                <?php echo esc_html($s->section_name); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </form>
+
+            <div class="pswd-table-container">
+                <?php if (!$grade_id && !$section_id): ?>
+                    <div class="no-results">
+                        <span class="material-icons">school</span>
+                        <p><?php echo Olama_School_Helpers::translate('Please select a grade and section to view students.'); ?></p>
+                    </div>
+                <?php elseif (empty($students)): ?>
+                    <div class="no-results">
+                        <span class="material-icons">search_off</span>
+                        <p><?php echo Olama_School_Helpers::translate('No students found for this selection.'); ?></p>
+                    </div>
+                <?php else: ?>
+                    <table class="pswd-table">
+                        <thead>
+                            <tr>
+                                <th><?php echo Olama_School_Helpers::translate('Student Name'); ?></th>
+                                <th><?php echo Olama_School_Helpers::translate('Family Number'); ?></th>
+                                <th><?php echo Olama_School_Helpers::translate('Mother Mobile'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($students as $student): ?>
+                                <tr>
+                                    <td style="font-weight: 600;"><?php echo esc_html($student->student_name); ?></td>
+                                    <td><span class="family-num"><?php echo esc_html($student->family_uid); ?></span></td>
+                                    <td>
+                                        <div class="mother-phone">
+                                            <span class="material-icons" style="font-size: 16px;">phone</span>
+                                            <?php 
+                                                $phone = $student->mother_mobile;
+                                                if (!empty($phone) && substr($phone, 0, 1) !== '0') {
+                                                    $phone = '0' . $phone;
+                                                }
+                                                echo esc_html($phone); 
+                                            ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+
+                    <div class="mobile-stack-view">
+                        <?php foreach ($students as $student): ?>
+                            <div class="mobile-stack-card">
+                                <div style="font-weight: 800; color: #1e293b; margin-bottom: 8px; font-size: 1.1rem;">
+                                    <?php echo esc_html($student->student_name); ?>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 2px;">
+                                            <?php echo Olama_School_Helpers::translate('Family Number'); ?>
+                                        </div>
+                                        <span class="family-num"><?php echo esc_html($student->family_uid); ?></span>
+                                    </div>
+                                    <div style="text-align: left;">
+                                        <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 2px;">
+                                            <?php echo Olama_School_Helpers::translate('Mother Mobile'); ?>
+                                        </div>
+                                        <div class="mother-phone" style="justify-content: flex-end;">
+                                            <?php 
+                                                $phone = $student->mother_mobile;
+                                                if (!empty($phone) && substr($phone, 0, 1) !== '0') {
+                                                    $phone = '0' . $phone;
+                                                }
+                                                echo esc_html($phone); 
+                                            ?>
+                                            <span class="material-icons" style="font-size: 16px;">phone</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <script>
+                jQuery(document).ready(function ($) {
+                    $('#report-grade-select').on('change', function () {
+                        var gradeId = $(this).val();
+                        var $sectionSelect = $('#report-section-select');
+
+                        if (!gradeId) {
+                            $sectionSelect.html('<option value=""><?php echo Olama_School_Helpers::translate('-- Select Grade First --'); ?></option>').prop('disabled', true);
+                            return;
+                        }
+
+                        $sectionSelect.prop('disabled', true).html('<option value=""><?php echo Olama_School_Helpers::translate('Loading...'); ?></option>');
+
+                        $.ajax({
+                            url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                            type: 'POST',
+                            data: {
+                                action: 'olama_get_sections_by_grade',
+                                grade_id: gradeId,
+                                nonce: '<?php echo wp_create_nonce("olama_curriculum_nonce"); ?>'
+                            },
+                            success: function (response) {
+                                if (response.success && response.data) {
+                                    var options = '<option value=""><?php echo Olama_School_Helpers::translate('-- Select Section --'); ?></option>';
+                                    $.each(response.data, function (i, section) {
+                                        options += '<option value="' + section.id + '">' + section.section_name + '</option>';
+                                    });
+                                    $sectionSelect.html(options).prop('disabled', false);
+                                } else {
+                                    $sectionSelect.html('<option value=""><?php echo Olama_School_Helpers::translate('No sections found'); ?></option>').prop('disabled', true);
+                                }
+                            }
+                        });
+                    });
+
+                    $('#report-section-select').on('change', function () {
+                        if ($(this).val()) {
+                            $(this).closest('form').submit();
+                        }
+                    });
+                });
+            </script>
         </div>
         <?php
         return ob_get_clean();
