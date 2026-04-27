@@ -115,10 +115,25 @@ class Olama_Exam_Hall_Ajax
         $unassigned   = Olama_Exam_Hall::get_canvas_unassigned($year_id, $semester_id, $grade_id, $section_id, $canvas_hall_ids);
         $assignments  = Olama_Exam_Hall::get_canvas_assignments($year_id, $semester_id, $canvas_hall_ids, $grade_id, $section_id);
 
+        // Get total occupancy for each canvas hall (across all grades)
+        $hall_occupancy = [];
+        if (!empty($canvas_hall_ids)) {
+            global $wpdb;
+            $table = $wpdb->prefix . 'olama_exam_hall_attendance';
+            foreach ($canvas_hall_ids as $hid) {
+                $count = (int) $wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(*) FROM $table WHERE hall_id = %d AND academic_year_id = %d AND semester_id = %d",
+                    $hid, $year_id, $semester_id
+                ));
+                $hall_occupancy[$hid] = $count;
+            }
+        }
+
         wp_send_json_success([
             'students'    => $all_students,
             'unassigned'  => $unassigned,
             'assignments' => $assignments,
+            'occupancy'   => $hall_occupancy,
         ]);
     }
 
@@ -144,7 +159,21 @@ class Olama_Exam_Hall_Ajax
             wp_send_json_error(['message' => $result->get_error_message()]);
         }
 
-        wp_send_json_success($result);
+        // Return new occupancy counts
+        $occupancy = [];
+        global $wpdb;
+        $table = $wpdb->prefix . 'olama_exam_hall_attendance';
+        foreach ($hall_ids as $hid) {
+            $occupancy[$hid] = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM $table WHERE hall_id = %d AND academic_year_id = %d AND semester_id = %d",
+                $hid, $year_id, $semester_id
+            ));
+        }
+
+        wp_send_json_success([
+            'message'   => __('Students distributed successfully.', 'olama-school'),
+            'occupancy' => $occupancy,
+        ]);
     }
 
     // ── move_student ──────────────────────────────────────────────────────────
@@ -161,13 +190,22 @@ class Olama_Exam_Hall_Ajax
             wp_send_json_error(['message' => __('Missing hall or student.', 'olama-school')]);
         }
 
-        $result = Olama_Exam_Hall::assign_student($hall_id, $student_id, $year_id, $semester_id);
-
         if (is_wp_error($result)) {
             wp_send_json_error(['message' => $result->get_error_message()]);
         }
 
-        wp_send_json_success(['message' => __('Student moved successfully.', 'olama-school')]);
+        // Return new occupancy for the target hall
+        global $wpdb;
+        $count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_exam_hall_attendance 
+             WHERE hall_id = %d AND academic_year_id = %d AND semester_id = %d",
+            $hall_id, $year_id, $semester_id
+        ));
+
+        wp_send_json_success([
+            'message' => __('Student moved successfully.', 'olama-school'),
+            'occupancy' => [$hall_id => $count]
+        ]);
     }
 
     // ── remove_student ────────────────────────────────────────────────────────

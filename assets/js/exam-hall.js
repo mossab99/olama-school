@@ -24,6 +24,7 @@
             students:   [],   // all students from selected grade/section
             assignments:{},   // { hall_id: [studentObj, ...] }
             invigilators:{},   // { hall_id: [invigilatorObj, ...] }
+            occupancy:  {},   // { hall_id: totalCount }
         },
         dragSrc: null,
     };
@@ -121,6 +122,7 @@
             if (err) { toast(err, 'error'); return; }
             EH.canvas.students    = data.students    || [];
             EH.canvas.assignments = data.assignments || {};
+            EH.canvas.occupancy   = data.occupancy   || {};
             // Ensure each canvas hall is keyed in assignments
             EH.canvas.halls.forEach(h => {
                 if (!EH.canvas.assignments[h.id]) EH.canvas.assignments[h.id] = [];
@@ -151,13 +153,11 @@
 
         if (!EH.canvas.gradeId && !EH.canvas.sectionId) {
             $body.html('<p style="color:#9ca3af;text-align:center;padding:24px;font-size:13px;">اختر الصف والشعبة<br>لعرض الطلاب</p>');
-            return;
-        }
-        if (!students.length) {
+        } else if (!students.length) {
             $body.html('<p style="color:#22c55e;text-align:center;padding:20px;">✓ جميع الطلاب موزعون</p>');
-            return;
+        } else {
+            students.forEach((s, i) => $body.append(makeStudentCard(s, '')));
         }
-        students.forEach((s, i) => $body.append(makeStudentCard(s, '')));
         bindDragDrop();
     }
 
@@ -185,8 +185,9 @@
     function makeHallCard(hall, students) {
         const cap  = parseInt(hall.capacity);
         const cnt  = students.length;
-        const full = cnt >= cap;
-        const pct  = cap > 0 ? Math.min(100, Math.round(cnt / cap * 100)) : 0;
+        const totalOcc = parseInt(EH.canvas.occupancy[hall.id] || cnt);
+        const full = totalOcc >= cap;
+        const pct  = cap > 0 ? Math.min(100, Math.round(totalOcc / cap * 100)) : 0;
 
         const $card = $('<div class="eh-hall-card">')
             .attr({ 'data-hall-id': hall.id, 'data-capacity': cap })
@@ -195,7 +196,7 @@
 
         // Header
         const $headerRight = $('<div style="display:flex;gap:6px;align-items:center;">').append(
-            $('<span class="eh-hall-capacity-badge' + (full ? ' full' : '') + '">').text(cnt + '/' + cap),
+            $('<span class="eh-hall-capacity-badge' + (full ? ' full' : '') + '">').text(totalOcc + '/' + cap),
             $('<button class="btn-eh-print-hall" type="button" title="طباعة هذه القاعة" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;">').html('🖨')
                 .data('hall-id', hall.id).data('hall-name', hall.hall_name),
             EH.isAdmin
@@ -281,11 +282,12 @@
         EH.canvas.halls.forEach(h => {
             const cnt = (EH.canvas.assignments[h.id] || []).length;
             assigned += cnt;
+            const totalOcc = parseInt(EH.canvas.occupancy[h.id] || cnt);
             const cap  = parseInt(h.capacity);
-            const pct  = cap ? Math.min(100, Math.round(cnt / cap * 100)) : 0;
+            const pct  = cap ? Math.min(100, Math.round(totalOcc / cap * 100)) : 0;
             const $c   = $('#eh-hall-' + h.id);
-            $c.find('.eh-hall-capacity-badge').text(cnt + '/' + cap).toggleClass('full', cnt >= cap);
-            $c.toggleClass('full', cnt >= cap);
+            $c.find('.eh-hall-capacity-badge').text(totalOcc + '/' + cap).toggleClass('full', totalOcc >= cap);
+            $c.toggleClass('full', totalOcc >= cap);
             $c.find('.eh-hall-progress-fill').css('width', pct + '%').toggleClass('full', pct >= 100);
         });
 
@@ -367,20 +369,22 @@
     function bindDragDrop() {
         if (!EH.isAdmin) return;
 
-        // Check if jQuery UI Sortable is available
         if (typeof $.fn.sortable === 'undefined') {
-            console.error('Olama Exam Hall: jQuery UI Sortable NOT found!');
+            console.error('[EH] ERROR: jQuery UI Sortable NOT found! Drag-and-drop will not work.');
             return;
         }
 
         const $lists = $('#eh-student-panel-body, .eh-hall-card-body');
-        
-        // Destroy existing sortable instances if they exist to prevent duplication
+        if (!$lists.length) return;
+
+        // Clean up old instances
         $lists.each(function() {
             if ($(this).hasClass('ui-sortable')) {
-                $(this).sortable('destroy');
+                try { $(this).sortable('destroy'); } catch(e) {}
             }
         });
+
+        console.log('[EH] Initializing Sortable on ' + $lists.length + ' lists');
 
         $lists.sortable({
             connectWith: '#eh-student-panel-body, .eh-hall-card-body',
@@ -395,9 +399,11 @@
                 ui.item.addClass('dragging');
                 ui.placeholder.css({
                     'visibility': 'visible',
-                    'background-color': 'rgba(255,255,255,0.5)',
-                    'border': '2px dashed #94a3b8',
-                    'height': ui.item.outerHeight()
+                    'background-color': 'rgba(255,255,255,0.4)',
+                    'border': '2px dashed #fb923c',
+                    'height': ui.item.outerHeight(),
+                    'border-radius': '8px',
+                    'margin-bottom': '5px'
                 });
             },
             stop: function(event, ui) {
@@ -409,53 +415,81 @@
                 const $targetList = $(this);
                 const $sourceList = ui.sender;
 
-                const toHallId = $targetList.closest('.eh-hall-card').attr('data-hall-id') || 'unassigned';
-                const fromId = $sourceList.closest('.eh-hall-card').attr('data-hall-id') || 'unassigned';
+                const toHallIdRaw = $targetList.closest('.eh-hall-card').attr('data-hall-id');
+                const fromIdRaw   = $sourceList.closest('.eh-hall-card').attr('data-hall-id');
+                
+                const toHallId = toHallIdRaw ? parseInt(toHallIdRaw) : 'unassigned';
+                const fromId   = fromIdRaw   ? parseInt(fromIdRaw)   : 'unassigned';
 
-                if (String(toHallId) === String(fromId)) return;
+                if (toHallId === fromId) return;
+
+                console.log('[EH] Moving student ' + sid + ' from ' + fromId + ' to ' + toHallId);
 
                 const student = findStudentObj(sid);
                 if (!student) {
+                    console.error('[EH] Error: Student ' + sid + ' not found in master list.');
                     toast('خطأ: الطالب غير موجود', 'error');
                     $(ui.sender).sortable('cancel');
                     return;
                 }
 
                 if (toHallId !== 'unassigned') {
-                    const hall = EH.canvas.halls.find(h => parseInt(h.id) === parseInt(toHallId));
-                    const currentCount = (EH.canvas.assignments[toHallId] || []).length;
+                    const hall = EH.canvas.halls.find(h => parseInt(h.id) === toHallId);
+                    const totalOcc = parseInt(EH.canvas.occupancy[toHallId] || 0);
+                    const capacity = hall ? parseInt(hall.capacity) : 0;
                     
-                    if (hall && currentCount >= parseInt(hall.capacity)) {
+                    console.log('[EH] Capacity Check: Hall=' + toHallId + ' Occupancy=' + totalOcc + ' Capacity=' + capacity);
+
+                    if (capacity > 0 && totalOcc >= capacity) {
                         toast('القاعة ممتلئة / Hall is full', 'error');
                         $(ui.sender).sortable('cancel');
                         return;
                     }
                 }
 
-                // Update state
+                // State sync: Remove from source
                 if (fromId !== 'unassigned') {
                     EH.canvas.assignments[fromId] = (EH.canvas.assignments[fromId] || [])
                         .filter(s => parseInt(s.id || s.student_id) !== sid);
+                    EH.canvas.occupancy[fromId] = Math.max(0, (EH.canvas.occupancy[fromId] || 1) - 1);
                 }
                 
+                // State sync: Add to target
                 if (toHallId !== 'unassigned') {
                     if (!EH.canvas.assignments[toHallId]) EH.canvas.assignments[toHallId] = [];
-                    EH.canvas.assignments[toHallId].push(student);
+                    const exists = EH.canvas.assignments[toHallId].some(s => parseInt(s.id || s.student_id) === sid);
+                    if (!exists) {
+                        EH.canvas.assignments[toHallId].push(student);
+                        EH.canvas.occupancy[toHallId] = (EH.canvas.occupancy[toHallId] || 0) + 1;
+                    }
                 }
 
-                // Defer re-render to allow sortable to finish its DOM manipulation safely
+                console.log('[EH] Assignments State:', JSON.parse(JSON.stringify(EH.canvas.assignments)));
+
+                // Refresh UI after a small delay
                 setTimeout(() => {
                     renderCanvas();
                     renderUnassigned(getUnassignedList());
                     updateStats();
-                }, 50);
+                }, 150);
 
                 const action = toHallId === 'unassigned' ? 'olama_eh_remove_student' : 'olama_eh_move_student';
-                const data = toHallId === 'unassigned' ? { student_id: sid } : { hall_id: toHallId, student_id: sid };
+                const data   = { student_id: sid };
+                if (toHallId !== 'unassigned') data.hall_id = toHallId;
 
-                ajax(action, data, function (err) {
-                    if (err) { toast(err, 'error'); loadStudents(); }
-                    else toast('تم النقل ✓', 'success');
+                ajax(action, data, function (err, res) {
+                    if (err) { 
+                        console.error('[EH] AJAX Error:', err);
+                        toast(err, 'error'); 
+                        loadStudents(); 
+                    } else {
+                        // Sync occupancy from server if returned
+                        if (res && res.occupancy) {
+                            Object.assign(EH.canvas.occupancy, res.occupancy);
+                            updateStats();
+                        }
+                        toast('تم النقل ✓', 'success');
+                    }
                 });
             }
         });
@@ -1199,6 +1233,7 @@
         if ($('#eh-notes-date').length && !$('#eh-notes-date').val()) $('#eh-notes-date').val(today);
 
         if ($('#eh-canvas-grid').length) {
+            bindDragDrop(); // Global init
             // Restore previous canvas if any
             const restored = restoreState();
             renderCanvas();
