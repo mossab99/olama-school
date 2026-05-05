@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../olama-exam-engine"
+		},
+		{
+			"path": "../../olama-registration"
+		}
+	],
+	"settings": {
+		"php.version": "8.4"
+	}
+}
