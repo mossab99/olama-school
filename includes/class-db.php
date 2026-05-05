@@ -73,7 +73,8 @@ class Olama_School_DB
 			'olama_exam_hall_assignments',
 			'olama_exam_hall_attendance',
 			'olama_exam_hall_notes',
-			'olama_exam_hall_invigilators'
+			'olama_exam_hall_invigilators',
+			'olama_system_logs'
 		);
 	}
 
@@ -315,6 +316,21 @@ class Olama_School_DB
 				PRIMARY KEY  (id),
 				KEY  user_id (user_id),
 				KEY  created_at (created_at)
+			) $charset_collate;",
+
+			'olama_system_logs' => "CREATE TABLE {$wpdb->prefix}olama_system_logs (
+				id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+				level varchar(10) NOT NULL DEFAULT 'info',
+				source varchar(50) NOT NULL DEFAULT 'school',
+				message text NOT NULL,
+				context longtext DEFAULT NULL,
+				user_id bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				KEY  source (source),
+				KEY  level (level),
+				KEY  created_at (created_at),
+				KEY  source_level (source, level)
 			) $charset_collate;",
 
 			'olama_transport_buses' => "CREATE TABLE {$wpdb->prefix}olama_transport_buses (

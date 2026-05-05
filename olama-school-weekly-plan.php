@@ -58,6 +58,7 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-lessons.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-questions.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-template.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-logger.php';
+require_once OLAMA_SCHOOL_PATH . 'includes/class-system-logger.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-exporter.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-importer.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-permissions.php';

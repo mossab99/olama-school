@@ -3676,10 +3676,11 @@ class Olama_School_Admin
         $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'general';
 
         $tabs_config = array(
-            'general' => array('label' => __('General Settings', 'olama-school'), 'cap' => 'olama_manage_settings_general'),
+            'general'        => array('label' => __('General Settings', 'olama-school'), 'cap' => 'olama_manage_settings_general'),
             'family_gateway' => array('label' => Olama_School_Helpers::translate('Family Gateway'), 'cap' => 'olama_manage_settings_general'),
-            'shortcode' => array('label' => __('Shortcode Generator', 'olama-school'), 'cap' => 'olama_manage_settings_shortcode'),
-            'backup' => array('label' => __('Backup & Restore', 'olama-school'), 'cap' => 'manage_options'),
+            'shortcode'      => array('label' => __('Shortcode Generator', 'olama-school'), 'cap' => 'olama_manage_settings_shortcode'),
+            'backup'         => array('label' => __('Backup & Restore', 'olama-school'), 'cap' => 'manage_options'),
+            'logs'           => array('label' => __('Logs', 'olama-school'), 'cap' => 'manage_options'),
         );
 
         $allowed_tabs = array();
@@ -3844,6 +3845,8 @@ class Olama_School_Admin
                     <?php $this->render_family_gateway_settings_content(); ?>
                 <?php elseif ($active_tab === 'backup'): ?>
                     <?php $this->render_backup_settings_content(); ?>
+                <?php elseif ($active_tab === 'logs'): ?>
+                    <?php $this->render_logs_tab_content(); ?>
                 <?php else: ?>
                     <?php $this->render_shortcode_generator_content(); ?>
                 <?php endif; ?>
@@ -3858,6 +3861,280 @@ class Olama_School_Admin
     public function render_shortcode_generator_content()
     {
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/shortcode-generator.php';
+    }
+
+    /**
+     * Render the unified Logs tab in Plugin Settings.
+     * Accessible to manage_options only.
+     */
+    public function render_logs_tab_content()
+    {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( __( 'You do not have permission to view system logs.', 'olama-school' ) );
+        }
+
+        // ── Handle Actions ────────────────────────────────────────────────
+        if ( isset( $_POST['olama_clear_logs'] ) && check_admin_referer( 'olama_logs_action', 'olama_logs_nonce' ) ) {
+            Olama_System_Logger::clear_all_logs();
+            echo '<div class="notice notice-success is-dismissible"><p>' . __( 'All system logs cleared.', 'olama-school' ) . '</p></div>';
+        }
+
+        if ( isset( $_POST['olama_prune_logs'] ) && check_admin_referer( 'olama_logs_action', 'olama_logs_nonce' ) ) {
+            $days   = max( 1, intval( $_POST['prune_days'] ?? 30 ) );
+            $pruned = Olama_System_Logger::prune_logs( $days );
+            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf( __( 'Deleted %d log entries older than %d days.', 'olama-school' ), $pruned, $days ) . '</p></div>';
+        }
+
+        // ── Download log file ─────────────────────────────────────────────
+        if ( isset( $_GET['olama_download_log'] ) && check_admin_referer( 'olama_download_log' ) ) {
+            $log_file = Olama_System_Logger::get_log_file_path();
+            if ( file_exists( $log_file ) ) {
+                header( 'Content-Type: text/plain' );
+                header( 'Content-Disposition: attachment; filename="olama-system-' . gmdate( 'Y-m-d' ) . '.log"' );
+                readfile( $log_file );
+                exit;
+            }
+        }
+
+        // ── Filters & Pagination ──────────────────────────────────────────
+        $filter_source = isset( $_GET['log_source'] ) ? sanitize_key( $_GET['log_source'] ) : '';
+        $filter_level  = isset( $_GET['log_level'] ) ? sanitize_key( $_GET['log_level'] ) : '';
+        $per_page      = 50;
+        $current_page  = max( 1, intval( $_GET['paged'] ?? 1 ) );
+        $offset        = ( $current_page - 1 ) * $per_page;
+
+        $query_args = [
+            'source' => $filter_source,
+            'level'  => $filter_level,
+            'limit'  => $per_page,
+            'offset' => $offset,
+        ];
+
+        $logs       = Olama_System_Logger::get_logs( $query_args );
+        $total      = Olama_System_Logger::count_logs( $query_args );
+        $total_pages = max( 1, ceil( $total / $per_page ) );
+
+        $sources = [
+            ''             => __( 'All Sources', 'olama-school' ),
+            'school'       => __( 'School System', 'olama-school' ),
+            'exam-engine'  => __( 'Exam Engine', 'olama-school' ),
+            'registration' => __( 'Registration', 'olama-school' ),
+        ];
+
+        $levels = [
+            ''        => __( 'All Levels', 'olama-school' ),
+            'error'   => __( 'Error', 'olama-school' ),
+            'warning' => __( 'Warning', 'olama-school' ),
+            'info'    => __( 'Info', 'olama-school' ),
+            'debug'   => __( 'Debug', 'olama-school' ),
+        ];
+
+        $level_colors = [
+            'error'   => '#d63638',
+            'warning' => '#dba617',
+            'info'    => '#2271b1',
+            'debug'   => '#787c82',
+        ];
+
+        $level_badges = [
+            'error'   => 'background:#fce8e8; color:#d63638; border:1px solid #f8b4b4;',
+            'warning' => 'background:#fef9e7; color:#8a6d0a; border:1px solid #fcd581;',
+            'info'    => 'background:#e8f4fd; color:#2271b1; border:1px solid #a7cdf0;',
+            'debug'   => 'background:#f0f0f1; color:#3c434a; border:1px solid #c3c4c7;',
+        ];
+
+        $base_page_url = admin_url( 'admin.php?page=olama-school-settings&tab=logs' );
+        $log_file_path = Olama_System_Logger::get_log_file_path();
+        $log_file_size = file_exists( $log_file_path ) ? size_format( filesize( $log_file_path ) ) : __( 'Not created yet', 'olama-school' );
+        ?>
+
+        <style>
+        .olama-logs-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+        .olama-logs-toolbar select, .olama-logs-toolbar input[type="number"] { height:30px; }
+        .olama-log-table { border-collapse:collapse; width:100%; font-size:13px; }
+        .olama-log-table th { background:#f0f0f1; padding:8px 12px; text-align:left; border-bottom:2px solid #c3c4c7; font-weight:600; }
+        .olama-log-table td { padding:7px 12px; border-bottom:1px solid #f0f0f1; vertical-align:top; }
+        .olama-log-table tr:hover td { background:#f6f7f7; }
+        .olama-log-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+        .olama-log-source { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; background:#f0f0f1; color:#3c434a; border:1px solid #c3c4c7; }
+        .olama-log-message { font-family:monospace; font-size:12px; word-break:break-word; max-width:600px; }
+        .olama-log-context { font-family:monospace; font-size:11px; color:#787c82; margin-top:4px; word-break:break-all; }
+        .olama-logs-pagination { margin-top:16px; display:flex; align-items:center; gap:8px; }
+        .olama-logs-pagination a, .olama-logs-pagination span { padding:4px 10px; border:1px solid #c3c4c7; border-radius:4px; font-size:13px; text-decoration:none; }
+        .olama-logs-pagination .current { background:#2271b1; color:#fff; border-color:#2271b1; }
+        .olama-log-empty { text-align:center; padding:40px; color:#787c82; }
+        #olama-log-refresh-countdown { font-size:12px; color:#787c82; margin-left:auto; }
+        </style>
+
+        <div class="olama-logs-header" style="display:flex; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap;">
+            <h2 style="margin:0; font-size:18px; font-weight:700;"><?php _e( 'System Logs', 'olama-school' ); ?></h2>
+            <span style="background:#f0f0f1; padding:3px 10px; border-radius:10px; font-size:12px; color:#3c434a;">
+                <?php echo number_format( $total ); ?> <?php _e( 'entries', 'olama-school' ); ?>
+            </span>
+            <span style="font-size:12px; color:#787c82;">
+                <?php _e( 'Log file:', 'olama-school' ); ?> <code>olama-system.log</code>
+                (<?php echo esc_html( $log_file_size ); ?>)
+            </span>
+            <?php
+            $download_url = wp_nonce_url(
+                add_query_arg( 'olama_download_log', '1', $base_page_url ),
+                'olama_download_log'
+            );
+            ?>
+            <a href="<?php echo esc_url( $download_url ); ?>" class="button" style="margin-left:auto;">
+                <span class="dashicons dashicons-download" style="vertical-align:middle; margin-right:4px;"></span>
+                <?php _e( 'Download Log File', 'olama-school' ); ?>
+            </a>
+            <span id="olama-log-refresh-countdown"><?php _e( 'Auto-refresh in', 'olama-school' ); ?> <strong id="olama-log-seconds">30</strong>s</span>
+        </div>
+
+        <!-- Filters -->
+        <form method="get" action="">
+            <input type="hidden" name="page" value="olama-school-settings" />
+            <input type="hidden" name="tab" value="logs" />
+            <div class="olama-logs-toolbar">
+                <select name="log_source" id="log-source-filter">
+                    <?php foreach ( $sources as $val => $label ): ?>
+                        <option value="<?php echo esc_attr( $val ); ?>" <?php selected( $filter_source, $val ); ?>>
+                            <?php echo esc_html( $label ); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <select name="log_level" id="log-level-filter">
+                    <?php foreach ( $levels as $val => $label ): ?>
+                        <option value="<?php echo esc_attr( $val ); ?>" <?php selected( $filter_level, $val ); ?>>
+                            <?php echo esc_html( $label ); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit" class="button"><?php _e( 'Filter', 'olama-school' ); ?></button>
+                <a href="<?php echo esc_url( $base_page_url ); ?>" class="button"><?php _e( 'Reset', 'olama-school' ); ?></a>
+            </div>
+        </form>
+
+        <!-- Log Table -->
+        <?php if ( empty( $logs ) ): ?>
+            <div class="olama-log-empty">
+                <span class="dashicons dashicons-yes-alt" style="font-size:40px; color:#00a32a;"></span>
+                <p><?php _e( 'No log entries found for the selected filters. The system is running cleanly.', 'olama-school' ); ?></p>
+            </div>
+        <?php else: ?>
+            <table class="olama-log-table">
+                <thead>
+                    <tr>
+                        <th style="width:160px;"><?php _e( 'Time', 'olama-school' ); ?></th>
+                        <th style="width:80px;"><?php _e( 'Level', 'olama-school' ); ?></th>
+                        <th style="width:110px;"><?php _e( 'Source', 'olama-school' ); ?></th>
+                        <th><?php _e( 'Message', 'olama-school' ); ?></th>
+                        <th style="width:60px;"><?php _e( 'User', 'olama-school' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ( $logs as $log ):
+                        $badge_style = $level_badges[ $log->level ] ?? $level_badges['info'];
+                        $user_info   = $log->user_id ? get_userdata( $log->user_id ) : null;
+                        $user_label  = $user_info ? esc_html( $user_info->display_name ) : ( $log->user_id ? '#' . $log->user_id : '—' );
+                    ?>
+                    <tr>
+                        <td style="white-space:nowrap; color:#787c82; font-size:12px;">
+                            <?php echo esc_html( $log->created_at ); ?>
+                        </td>
+                        <td>
+                            <span class="olama-log-badge" style="<?php echo esc_attr( $badge_style ); ?>">
+                                <?php echo esc_html( strtoupper( $log->level ) ); ?>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="olama-log-source"><?php echo esc_html( $log->source ); ?></span>
+                        </td>
+                        <td>
+                            <div class="olama-log-message"><?php echo esc_html( $log->message ); ?></div>
+                            <?php if ( ! empty( $log->context ) ): ?>
+                                <div class="olama-log-context"><?php echo esc_html( $log->context ); ?></div>
+                            <?php endif; ?>
+                        </td>
+                        <td style="white-space:nowrap; font-size:12px;"><?php echo $user_label; ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <?php if ( $total_pages > 1 ): ?>
+            <div class="olama-logs-pagination">
+                <?php
+                $page_base = add_query_arg( [
+                    'page'       => 'olama-school-settings',
+                    'tab'        => 'logs',
+                    'log_source' => $filter_source,
+                    'log_level'  => $filter_level,
+                ], admin_url( 'admin.php' ) );
+
+                if ( $current_page > 1 ) {
+                    echo '<a href="' . esc_url( add_query_arg( 'paged', $current_page - 1, $page_base ) ) . '">← ' . __( 'Prev', 'olama-school' ) . '</a>';
+                }
+
+                $start = max( 1, $current_page - 2 );
+                $end   = min( $total_pages, $current_page + 2 );
+                for ( $p = $start; $p <= $end; $p++ ) {
+                    if ( $p === $current_page ) {
+                        echo '<span class="current">' . $p . '</span>';
+                    } else {
+                        echo '<a href="' . esc_url( add_query_arg( 'paged', $p, $page_base ) ) . '">' . $p . '</a>';
+                    }
+                }
+
+                if ( $current_page < $total_pages ) {
+                    echo '<a href="' . esc_url( add_query_arg( 'paged', $current_page + 1, $page_base ) ) . '">' . __( 'Next', 'olama-school' ) . ' →</a>';
+                }
+                ?>
+                <span style="margin-left:auto; font-size:12px; color:#787c82;">
+                    <?php printf( __( 'Page %d of %d', 'olama-school' ), $current_page, $total_pages ); ?>
+                </span>
+            </div>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <!-- Maintenance Actions -->
+        <div style="margin-top:40px; padding:20px; background:#f9f9f9; border:1px solid #ddd; border-radius:6px;">
+            <h3 style="margin-top:0;"><?php _e( 'Log Maintenance', 'olama-school' ); ?></h3>
+            <form method="post" style="display:inline-block; margin-right:20px;">
+                <?php wp_nonce_field( 'olama_logs_action', 'olama_logs_nonce' ); ?>
+                <label><?php _e( 'Delete entries older than', 'olama-school' ); ?>
+                    <input type="number" name="prune_days" value="30" min="1" max="365" style="width:60px; margin:0 6px;" />
+                    <?php _e( 'days', 'olama-school' ); ?>
+                </label>
+                <button type="submit" name="olama_prune_logs" class="button button-secondary" style="margin-left:8px;">
+                    <?php _e( 'Prune Old Logs', 'olama-school' ); ?>
+                </button>
+            </form>
+
+            <form method="post" style="display:inline-block;" onsubmit="return confirm('<?php esc_attr_e( 'Are you sure? This will permanently delete ALL log entries.', 'olama-school' ); ?>');">
+                <?php wp_nonce_field( 'olama_logs_action', 'olama_logs_nonce' ); ?>
+                <button type="submit" name="olama_clear_logs" class="button" style="background:#fcf0f1; border-color:#d63638; color:#d63638;">
+                    <span class="dashicons dashicons-trash" style="vertical-align:middle; margin-right:4px;"></span>
+                    <?php _e( 'Clear All Logs', 'olama-school' ); ?>
+                </button>
+            </form>
+        </div>
+
+        <script>
+        (function() {
+            // Auto-refresh countdown (30 seconds)
+            var seconds = 30;
+            var el = document.getElementById('olama-log-seconds');
+            if ( ! el ) return;
+            var interval = setInterval(function() {
+                seconds--;
+                el.textContent = seconds;
+                if ( seconds <= 0 ) {
+                    clearInterval(interval);
+                    window.location.reload();
+                }
+            }, 1000);
+        })();
+        </script>
+        <?php
     }
 
     /**
