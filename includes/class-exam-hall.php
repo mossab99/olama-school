@@ -310,7 +310,7 @@ class Olama_Exam_Hall
                    AND a.hall_id IN ($safe_halls)
                    $extra_where
                  GROUP BY a.id
-                 ORDER BY a.seat_number ASC, g.grade_name ASC, sec.section_name ASC, s.student_name ASC";
+                 ORDER BY g.grade_name ASC, sec.section_name ASC, s.student_name ASC";
 
         $rows = empty($extra_vals)
             ? $wpdb->get_results($sql)
@@ -347,7 +347,7 @@ class Olama_Exam_Hall
              LEFT JOIN {$wpdb->prefix}olama_sections sec ON sec.id = e.section_id
              LEFT JOIN {$wpdb->prefix}olama_grades g ON g.id = sec.grade_id
              WHERE $where
-             ORDER BY a.seat_number ASC, g.grade_name ASC, sec.section_name ASC, s.student_name ASC",
+             ORDER BY g.grade_name ASC, sec.section_name ASC, s.student_name ASC",
             $vals
         ));
     }
@@ -382,7 +382,7 @@ class Olama_Exam_Hall
              LEFT JOIN {$wpdb->prefix}olama_sections sec ON sec.id = e.section_id
              LEFT JOIN {$wpdb->prefix}olama_grades g ON g.id = sec.grade_id
              WHERE a.academic_year_id = $year_id $sem_clause
-             ORDER BY h.hall_name ASC, a.seat_number ASC, g.grade_name ASC, sec.section_name ASC, s.student_name ASC"
+             ORDER BY h.hall_name ASC, g.grade_name ASC, sec.section_name ASC, s.student_name ASC"
         );
 
         $map = [];
