@@ -118,14 +118,8 @@ class Olama_Exam_Hall_Ajax
         // Get total occupancy for each canvas hall (across all grades)
         $hall_occupancy = [];
         if (!empty($canvas_hall_ids)) {
-            global $wpdb;
-            $table = $wpdb->prefix . 'olama_exam_hall_attendance';
             foreach ($canvas_hall_ids as $hid) {
-                $count = (int) $wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(*) FROM $table WHERE hall_id = %d AND academic_year_id = %d AND semester_id = %d",
-                    $hid, $year_id, $semester_id
-                ));
-                $hall_occupancy[$hid] = $count;
+                $hall_occupancy[$hid] = Olama_Exam_Hall::get_hall_count($hid, $year_id, $semester_id);
             }
         }
 
@@ -161,18 +155,15 @@ class Olama_Exam_Hall_Ajax
 
         // Return new occupancy counts
         $occupancy = [];
-        global $wpdb;
-        $table = $wpdb->prefix . 'olama_exam_hall_attendance';
         foreach ($hall_ids as $hid) {
-            $occupancy[$hid] = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM $table WHERE hall_id = %d AND academic_year_id = %d AND semester_id = %d",
-                $hid, $year_id, $semester_id
-            ));
+            $occupancy[$hid] = Olama_Exam_Hall::get_hall_count($hid, $year_id, $semester_id);
         }
 
         wp_send_json_success([
-            'message'   => __('Students distributed successfully.', 'olama-school'),
-            'occupancy' => $occupancy,
+            'message'     => $result['message'] ?? __('Students distributed successfully.', 'olama-school'),
+            'occupancy'   => $occupancy,
+            'assignments' => $result['assignments'] ?? [],
+            'unassigned'  => $result['unassigned'] ?? [],
         ]);
     }
 
@@ -190,17 +181,14 @@ class Olama_Exam_Hall_Ajax
             wp_send_json_error(['message' => __('Missing hall or student.', 'olama-school')]);
         }
 
+        $result = Olama_Exam_Hall::assign_student($hall_id, $student_id, $year_id, $semester_id);
+
         if (is_wp_error($result)) {
             wp_send_json_error(['message' => $result->get_error_message()]);
         }
 
         // Return new occupancy for the target hall
-        global $wpdb;
-        $count = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_exam_hall_attendance 
-             WHERE hall_id = %d AND academic_year_id = %d AND semester_id = %d",
-            $hall_id, $year_id, $semester_id
-        ));
+        $count = Olama_Exam_Hall::get_hall_count($hall_id, $year_id, $semester_id);
 
         wp_send_json_success([
             'message' => __('Student moved successfully.', 'olama-school'),
@@ -236,13 +224,25 @@ class Olama_Exam_Hall_Ajax
         $section_id  = intval($_POST['section_id'] ?? 0);
         $hall_ids    = $this->canvas_hall_ids();
 
-        // Get the student IDs in this grade/section
-        $students    = Olama_Exam_Hall::get_filtered_students($year_id, $semester_id, $grade_id, $section_id);
-        $student_ids = array_column($students, 'id');
+        // Clear ALL students from these halls (regardless of grade/section) to make them empty for re-distribution
+        Olama_Exam_Hall::clear_assignments($year_id, $semester_id, [], $hall_ids);
 
-        Olama_Exam_Hall::clear_assignments($year_id, $semester_id, $student_ids, $hall_ids);
+        // Get fresh state for the canvas
+        $assignments = Olama_Exam_Hall::get_canvas_assignments($year_id, $semester_id, $hall_ids, $grade_id, $section_id);
+        $unassigned  = Olama_Exam_Hall::get_canvas_unassigned($year_id, $semester_id, $grade_id, $section_id, $hall_ids);
 
-        wp_send_json_success(['message' => __('All assignments cleared.', 'olama-school')]);
+        // Return new occupancy counts
+        $occupancy = [];
+        foreach ($hall_ids as $hid) {
+            $occupancy[$hid] = Olama_Exam_Hall::get_hall_count($hid, $year_id, $semester_id);
+        }
+
+        wp_send_json_success([
+            'message'     => __('All assignments cleared.', 'olama-school'),
+            'occupancy'   => $occupancy,
+            'assignments' => $assignments,
+            'unassigned'  => $unassigned,
+        ]);
     }
 
     // ── save_hall ─────────────────────────────────────────────────────────────

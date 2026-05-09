@@ -566,6 +566,8 @@
             if (err) { toast(err, 'error'); return; }
 
             EH.canvas.assignments = data.assignments || {};
+            if (data.occupancy) Object.assign(EH.canvas.occupancy, data.occupancy);
+
             EH.canvas.halls.forEach(h => {
                 if (!EH.canvas.assignments[h.id]) EH.canvas.assignments[h.id] = [];
             });
@@ -587,9 +589,15 @@
             canvas_hall_ids: EH.canvas.halls.map(h => h.id),
         }, function (err, data) {
             if (err) { toast(err, 'error'); return; }
-            EH.canvas.halls.forEach(h => EH.canvas.assignments[h.id] = []);
+            if (data.occupancy) Object.assign(EH.canvas.occupancy, data.occupancy);
+            EH.canvas.assignments = data.assignments || {};
+            // Ensure each canvas hall is keyed
+            EH.canvas.halls.forEach(h => {
+                if (!EH.canvas.assignments[h.id]) EH.canvas.assignments[h.id] = [];
+            });
+
             renderCanvas();
-            renderUnassigned(EH.canvas.students);
+            renderUnassigned(data.unassigned || getUnassignedList());
             updateStats();
             toast(data.message, 'info');
         });
@@ -648,11 +656,17 @@
 
         halls.forEach((hall, hallIdx) => {
             const rawList = assignments[hall.id] || [];
-            // Sort by seat number, then name
+            // Sort by Grade (DESC), Section (DESC), then Name (ASC)
             const students = rawList.slice().sort((a, b) => {
-                const sa = parseInt(a.seat_number) || 9999;
-                const sb = parseInt(b.seat_number) || 9999;
-                return sa !== sb ? sa - sb : (a.student_name || '').localeCompare(b.student_name || '');
+                const gA = a.grade_name || '';
+                const gB = b.grade_name || '';
+                if (gA !== gB) return gB.localeCompare(gA);
+
+                const sA = a.section_name || '';
+                const sB = b.section_name || '';
+                if (sA !== sB) return sB.localeCompare(sA);
+
+                return (a.student_name || '').localeCompare(b.student_name || '');
             });
             totalStudents += students.length;
             const pct = hall.capacity > 0 ? Math.min(100, Math.round(students.length / hall.capacity * 100)) : 0;

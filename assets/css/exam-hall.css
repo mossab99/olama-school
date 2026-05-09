@@ -456,7 +456,7 @@
     animation: eh-toast-in .3s ease;
 }
 .eh-toast.success { border-left: 4px solid #22c55e; }
-.eh-toast.error   { border-left: 4px solid #ef4444; }
+.eh-toast.error   { background: #ef4444 !important; color: #fff !important; border-left: 4px solid #b91c1c; }
 .eh-toast.info    { border-left: 4px solid #1a73e8; }
 
 @keyframes eh-toast-in {
