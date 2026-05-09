@@ -491,6 +491,40 @@
                         toast('تم النقل ✓', 'success');
                     }
                 });
+            },
+            update: function(event, ui) {
+                // Triggered when reordering within the same list OR after receive
+                const $targetList = $(this);
+                const isHall = $targetList.hasClass('eh-hall-card-body');
+                if (!isHall) return;
+
+                const hallId = parseInt($targetList.closest('.eh-hall-card').attr('data-hall-id'));
+                if (!hallId) return;
+
+                // Only handle if it was an internal reorder (ui.sender is null)
+                // OR if it was a receive (ui.sender is NOT null) but we handle it here collectively
+                // Wait, sortable 'update' fires for both.
+                
+                const studentIds = [];
+                $targetList.find('.eh-student-item').each(function() {
+                    studentIds.push(parseInt($(this).attr('data-student-id')));
+                });
+
+                console.log('[EH] Saving sort order for hall ' + hallId, studentIds);
+
+                ajax('olama_eh_sort_students', {
+                    hall_id: hallId,
+                    student_ids: studentIds
+                }, function(err) {
+                    if (err) toast(err, 'error');
+                    else {
+                        toast('تم حفظ الترتيب ✓', 'success');
+                        // Update seat badges locally
+                        $targetList.find('.eh-student-item').each(function(idx) {
+                            $(this).find('.seat-badge').text(idx + 1);
+                        });
+                    }
+                });
             }
         });
     }
@@ -655,19 +689,8 @@
         let hallsHtml = '';
 
         halls.forEach((hall, hallIdx) => {
-            const rawList = assignments[hall.id] || [];
-            // Sort by Grade (ASC), Section (ASC), then Name (ASC)
-            const students = rawList.slice().sort((a, b) => {
-                const gA = a.grade_name || '';
-                const gB = b.grade_name || '';
-                if (gA !== gB) return gA.localeCompare(gB);
-
-                const sA = a.section_name || '';
-                const sB = b.section_name || '';
-                if (sA !== sB) return sA.localeCompare(sB);
-
-                return (a.student_name || '').localeCompare(b.student_name || '');
-            });
+            const students = assignments[hall.id] || [];
+            // REMOVED: force sorting by Grade/Name here to respect manual sorting/seat numbers
             totalStudents += students.length;
             const pct = hall.capacity > 0 ? Math.min(100, Math.round(students.length / hall.capacity * 100)) : 0;
 

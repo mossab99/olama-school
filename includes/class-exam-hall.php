@@ -310,7 +310,7 @@ class Olama_Exam_Hall
                    AND a.hall_id IN ($safe_halls)
                    $extra_where
                  GROUP BY a.id
-                 ORDER BY g.grade_name ASC, sec.section_name ASC, s.student_name ASC";
+                 ORDER BY a.seat_number ASC, g.grade_name ASC, sec.section_name ASC, s.student_name ASC";
 
         $rows = empty($extra_vals)
             ? $wpdb->get_results($sql)
@@ -347,7 +347,7 @@ class Olama_Exam_Hall
              LEFT JOIN {$wpdb->prefix}olama_sections sec ON sec.id = e.section_id
              LEFT JOIN {$wpdb->prefix}olama_grades g ON g.id = sec.grade_id
              WHERE $where
-             ORDER BY g.grade_name ASC, sec.section_name ASC, s.student_name ASC",
+             ORDER BY a.seat_number ASC, g.grade_name ASC, sec.section_name ASC, s.student_name ASC",
             $vals
         ));
     }
@@ -382,7 +382,7 @@ class Olama_Exam_Hall
              LEFT JOIN {$wpdb->prefix}olama_sections sec ON sec.id = e.section_id
              LEFT JOIN {$wpdb->prefix}olama_grades g ON g.id = sec.grade_id
              WHERE a.academic_year_id = $year_id $sem_clause
-             ORDER BY h.hall_name ASC, g.grade_name ASC, sec.section_name ASC, s.student_name ASC"
+             ORDER BY h.hall_name ASC, a.seat_number ASC, g.grade_name ASC, sec.section_name ASC, s.student_name ASC"
         );
 
         $map = [];
@@ -592,7 +592,7 @@ class Olama_Exam_Hall
         $hall_counts = [];
         foreach ($halls as $h) {
             $hall_pool[$h->id]   = $h;
-            $hall_counts[$h->id] = 0;
+            $hall_counts[$h->id] = $clear ? 0 : self::get_hall_count($h->id, $year_id, $semester_id);
         }
 
         $hall_ids_ordered = array_keys($hall_pool);
@@ -878,5 +878,28 @@ class Olama_Exam_Hall
             $year_id,
             $semester_id
         ));
+    /**
+     * Update seat numbers for a set of students in a hall.
+     */
+    public static function update_seat_numbers($hall_id, $student_ids, $academic_year_id, $semester_id = 0)
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'olama_exam_hall_assignments';
+        
+        foreach ($student_ids as $index => $student_id) {
+            $seat_number = $index + 1;
+            $wpdb->update($table, 
+                ['seat_number' => $seat_number],
+                [
+                    'hall_id' => $hall_id,
+                    'student_id' => $student_id,
+                    'academic_year_id' => $academic_year_id,
+                    'semester_id' => $semester_id
+                ],
+                ['%d'],
+                ['%d', '%d', '%d', '%d']
+            );
+        }
+        return true;
     }
 }

@@ -26,6 +26,7 @@ class Olama_Exam_Hall_Ajax
             'olama_eh_get_invigilators',
             'olama_eh_assign_invigilator',
             'olama_eh_remove_invigilator',
+            'olama_eh_sort_students',
         ];
 
         foreach ($actions as $action) {
@@ -419,5 +420,22 @@ class Olama_Exam_Hall_Ajax
             'message'  => __('Invigilator removed.', 'olama-school'),
             'assigned' => $assigned
         ]);
+    }
+
+    public function sort_students()
+    {
+        $this->check_admin();
+        $year_id     = $this->year_id();
+        $semester_id = $this->semester_id();
+        $hall_id     = intval($_POST['hall_id'] ?? 0);
+        $student_ids = $_POST['student_ids'] ?? [];
+
+        if (!$hall_id || empty($student_ids)) {
+            wp_send_json_error(['message' => __('Missing data.', 'olama-school')]);
+        }
+
+        Olama_Exam_Hall::update_seat_numbers($hall_id, $student_ids, $year_id, $semester_id);
+
+        wp_send_json_success(['message' => __('Order saved.', 'olama-school')]);
     }
 }
