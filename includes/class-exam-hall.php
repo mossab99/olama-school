@@ -210,7 +210,7 @@ class Olama_Exam_Hall
              LEFT JOIN {$wpdb->prefix}olama_sections sec ON sec.id = e.section_id
              LEFT JOIN {$wpdb->prefix}olama_grades g ON g.id = sec.grade_id
              WHERE 1=1 $where
-             ORDER BY g.grade_name DESC, sec.section_name DESC, s.student_name ASC",
+             ORDER BY g.grade_name ASC, sec.section_name ASC, s.student_name ASC",
             $vals
         ));
     }
@@ -261,7 +261,7 @@ class Olama_Exam_Hall
              LEFT JOIN {$wpdb->prefix}olama_sections sec ON sec.id = e.section_id
              LEFT JOIN {$wpdb->prefix}olama_grades g ON g.id = sec.grade_id
              WHERE 1=1 $where
-             ORDER BY g.grade_name DESC, sec.section_name DESC, s.student_name ASC",
+             ORDER BY g.grade_name ASC, sec.section_name ASC, s.student_name ASC",
             $vals
         ));
     }
@@ -309,7 +309,8 @@ class Olama_Exam_Hall
                  WHERE a.academic_year_id = $safe_year $sem_clause
                    AND a.hall_id IN ($safe_halls)
                    $extra_where
-                 ORDER BY g.grade_name DESC, sec.section_name DESC, s.student_name ASC";
+                 GROUP BY a.id
+                 ORDER BY g.grade_name ASC, sec.section_name ASC, s.student_name ASC";
 
         $rows = empty($extra_vals)
             ? $wpdb->get_results($sql)
@@ -346,7 +347,7 @@ class Olama_Exam_Hall
              LEFT JOIN {$wpdb->prefix}olama_sections sec ON sec.id = e.section_id
              LEFT JOIN {$wpdb->prefix}olama_grades g ON g.id = sec.grade_id
              WHERE $where
-             ORDER BY g.grade_name DESC, sec.section_name DESC, s.student_name ASC",
+             ORDER BY g.grade_name ASC, sec.section_name ASC, s.student_name ASC",
             $vals
         ));
     }
@@ -381,7 +382,7 @@ class Olama_Exam_Hall
              LEFT JOIN {$wpdb->prefix}olama_sections sec ON sec.id = e.section_id
              LEFT JOIN {$wpdb->prefix}olama_grades g ON g.id = sec.grade_id
              WHERE a.academic_year_id = $year_id $sem_clause
-             ORDER BY h.hall_name ASC, g.grade_name DESC, sec.section_name DESC, s.student_name ASC"
+             ORDER BY h.hall_name ASC, g.grade_name ASC, sec.section_name ASC, s.student_name ASC"
         );
 
         $map = [];
@@ -412,7 +413,7 @@ class Olama_Exam_Hall
                  SELECT student_id FROM {$wpdb->prefix}olama_exam_hall_assignments
                  WHERE academic_year_id = %d $sem_clause
              )
-             ORDER BY g.grade_name DESC, sec.section_name DESC, s.student_name ASC",
+             ORDER BY g.grade_name ASC, sec.section_name ASC, s.student_name ASC",
             $academic_year_id,
             $academic_year_id
         ));
@@ -562,7 +563,7 @@ class Olama_Exam_Hall
              LEFT JOIN {$wpdb->prefix}olama_sections sec ON sec.id = e.section_id
              LEFT JOIN {$wpdb->prefix}olama_grades g ON g.id = sec.grade_id
              WHERE 1=1 $extra_where
-             ORDER BY g.grade_name DESC, sec.section_name DESC, s.student_name ASC",
+             ORDER BY g.grade_name ASC, sec.section_name ASC, s.student_name ASC",
             array_merge([intval($year_id)], $extra_vals)
         ));
 

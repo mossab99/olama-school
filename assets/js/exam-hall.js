@@ -656,15 +656,15 @@
 
         halls.forEach((hall, hallIdx) => {
             const rawList = assignments[hall.id] || [];
-            // Sort by Grade (DESC), Section (DESC), then Name (ASC)
+            // Sort by Grade (ASC), Section (ASC), then Name (ASC)
             const students = rawList.slice().sort((a, b) => {
                 const gA = a.grade_name || '';
                 const gB = b.grade_name || '';
-                if (gA !== gB) return gB.localeCompare(gA);
+                if (gA !== gB) return gA.localeCompare(gB);
 
                 const sA = a.section_name || '';
                 const sB = b.section_name || '';
-                if (sA !== sB) return sB.localeCompare(sA);
+                if (sA !== sB) return sA.localeCompare(sB);
 
                 return (a.student_name || '').localeCompare(b.student_name || '');
             });
@@ -675,7 +675,7 @@
                 const gradeCell   = h(s.grade_name   || '');
                 const sectionCell = h(s.section_name || '');
                 const nameCell    = h(s.student_name || '');
-                const seatNo      = s.seat_number || (i + 1);
+                const seatNo      = i + 1; // Sequential serial number for report
                 const rowClass    = i % 2 === 0 ? '' : ' class="alt"';
                 return `<tr${rowClass}>
                     <td class="seat">${seatNo}</td>
