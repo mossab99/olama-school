@@ -306,7 +306,7 @@
 
         const $list = $('#eh-hall-picker-list').empty();
         if (!avail.length) {
-            $list.html('<p style="text-align:center;color:#6b7280;">كل القاعات مضافة للقماش بالفعل.</p>');
+            $list.html('<p style="text-align:center;color:#6b7280;">كل القاعات مضافة للوحة توزيع القاعات بالفعل.</p>');
         } else {
             avail.forEach(h => {
                 $list.append(
@@ -337,7 +337,7 @@
 
         // Reload students from server with updated canvas halls
         if (EH.canvas.gradeId || EH.canvas.sectionId) loadStudents();
-        toast(hall.hall_name + ' أضيفت للقماش ✓', 'success');
+        toast(hall.hall_name + ' أضيفت للوحة توزيع القاعات ✓', 'success');
     });
 
     // Remove hall from canvas
@@ -346,7 +346,7 @@
         const hallId = parseInt($(this).data('hall-id'));
         const hall   = EH.canvas.halls.find(h => parseInt(h.id) === hallId);
         if (!hall) return;
-        if (!confirm('إزالة "' + hall.hall_name + '" من القماش؟')) return;
+        if (!confirm('إزالة "' + hall.hall_name + '" من لوحة توزيع القاعات؟')) return;
 
         EH.canvas.halls = EH.canvas.halls.filter(h => parseInt(h.id) !== hallId);
         delete EH.canvas.assignments[hallId];
@@ -937,7 +937,7 @@
 
     // Print All Halls on Canvas
     $(document).on('click', '#btn-eh-print-all-halls', function () {
-        if (!EH.canvas.halls.length) { toast('لا توجد قاعات على القماش', 'error'); return; }
+        if (!EH.canvas.halls.length) { toast('لا توجد قاعات على لوحة توزيع القاعات', 'error'); return; }
         buildPrintReport(null);
     });
 
