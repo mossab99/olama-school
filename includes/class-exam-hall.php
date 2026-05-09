@@ -878,6 +878,8 @@ class Olama_Exam_Hall
             $year_id,
             $semester_id
         ));
+    }
+
     /**
      * Update seat numbers for a set of students in a hall.
      */
