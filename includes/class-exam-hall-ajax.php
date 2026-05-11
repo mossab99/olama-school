@@ -390,8 +390,9 @@ class Olama_Exam_Hall_Ajax
 
         $result = Olama_Exam_Hall::assign_invigilator($hall_id, $invigilator_id, $year_id, $semester_id);
 
-        if (is_wp_error($result)) {
-            wp_send_json_error(['message' => $result->get_error_message()]);
+        if (is_wp_error($result) || $result === false) {
+            $msg = is_wp_error($result) ? $result->get_error_message() : __('Database error: could not assign invigilator.', 'olama-school');
+            wp_send_json_error(['message' => $msg]);
         }
 
         $assigned = Olama_Exam_Hall::get_hall_invigilators($hall_id, $year_id, $semester_id);

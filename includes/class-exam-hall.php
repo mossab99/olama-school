@@ -46,6 +46,11 @@ class Olama_Exam_Hall
                 'def'   => 'semester_id mediumint(9) NOT NULL DEFAULT 0',
                 'after' => 'exam_date',
             ],
+            'olama_exam_hall_invigilators' => [
+                'col'   => 'assigned_by',
+                'def'   => 'assigned_by bigint(20) NOT NULL DEFAULT 0',
+                'after' => 'semester_id',
+            ],
         ];
 
         foreach ($migrations as $base => $m) {
@@ -76,7 +81,7 @@ class Olama_Exam_Hall
             $wpdb->query("CREATE TABLE $inv_table (
                 id bigint(20) NOT NULL AUTO_INCREMENT,
                 hall_id mediumint(9) NOT NULL,
-                invigilator_id bigint(20) NOT NULL,
+                invigilator_id bigint(20) UNSIGNED NOT NULL,
                 academic_year_id mediumint(9) NOT NULL,
                 semester_id mediumint(9) NOT NULL DEFAULT 0,
                 assigned_by bigint(20) NOT NULL,

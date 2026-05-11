@@ -897,15 +897,16 @@ class Olama_School_DB
 			) $charset_collate;",
 
 			'olama_exam_hall_invigilators' => "CREATE TABLE {$wpdb->prefix}olama_exam_hall_invigilators (
-				id mediumint(9) NOT NULL AUTO_INCREMENT,
-				academic_year_id mediumint(9) NOT NULL,
-				semester_id mediumint(9) NOT NULL,
+				id bigint(20) NOT NULL AUTO_INCREMENT,
 				hall_id mediumint(9) NOT NULL,
 				invigilator_id bigint(20) UNSIGNED NOT NULL,
-				assigned_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				academic_year_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL DEFAULT 0,
+				assigned_by bigint(20) NOT NULL,
+				created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				PRIMARY KEY  (id),
-				UNIQUE KEY hall_invigilator (hall_id, invigilator_id, academic_year_id, semester_id),
-				KEY year_semester (academic_year_id, semester_id)
+				UNIQUE KEY inv_context (invigilator_id, academic_year_id, semester_id),
+				KEY hall_context (hall_id, academic_year_id, semester_id)
 			) $charset_collate;"
 		);
 
@@ -1131,15 +1132,16 @@ class Olama_School_DB
 		if ($wpdb->get_var("SHOW TABLES LIKE '$invigilators_table'") !== $invigilators_table) {
 			$charset_collate = $wpdb->get_charset_collate();
 			$wpdb->query("CREATE TABLE $invigilators_table (
-				id mediumint(9) NOT NULL AUTO_INCREMENT,
-				academic_year_id mediumint(9) NOT NULL,
-				semester_id mediumint(9) NOT NULL,
+				id bigint(20) NOT NULL AUTO_INCREMENT,
 				hall_id mediumint(9) NOT NULL,
 				invigilator_id bigint(20) UNSIGNED NOT NULL,
-				assigned_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				academic_year_id mediumint(9) NOT NULL,
+				semester_id mediumint(9) NOT NULL DEFAULT 0,
+				assigned_by bigint(20) NOT NULL,
+				created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				PRIMARY KEY  (id),
-				UNIQUE KEY hall_invigilator (hall_id, invigilator_id, academic_year_id, semester_id),
-				KEY year_semester (academic_year_id, semester_id)
+				UNIQUE KEY inv_context (invigilator_id, academic_year_id, semester_id),
+				KEY hall_context (hall_id, academic_year_id, semester_id)
 			) $charset_collate;");
 		}
 
