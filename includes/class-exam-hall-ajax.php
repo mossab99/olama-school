@@ -105,6 +105,17 @@ class Olama_Exam_Hall_Ajax
         if ($hall_id) {
             // Mode 2: attendance/notes – return hall students
             $students = Olama_Exam_Hall::get_hall_students($hall_id, $year_id, $semester_id);
+            
+            $exam_date = sanitize_text_field($_POST['exam_date'] ?? '');
+            $session_label = sanitize_text_field($_POST['session_label'] ?? '');
+            if ($exam_date) {
+                $attendance_map = Olama_Exam_Hall::get_attendance($hall_id, $exam_date, $session_label, $semester_id);
+                foreach ($students as $student) {
+                    $sid = $student->student_id;
+                    $student->attendance_status = isset($attendance_map[$sid]) ? $attendance_map[$sid] : 'present';
+                }
+            }
+
             wp_send_json_success(['students' => $students]);
             return;
         }

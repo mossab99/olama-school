@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "../../olama-registration"
+		},
+		{
+			"path": "../../olama-stores"
 		}
 	],
 	"settings": {

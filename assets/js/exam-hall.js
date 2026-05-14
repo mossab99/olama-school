@@ -1169,10 +1169,15 @@
     });
 
     /* ─── Attendance Tab ──────────────────────────────────────────────────────── */
-    $(document).on('change', '#eh-att-hall', function () {
-        const hallId = $(this).val();
+
+    function loadAttendance() {
+        const hallId  = $('#eh-att-hall').val();
+        const date    = $('#eh-att-date').val();
+        const session = $('#eh-att-session').val() || '';
+
         if (!hallId) { $('#eh-att-table-wrap').hide(); return; }
-        ajax('olama_eh_get_students', { hall_id: hallId }, function (err, data) {
+
+        ajax('olama_eh_get_students', { hall_id: hallId, exam_date: date, session_label: session }, function (err, data) {
             if (err) return;
             const students = data.students || [];
             const $tbody = $('#eh-att-tbody').empty();
@@ -1183,22 +1188,37 @@
             }
             students.forEach(s => {
                 const sid = s.student_id || s.id;
-                $tbody.append($('<tr>').append(
+                const status = s.attendance_status || 'present';
+                const $row = $('<tr>').append(
                     $('<td>').text(s.seat_number || ''),
                     $('<td>').html('<strong>' + esc(s.student_name) + '</strong>'),
                     $('<td>').text([s.grade_name, s.section_name].filter(Boolean).join(' / ')),
                     $('<td>').append(
                         $('<div class="status-toggle">').append(
-                            $('<button class="status-btn present active" type="button">').data({ student_id: sid, status: 'present' }).text('حاضر'),
-                            $('<button class="status-btn absent" type="button">').data({ student_id: sid, status: 'absent' }).text('غائب')
+                            $('<button type="button">')
+                                .addClass('status-btn present' + (status === 'present' ? ' active' : ''))
+                                .attr('data-sid', sid)
+                                .attr('data-status', 'present')
+                                .text('حاضر'),
+                            $('<button type="button">')
+                                .addClass('status-btn absent' + (status === 'absent' ? ' active' : ''))
+                                .attr('data-sid', sid)
+                                .attr('data-status', 'absent')
+                                .text('غائب')
                         )
                     )
-                ));
+                );
+                $tbody.append($row);
             });
-            $('#print-att-date').text($('#eh-att-date').val());
-            $('#print-att-session').text($('#eh-att-session').val());
+            $('#print-att-date').text(date);
+            $('#print-att-session').text(session);
             $('#eh-att-table-wrap').show();
         });
+    }
+
+    // Trigger load when hall dropdown changes
+    $(document).on('change', '#eh-att-hall', function () {
+        loadAttendance();
     });
 
     $(document).on('click', '.status-btn', function () {
@@ -1226,9 +1246,17 @@
         if (!hallId || !date) { toast('اختر قاعة وتاريخاً', 'error'); return; }
 
         const statuses = {};
+        // Use attr() to read HTML data-* attributes reliably (avoids jQuery camelCase issue)
         $('#eh-att-tbody .status-btn.active').each(function () {
-            statuses[$(this).data('student_id')] = $(this).data('status');
+            const sid    = $(this).attr('data-sid');
+            const status = $(this).attr('data-status');
+            if (sid) statuses[sid] = status;
         });
+
+        if (Object.keys(statuses).length === 0) {
+            toast('لا يوجد طلاب لحفظ حضورهم', 'error');
+            return;
+        }
 
         const $btn = $(this).addClass('eh-loading');
         ajax('olama_eh_save_attendance', { hall_id: hallId, exam_date: date, session_label: session, statuses }, function (err, data) {
@@ -1292,5 +1320,8 @@
             }
         }
     });
+
+    // Expose loadAttendance globally so inline onclick in PHP templates can call it
+    window.loadAttendance = loadAttendance;
 
 })(jQuery);

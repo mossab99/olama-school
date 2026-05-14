@@ -699,6 +699,7 @@ class Olama_Exam_Hall
 
     public static function save_attendance($hall_id, $exam_date, $session_label, $status_map, $semester_id = 0, $year_id = 0)
     {
+        self::maybe_migrate();
         global $wpdb;
         $table   = $wpdb->prefix . 'olama_exam_hall_attendance';
         $user_id = get_current_user_id();
@@ -749,6 +750,7 @@ class Olama_Exam_Hall
 
     public static function save_note($data)
     {
+        self::maybe_migrate();
         global $wpdb;
         return $wpdb->insert(
             $wpdb->prefix . 'olama_exam_hall_notes',

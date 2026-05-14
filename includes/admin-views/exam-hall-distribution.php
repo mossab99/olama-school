@@ -310,7 +310,7 @@ foreach ($all_invigilators as $inv) {
                        style="height:34px;border-radius:6px;border:1px solid #d1d5db;padding:0 8px;min-width:200px;">
             </div>
             <div style="margin-top:auto;">
-                <button class="button" onclick="jQuery('#eh-att-hall').trigger('change');">
+                <button class="button" onclick="loadAttendance();">
                     <span class="dashicons dashicons-search"></span> تحميل
                 </button>
             </div>
