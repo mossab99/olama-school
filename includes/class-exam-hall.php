@@ -59,12 +59,16 @@ class Olama_Exam_Hall
             ],
         ];
 
-        // Ensure robust Unique Key for attendance
+        // Ensure attendance table has 'session_student' UNIQUE KEY.
+        // NOTE: only add if no unique key covering those columns already exists
+        // (the table may have been created with 'session_student' already).
         $attendance_table = $wpdb->prefix . 'olama_exam_hall_attendance';
         if ($wpdb->get_var("SHOW TABLES LIKE '$attendance_table'") === $attendance_table) {
-            $has_unique = $wpdb->get_results("SHOW INDEX FROM $attendance_table WHERE Key_name = 'unique_attendance'");
-            if (empty($has_unique)) {
-                $wpdb->query("ALTER TABLE $attendance_table ADD UNIQUE KEY unique_attendance (student_id, hall_id, exam_date, session_label)");
+            $has_session_student = $wpdb->get_results("SHOW INDEX FROM $attendance_table WHERE Key_name = 'session_student'");
+            $has_unique_att      = $wpdb->get_results("SHOW INDEX FROM $attendance_table WHERE Key_name = 'unique_attendance'");
+            // Only add our key if NEITHER version exists
+            if (empty($has_session_student) && empty($has_unique_att)) {
+                $wpdb->query("ALTER TABLE $attendance_table ADD UNIQUE KEY session_student (hall_id, student_id, exam_date, session_label)");
             }
         }
 
@@ -721,13 +725,22 @@ class Olama_Exam_Hall
 
     public static function save_attendance($hall_id, $exam_date, $session_label, $status_map, $semester_id = 0, $year_id = 0)
     {
-        self::maybe_migrate();
+        // NOTE: Do NOT call maybe_migrate() here — it runs DDL (ALTER TABLE) which
+        // causes an implicit COMMIT in MySQL and breaks any outer transaction.
+        // maybe_migrate() is called once by the AJAX handler BEFORE the transaction starts.
         global $wpdb;
         $table   = $wpdb->prefix . 'olama_exam_hall_attendance';
         $user_id = get_current_user_id();
 
-        error_log("[EH Save] Hall: $hall_id, Date: $exam_date, Session: $session_label, Year: $year_id, Sem: $semester_id");
-        error_log("[EH Save] Status Map: " . print_r($status_map, true));
+        // Ensure we have a valid year_id (default to 0 if not provided)
+        $year_id     = intval($year_id);
+        $semester_id = intval($semester_id);
+
+        error_log("[EH Save] Hall: $hall_id, Date: $exam_date, Session: $session_label, Year: $year_id, Sem: $semester_id, Count: " . count($status_map));
+
+        // Check if academic_year_id column exists (might not on some production DBs)
+        $has_year_col = !empty($wpdb->get_results("SHOW COLUMNS FROM $table LIKE 'academic_year_id'"));
+        $has_sem_col  = !empty($wpdb->get_results("SHOW COLUMNS FROM $table LIKE 'semester_id'"));
 
         foreach ($status_map as $student_id => $status) {
             $student_id = intval($student_id);
@@ -738,16 +751,30 @@ class Olama_Exam_Hall
                 $student_id
             ));
 
-            $wpdb->query($wpdb->prepare(
-                "INSERT INTO $table
-                    (hall_id, student_id, student_uid, academic_year_id, semester_id, exam_date, session_label, status, recorded_by)
-                 VALUES (%d, %d, %s, %d, %d, %s, %s, %s, %d)
-                 ON DUPLICATE KEY UPDATE status = VALUES(status), recorded_by = VALUES(recorded_by)",
-                $hall_id, $student_id, $uid ?? '', $year_id, $semester_id, $exam_date, $session_label, $status, $user_id
-            ));
+            if ($has_year_col && $has_sem_col) {
+                $result = $wpdb->query($wpdb->prepare(
+                    "INSERT INTO $table
+                        (hall_id, student_id, student_uid, academic_year_id, semester_id, exam_date, session_label, status, recorded_by)
+                     VALUES (%d, %d, %s, %d, %d, %s, %s, %s, %d)
+                     ON DUPLICATE KEY UPDATE status = VALUES(status), recorded_by = VALUES(recorded_by)",
+                    $hall_id, $student_id, $uid ?? '', $year_id, $semester_id, $exam_date, $session_label, $status, $user_id
+                ));
+            } else {
+                // Fallback: insert without year/semester columns (older schema)
+                $result = $wpdb->query($wpdb->prepare(
+                    "INSERT INTO $table
+                        (hall_id, student_id, student_uid, exam_date, session_label, status, recorded_by)
+                     VALUES (%d, %d, %s, %s, %s, %s, %d)
+                     ON DUPLICATE KEY UPDATE status = VALUES(status), recorded_by = VALUES(recorded_by)",
+                    $hall_id, $student_id, $uid ?? '', $exam_date, $session_label, $status, $user_id
+                ));
+            }
 
             if ($wpdb->last_error) {
                 error_log("[EH Save Error] SID $student_id: " . $wpdb->last_error);
+                // Don't throw — log and continue so partial saves still work
+            } else {
+                error_log("[EH Save OK] SID $student_id => $status (affected: $result)");
             }
         }
     }

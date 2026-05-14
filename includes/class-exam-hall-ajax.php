@@ -305,6 +305,11 @@ class Olama_Exam_Hall_Ajax
             wp_send_json_error(['message' => __('Unauthorized', 'olama-school')], 403);
         }
 
+        // Run schema migration BEFORE starting any transaction.
+        // DDL statements (ALTER TABLE) cause implicit COMMIT in MySQL,
+        // so they must never run inside an open transaction.
+        Olama_Exam_Hall::maybe_migrate();
+
         global $wpdb;
         $wpdb->query('START TRANSACTION');
 
@@ -315,14 +320,16 @@ class Olama_Exam_Hall_Ajax
             $exam_date   = sanitize_text_field($_POST['exam_date']     ?? date('Y-m-d'));
             $session     = sanitize_text_field($_POST['session_label'] ?? '');
             $statuses    = $_POST['statuses'] ?? [];
-            
+
+            error_log("[EH Ajax] Save attempt - Hall: $hall_id, Date: $exam_date, Session: $session, Year: $year_id, Sem: $semester_id, Statuses count: " . count($statuses));
+
             if (!$hall_id || empty($statuses)) {
                 throw new Exception(__('Missing hall ID or attendance data.', 'olama-school'));
             }
 
             Olama_Exam_Hall::save_attendance($hall_id, $exam_date, $session, $statuses, $semester_id, $year_id);
             $wpdb->query('COMMIT');
-            error_log("[EH Ajax Success] Save completed for Hall $hall_id");
+            error_log("[EH Ajax Success] Attendance save committed for Hall $hall_id");
             wp_send_json_success(['message' => __('Attendance saved successfully.', 'olama-school')]);
         } catch (Exception $e) {
             $wpdb->query('ROLLBACK');
