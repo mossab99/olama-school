@@ -1699,13 +1699,13 @@ class Olama_School_Admin
                 'olama-exam-hall-style',
                 OLAMA_SCHOOL_URL . 'assets/css/exam-hall.css',
                 ['olama-admin-style'],
-                OLAMA_SCHOOL_VERSION
+                time()
             );
             wp_enqueue_script(
                 'olama-exam-hall-script',
                 OLAMA_SCHOOL_URL . 'assets/js/exam-hall.js',
                 ['jquery', 'jquery-ui-sortable'],
-                OLAMA_SCHOOL_VERSION,
+                time(),
                 true
             );
             wp_localize_script('olama-exam-hall-script', 'olamaExamHall', [
