@@ -305,20 +305,30 @@ class Olama_Exam_Hall_Ajax
             wp_send_json_error(['message' => __('Unauthorized', 'olama-school')], 403);
         }
 
-        $year_id     = $this->year_id();
-        $semester_id = $this->semester_id();
-        $hall_id     = intval($_POST['hall_id']       ?? 0);
-        $exam_date   = sanitize_text_field($_POST['exam_date']     ?? date('Y-m-d'));
-        $session     = sanitize_text_field($_POST['session_label'] ?? '');
-        $statuses    = $_POST['statuses'] ?? [];
+        global $wpdb;
+        $wpdb->query('START TRANSACTION');
 
-        if (!$hall_id || empty($statuses)) {
-            wp_send_json_error(['message' => __('Missing data.', 'olama-school')]);
+        try {
+            $year_id     = $this->year_id();
+            $semester_id = $this->semester_id();
+            $hall_id     = intval($_POST['hall_id']       ?? 0);
+            $exam_date   = sanitize_text_field($_POST['exam_date']     ?? date('Y-m-d'));
+            $session     = sanitize_text_field($_POST['session_label'] ?? '');
+            $statuses    = $_POST['statuses'] ?? [];
+            
+            if (!$hall_id || empty($statuses)) {
+                throw new Exception(__('Missing hall ID or attendance data.', 'olama-school'));
+            }
+
+            Olama_Exam_Hall::save_attendance($hall_id, $exam_date, $session, $statuses, $semester_id, $year_id);
+            $wpdb->query('COMMIT');
+            error_log("[EH Ajax Success] Save completed for Hall $hall_id");
+            wp_send_json_success(['message' => __('Attendance saved successfully.', 'olama-school')]);
+        } catch (Exception $e) {
+            $wpdb->query('ROLLBACK');
+            error_log("[EH Ajax Error] " . $e->getMessage());
+            wp_send_json_error(['message' => __('Failed to save attendance: ', 'olama-school') . $e->getMessage()]);
         }
-
-        Olama_Exam_Hall::save_attendance($hall_id, $exam_date, $session, $statuses, $semester_id, $year_id);
-
-        wp_send_json_success(['message' => __('Attendance saved successfully.', 'olama-school')]);
     }
 
     // ── save_note ─────────────────────────────────────────────────────────────

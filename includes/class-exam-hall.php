@@ -37,9 +37,15 @@ class Olama_Exam_Hall
                 'after' => 'academic_year_id',
             ],
             'olama_exam_hall_attendance'  => [
+                'col'   => 'academic_year_id',
+                'def'   => 'academic_year_id mediumint(9) NOT NULL DEFAULT 0',
+                'after' => 'hall_id',
+            ],
+            'olama_exam_hall_attendance_sem' => [
+                'table' => 'olama_exam_hall_attendance',
                 'col'   => 'semester_id',
                 'def'   => 'semester_id mediumint(9) NOT NULL DEFAULT 0',
-                'after' => 'academic_year_id',   // may not exist – handled below
+                'after' => 'academic_year_id',
             ],
             'olama_exam_hall_notes'       => [
                 'col'   => 'semester_id',
@@ -53,7 +59,17 @@ class Olama_Exam_Hall
             ],
         ];
 
-        foreach ($migrations as $base => $m) {
+        // Ensure robust Unique Key for attendance
+        $attendance_table = $wpdb->prefix . 'olama_exam_hall_attendance';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$attendance_table'") === $attendance_table) {
+            $has_unique = $wpdb->get_results("SHOW INDEX FROM $attendance_table WHERE Key_name = 'unique_attendance'");
+            if (empty($has_unique)) {
+                $wpdb->query("ALTER TABLE $attendance_table ADD UNIQUE KEY unique_attendance (student_id, hall_id, exam_date, session_label)");
+            }
+        }
+
+        foreach ($migrations as $key => $m) {
+            $base  = $m['table'] ?? $key;
             $table = $wpdb->prefix . $base;
 
             // Skip if table doesn't exist yet
@@ -685,11 +701,17 @@ class Olama_Exam_Hall
     {
         global $wpdb;
         $sem   = $semester_id ? $wpdb->prepare(' AND semester_id = %d', $semester_id) : '';
-        $rows  = $wpdb->get_results($wpdb->prepare(
+        $sql   = $wpdb->prepare(
             "SELECT student_id, status FROM {$wpdb->prefix}olama_exam_hall_attendance
              WHERE hall_id = %d AND exam_date = %s AND session_label = %s $sem",
             $hall_id, $exam_date, $session_label
-        ));
+        );
+        $rows  = $wpdb->get_results($sql);
+        
+        error_log("[EH Load] Hall: $hall_id, Date: $exam_date, Session: $session_label, Sem: $semester_id");
+        error_log("[EH Load] Query: $sql");
+        error_log("[EH Load] Found: " . count($rows) . " records");
+
         $map = [];
         foreach ($rows as $r) {
             $map[$r->student_id] = $r->status;
@@ -703,6 +725,9 @@ class Olama_Exam_Hall
         global $wpdb;
         $table   = $wpdb->prefix . 'olama_exam_hall_attendance';
         $user_id = get_current_user_id();
+
+        error_log("[EH Save] Hall: $hall_id, Date: $exam_date, Session: $session_label, Year: $year_id, Sem: $semester_id");
+        error_log("[EH Save] Status Map: " . print_r($status_map, true));
 
         foreach ($status_map as $student_id => $status) {
             $student_id = intval($student_id);
@@ -720,6 +745,10 @@ class Olama_Exam_Hall
                  ON DUPLICATE KEY UPDATE status = VALUES(status), recorded_by = VALUES(recorded_by)",
                 $hall_id, $student_id, $uid ?? '', $year_id, $semester_id, $exam_date, $session_label, $status, $user_id
             ));
+
+            if ($wpdb->last_error) {
+                error_log("[EH Save Error] SID $student_id: " . $wpdb->last_error);
+            }
         }
     }
 
