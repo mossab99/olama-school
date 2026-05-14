@@ -11,7 +11,15 @@ $academic_years = Olama_School_Academic::get_years();
 $active_year = Olama_School_Academic::get_active_year();
 $selected_year_id = $active_year ? intval($active_year->id) : 0;
 $semesters = $selected_year_id ? Olama_School_Academic::get_semesters($selected_year_id) : array();
+
+global $wpdb;
+$global_units = $wpdb->get_col("SELECT name FROM {$wpdb->prefix}os_units ORDER BY name ASC");
+$global_categories = $wpdb->get_col("SELECT name FROM {$wpdb->prefix}os_categories WHERE is_active = 1 ORDER BY name ASC");
 ?>
+<script>
+    window.olamaGlobalUnits = <?php echo json_encode($global_units); ?>;
+    window.olamaGlobalCategories = <?php echo json_encode($global_categories); ?>;
+</script>
 
 <?php
 if ($import_message = get_transient('olama_import_message')) {
@@ -151,9 +159,18 @@ if ($import_error = get_transient('olama_import_error')) {
                     required>
             </div>
             <div style="margin-bottom: 10px;">
-                <input type="text" id="unit-name"
-                    placeholder="<?php echo Olama_School_Helpers::translate('Unit Name'); ?>" style="width: 100%;"
-                    required>
+                <?php if (!empty($global_units)): ?>
+                    <select id="unit-name" style="width: 100%; height: 40px; border-radius: 6px; border: 1px solid #cbd5e1;" required>
+                        <option value=""><?php echo Olama_School_Helpers::translate('-- Select Unit Title --'); ?></option>
+                        <?php foreach ($global_units as $gu): ?>
+                            <option value="<?php echo esc_attr($gu); ?>"><?php echo esc_html($gu); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php else: ?>
+                    <input type="text" id="unit-name"
+                        placeholder="<?php echo Olama_School_Helpers::translate('Unit Name'); ?>" style="width: 100%; height: 40px; border-radius: 8px; border: 1px solid #cbd5e1;"
+                        required>
+                <?php endif; ?>
             </div>
             <div style="margin-bottom: 10px;">
                 <textarea id="unit-objectives"

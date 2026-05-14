@@ -38,6 +38,11 @@ class Olama_School_Unit
         global $wpdb;
         $table = "{$wpdb->prefix}olama_curriculum_units";
 
+        $unit_exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}os_units WHERE name = %s", $data['unit_name']));
+        if (!$unit_exists) {
+            return new WP_Error('invalid_unit_name', __('The selected unit title is not authorized. Please define it in Units settings.', 'olama-school'));
+        }
+
         $unit_data = array(
             'grade_id' => intval($data['grade_id']),
             'subject_id' => intval($data['subject_id']),

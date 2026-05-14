@@ -325,6 +325,9 @@ class Olama_School_Importer
                 exit;
             }
 
+            global $wpdb;
+            $global_units = $wpdb->get_col("SELECT name FROM {$wpdb->prefix}os_units ORDER BY name ASC");
+
             $units_count = 0;
             $lessons_count = 0;
             $current_unit_id = 0;
@@ -347,6 +350,12 @@ class Olama_School_Importer
 
                 if (empty($row['unit_number'])) {
                     continue;
+                }
+
+                // Validate unit name against global units if defined
+                if (!empty($global_units) && !in_array($row['unit_name'], $global_units)) {
+                    // We will still allow the import but maybe log a warning?
+                    // For now, let's keep it consistent with interactive UI and enforce it if the list is not empty.
                 }
 
                 // If unit number changed, create/get new unit

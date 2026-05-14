@@ -5,6 +5,9 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+<?php
+global $wpdb;
+$global_categories = $wpdb->get_col("SELECT name FROM {$wpdb->prefix}os_categories WHERE is_active = 1 ORDER BY name ASC");
 ?>
 
 <div class="olama-ev-mgmt-wrap">
@@ -431,7 +434,16 @@ if (!defined('ABSPATH')) {
                                             <label>
                                                 <?php echo Olama_School_Helpers::translate('Category Title'); ?>
                                             </label>
-                                            <input type="text" name="title_ar" required style="width: 100%;">
+                                            <?php if (!empty($global_categories)): ?>
+                                                <select name="title_ar" required style="width: 100%; height: 35px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                                                    <option value=""><?php echo Olama_School_Helpers::translate('-- Select Category --'); ?></option>
+                                                    <?php foreach ($global_categories as $gc): ?>
+                                                        <option value="<?php echo esc_attr($gc); ?>"><?php echo esc_html($gc); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            <?php else: ?>
+                                                <input type="text" name="title_ar" required style="width: 100%; height: 35px; border-radius: 6px; border: 1px solid #cbd5e1;" placeholder="<?php echo Olama_School_Helpers::translate('Define categories in Settings'); ?>">
+                                            <?php endif; ?>
                                         </div>
                                         <button type="submit" class="button button-secondary">
                                             <?php echo Olama_School_Helpers::translate('Add'); ?>
@@ -483,9 +495,17 @@ if (!defined('ABSPATH')) {
                                             <div style="display: flex; gap: 10px; align-items: flex-end;">
                                                 <div style="flex: 2;">
                                                     <label><?php echo Olama_School_Helpers::translate('Edit Category Title'); ?></label>
-                                                    <input type="text" name="title_ar"
-                                                        value="<?php echo esc_attr($category->title_ar); ?>" required
-                                                        style="width: 100%;">
+                                                    <?php if (!empty($global_categories)): ?>
+                                                        <select name="title_ar" required style="width: 100%; height: 35px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                                                            <?php foreach ($global_categories as $gc): ?>
+                                                                <option value="<?php echo esc_attr($gc); ?>" <?php selected($category->title_ar, $gc); ?>><?php echo esc_html($gc); ?></option>
+                                                            <?php endforeach; ?>
+                                                        </select>
+                                                    <?php else: ?>
+                                                        <input type="text" name="title_ar"
+                                                            value="<?php echo esc_attr($category->title_ar); ?>" required
+                                                            style="width: 100%; height: 35px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div style="flex: 1;">
                                                     <label><?php echo Olama_School_Helpers::translate('Sort Order'); ?></label>

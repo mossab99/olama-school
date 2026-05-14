@@ -63,6 +63,12 @@ class Olama_School_EV_Curriculum
     public static function save_category($data)
     {
         global $wpdb;
+
+        $category_exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}os_categories WHERE name = %s AND is_active = 1", $data['title_ar']));
+        if (!$category_exists) {
+            return new WP_Error('invalid_category', Olama_School_Helpers::translate('Selected category is not valid. Please define it in Categories settings.'));
+        }
+
         $fields = array(
             'domain_id' => intval($data['domain_id']),
             'title_ar' => sanitize_text_field($data['title_ar']),
