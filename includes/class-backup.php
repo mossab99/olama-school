@@ -91,7 +91,31 @@ class Olama_School_Backup
 
             // --- Core User Tables (Added for data integrity between environments) ---
             'users',
-            'usermeta'
+            'usermeta',
+
+            // --- Olama Registration ---
+            'olama_reg_academic_history',
+            'olama_reg_financial',
+
+            // --- Olama Stores ---
+            'os_categories',
+            'os_units',
+            'os_custom_models',
+            'os_fabrics',
+            'os_colors',
+            'os_sizes',
+            'os_providers',
+            'os_items',
+            'os_warehouses',
+            'os_stock',
+            'os_stock_movements',
+            'os_inventory_counts',
+            'os_inventory_count_lines',
+            'os_assignments',
+            'os_assignment_returns',
+            'os_transfers',
+            'os_student_uniform_sizes',
+            'os_audit_log'
         );
     }
 
@@ -131,6 +155,48 @@ class Olama_School_Backup
             $backup_data['parts']['olama_exam_engine'] = array(
                 'label' => 'Olama Exam Engine',
                 'tables' => self::collect_tables_data($tables)
+            );
+        }
+
+        // --- PART 3: Olama Registration ---
+        $registration_tables = array(
+            'olama_reg_academic_history',
+            'olama_reg_financial'
+        );
+        $reg_data = self::collect_tables_data($registration_tables);
+        if (!empty($reg_data)) {
+            $backup_data['parts']['olama_registration'] = array(
+                'label' => 'Olama Registration',
+                'tables' => $reg_data
+            );
+        }
+
+        // --- PART 4: Olama Stores ---
+        $store_tables = array(
+            'os_categories',
+            'os_units',
+            'os_custom_models',
+            'os_fabrics',
+            'os_colors',
+            'os_sizes',
+            'os_providers',
+            'os_items',
+            'os_warehouses',
+            'os_stock',
+            'os_stock_movements',
+            'os_inventory_counts',
+            'os_inventory_count_lines',
+            'os_assignments',
+            'os_assignment_returns',
+            'os_transfers',
+            'os_student_uniform_sizes',
+            'os_audit_log'
+        );
+        $store_data = self::collect_tables_data($store_tables);
+        if (!empty($store_data)) {
+            $backup_data['parts']['olama_stores'] = array(
+                'label' => 'Olama Stores',
+                'tables' => $store_data
             );
         }
 
