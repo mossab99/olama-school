@@ -22,7 +22,7 @@ class Olama_School_Permissions
         // Skip if capabilities already initialized and exams caps are added
         $initialized = get_option('olama_school_caps_version') === OLAMA_SCHOOL_VERSION;
         $exams_added = get_option('olama_school_exams_caps_added');
-        $roles_exist = get_role('supervisor') && get_role('teacher') && get_role('assistant');
+        $roles_exist = get_role('supervisor') && get_role('teacher') && get_role('assistant') && get_role('accountant');
 
         if ($initialized && $exams_added && $roles_exist) {
             return;
@@ -186,6 +186,38 @@ class Olama_School_Permissions
                     'olama_manage_hall_attendance' => __('Record Attendance & Behavior Notes', 'olama-school'),
                 )
             ),
+            'registration' => array(
+                'label' => __('Registration & Billing', 'olama-school'),
+                'caps' => array(
+                    'olama_access_registration' => __('Access Registration', 'olama-school'),
+                    'olama_manage_registration_families' => __('Manage Families', 'olama-school'),
+                    'olama_manage_registration_students' => __('Manage Students', 'olama-school'),
+                    'olama_manage_registration_fees' => __('Fee Templates', 'olama-school'),
+                    'olama_manage_registration_invoices' => __('Invoices', 'olama-school'),
+                    'olama_manage_registration_payments' => __('Payments', 'olama-school'),
+                    'olama_manage_registration_reports' => __('Billing Reports', 'olama-school'),
+                )
+            ),
+            'stores' => array(
+                'label' => __('Stores & Inventory', 'olama-school'),
+                'caps' => array(
+                    'os_view_items'           => __( 'View Item Registry', 'olama-stores' ),
+                    'os_manage_items'         => __( 'Add / Edit Items', 'olama-stores' ),
+                    'os_delete_items'         => __( 'Delete Items', 'olama-stores' ),
+                    'os_view_stock'           => __( 'View Stock Levels', 'olama-stores' ),
+                    'os_receive_stock'        => __( 'Record Stock Receipt', 'olama-stores' ),
+                    'os_adjust_stock'         => __( 'Manual Stock Adjustment', 'olama-stores' ),
+                    'os_process_assignments'  => __( 'Issue & Return Items', 'olama-stores' ),
+                    'os_view_assignments'     => __( 'View Assignments', 'olama-stores' ),
+                    'os_run_inventory_count'  => __( 'Run Inventory Count', 'olama-stores' ),
+                    'os_manage_transfers'     => __( 'Manage Warehouse Transfers', 'olama-stores' ),
+                    'os_view_reports'         => __( 'View Reports', 'olama-stores' ),
+                    'os_manage_settings'      => __( 'Manage Stores Settings', 'olama-stores' ),
+                    'os_manage_warehouses'    => __( 'Manage Warehouses', 'olama-stores' ),
+                    'os_view_audit_log'       => __( 'View Audit Log', 'olama-stores' ),
+                    'os_manage_order_estimation' => __('Order Estimation', 'olama-stores'),
+                )
+            ),
         );
     }
 
@@ -204,9 +236,12 @@ class Olama_School_Permissions
         if (!get_role('assistant')) {
             add_role('assistant', __('Assistant', 'olama-school'), get_role('author')->capabilities);
         }
+        if (!get_role('accountant')) {
+            add_role('accountant', __('Accountant', 'olama-school'), get_role('author')->capabilities);
+        }
 
         $all_groups = self::get_all_capabilities();
-        $roles = array('administrator', 'editor', 'supervisor', 'author', 'teacher', 'assistant');
+        $roles = array('administrator', 'editor', 'supervisor', 'author', 'teacher', 'assistant', 'accountant', 'os_warehouse_manager', 'os_warehouse_staff', 'os_viewer');
 
         foreach ($roles as $role_name) {
             $role = get_role($role_name);
@@ -319,7 +354,7 @@ class Olama_School_Permissions
     public static function remove_capabilities()
     {
         $all_groups = self::get_all_capabilities();
-        $roles = array('administrator', 'editor', 'supervisor', 'author', 'teacher', 'assistant');
+        $roles = array('administrator', 'editor', 'supervisor', 'author', 'teacher', 'assistant', 'accountant', 'os_warehouse_manager', 'os_warehouse_staff', 'os_viewer');
 
         foreach ($roles as $role_name) {
             $role = get_role($role_name);
