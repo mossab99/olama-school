@@ -117,7 +117,7 @@ class Olama_School_Family
     {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_students WHERE family_id = %s",
+            "SELECT * FROM {$wpdb->prefix}olama_students WHERE family_id = %s AND student_uid NOT LIKE 'ext_%'",
             $family_uid
         ));
     }
