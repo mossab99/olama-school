@@ -391,9 +391,25 @@ class Olama_School_Backup
             return true;
         }
 
+        // Filter out columns that don't exist in the current database schema
+        $table_columns = $wpdb->get_col("DESCRIBE $table", 0);
+        $valid_columns = $table_columns ? array_flip($table_columns) : array();
+
         // Get columns from first row
         $first_row = reset($rows);
-        $columns = array_keys($first_row);
+        $raw_columns = array_keys($first_row);
+        
+        $columns = array();
+        foreach ($raw_columns as $col) {
+            if (isset($valid_columns[$col])) {
+                $columns[] = $col;
+            }
+        }
+
+        if (empty($columns)) {
+            return true;
+        }
+
         $columns_escaped = array_map(function ($col) {
             return '`' . esc_sql($col) . '`';
         }, $columns);
