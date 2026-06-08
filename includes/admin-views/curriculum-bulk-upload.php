@@ -57,8 +57,8 @@ $default_semester_id = $active_semester ? intval($active_semester->id) : 0;
                     }
                 }
 
-                echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Academic Year'), $active_year_name, 'academic_year_id', $selected_year_id);
-                echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Semester'), $active_semester_name, 'semester_id', $default_semester_id);
+                echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Academic Year'), $active_year_name, 'academic_year_id', $selected_year_id, 'bulk-year');
+                echo Olama_School_Helpers::locked_filter_render(Olama_School_Helpers::translate('Semester'), $active_semester_name, 'semester_id', $default_semester_id, 'bulk-semester');
                 ?>
 
                 <div style="flex: 1; min-width: 180px;">

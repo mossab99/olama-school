@@ -1,15 +1,17 @@
 jQuery(document).ready(function ($) {
     'use strict';
 
-    let selectedSemester = null;
-    let selectedGrade = null;
+    let selectedSemester = $('#bulk-semester').val() || null;
+    let selectedGrade = $('#bulk-grade').val() || null;
     let selectedFile = null;
 
     // Enable/disable file input when semester and grade are selected
     function updateUploadButtonState() {
         const semesterSelected = $('#bulk-semester').val();
         const gradeSelected = $('#bulk-grade').val();
-        const fileSelected = $('#bulk-upload-file')[0].files.length > 0;
+        
+        const fileInput = $('#bulk-upload-file')[0];
+        const fileSelected = fileInput && fileInput.files && fileInput.files.length > 0;
 
         if (semesterSelected && gradeSelected) {
             $('#bulk-upload-file').prop('disabled', false);
@@ -24,6 +26,9 @@ jQuery(document).ready(function ($) {
             $('#bulk-upload-btn').prop('disabled', true);
         }
     }
+
+    // Set initial state on page load
+    updateUploadButtonState();
 
     // Semester change handler
     $('#bulk-semester').on('change', function () {
