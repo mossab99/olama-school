@@ -1129,6 +1129,11 @@ class Olama_School_Admin
 
             wp_send_json_success(sprintf(__('Restored table %s', 'olama-school'), $table_name));
         } elseif ($step === 'finalize') {
+            $result = Olama_School_Backup::restore_options($json_data);
+            if (is_wp_error($result)) {
+                wp_send_json_error($result->get_error_message());
+            }
+
             @unlink($temp_file);
             wp_send_json_success(__('Restoration completed successfully!', 'olama-school'));
         }
@@ -1441,9 +1446,17 @@ class Olama_School_Admin
                             step: 'finalize',
                             nonce: nonce
                         }, function (response) {
-                            addLog(response.data, 'success');
-                            alert(response.data);
-                            location.reload();
+                            if (response.success) {
+                                addLog(response.data, 'success');
+                                alert(response.data);
+                                location.reload();
+                            } else {
+                                addLog('<?php _e('Finalization Error:', 'olama-school'); ?> ' + response.data, 'error');
+                                resetUI();
+                            }
+                        }).fail(function () {
+                            addLog('<?php _e('Server timeout during finalization.', 'olama-school'); ?>', 'error');
+                            resetUI();
                         });
                     }
 

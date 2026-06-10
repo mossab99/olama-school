@@ -10,113 +10,112 @@ if (!defined('ABSPATH')) {
 class Olama_School_Backup
 {
     /**
-     * Get list of all plugin tables
+     * Get list of all Olama ecosystem tables present in the current database.
      */
     public static function get_plugin_tables()
     {
-        return array(
-            // --- Core Setup ---
-            'olama_settings',
-            'olama_academic_years',
-            'olama_semesters',
-            'olama_grades',
-            'olama_sections',
-            'olama_families',
-            'olama_students',
-            'olama_student_enrollment',
-            'olama_subjects',
-            'olama_teachers',
-            
-            // --- Evaluations & Supervision ---
-            'olama_ev_templates',
-            'olama_ev_domains',
-            'olama_ev_categories',
-            'olama_ev_indicators',
-            'olama_ev_records',
-            'olama_ev_scores',
-            'olama_supervisor_visits',
-            'olama_supervisor_assignments',
-            
-            // --- Academic Planning ---
-            'olama_plans',
-            'olama_plan_questions',
-            'olama_templates',
-            'olama_lesson_plans',
-            'olama_schedule',
-            'olama_curriculum_units',
-            'olama_curriculum_lessons',
-            'olama_curriculum_questions',
-            'olama_academic_events',
-            'olama_teacher_assignments',
-            'olama_teacher_office_hours',
-            
-            // --- Exams (Internal/Manual) ---
-            'olama_exams',
-            'olama_exam_attachments',
-            'olama_semester_exams',
-            'olama_stationary',
-            
-            // --- Exam Engine (Online) ---
-            'olama_exam_question_categories',
-            'olama_exam_questions',
-            'olama_exam_exams',
-            'olama_exam_attempts',
-            'olama_exam_essay_grades',
-            'olama_exam_placement_info',
-            
-            // --- Student Services ---
-            'olama_attendance',
-            'olama_attendance_sheets',
-            'olama_transport_buses',
-            'olama_student_bus_assignments',
-            
-            // --- Staff Shifts & Cleaning ---
-            'olama_shifts_locations',
-            'olama_shifts_time_slots',
-            'olama_shifts_periods',
-            'olama_shifts',
-            'olama_shifts_assignments',
-            'olama_shifts_schedule',
-            'olama_cleaning_logs',
-            'olama_cleaning_items',
-            'olama_cleaning_floors',
-            'olama_cleaning_cleaners',
-            'olama_cleaning_slots',
-            'olama_cleaning_assignments',
-            
-            // --- Logs & Preferences ---
-            'olama_user_preferences',
-            'olama_notifications',
-            'olama_logs',
+        $tables = array('users', 'usermeta');
 
-            // --- Core User Tables (Added for data integrity between environments) ---
-            'users',
-            'usermeta',
+        if (class_exists('Olama_School_DB') && method_exists('Olama_School_DB', 'get_tables')) {
+            $tables = array_merge($tables, Olama_School_DB::get_tables());
+        }
 
-            // --- Olama Registration ---
-            'olama_reg_academic_history',
-            'olama_reg_financial',
+        foreach (self::get_declared_table_providers() as $provider) {
+            $tables = array_merge($tables, (array) call_user_func(array($provider, 'get_tables')));
+        }
 
-            // --- Olama Stores ---
-            'os_categories',
-            'os_units',
-            'os_custom_models',
-            'os_fabrics',
-            'os_colors',
-            'os_sizes',
-            'os_providers',
-            'os_items',
-            'os_warehouses',
-            'os_stock',
-            'os_stock_movements',
-            'os_inventory_counts',
-            'os_inventory_count_lines',
-            'os_assignments',
-            'os_assignment_returns',
-            'os_transfers',
-            'os_student_uniform_sizes',
-            'os_audit_log'
-        );
+        $tables = array_merge($tables, self::discover_olama_tables());
+
+        return self::normalize_table_list($tables);
+    }
+
+    /**
+     * Prefixes used by registered Olama ecosystem plugins for custom tables/options.
+     */
+    private static function get_olama_data_prefixes()
+    {
+        return apply_filters('olama_school_backup_data_prefixes', array(
+            'olama_',
+            'os_',
+            'oee_',
+        ));
+    }
+
+    /**
+     * Find loaded Olama plugin classes that expose a get_tables() registry.
+     */
+    private static function get_declared_table_providers()
+    {
+        $providers = array();
+
+        foreach (get_declared_classes() as $class_name) {
+            if (!method_exists($class_name, 'get_tables')) {
+                continue;
+            }
+
+            if (!preg_match('/^(Olama|OS_|OEE_)/', $class_name)) {
+                continue;
+            }
+
+            $method = new ReflectionMethod($class_name, 'get_tables');
+            if (!$method->isStatic() || $method->getNumberOfRequiredParameters() > 0) {
+                continue;
+            }
+
+            $providers[] = $class_name;
+        }
+
+        return array_unique($providers);
+    }
+
+    /**
+     * Discover live database tables owned by Olama plugins by naming convention.
+     */
+    private static function discover_olama_tables()
+    {
+        global $wpdb;
+
+        $tables = array();
+        foreach (self::get_olama_data_prefixes() as $data_prefix) {
+            $like = $wpdb->esc_like($wpdb->prefix . $data_prefix) . '%';
+            $found = $wpdb->get_col($wpdb->prepare('SHOW TABLES LIKE %s', $like));
+            $tables = array_merge($tables, (array) $found);
+        }
+
+        return $tables;
+    }
+
+    /**
+     * Convert full table names to plugin-relative names and remove unsafe entries.
+     */
+    private static function normalize_table_list($tables, $apply_filter = true)
+    {
+        global $wpdb;
+
+        $normalized = array();
+        foreach ((array) $tables as $table) {
+            $table = (string) $table;
+
+            if (strpos($table, $wpdb->prefix) === 0) {
+                $table = substr($table, strlen($wpdb->prefix));
+            }
+
+            if (!preg_match('/^[A-Za-z0-9_]+$/', $table)) {
+                continue;
+            }
+
+            $normalized[] = $table;
+        }
+
+        if ($apply_filter) {
+            $normalized = apply_filters('olama_school_backup_plugin_tables', $normalized);
+        }
+
+        $normalized = array_values(array_unique(array_filter((array) $normalized)));
+
+        sort($normalized, SORT_NATURAL);
+
+        return $normalized;
     }
 
     /**
@@ -133,72 +132,16 @@ class Olama_School_Backup
             'version' => OLAMA_SCHOOL_VERSION,
             'timestamp' => current_time('mysql'),
             'site_url' => get_site_url(),
-            'parts' => array()
+            'parts' => array(),
+            'options' => self::collect_options_data()
         );
 
-        // --- PART 1: Olama School Core ---
-        if (class_exists('Olama_School_DB') && method_exists('Olama_School_DB', 'get_tables')) {
-            $tables = Olama_School_DB::get_tables();
-            // Include core user data in the main plugin part
-            $tables[] = 'users';
-            $tables[] = 'usermeta';
-
-            $backup_data['parts']['olama_school'] = array(
-                'label' => 'Olama School Core & Users',
-                'tables' => self::collect_tables_data($tables)
-            );
-        }
-
-        // --- PART 2: Olama Exam Engine ---
-        if (class_exists('Olama_Exam_DB') && method_exists('Olama_Exam_DB', 'get_tables')) {
-            $tables = Olama_Exam_DB::get_tables();
-            $backup_data['parts']['olama_exam_engine'] = array(
-                'label' => 'Olama Exam Engine',
-                'tables' => self::collect_tables_data($tables)
-            );
-        }
-
-        // --- PART 3: Olama Registration ---
-        $registration_tables = array(
-            'olama_reg_academic_history',
-            'olama_reg_financial'
+        $backup_data['parts']['olama_ecosystem'] = array(
+            'label' => 'Olama School Ecosystem',
+            'tables' => self::collect_tables_data(self::get_plugin_tables())
         );
-        $reg_data = self::collect_tables_data($registration_tables);
-        if (!empty($reg_data)) {
-            $backup_data['parts']['olama_registration'] = array(
-                'label' => 'Olama Registration',
-                'tables' => $reg_data
-            );
-        }
 
-        // --- PART 4: Olama Stores ---
-        $store_tables = array(
-            'os_categories',
-            'os_units',
-            'os_custom_models',
-            'os_fabrics',
-            'os_colors',
-            'os_sizes',
-            'os_providers',
-            'os_items',
-            'os_warehouses',
-            'os_stock',
-            'os_stock_movements',
-            'os_inventory_counts',
-            'os_inventory_count_lines',
-            'os_assignments',
-            'os_assignment_returns',
-            'os_transfers',
-            'os_student_uniform_sizes',
-            'os_audit_log'
-        );
-        $store_data = self::collect_tables_data($store_tables);
-        if (!empty($store_data)) {
-            $backup_data['parts']['olama_stores'] = array(
-                'label' => 'Olama Stores',
-                'tables' => $store_data
-            );
-        }
+        $backup_data = apply_filters('olama_school_backup_data', $backup_data);
 
         return $backup_data;
     }
@@ -211,14 +154,66 @@ class Olama_School_Backup
         global $wpdb;
         $data = array();
 
-        foreach ($tables as $table) {
+        foreach (self::normalize_table_list($tables) as $table) {
             $full_table_name = $wpdb->prefix . $table;
-            if ($wpdb->get_var("SHOW TABLES LIKE '$full_table_name'") === $full_table_name) {
-                $data[$table] = $wpdb->get_results("SELECT * FROM $full_table_name", ARRAY_A);
+            if (self::table_exists($table)) {
+                $data[$table] = $wpdb->get_results("SELECT * FROM `" . esc_sql($full_table_name) . "`", ARRAY_A);
             }
         }
 
         return $data;
+    }
+
+    /**
+     * Collect WordPress options owned by Olama plugins.
+     */
+    private static function collect_options_data()
+    {
+        global $wpdb;
+
+        $options = array();
+        foreach (self::get_olama_data_prefixes() as $data_prefix) {
+            $like = $wpdb->esc_like($data_prefix) . '%';
+            $rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT option_name, option_value, autoload FROM {$wpdb->options} WHERE option_name LIKE %s",
+                    $like
+                ),
+                ARRAY_A
+            );
+
+            foreach ((array) $rows as $row) {
+                $name = $row['option_name'];
+                if (strpos($name, '_transient_') !== false || strpos($name, '_site_transient_') !== false) {
+                    continue;
+                }
+
+                $options[$name] = array(
+                    'value' => $row['option_value'],
+                    'autoload' => $row['autoload'],
+                );
+            }
+        }
+
+        ksort($options, SORT_NATURAL);
+
+        return apply_filters('olama_school_backup_options', $options);
+    }
+
+    /**
+     * Check for a plugin-relative table name.
+     */
+    private static function table_exists($table)
+    {
+        global $wpdb;
+
+        if (!preg_match('/^[A-Za-z0-9_]+$/', $table)) {
+            return false;
+        }
+
+        $full_table_name = $wpdb->prefix . $table;
+
+        return $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $full_table_name)) === $full_table_name;
     }
 
     /**
@@ -229,10 +224,14 @@ class Olama_School_Backup
         global $wpdb;
         $full_table_name = $wpdb->prefix . $table;
 
+        if (!self::table_exists($table)) {
+            return true;
+        }
+
         $wpdb->query('SET FOREIGN_KEY_CHECKS=0');
         // TRUNCATE auto-commits, use DELETE for transaction safety
-        $wpdb->query("DELETE FROM $full_table_name");
-        $result = $wpdb->query("ALTER TABLE $full_table_name AUTO_INCREMENT = 1");
+        $wpdb->query("DELETE FROM `" . esc_sql($full_table_name) . "`");
+        $result = $wpdb->query("ALTER TABLE `" . esc_sql($full_table_name) . "` AUTO_INCREMENT = 1");
         $wpdb->query('SET FOREIGN_KEY_CHECKS=1');
 
         return $result;
@@ -245,6 +244,10 @@ class Olama_School_Backup
     {
         global $wpdb;
         $full_table_name = $wpdb->prefix . $table;
+
+        if (!self::table_exists($table)) {
+            return true;
+        }
 
         if (!is_array($rows) || empty($rows)) {
             return true;
@@ -319,6 +322,16 @@ class Olama_School_Backup
         global $wpdb;
         $data = json_decode($json_data, true);
 
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return new WP_Error('invalid_json', __('Invalid JSON format.', 'olama-school'));
+        }
+
+        $table_name = self::normalize_table_list(array($table_name), false);
+        $table_name = reset($table_name);
+        if (!$table_name) {
+            return new WP_Error('invalid_table', __('Invalid table name.', 'olama-school'));
+        }
+
         // Find the rows
         $rows = array();
         if ($part_id === 'legacy') {
@@ -331,7 +344,7 @@ class Olama_School_Backup
         $full_table_name = $wpdb->prefix . $table_name;
 
         // Check if table exists
-        if ($wpdb->get_var("SHOW TABLES LIKE '$full_table_name'") !== $full_table_name) {
+        if (!self::table_exists($table_name)) {
             return true; // Not a fatal error, just skip
         }
 
@@ -341,12 +354,12 @@ class Olama_School_Backup
         try {
             // Wipe & Preserve
             if ($table_name === 'users') {
-                $wpdb->query($wpdb->prepare("DELETE FROM $full_table_name WHERE ID != %d", $current_user_id));
+                $wpdb->query($wpdb->prepare("DELETE FROM `" . esc_sql($full_table_name) . "` WHERE ID != %d", $current_user_id));
                 $rows = array_filter($rows, function ($r) use ($current_user_id) {
                     return (int)$r['ID'] !== (int)$current_user_id;
                 });
             } else if ($table_name === 'usermeta') {
-                $wpdb->query($wpdb->prepare("DELETE FROM $full_table_name WHERE user_id != %d", $current_user_id));
+                $wpdb->query($wpdb->prepare("DELETE FROM `" . esc_sql($full_table_name) . "` WHERE user_id != %d", $current_user_id));
                 $rows = array_filter($rows, function ($r) use ($current_user_id) {
                     return (int)$r['user_id'] !== (int)$current_user_id;
                 });
@@ -357,8 +370,8 @@ class Olama_School_Backup
                     return $r;
                 }, $rows);
             } else {
-                $wpdb->query("DELETE FROM $full_table_name");
-                $wpdb->query("ALTER TABLE $full_table_name AUTO_INCREMENT = 1");
+                $wpdb->query("DELETE FROM `" . esc_sql($full_table_name) . "`");
+                $wpdb->query("ALTER TABLE `" . esc_sql($full_table_name) . "` AUTO_INCREMENT = 1");
             }
 
             // Batch insert the rows
@@ -380,6 +393,74 @@ class Olama_School_Backup
     }
 
     /**
+     * Restore all plugin options stored in the backup.
+     */
+    public static function restore_options($json_data)
+    {
+        $data = json_decode($json_data, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return new WP_Error('invalid_json', __('Invalid JSON format.', 'olama-school'));
+        }
+
+        if (empty($data['options']) || !is_array($data['options'])) {
+            return true;
+        }
+
+        foreach ($data['options'] as $option_name => $option_data) {
+            if (!self::is_allowed_option_name($option_name)) {
+                continue;
+            }
+
+            $raw_value = is_array($option_data) && array_key_exists('value', $option_data)
+                ? $option_data['value']
+                : $option_data;
+
+            $autoload = null;
+            if (is_array($option_data) && array_key_exists('autoload', $option_data)) {
+                $autoload = in_array($option_data['autoload'], array('yes', 'on', 'auto-on', '1', 1, true), true);
+            }
+
+            update_option($option_name, maybe_unserialize($raw_value), $autoload);
+        }
+
+        return true;
+    }
+
+    /**
+     * Full restore helper used by WP-CLI and any non-AJAX callers.
+     */
+    public static function restore_backup($json_data)
+    {
+        $index = self::get_restore_index($json_data);
+        if (is_wp_error($index)) {
+            return $index;
+        }
+
+        foreach ($index as $item) {
+            $result = self::restore_single_table($json_data, $item['part'], $item['table']);
+            if (is_wp_error($result)) {
+                return $result;
+            }
+        }
+
+        return self::restore_options($json_data);
+    }
+
+    /**
+     * Only restore options that belong to Olama plugin namespaces.
+     */
+    private static function is_allowed_option_name($option_name)
+    {
+        foreach (self::get_olama_data_prefixes() as $data_prefix) {
+            if (strpos($option_name, $data_prefix) === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Batch insert multiple rows in a single query
      * Much faster than individual inserts for large datasets
      */
@@ -392,7 +473,7 @@ class Olama_School_Backup
         }
 
         // Filter out columns that don't exist in the current database schema
-        $table_columns = $wpdb->get_col("DESCRIBE $table", 0);
+        $table_columns = $wpdb->get_col("DESCRIBE `" . esc_sql($table) . "`", 0);
         $valid_columns = $table_columns ? array_flip($table_columns) : array();
 
         // Get columns from first row
