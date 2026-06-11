@@ -36,7 +36,7 @@ class Academy_Media_AJAX
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
 
-        if (!Olama_School_Permissions::can('olama_manage_curriculum_list')) {
+        if (!Olama_School_Permissions::can('olama_access_media_library')) {
             wp_send_json_error(__('Unauthorized access', 'olama-school'));
         }
 
@@ -99,7 +99,7 @@ class Academy_Media_AJAX
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
 
-        if (!Olama_School_Permissions::can('olama_manage_curriculum_upload')) {
+        if (!Olama_School_Permissions::can('olama_media_upload_video')) {
             wp_send_json_error(__('Unauthorized access', 'olama-school'));
         }
 
@@ -237,7 +237,7 @@ class Academy_Media_AJAX
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
 
-        if (!Olama_School_Permissions::can('olama_manage_curriculum_upload')) {
+        if (!Olama_School_Permissions::can('olama_media_upload_video')) {
             wp_send_json_error(__('Unauthorized access', 'olama-school'));
         }
 

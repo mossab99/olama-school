@@ -22,9 +22,13 @@ class Olama_School_Permissions
         // Skip if capabilities already initialized and exams caps are added
         $initialized = get_option('olama_school_caps_version') === OLAMA_SCHOOL_VERSION;
         $exams_added = get_option('olama_school_exams_caps_added');
-        $roles_exist = get_role('supervisor') && get_role('teacher') && get_role('assistant') && get_role('accountant');
+        $teacher_role = get_role('teacher');
+        $roles_exist = get_role('supervisor') && $teacher_role && get_role('assistant') && get_role('accountant');
+        $teacher_media_caps_added = $teacher_role &&
+            $teacher_role->has_cap('olama_access_media_library') &&
+            $teacher_role->has_cap('olama_media_upload_video');
 
-        if ($initialized && $exams_added && $roles_exist) {
+        if ($initialized && $exams_added && $roles_exist && $teacher_media_caps_added) {
             return;
         }
 
