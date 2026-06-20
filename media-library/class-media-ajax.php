@@ -98,6 +98,10 @@ class Academy_Media_AJAX
      */
     public function upload_video()
     {
+        // Prevent PHP timeout and disconnection during direct uploads
+        set_time_limit(0);
+        ignore_user_abort(true);
+
         check_ajax_referer('olama_admin_nonce', 'nonce');
 
         if (!Olama_School_Permissions::can('olama_media_upload_video')) {

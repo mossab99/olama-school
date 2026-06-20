@@ -144,8 +144,8 @@ class Academy_Media_Library
         $upload_max_bytes = $to_bytes($upload_max);
         $post_max_bytes = $to_bytes($post_max);
 
-        // Effective max = configured limit (chunked upload bypasses PHP limits)
-        $effective_max = $max_size_bytes;
+        // Effective max = smallest of configured max size and server PHP limits
+        $effective_max = min($max_size_bytes, $upload_max_bytes, $post_max_bytes);
         $effective_max_human = size_format($effective_max);
         $server_limits_bytes = array_filter([$upload_max_bytes, $post_max_bytes]);
         $server_limit_bytes = !empty($server_limits_bytes) ? min($server_limits_bytes) : 0;
