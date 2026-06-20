@@ -1,4 +1,3 @@
-@'
 name: Deploy Olama School Plugin to Contabo
 
 on:
@@ -59,4 +58,3 @@ jobs:
             find "$PLUGIN_DIR" -type f -exec chmod 644 {} \;
 
             echo "Olama School deployment completed successfully"
-'@ | Set-Content "olama-school\.github\workflows\deploy.yml" -Encoding UTF8
