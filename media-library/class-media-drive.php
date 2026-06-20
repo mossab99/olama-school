@@ -20,12 +20,29 @@ class Academy_Media_Drive
 
         $client = $this->get_client();
         if ($client) {
-            $refresh_token = $settings['refresh_token'] ?? '';
-            if ($refresh_token) {
-                try {
-                    $client->fetchAccessTokenWithRefreshToken($refresh_token);
-                } catch (Exception $e) {
-                    error_log('Google Drive Token Refresh Error: ' . $e->getMessage());
+            $access_token = $settings['access_token'] ?? null;
+            if ($access_token) {
+                $client->setAccessToken($access_token);
+            }
+
+            if ($client->isAccessTokenExpired()) {
+                $refresh_token = $settings['refresh_token'] ?? '';
+                if ($refresh_token) {
+                    try {
+                        $new_token = $client->fetchAccessTokenWithRefreshToken($refresh_token);
+                        if ($new_token && !isset($new_token['error'])) {
+                            // Merge and save new token details into settings
+                            $settings = get_option('academy_media_library_settings', []);
+                            $settings['access_token'] = $new_token;
+                            // Ensure the refresh token is kept if Google didn't return a new one in this response
+                            if (!isset($settings['access_token']['refresh_token']) && $refresh_token) {
+                                $settings['access_token']['refresh_token'] = $refresh_token;
+                            }
+                            update_option('academy_media_library_settings', $settings);
+                        }
+                    } catch (Exception $e) {
+                        error_log('Google Drive Token Refresh Error: ' . $e->getMessage());
+                    }
                 }
             }
             $this->service = new Google_Service_Drive($client);
@@ -78,12 +95,19 @@ class Academy_Media_Drive
                 return new WP_Error('auth_error', $token['error_description'] ?? $token['error']);
             }
 
+            $settings = get_option('academy_media_library_settings', []);
+            $settings['access_token'] = $token;
+            
             if (isset($token['refresh_token'])) {
-                $settings = get_option('academy_media_library_settings', []);
                 $settings['refresh_token'] = $token['refresh_token'];
                 update_option('academy_media_library_settings', $settings);
                 return true;
             } else {
+                // If we already have a refresh token in settings, we can proceed even if Google didn't return a new one (sometimes happens if consent wasn't forced)
+                if (!empty($settings['refresh_token'])) {
+                    update_option('academy_media_library_settings', $settings);
+                    return true;
+                }
                 return new WP_Error('no_refresh_token', __('No refresh token returned. Revoke access and try again.', 'olama-school'));
             }
         } catch (Exception $e) {

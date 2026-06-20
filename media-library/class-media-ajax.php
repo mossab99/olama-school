@@ -372,18 +372,21 @@ class Academy_Media_AJAX
         $client_id = sanitize_text_field($_POST['client_id'] ?? '');
         $client_secret = sanitize_text_field($_POST['client_secret'] ?? '');
         $refresh_token = $current_settings['refresh_token'] ?? '';
+        $access_token = $current_settings['access_token'] ?? null;
 
-        // If credentials changed, clear the refresh token as it is tied to the old credentials
+        // If credentials changed, clear the refresh token and access token as they are tied to the old credentials
         if (($current_settings['client_id'] ?? '') !== $client_id || ($current_settings['client_secret'] ?? '') !== $client_secret) {
             $refresh_token = '';
+            $access_token = null;
         }
 
         $settings = [
             'client_id' => $client_id,
             'client_secret' => $client_secret,
             'root_folder_id' => trim(sanitize_text_field($_POST['root_folder_id'] ?? ''), " \t\n\r\0\x0B."),
-            'max_file_size' => intval($_POST['max_file_size'] ?? 2048),
-            'refresh_token' => $refresh_token
+            'max_file_size' => intval($_POST['max_file_size'] ?? 100),
+            'refresh_token' => $refresh_token,
+            'access_token' => $access_token
         ];
 
         update_option('academy_media_library_settings', $settings);
