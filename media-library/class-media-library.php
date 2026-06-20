@@ -117,11 +117,11 @@ class Academy_Media_Library
             return;
         }
 
-        wp_enqueue_style('academy-media-library-css', ACADEMY_MEDIA_URL . 'assets/css/media-library.css', [], '1.0.5');
-        wp_enqueue_script('academy-media-library-js', ACADEMY_MEDIA_URL . 'assets/js/media-library.js', ['jquery'], '1.0.5', true);
+        wp_enqueue_style('academy-media-library-css', ACADEMY_MEDIA_URL . 'assets/css/media-library.css', [], '1.0.6');
+        wp_enqueue_script('academy-media-library-js', ACADEMY_MEDIA_URL . 'assets/js/media-library.js', ['jquery'], '1.0.6', true);
 
         $settings = get_option('academy_media_library_settings', []);
-        $max_size_mb = intval($settings['max_file_size'] ?? 100);
+        $max_size_mb = intval($settings['max_file_size'] ?? 2048);
         $max_size_bytes = $max_size_mb * 1024 * 1024;
 
         // Get server limits and convert to bytes
@@ -147,6 +147,13 @@ class Academy_Media_Library
         // Effective max = configured limit (chunked upload bypasses PHP limits)
         $effective_max = $max_size_bytes;
         $effective_max_human = size_format($effective_max);
+        $server_limits_bytes = array_filter([$upload_max_bytes, $post_max_bytes]);
+        $server_limit_bytes = !empty($server_limits_bytes) ? min($server_limits_bytes) : 0;
+        $chunk_size = 10 * 1024 * 1024;
+
+        if ($server_limit_bytes > 0) {
+            $chunk_size = min($chunk_size, max(1024 * 1024, (int) floor($server_limit_bytes * 0.7)));
+        }
 
         wp_localize_script('academy-media-library-js', 'academyMedia', [
             'ajaxurl' => admin_url('admin-ajax.php', 'relative'),
@@ -155,6 +162,7 @@ class Academy_Media_Library
             'current_user_id' => get_current_user_id(),
             'max_file_size' => $effective_max,
             'max_file_size_human' => $effective_max_human,
+            'chunk_size' => $chunk_size,
             'server_limits' => [
                 'upload_max' => $upload_max,
                 'post_max' => $post_max

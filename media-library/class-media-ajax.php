@@ -128,7 +128,7 @@ class Academy_Media_AJAX
 
             // 1. File Type & Size Validation
             $settings = get_option('academy_media_library_settings', []);
-            $max_size_mb = intval($settings['max_file_size'] ?? 100);
+            $max_size_mb = intval($settings['max_file_size'] ?? 2048);
             $max_size_bytes = $max_size_mb * 1024 * 1024;
 
             if ($file['size'] > $max_size_bytes) {
@@ -382,7 +382,7 @@ class Academy_Media_AJAX
             'client_id' => $client_id,
             'client_secret' => $client_secret,
             'root_folder_id' => trim(sanitize_text_field($_POST['root_folder_id'] ?? ''), " \t\n\r\0\x0B."),
-            'max_file_size' => intval($_POST['max_file_size'] ?? 100),
+            'max_file_size' => intval($_POST['max_file_size'] ?? 2048),
             'refresh_token' => $refresh_token
         ];
 
@@ -531,7 +531,7 @@ class Academy_Media_AJAX
 
                 // 1. File Type & Size Validation
                 $settings = get_option('academy_media_library_settings', []);
-                $max_size_mb = intval($settings['max_file_size'] ?? 100);
+                $max_size_mb = intval($settings['max_file_size'] ?? 2048);
                 $max_size_bytes = $max_size_mb * 1024 * 1024;
                 $merged_file_size = filesize($merged_file_path);
 

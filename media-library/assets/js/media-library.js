@@ -399,7 +399,7 @@ jQuery(document).ready(function ($) {
             return;
         }
 
-        const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB chunks (server supports 512MB)
+        const CHUNK_SIZE = academyMedia.chunk_size || (10 * 1024 * 1024);
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
         const fileUuid = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
         

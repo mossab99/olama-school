@@ -226,8 +226,11 @@ $grades = Olama_School_Grade::get_grades();
                                 </th>
                                 <td>
                                     <input type="number" id="max_file_size" name="max_file_size"
-                                        value="<?php echo esc_attr($settings['max_file_size'] ?? 100); ?>"
+                                        value="<?php echo esc_attr($settings['max_file_size'] ?? 2048); ?>"
                                         class="small-text">
+                                    <p class="description">
+                                        <?php _e('Maximum video size in megabytes. The default is 2048 MB.', 'olama-school'); ?>
+                                    </p>
                                 </td>
                             </tr>
                         </table>
