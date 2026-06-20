@@ -144,8 +144,8 @@ class Academy_Media_Library
         $upload_max_bytes = $to_bytes($upload_max);
         $post_max_bytes = $to_bytes($post_max);
 
-        // Effective max = the smallest of all three limits
-        $effective_max = min($max_size_bytes, $upload_max_bytes, $post_max_bytes);
+        // Effective max = configured limit (chunked upload bypasses PHP limits)
+        $effective_max = $max_size_bytes;
         $effective_max_human = size_format($effective_max);
 
         wp_localize_script('academy-media-library-js', 'academyMedia', [

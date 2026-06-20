@@ -399,71 +399,100 @@ jQuery(document).ready(function ($) {
             return;
         }
 
-        const formData = new FormData();
-        formData.append('action', 'academy_upload_media_video');
-        formData.append('nonce', academyMedia.nonce);
-        formData.append('video_file', file);
-        formData.append('id', lessonData.recordId || '');  // If we are replacing
-        formData.append('lesson_id', lessonData.lessonId);
-        formData.append('unit_id', lessonData.unitId);
-        formData.append('lesson_name', lessonData.lessonName);
-        formData.append('lesson_number', lessonData.lessonNumber);
-        formData.append('unit_name', lessonData.unitName);
-        if (lessonData.part) {
-            formData.append('part_number', lessonData.part);
-        }
-        formData.append('grade_name', $('#filter-grade option:selected').data('name'));
-        formData.append('subject_name', $('#filter-subject option:selected').data('name'));
-        formData.append('semester_name', $('#filter-semester-name').val());
-        formData.append('academic_year_name', $('#filter-year-name').val());
+        const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB chunks
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+        const fileUuid = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        
+        let chunkIndex = 0;
 
-        $.ajax({
-            url: academyMedia.ajaxurl,
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            xhr: function () {
-                const xhr = new window.XMLHttpRequest();
-                xhr.upload.addEventListener("progress", function (evt) {
-                    if (evt.lengthComputable) {
-                        const percentComplete = Math.round((evt.loaded / evt.total) * 95); // Keep some room for server processing
-                        $progressBar.css('width', percentComplete + '%');
-                    }
-                }, false);
-                return xhr;
-            },
-            success: function (response) {
-                if (response.success) {
-                    $progressBar.css('width', '100%');
-                    $statusText.text(academyMedia.i18n.status_completed);
-                    state.successCount++;
-                } else {
-                    $progressBar.addClass('error').css('width', '100%');
-                    $statusText.addClass('error').text(response.data || academyMedia.i18n.error);
-                    state.errorCount++;
-                }
-            },
-            error: function (xhr) {
-                $progressBar.addClass('error').css('width', '100%');
-                if (xhr.status === 413) {
-                    $statusText.addClass('error').text(academyMedia.i18n.payload_too_large);
-                } else {
-                    $statusText.addClass('error').text(academyMedia.i18n.error);
-                }
-                state.errorCount++;
-            },
-            complete: function () {
-                // Don't hide progress immediately so user can see what happened
-                setTimeout(() => {
-                    if (!$statusText.hasClass('error')) {
-                        $progressCont.fadeOut(1000);
-                    }
-                }, 2000);
+        function uploadNextChunk() {
+            const start = chunkIndex * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const chunk = file.slice(start, end);
 
-                if (callback) callback();
+            const formData = new FormData();
+            formData.append('action', 'academy_upload_media_video_chunk');
+            formData.append('nonce', academyMedia.nonce);
+            formData.append('file_uuid', fileUuid);
+            formData.append('chunk_index', chunkIndex);
+            formData.append('total_chunks', totalChunks);
+            formData.append('video_chunk', chunk, file.name);
+            formData.append('filename', file.name);
+
+            // Add all other lesson metadata
+            formData.append('id', lessonData.recordId || '');
+            formData.append('lesson_id', lessonData.lessonId);
+            formData.append('unit_id', lessonData.unitId);
+            formData.append('lesson_name', lessonData.lessonName);
+            formData.append('lesson_number', lessonData.lessonNumber);
+            formData.append('unit_name', lessonData.unitName);
+            if (lessonData.part) {
+                formData.append('part_number', lessonData.part);
             }
-        });
+            formData.append('grade_name', $('#filter-grade option:selected').data('name'));
+            formData.append('subject_name', $('#filter-subject option:selected').data('name'));
+            formData.append('semester_name', $('#filter-semester-name').val());
+            formData.append('academic_year_name', $('#filter-year-name').val());
+
+            $.ajax({
+                url: academyMedia.ajaxurl,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhr: function () {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener("progress", function (evt) {
+                        if (evt.lengthComputable) {
+                            const chunkUploadedBytes = evt.loaded;
+                            const totalUploadedBytes = (chunkIndex * CHUNK_SIZE) + chunkUploadedBytes;
+                            const percentComplete = Math.min(Math.round((totalUploadedBytes / file.size) * 98), 98); // keep some room for final server merging
+                            $progressBar.css('width', percentComplete + '%');
+                        }
+                    }, false);
+                    return xhr;
+                },
+                success: function (response) {
+                    if (response.success) {
+                        if (response.data && response.data.completed) {
+                            $progressBar.css('width', '100%');
+                            $statusText.text(academyMedia.i18n.status_completed);
+                            state.successCount++;
+                            
+                            // Don't hide progress immediately so user can see what happened
+                            setTimeout(() => {
+                                $progressCont.fadeOut(1000);
+                            }, 2000);
+
+                            if (callback) callback();
+                        } else {
+                            chunkIndex++;
+                            if (chunkIndex < totalChunks) {
+                                uploadNextChunk();
+                            }
+                        }
+                    } else {
+                        $progressBar.addClass('error').css('width', '100%');
+                        $statusText.addClass('error').text(response.data || academyMedia.i18n.error);
+                        state.errorCount++;
+                        if (callback) callback();
+                    }
+                },
+                error: function (xhr) {
+                    $progressBar.addClass('error').css('width', '100%');
+                    if (xhr.status === 413) {
+                        $statusText.addClass('error').text(academyMedia.i18n.payload_too_large);
+                    } else {
+                        $statusText.addClass('error').text(academyMedia.i18n.error);
+                    }
+                    state.errorCount++;
+                    if (callback) callback();
+                }
+            });
+        }
+
+        // Start chunked upload
+        uploadNextChunk();
     }
 
 
