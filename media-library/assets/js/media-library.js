@@ -386,8 +386,8 @@ jQuery(document).ready(function ($) {
         const $statusText = $progressCont.find('.status-text');
 
         $progressCont.show();
-        $progressBar.removeClass('error').css('width', '5%');
-        $statusText.removeClass('error').text(academyMedia.i18n.uploading + ' (' + file.name + ')');
+        $progressBar.removeClass('error').css('width', '0%');
+        $statusText.removeClass('error').text(academyMedia.i18n.preparing_upload + ' (' + file.name + ')');
 
         // 1. Client-side Size Validation
         if (academyMedia.max_file_size && file.size > academyMedia.max_file_size) {
@@ -404,11 +404,37 @@ jQuery(document).ready(function ($) {
         const fileUuid = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
         
         let chunkIndex = 0;
+        let uploadedBytes = 0;
+        let lastPercent = 0;
+
+        function updateProgress(percent, text) {
+            lastPercent = Math.max(lastPercent, percent);
+            $progressBar.css('width', lastPercent + '%');
+            if (text) {
+                $statusText.text(text);
+            }
+        }
+
+        function failUpload(message) {
+            $progressBar.addClass('error').css('width', '100%');
+            $statusText.addClass('error').text(message || academyMedia.i18n.error);
+            state.errorCount++;
+            if (callback) callback();
+        }
 
         function uploadNextChunk() {
             const start = chunkIndex * CHUNK_SIZE;
             const end = Math.min(start + CHUNK_SIZE, file.size);
             const chunk = file.slice(start, end);
+            const currentChunkNumber = chunkIndex + 1;
+
+            updateProgress(
+                lastPercent,
+                academyMedia.i18n.uploading_chunk
+                    .replace('%1$s', currentChunkNumber)
+                    .replace('%2$s', totalChunks)
+                    + ' (' + file.name + ')'
+            );
 
             const formData = new FormData();
             formData.append('action', 'academy_upload_media_video_chunk');
@@ -444,10 +470,14 @@ jQuery(document).ready(function ($) {
                     const xhr = new window.XMLHttpRequest();
                     xhr.upload.addEventListener("progress", function (evt) {
                         if (evt.lengthComputable) {
-                            const chunkUploadedBytes = evt.loaded;
-                            const totalUploadedBytes = (chunkIndex * CHUNK_SIZE) + chunkUploadedBytes;
-                            const percentComplete = Math.min(Math.round((totalUploadedBytes / file.size) * 98), 98); // keep some room for final server merging
-                            $progressBar.css('width', percentComplete + '%');
+                            const totalUploadedBytes = uploadedBytes + evt.loaded;
+                            const percentComplete = Math.min(Math.round((totalUploadedBytes / file.size) * 90), 90);
+                            updateProgress(percentComplete);
+                        }
+                    }, false);
+                    xhr.upload.addEventListener("load", function () {
+                        if (currentChunkNumber === totalChunks) {
+                            updateProgress(95, academyMedia.i18n.finalizing_upload + ' (' + file.name + ')');
                         }
                     }, false);
                     return xhr;
@@ -455,8 +485,7 @@ jQuery(document).ready(function ($) {
                 success: function (response) {
                     if (response.success) {
                         if (response.data && response.data.completed) {
-                            $progressBar.css('width', '100%');
-                            $statusText.text(academyMedia.i18n.status_completed);
+                            updateProgress(100, academyMedia.i18n.status_completed);
                             state.successCount++;
                             
                             // Don't hide progress immediately so user can see what happened
@@ -466,27 +495,30 @@ jQuery(document).ready(function ($) {
 
                             if (callback) callback();
                         } else {
+                            uploadedBytes = end;
+                            updateProgress(
+                                Math.min(Math.round((uploadedBytes / file.size) * 90), 90),
+                                academyMedia.i18n.uploading_chunk
+                                    .replace('%1$s', currentChunkNumber)
+                                    .replace('%2$s', totalChunks)
+                            );
                             chunkIndex++;
                             if (chunkIndex < totalChunks) {
                                 uploadNextChunk();
+                            } else {
+                                failUpload(academyMedia.i18n.finalize_failed);
                             }
                         }
                     } else {
-                        $progressBar.addClass('error').css('width', '100%');
-                        $statusText.addClass('error').text(response.data || academyMedia.i18n.error);
-                        state.errorCount++;
-                        if (callback) callback();
+                        failUpload(response.data || academyMedia.i18n.error);
                     }
                 },
                 error: function (xhr) {
-                    $progressBar.addClass('error').css('width', '100%');
                     if (xhr.status === 413) {
-                        $statusText.addClass('error').text(academyMedia.i18n.payload_too_large);
+                        failUpload(academyMedia.i18n.payload_too_large);
                     } else {
-                        $statusText.addClass('error').text(academyMedia.i18n.error);
+                        failUpload(academyMedia.i18n.error);
                     }
-                    state.errorCount++;
-                    if (callback) callback();
                 }
             });
         }

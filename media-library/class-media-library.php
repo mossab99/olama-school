@@ -117,8 +117,8 @@ class Academy_Media_Library
             return;
         }
 
-        wp_enqueue_style('academy-media-library-css', ACADEMY_MEDIA_URL . 'assets/css/media-library.css', [], '1.0.6');
-        wp_enqueue_script('academy-media-library-js', ACADEMY_MEDIA_URL . 'assets/js/media-library.js', ['jquery'], '1.0.6', true);
+        wp_enqueue_style('academy-media-library-css', ACADEMY_MEDIA_URL . 'assets/css/media-library.css', [], '1.0.7');
+        wp_enqueue_script('academy-media-library-js', ACADEMY_MEDIA_URL . 'assets/js/media-library.js', ['jquery'], '1.0.7', true);
 
         $settings = get_option('academy_media_library_settings', []);
         $max_size_mb = intval($settings['max_file_size'] ?? 2048);
@@ -170,6 +170,10 @@ class Academy_Media_Library
             'i18n' => [
                 'confirm_delete' => __('Are you sure you want to delete this record?', 'olama-school'),
                 'uploading' => __('Uploading...', 'olama-school'),
+                'preparing_upload' => __('Preparing upload...', 'olama-school'),
+                'uploading_chunk' => __('Uploading part %1$s of %2$s...', 'olama-school'),
+                'finalizing_upload' => __('Processing video and uploading to Google Drive...', 'olama-school'),
+                'finalize_failed' => __('Upload reached the final part but the server did not finish processing it. Please try again.', 'olama-school'),
                 'error' => __('Something went wrong', 'olama-school'),
                 'select' => __(' -- Select -- ', 'olama-school'),
                 'select_all' => __('Please select all filters first.', 'olama-school'),
