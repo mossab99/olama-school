@@ -332,7 +332,7 @@ class Academy_Media_Drive
         ]);
 
         $file_size = filesize($tmp_path);
-        $chunk_size = 5 * 1024 * 1024; // 5MB chunks for Drive upload
+        $chunk_size = 25 * 1024 * 1024; // 25MB chunks for Drive upload (fewer API calls = faster)
 
         // Resumable upload for files > 5MB
         if ($file_size > 5 * 1024 * 1024) {
