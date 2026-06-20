@@ -1,4 +1,4 @@
-name: Deploy Olama School Plugin to Contabo
+﻿name: Deploy Olama School Plugin to Contabo
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
             BASE_DIR="/home/olama/htdocs/olama.online/wp-content/plugins"
             PLUGIN_DIR="$BASE_DIR/olama-school"
             REPO_URL="https://github.com/mossab99/olama-school.git"
-            BRANCH="master"
+            BRANCH="main"
 
             if [ ! -d "$BASE_DIR" ]; then
               echo "ERROR: WordPress plugins directory not found: $BASE_DIR"
