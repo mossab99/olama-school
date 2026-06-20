@@ -298,13 +298,17 @@ class Academy_Media_Drive
             throw new Exception(__('Google Drive service not initialized', 'olama-school'));
         }
 
+        // Prevent PHP timeout during large uploads to Google Drive
+        set_time_limit(0);
+        ignore_user_abort(true);
+
         $file_metadata = new Google_Service_Drive_DriveFile([
             'name' => $filename,
             'parents' => [$folder_id]
         ]);
 
         $file_size = filesize($tmp_path);
-        $chunk_size = 1 * 1024 * 1024; // 1MB chunks
+        $chunk_size = 5 * 1024 * 1024; // 5MB chunks for Drive upload
 
         // Resumable upload for files > 5MB
         if ($file_size > 5 * 1024 * 1024) {
