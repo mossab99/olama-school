@@ -444,6 +444,8 @@ jQuery(document).ready(function ($) {
             formData.append('total_chunks', totalChunks);
             formData.append('video_chunk', chunk, file.name);
             formData.append('filename', file.name);
+            formData.append('total_size', file.size);
+            formData.append('start_byte', start);
 
             // Add all other lesson metadata
             formData.append('id', lessonData.recordId || '');
@@ -484,11 +486,6 @@ jQuery(document).ready(function ($) {
                 },
                 success: function (response) {
                     if (response.success) {
-                        if (response.data && response.data.ready) {
-                            // All chunks merged on server, now push to Drive
-                            finalizeDriveUpload(response.data, file, lessonData, callback);
-                            return;
-                        }
                         if (response.data && response.data.completed) {
                             updateProgress(100, academyMedia.i18n.status_completed);
                             state.successCount++;
@@ -531,62 +528,6 @@ jQuery(document).ready(function ($) {
         // Start chunked upload
         uploadNextChunk();
     }
-
-    function finalizeDriveUpload(serverData, file, lessonData, callback) {
-        const $progressCont = $(`#progress-${lessonData.lessonId}`);
-        const $progressBar = $progressCont.find('.progress-bar');
-        const $statusText = $progressCont.find('.status-text');
-
-        const formData = new FormData();
-        formData.append('action', 'academy_finalize_drive_upload');
-        formData.append('nonce', academyMedia.nonce);
-        formData.append('merged_file_path', serverData.file_path);
-        formData.append('temp_dir', serverData.temp_dir);
-        formData.append('filename', serverData.filename);
-
-        // Pass all metadata again
-        formData.append('id', lessonData.recordId || '');
-        formData.append('lesson_id', lessonData.lessonId);
-        formData.append('unit_id', lessonData.unitId);
-        formData.append('lesson_name', lessonData.lessonName);
-        formData.append('lesson_number', lessonData.lessonNumber);
-        formData.append('unit_name', lessonData.unitName);
-        if (lessonData.part) formData.append('part_number', lessonData.part);
-        formData.append('grade_name', $('#filter-grade option:selected').data('name'));
-        formData.append('subject_name', $('#filter-subject option:selected').data('name'));
-        formData.append('semester_name', $('#filter-semester-name').val());
-        formData.append('academic_year_name', $('#filter-year-name').val());
-
-        $.ajax({
-            url: academyMedia.ajaxurl,
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function (response) {
-                if (response.success && response.data && response.data.completed) {
-                    $progressBar.css('width', '100%');
-                    $statusText.text(academyMedia.i18n.status_completed);
-                    state.successCount++;
-                    setTimeout(() => $progressCont.fadeOut(1000), 2000);
-                    if (callback) callback();
-                } else {
-                    $progressBar.addClass('error').css('width', '100%');
-                    $statusText.addClass('error').text(response.data || academyMedia.i18n.error);
-                    state.errorCount++;
-                    if (callback) callback();
-                }
-            },
-            error: function (xhr) {
-                $progressBar.addClass('error').css('width', '100%');
-                $statusText.addClass('error').text(xhr.status === 413 ? academyMedia.i18n.payload_too_large : academyMedia.i18n.error);
-                state.errorCount++;
-                if (callback) callback();
-            }
-        });
-    }
-
-
 
     // --- Settings Management ---
     $('#drive-settings-form').on('submit', function (e) {

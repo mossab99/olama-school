@@ -16,7 +16,6 @@ class Academy_Media_AJAX
         add_action('wp_ajax_academy_load_media_curriculum', [$this, 'load_curriculum']);
         add_action('wp_ajax_academy_upload_media_video', [$this, 'upload_video']);
         add_action('wp_ajax_academy_upload_media_video_chunk', [$this, 'upload_video_chunk']);
-        add_action('wp_ajax_academy_finalize_drive_upload', [$this, 'finalize_drive_upload']);
         add_action('wp_ajax_academy_sync_lessons_status', [$this, 'sync_lessons_status']);
 
         // Settings
@@ -450,7 +449,7 @@ class Academy_Media_AJAX
     }
 
     /**
-     * Handle video chunk upload
+     * Handle video chunk upload directly to Google Drive
      */
     public function upload_video_chunk()
     {
@@ -468,8 +467,10 @@ class Academy_Media_AJAX
         $chunk_index = intval($_POST['chunk_index'] ?? 0);
         $total_chunks = intval($_POST['total_chunks'] ?? 0);
         $filename = sanitize_file_name($_POST['filename'] ?? '');
+        $total_size = intval($_POST['total_size'] ?? 0);
+        $start_byte = intval($_POST['start_byte'] ?? 0);
 
-        if (empty($file_uuid) || $total_chunks <= 0 || empty($_FILES['video_chunk'])) {
+        if (empty($file_uuid) || $total_chunks <= 0 || empty($_FILES['video_chunk']) || $total_size <= 0) {
             wp_send_json_error(__('Invalid chunk upload parameters', 'olama-school'));
         }
 
@@ -485,209 +486,126 @@ class Academy_Media_AJAX
         // Run garbage collection
         $this->cleanup_temp_uploads();
 
-        // Save chunk
-        $chunk_path = $temp_dir . '/chunk_' . $chunk_index;
-        if (!move_uploaded_file($chunk_file['tmp_name'], $chunk_path)) {
-            wp_send_json_error(__('Failed to save chunk', 'olama-school'));
-        }
-
-        // Check if all chunks are uploaded
-        $chunks_uploaded = 0;
-        for ($i = 0; $i < $total_chunks; $i++) {
-            if (file_exists($temp_dir . '/chunk_' . $i)) {
-                $chunks_uploaded++;
-            }
-        }
-
-        if ($chunks_uploaded === $total_chunks) {
-            // All chunks uploaded! Merge them.
-            $merged_file_path = $temp_dir . '/merged_' . $filename;
-            $out = fopen($merged_file_path, 'wb');
-            if (!$out) {
-                wp_send_json_error(__('Failed to open output file for merging', 'olama-school'));
-            }
-
-            // FIX: Use 1MB buffer instead of 4KB
-            $bufferSize = 1024 * 1024;
-            for ($i = 0; $i < $total_chunks; $i++) {
-                $chunk_file_path = $temp_dir . '/chunk_' . $i;
-                $in = fopen($chunk_file_path, 'rb');
-                if ($in) {
-                    while ($buff = fread($in, $bufferSize)) {
-                        fwrite($out, $buff);
-                    }
-                    fclose($in);
-                    unlink($chunk_file_path); // remove chunk file immediately
-                }
-            }
-            fclose($out);
-
-            // Return immediately — don't touch Google Drive here
-            wp_send_json_success([
-                'completed' => false,
-                'ready' => true,
-                'file_path' => $merged_file_path,
-                'temp_dir' => $temp_dir,
-                'filename' => $filename,
-                'message' => __('All chunks received. Finalizing...', 'olama-school')
-            ]);
-        } else {
-            wp_send_json_success([
-                'completed' => false,
-                'message' => sprintf(__('Chunk %d uploaded successfully', 'olama-school'), $chunk_index)
-            ]);
-        }
-    }
-
-    /**
-     * Finalize upload to Google Drive after all chunks are merged
-     */
-    public function finalize_drive_upload()
-    {
-        set_time_limit(0);
-        ignore_user_abort(true);
-
-        check_ajax_referer('olama_admin_nonce', 'nonce');
-
-        if (!Olama_School_Permissions::can('olama_media_upload_video')) {
-            wp_send_json_error(__('Unauthorized access', 'olama-school'));
-        }
-
-        $merged_file_path = sanitize_text_field($_POST['merged_file_path'] ?? '');
-        $temp_dir         = sanitize_text_field($_POST['temp_dir'] ?? '');
-        $filename         = sanitize_text_field($_POST['filename'] ?? '');
-
-        // Validate the path is inside our temp directory
-        $upload_dir = wp_upload_dir();
-        $expected_base = wp_normalize_path(trailingslashit($upload_dir['basedir']) . 'academy-media-temp');
-        $normalized_path = wp_normalize_path($merged_file_path);
-        if (strpos($normalized_path, $expected_base) !== 0) {
-            wp_send_json_error(__('Invalid file path', 'olama-school'));
-        }
-
-        if (!file_exists($merged_file_path)) {
-            wp_send_json_error(__('Merged file not found', 'olama-school'));
-        }
-
         try {
-            $lesson_id      = intval($_POST['lesson_id'] ?? 0);
-            $unit_id        = intval($_POST['unit_id'] ?? 0);
-            $record_id      = intval($_POST['id'] ?? 0);
-            $part_number    = intval($_POST['part_number'] ?? 0);
-            $lesson_name    = sanitize_text_field($_POST['lesson_name'] ?? '');
-            $lesson_number  = sanitize_text_field($_POST['lesson_number'] ?? '');
-            $unit_name      = sanitize_text_field($_POST['unit_name'] ?? '');
-            $grade          = sanitize_text_field($_POST['grade_name'] ?? '');
-            $subject        = sanitize_text_field($_POST['subject_name'] ?? '');
-            $semester       = sanitize_text_field($_POST['semester_name'] ?? '');
-            $academic_year  = sanitize_text_field($_POST['academic_year_name'] ?? '');
-
             $drive = new Academy_Media_Drive();
             $db    = new Academy_Media_DB();
 
-            // 1. File Type & Size Validation
-            $settings = get_option('academy_media_library_settings', []);
-            $max_size_mb = intval($settings['max_file_size'] ?? 2048);
-            $max_size_bytes = $max_size_mb * 1024 * 1024;
-            $merged_file_size = filesize($merged_file_path);
+            if ($chunk_index === 0) {
+                // Initialize Google Drive Upload Session
+                $settings = get_option('academy_media_library_settings', []);
+                $max_size_mb = intval($settings['max_file_size'] ?? 2048);
+                $max_size_bytes = $max_size_mb * 1024 * 1024;
 
-            if ($merged_file_size > $max_size_bytes) {
-                throw new Exception(sprintf(__('File is too large. Max size allowed: %sMB', 'olama-school'), $max_size_mb));
-            }
+                if ($total_size > $max_size_bytes) {
+                    throw new Exception(sprintf(__('File is too large. Max size allowed: %sMB', 'olama-school'), $max_size_mb));
+                }
 
-            // Detect mime type
-            $mime_type = '';
-            if (function_exists('mime_content_type')) {
-                $mime_type = mime_content_type($merged_file_path);
-            }
+                $lesson_id      = intval($_POST['lesson_id'] ?? 0);
+                $unit_id        = intval($_POST['unit_id'] ?? 0);
+                $record_id      = intval($_POST['id'] ?? 0);
+                $part_number    = intval($_POST['part_number'] ?? 0);
+                $lesson_name    = sanitize_text_field($_POST['lesson_name'] ?? '');
+                $lesson_number  = sanitize_text_field($_POST['lesson_number'] ?? '');
+                $unit_name      = sanitize_text_field($_POST['unit_name'] ?? '');
+                $grade          = sanitize_text_field($_POST['grade_name'] ?? '');
+                $subject        = sanitize_text_field($_POST['subject_name'] ?? '');
+                $semester       = sanitize_text_field($_POST['semester_name'] ?? '');
+                $academic_year  = sanitize_text_field($_POST['academic_year_name'] ?? '');
 
-            // Fallback mime type
-            if (empty($mime_type)) {
                 $extension = pathinfo($filename, PATHINFO_EXTENSION);
-                $mimes = [
-                    'mp4' => 'video/mp4',
-                    'mov' => 'video/quicktime',
-                    'avi' => 'video/x-msvideo',
-                    'mkv' => 'video/x-matroska',
-                    'wmv' => 'video/x-ms-wmv',
-                    'webm' => 'video/webm'
-                ];
+                if (empty($extension)) $extension = 'mp4';
+                
+                if ($part_number > 0) {
+                    $new_filename = sprintf(__('%s %s %s %s %s.%s', 'olama-school'), __('Lesson', 'olama-school'), $lesson_number, __('Part', 'olama-school'), $part_number, $lesson_name, $extension);
+                } else {
+                    $new_filename = sprintf(__('%s %s %s.%s', 'olama-school'), __('Lesson', 'olama-school'), $lesson_number, $lesson_name, $extension);
+                }
+
+                $path = [$academic_year, $semester, $grade, $subject, $unit_name];
+                $folder_id = $drive->get_or_create_nested_folder($path);
+                
+                if (!$folder_id) {
+                    throw new Exception(__('Failed to create folder structure on Google Drive', 'olama-school'));
+                }
+
+                $mimes = ['mp4' => 'video/mp4', 'mov' => 'video/quicktime', 'avi' => 'video/x-msvideo', 'mkv' => 'video/x-matroska', 'wmv' => 'video/x-ms-wmv', 'webm' => 'video/webm'];
                 $mime_type = $mimes[strtolower($extension)] ?? 'video/mp4';
+
+                $resumeUri = $drive->init_resumable_upload($new_filename, $mime_type, $folder_id, $total_size);
+
+                file_put_contents($temp_dir . '/meta.json', json_encode([
+                    'resumeUri' => $resumeUri,
+                    'folder_id' => $folder_id,
+                    'record_id' => $record_id,
+                    'lesson_id' => $lesson_id,
+                    'unit_id' => $unit_id,
+                    'part_number' => $part_number,
+                    'lesson_name' => $lesson_name,
+                    'unit_name' => $unit_name,
+                    'grade' => $grade,
+                    'subject' => $subject,
+                    'semester' => $semester,
+                    'academic_year' => $academic_year
+                ]));
             }
 
-            $allowed_types = [
-                'video/mp4',
-                'video/quicktime',
-                'video/x-msvideo',
-                'video/x-matroska',
-                'video/x-ms-wmv',
-                'video/webm'
-            ];
-            if (!in_array($mime_type, $allowed_types)) {
-                throw new Exception(__('Only video files are allowed.', 'olama-school'));
+            // Read meta.json
+            $meta_path = $temp_dir . '/meta.json';
+            if (!file_exists($meta_path)) {
+                throw new Exception(__('Upload metadata not found. Please restart the upload.', 'olama-school'));
             }
+            $meta = json_decode(file_get_contents($meta_path), true);
+            $resumeUri = $meta['resumeUri'];
 
-            // 2. Rename File
-            $extension = pathinfo($filename, PATHINFO_EXTENSION);
-            if (empty($extension)) {
-                $extension = 'mp4';
-            }
+            // Upload chunk to Drive
+            $chunk_data = file_get_contents($chunk_file['tmp_name']);
+            $result = $drive->put_upload_chunk($resumeUri, $chunk_data, $start_byte, $total_size);
+            
+            // Delete the local chunk file immediately since it's now on Drive
+            unlink($chunk_file['tmp_name']);
 
-            if ($part_number > 0) {
-                $new_filename = sprintf(__('%s %s %s %s %s.%s', 'olama-school'), __('Lesson', 'olama-school'), $lesson_number, __('Part', 'olama-school'), $part_number, $lesson_name, $extension);
+            if ($result['status'] === 'completed') {
+                // Set permissions
+                $drive->set_file_permissions($result['file_id']);
+
+                // Save to DB
+                $db_data = [
+                    'id' => $meta['record_id'] ?: 0,
+                    'lesson_id' => $meta['lesson_id'],
+                    'unit_id' => $meta['unit_id'],
+                    'grade' => $meta['grade'],
+                    'subject' => $meta['subject'],
+                    'semester' => $meta['semester'],
+                    'academic_year' => $meta['academic_year'],
+                    'lesson_name' => $meta['lesson_name'],
+                    'unit_name' => $meta['unit_name'],
+                    'part_number' => $meta['part_number'] ?: null,
+                    'drive_file_id' => $result['file_id'],
+                    'drive_file_url' => $result['web_view_link'],
+                    'drive_folder_id' => $meta['folder_id'],
+                    'upload_status' => 'completed',
+                    'approval_status' => 'pending',
+                    'uploader_id' => get_current_user_id(),
+                    'uploaded_at' => current_time('mysql')
+                ];
+                $db->upsert_upload_record($db_data);
+
+                // Clean up
+                $this->recursive_rmdir($temp_dir);
+
+                wp_send_json_success([
+                    'completed' => true,
+                    'message' => __('Uploaded successfully', 'olama-school'),
+                    'url' => $result['web_view_link']
+                ]);
             } else {
-                $new_filename = sprintf(__('%s %s %s.%s', 'olama-school'), __('Lesson', 'olama-school'), $lesson_number, $lesson_name, $extension);
+                wp_send_json_success([
+                    'completed' => false,
+                    'message' => sprintf(__('Chunk %d uploaded successfully', 'olama-school'), $chunk_index)
+                ]);
             }
-
-            // 3. Get/Create Folder Structure
-            $path = [$academic_year, $semester, $grade, $subject, $unit_name];
-            $folder_id = $drive->get_or_create_nested_folder($path);
-
-            if (!$folder_id) {
-                throw new Exception(__('Failed to create folder structure on Google Drive', 'olama-school'));
-            }
-
-            // 4. Upload to Drive
-            $result = $drive->upload_video($merged_file_path, $new_filename, $mime_type, $folder_id);
-
-            // 5. Save to DB
-            $db_data = [
-                'id' => $record_id,
-                'lesson_id' => $lesson_id,
-                'unit_id' => $unit_id,
-                'grade' => $grade,
-                'subject' => $subject,
-                'semester' => $semester,
-                'academic_year' => $academic_year,
-                'lesson_name' => $lesson_name,
-                'unit_name' => $unit_name,
-                'part_number' => $part_number ?: null,
-                'drive_file_id' => $result['file_id'],
-                'drive_file_url' => $result['web_view_link'],
-                'drive_folder_id' => $folder_id,
-                'upload_status' => 'completed',
-                'approval_status' => 'pending',
-                'uploader_id' => get_current_user_id(),
-                'uploaded_at' => current_time('mysql')
-            ];
-
-            $db->upsert_upload_record($db_data);
-
-            // Clean up
-            unlink($merged_file_path);
-            $this->recursive_rmdir($temp_dir);
-
-            wp_send_json_success([
-                'completed' => true,
-                'message' => __('Uploaded successfully', 'olama-school'),
-                'url' => $result['web_view_link']
-            ]);
 
         } catch (Exception $e) {
-            if (file_exists($merged_file_path)) {
-                unlink($merged_file_path);
-            }
-            $this->recursive_rmdir($temp_dir);
             wp_send_json_error($e->getMessage());
         }
     }

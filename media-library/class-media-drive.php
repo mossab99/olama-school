@@ -375,11 +375,7 @@ class Academy_Media_Drive
 
         if ($file && isset($file->id)) {
             // Set permissions to anyone with the link can view
-            $permission = new Google_Service_Drive_Permission([
-                'type' => 'anyone',
-                'role' => 'reader',
-            ]);
-            $this->service->permissions->create($file->id, $permission);
+            $this->set_file_permissions($file->id);
 
             // Re-fetch to get webViewLink if not already there
             if (!isset($file->webViewLink)) {
@@ -393,5 +389,99 @@ class Academy_Media_Drive
         }
 
         throw new Exception(__('Upload failed', 'olama-school'));
+    }
+
+    /**
+     * Set file permissions to 'anyone with link can view'
+     */
+    public function set_file_permissions($file_id)
+    {
+        if (!$this->service || empty($file_id)) return;
+        try {
+            $permission = new Google_Service_Drive_Permission([
+                'type' => 'anyone',
+                'role' => 'reader',
+            ]);
+            $this->service->permissions->create($file_id, $permission);
+        } catch (Exception $e) {
+            error_log('Failed to set permissions: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Initialize a resumable upload session and return the Resume URI
+     */
+    public function init_resumable_upload($filename, $mime_type, $folder_id, $total_size)
+    {
+        if (!$this->service) {
+            throw new Exception(__('Google Drive service not initialized', 'olama-school'));
+        }
+
+        $file_metadata = new Google_Service_Drive_DriveFile([
+            'name' => $filename,
+            'parents' => [$folder_id]
+        ]);
+
+        $client = $this->service->getClient();
+        $client->setDefer(true);
+        $request = $this->service->files->create($file_metadata, [
+            'fields' => 'id, webViewLink',
+            'supportsAllDrives' => true
+        ]);
+
+        $media = new Google_Http_MediaFileUpload(
+            $client,
+            $request,
+            $mime_type,
+            null,
+            true,
+            10485760 // Default 10MB chunk, but it doesn't matter for getting the URI
+        );
+        $media->setFileSize($total_size);
+        $resumeUri = $media->getResumeUri();
+        $client->setDefer(false);
+        
+        return $resumeUri;
+    }
+
+    /**
+     * Put a chunk of data to the resumable upload URI
+     */
+    public function put_upload_chunk($resumeUri, $chunk_data, $start_byte, $total_size)
+    {
+        $end_byte = $start_byte + strlen($chunk_data) - 1;
+        
+        $args = [
+            'method' => 'PUT',
+            'headers' => [
+                'Content-Range' => "bytes $start_byte-$end_byte/$total_size",
+                'Content-Length' => (string) strlen($chunk_data),
+                'Content-Type' => 'application/octet-stream'
+            ],
+            'body' => $chunk_data,
+            'timeout' => 120
+        ];
+        
+        $response = wp_remote_request($resumeUri, $args);
+        
+        if (is_wp_error($response)) {
+            throw new Exception($response->get_error_message());
+        }
+        
+        $status_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        
+        if ($status_code == 308) {
+            return ['status' => 'incomplete'];
+        } elseif ($status_code == 200 || $status_code == 201) {
+            $data = json_decode($body, true);
+            return [
+                'status' => 'completed',
+                'file_id' => $data['id'] ?? '',
+                'web_view_link' => $data['webViewLink'] ?? ''
+            ];
+        } else {
+            throw new Exception(sprintf(__('Google Drive API error: %s %s', 'olama-school'), $status_code, $body));
+        }
     }
 }
