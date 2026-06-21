@@ -471,6 +471,7 @@ class Academy_Media_AJAX
         $start_byte = intval($_POST['start_byte'] ?? 0);
 
         if (empty($file_uuid) || $total_chunks <= 0 || empty($_FILES['video_chunk']) || $total_size <= 0) {
+            error_log(sprintf('Upload chunk error: uuid=%s, chunks=%d, file_empty=%d, size=%d', $file_uuid, $total_chunks, empty($_FILES['video_chunk']), $total_size));
             wp_send_json_error(__('Invalid chunk upload parameters', 'olama-school'));
         }
 

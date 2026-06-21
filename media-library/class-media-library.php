@@ -117,8 +117,8 @@ class Academy_Media_Library
             return;
         }
 
-        wp_enqueue_style('academy-media-library-css', ACADEMY_MEDIA_URL . 'assets/css/media-library.css', [], '1.0.7');
-        wp_enqueue_script('academy-media-library-js', ACADEMY_MEDIA_URL . 'assets/js/media-library.js', ['jquery'], '1.0.7', true);
+        wp_enqueue_style('academy-media-library-css', ACADEMY_MEDIA_URL . 'assets/css/media-library.css', [], '1.0.8');
+        wp_enqueue_script('academy-media-library-js', ACADEMY_MEDIA_URL . 'assets/js/media-library.js', ['jquery'], '1.0.8', true);
 
         $settings = get_option('academy_media_library_settings', []);
         $max_size_mb = intval($settings['max_file_size'] ?? 2048);
