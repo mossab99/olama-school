@@ -224,6 +224,22 @@ function olama_school_translate_strings($translated, $text, $domain)
 add_filter('gettext', 'olama_school_translate_strings', 10, 3);
 
 // Media Library Module
-if (is_admin()) {
+// Phase 1 extraction: when the standalone olama-media-library plugin is active,
+// it owns the media admin page, AJAX handlers, Google Drive upload flow, and diagnostics.
+function olama_school_should_load_legacy_media_module()
+{
+    if (class_exists('Olama_Media_Library_Plugin') || defined('OLAMA_MEDIA_LIBRARY_FILE')) {
+        return false;
+    }
+
+    $active_plugins = (array) get_option('active_plugins', array());
+    if (in_array('olama-media-library/olama-media-library.php', $active_plugins, true)) {
+        return false;
+    }
+
+    return true;
+}
+
+if (is_admin() && olama_school_should_load_legacy_media_module()) {
     require_once OLAMA_SCHOOL_PATH . 'media-library/class-media-library.php';
 }

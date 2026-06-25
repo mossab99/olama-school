@@ -97,6 +97,11 @@ jQuery(document).ready(function ($) {
         });
     });
 
+    // Trigger on load in case browser preserved the selected grade
+    if ($('#filter-grade').val()) {
+        $('#filter-grade').trigger('change');
+    }
+
     // --- Curriculum Loading ---
     $('#btn-load-curriculum').on('click', function () {
         const filters = {
