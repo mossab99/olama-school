@@ -5,7 +5,6 @@
 if (!defined('ABSPATH')) {
     exit;
 }
-<?php
 global $wpdb;
 $global_categories = $wpdb->get_col("SELECT name FROM {$wpdb->prefix}os_categories WHERE is_active = 1 ORDER BY name ASC");
 ?>
@@ -43,7 +42,7 @@ $global_categories = $wpdb->get_col("SELECT name FROM {$wpdb->prefix}os_categori
     <div class="olama-card"
         style="background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 25px;">
         <form method="get" action="">
-            <input type="hidden" name="page" value="olama-school-evaluation">
+            <input type="hidden" name="page" value="<?php echo esc_attr(olama_school_evaluation_admin_page()); ?>">
             <input type="hidden" name="tab" value="evaluation_mgmt">
 
             <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">

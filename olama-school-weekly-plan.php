@@ -22,6 +22,184 @@ define('OLAMA_SCHOOL_PATH', plugin_dir_path(__FILE__));
 define('OLAMA_SCHOOL_URL', plugin_dir_url(__FILE__));
 define('OLAMA_SCHOOL_FILE', __FILE__);
 
+/**
+ * The standalone Exam Management plugin owns the exam module when active.
+ * Checking the active-plugin options makes this independent of plugin load order.
+ */
+function olama_school_should_load_legacy_exam_module()
+{
+    if (defined('OLAMA_EXAM_MANAGEMENT_FILE') || class_exists('Olama_Exam_Management_Plugin', false)) {
+        return false;
+    }
+
+    $plugin = 'olama-exam-management/olama-exam-management.php';
+    if (in_array($plugin, (array) get_option('active_plugins', array()), true)) {
+        return false;
+    }
+
+    if (is_multisite()) {
+        $network_plugins = (array) get_site_option('active_sitewide_plugins', array());
+        if (isset($network_plugins[$plugin])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * The standalone Transportation plugin owns bus management when active.
+ * Checking active-plugin options keeps this independent of plugin load order.
+ */
+function olama_school_should_load_legacy_transportation_module()
+{
+    if (defined('OLAMA_TRANSPORTATION_FILE') || class_exists('Olama_Transportation_Plugin', false)) {
+        return false;
+    }
+
+    $plugin = 'olama-transportation/olama-transportation.php';
+    if (in_array($plugin, (array) get_option('active_plugins', array()), true)) {
+        return false;
+    }
+
+    if (is_multisite()) {
+        $network_plugins = (array) get_site_option('active_sitewide_plugins', array());
+        if (isset($network_plugins[$plugin])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * The standalone KG plugin owns KG session management when active.
+ * Checking active-plugin options keeps this independent of plugin load order.
+ */
+function olama_school_should_load_legacy_kg_module()
+{
+    if (defined('OLAMA_KG_FILE') || class_exists('Olama_KG_Plugin', false)) {
+        return false;
+    }
+
+    $plugin = 'olama-kg/olama-kg.php';
+    if (in_array($plugin, (array) get_option('active_plugins', array()), true)) {
+        return false;
+    }
+
+    if (is_multisite()) {
+        $network_plugins = (array) get_site_option('active_sitewide_plugins', array());
+        if (isset($network_plugins[$plugin])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * The standalone Student Evaluation plugin owns evaluation when active.
+ * Checking active-plugin options keeps this independent of plugin load order.
+ */
+function olama_school_should_load_legacy_student_evaluation_module()
+{
+    if (defined('OLAMA_STUDENT_EVALUATION_FILE') || class_exists('Olama_Student_Evaluation_Plugin', false)) {
+        return false;
+    }
+
+    $plugin = 'olama-student-evaluation/olama-student-evaluation.php';
+    if (in_array($plugin, (array) get_option('active_plugins', array()), true)) {
+        return false;
+    }
+
+    if (is_multisite()) {
+        $network_plugins = (array) get_site_option('active_sitewide_plugins', array());
+        if (isset($network_plugins[$plugin])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Return the evaluation admin page currently responsible for the module.
+ */
+function olama_school_evaluation_admin_page()
+{
+    return olama_school_should_load_legacy_student_evaluation_module()
+        ? 'olama-school-evaluation'
+        : 'olama-student-evaluation';
+}
+
+/**
+ * The standalone Olama Supervision plugin owns academic supervision when active.
+ */
+function olama_school_should_load_legacy_supervision_module()
+{
+    if (defined('OLAMA_SUPERVISION_FILE') || class_exists('Olama_Supervision_Plugin', false)) {
+        return false;
+    }
+
+    $plugin = 'olama-supervision/olama-supervision.php';
+    if (in_array($plugin, (array) get_option('active_plugins', array()), true)) {
+        return false;
+    }
+
+    if (is_multisite()) {
+        $network_plugins = (array) get_site_option('active_sitewide_plugins', array());
+        if (isset($network_plugins[$plugin])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Return the admin page currently responsible for academic supervision.
+ */
+function olama_school_supervision_admin_page()
+{
+    return olama_school_should_load_legacy_supervision_module()
+        ? 'olama-school-supervision'
+        : 'olama-supervision';
+}
+
+/**
+ * The standalone Olama Employees plugin owns shifts and cleaning when active.
+ */
+function olama_school_should_load_legacy_employees_module()
+{
+    if (defined('OLAMA_EMPLOYEES_FILE') || class_exists('Olama_Employees_Plugin', false)) {
+        return false;
+    }
+
+    $plugin = 'olama-employees/olama-employees.php';
+    if (in_array($plugin, (array) get_option('active_plugins', array()), true)) {
+        return false;
+    }
+
+    if (is_multisite()) {
+        $network_plugins = (array) get_site_option('active_sitewide_plugins', array());
+        if (isset($network_plugins[$plugin])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Return the admin page currently responsible for employee follow-up.
+ */
+function olama_school_follow_up_admin_page()
+{
+    return olama_school_should_load_legacy_employees_module()
+        ? 'olama-school-follow-up'
+        : 'olama-employees';
+}
+
 // Load Composer autoloader for PHPSpreadsheet
 if (file_exists(OLAMA_SCHOOL_PATH . 'vendor/autoload.php')) {
     require_once OLAMA_SCHOOL_PATH . 'vendor/autoload.php';
@@ -39,10 +217,14 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-student.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-family.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-curriculum.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-plan.php';
-require_once OLAMA_SCHOOL_PATH . 'includes/class-exam.php';
-require_once OLAMA_SCHOOL_PATH . 'includes/class-exam-attachment.php';
+if (olama_school_should_load_legacy_exam_module()) {
+    require_once OLAMA_SCHOOL_PATH . 'includes/class-exam.php';
+    require_once OLAMA_SCHOOL_PATH . 'includes/class-exam-attachment.php';
+}
 require_once OLAMA_SCHOOL_PATH . 'includes/class-stationary.php';
-require_once OLAMA_SCHOOL_PATH . 'includes/class-bus.php';
+if (olama_school_should_load_legacy_transportation_module()) {
+    require_once OLAMA_SCHOOL_PATH . 'includes/class-bus.php';
+}
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-template.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-curriculum.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ev-record.php';
@@ -67,13 +249,28 @@ require_once OLAMA_SCHOOL_PATH . 'includes/class-backup.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-ajax-handlers.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-supervision-ajax-handlers.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/class-shortcodes.php';
-require_once OLAMA_SCHOOL_PATH . 'includes/class-exam-hall.php';
-require_once OLAMA_SCHOOL_PATH . 'includes/class-exam-hall-ajax.php';
+if (olama_school_should_load_legacy_exam_module()) {
+    require_once OLAMA_SCHOOL_PATH . 'includes/class-exam-hall.php';
+    require_once OLAMA_SCHOOL_PATH . 'includes/class-exam-hall-ajax.php';
+}
 
 // Service Layer
 require_once OLAMA_SCHOOL_PATH . 'includes/Services/ScheduleValidatorService.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/Services/EvaluationScoringService.php';
 require_once OLAMA_SCHOOL_PATH . 'includes/Services/SupervisorVisitService.php';
+
+/**
+ * Contribute School and extension capabilities to the Core permissions registry.
+ */
+function olama_school_register_core_capabilities($groups)
+{
+    if (!class_exists('Olama_School_Permissions')) {
+        return $groups;
+    }
+
+    return array_replace($groups, Olama_School_Permissions::get_all_capabilities());
+}
+add_filter('olama_core_capability_groups', 'olama_school_register_core_capabilities');
 
 // Register custom cron schedules (WordPress only has hourly/twicedaily/daily)
 function olama_school_cron_schedules($schedules)
@@ -127,8 +324,10 @@ register_activation_hook(__FILE__, 'olama_school_activate');
  */
 function olama_school_deactivate()
 {
-    // Remove Permissions
-    Olama_School_Permissions::remove_capabilities();
+    // Core owns shared roles and capabilities. Preserve them when Core is active.
+    if (!class_exists('Olama_Core_Permissions')) {
+        Olama_School_Permissions::remove_capabilities();
+    }
 
     // Flush rewrite rules
     flush_rewrite_rules();
@@ -162,7 +361,9 @@ function olama_school_init()
     new Olama_School_Admin();
     if (is_admin()) {
         new Olama_School_Ajax_Handlers();
-        new Olama_School_Supervision_Ajax_Handlers();
+        if (olama_school_should_load_legacy_supervision_module()) {
+            new Olama_School_Supervision_Ajax_Handlers();
+        }
     }
 
     // Initialize Shortcodes

@@ -4385,7 +4385,10 @@ class Olama_School_Shortcodes
             $att_total = $att_present + $att_absent + $att_late;
 
             // -- Bus info --
-            $bus = Olama_School_Bus::get_student_bus($student->id, $year_id);
+            $bus = apply_filters('olama_school_student_bus', null, $student->id, $year_id);
+            if (!$bus && function_exists('olama_school_should_load_legacy_transportation_module') && olama_school_should_load_legacy_transportation_module() && class_exists('Olama_School_Bus')) {
+                $bus = Olama_School_Bus::get_student_bus($student->id, $year_id);
+            }
 
             // -- Today's timetable --
             $timetable = array();

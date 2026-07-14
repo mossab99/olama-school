@@ -115,7 +115,7 @@ $visits = $wpdb->get_results(
 
         <div class="olama-filter-section" style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
             <form method="get" class="olama-filter-row" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
-                <input type="hidden" name="page" value="olama-school-supervision" />
+                <input type="hidden" name="page" value="<?php echo esc_attr(olama_school_supervision_admin_page()); ?>" />
                 <input type="hidden" name="tab" value="complete_plan" />
                 
                 <div class="olama-filter-item" style="flex:1; min-width:150px;">

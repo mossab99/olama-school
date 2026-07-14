@@ -134,7 +134,7 @@ if (!defined('ABSPATH')) {
         <div class="olama-filter-bar olama-card"
             style="background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 25px;">
             <form method="get" action="">
-                <input type="hidden" name="page" value="<?php echo esc_attr($_GET['page'] ?? 'olama-school-evaluation'); ?>">
+                <input type="hidden" name="page" value="<?php echo esc_attr($_GET['page'] ?? olama_school_evaluation_admin_page()); ?>">
                 <input type="hidden" name="tab" value="<?php echo esc_attr($_GET['tab'] ?? 'student_evaluation'); ?>">
                 <input type="hidden" name="context" value="<?php echo esc_attr($context_type); ?>">
                 <?php if ($visit_id): ?>

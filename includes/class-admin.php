@@ -23,45 +23,72 @@ class Olama_School_Admin
         add_action('admin_init', array($this, 'handle_schedule_save'));
         add_action('admin_init', array($this, 'handle_plan_load_save'));
         add_action('admin_init', array($this, 'handle_office_hours_save'));
-        add_action('admin_init', array($this, 'handle_exam_save'));
+        if (olama_school_should_load_legacy_exam_module()) {
+            add_action('admin_init', array($this, 'handle_exam_save'));
+        }
         add_action('admin_init', array($this, 'handle_stationary_save'));
         add_action('admin_init', array($this, 'handle_academic_calendar_actions'));
         add_action('admin_init', array($this, 'handle_subject_actions'));
         add_action('admin_init', array($this, 'handle_backup_restore_actions'));
         add_action('admin_init', array($this, 'handle_teacher_settings_save'));
-        add_action('admin_init', array($this, 'handle_kg_curriculum_actions'));
-        add_action('admin_init', array($this, 'handle_kg_evaluation_save'));
-        add_action('admin_init', array($this, 'handle_kg_session_save'));
-        add_action('admin_init', array($this, 'handle_kg_report_print'));
+        if (olama_school_should_load_legacy_student_evaluation_module()) {
+            add_action('admin_init', array($this, 'handle_kg_curriculum_actions'));
+            add_action('admin_init', array($this, 'handle_kg_evaluation_save'));
+        }
+        if (olama_school_should_load_legacy_kg_module()) {
+            add_action('admin_init', array($this, 'handle_kg_session_save'));
+        }
+        if (olama_school_should_load_legacy_student_evaluation_module()) {
+            add_action('admin_init', array($this, 'handle_kg_report_print'));
+        }
         add_action('admin_init', array($this, 'handle_family_actions'));
-        add_action('admin_init', array($this, 'handle_lesson_planner_actions'));
-        add_action('init', array($this, 'handle_attendance_save'));
-        add_action('init', array($this, 'handle_cleaning_save'));
-        add_action('admin_init', array($this, 'handle_cleaning_config_save'));
-        add_action('wp_ajax_olama_save_attendance', array($this, 'ajax_save_attendance'));
-        add_action('wp_ajax_olama_mark_all_present', array($this, 'ajax_mark_all_present'));
-        add_action('wp_ajax_olama_kg_autosave', array($this, 'ajax_kg_autosave'));
-        add_action('wp_ajax_olama_save_exam', array($this, 'ajax_save_exam'));
+        add_action('admin_init', array($this, 'redirect_legacy_lesson_planner_tab'), 1);
+        if (olama_school_should_load_legacy_supervision_module()) {
+            add_action('admin_init', array($this, 'handle_lesson_planner_actions'));
+        }
+        if (olama_school_should_load_legacy_student_evaluation_module()) {
+            add_action('init', array($this, 'handle_attendance_save'));
+            add_action('wp_ajax_olama_save_attendance', array($this, 'ajax_save_attendance'));
+            add_action('wp_ajax_olama_mark_all_present', array($this, 'ajax_mark_all_present'));
+        }
+        if (olama_school_should_load_legacy_employees_module()) {
+            add_action('init', array($this, 'handle_cleaning_save'));
+            add_action('admin_init', array($this, 'handle_cleaning_config_save'));
+        }
+        if (olama_school_should_load_legacy_student_evaluation_module()) {
+            add_action('wp_ajax_olama_kg_autosave', array($this, 'ajax_kg_autosave'));
+        }
+        if (olama_school_should_load_legacy_exam_module()) {
+            add_action('wp_ajax_olama_save_exam', array($this, 'ajax_save_exam'));
+        }
         add_action('wp_ajax_olama_get_semesters', array($this, 'ajax_get_semesters'));
         add_action('wp_ajax_olama_get_subjects', array($this, 'ajax_get_subjects'));
-        add_action('wp_ajax_olama_bulk_add_exam_subjects', array($this, 'ajax_bulk_add_exam_subjects'));
+        if (olama_school_should_load_legacy_exam_module()) {
+            add_action('wp_ajax_olama_bulk_add_exam_subjects', array($this, 'ajax_bulk_add_exam_subjects'));
+        }
         add_action('wp_ajax_olama_get_student_history', array($this, 'ajax_get_enrollment_history'));
         add_action('wp_ajax_olama_mark_notification_read', array($this, 'ajax_mark_notification_read'));
         add_action('wp_ajax_olama_get_notifications', array($this, 'ajax_get_notifications'));
         add_action('wp_ajax_olama_get_family_students', array($this, 'ajax_get_family_students'));
         add_action('wp_ajax_olama_get_units', array($this, 'ajax_get_units'));
         add_action('wp_ajax_olama_get_lessons', array($this, 'ajax_get_lessons'));
-        add_action('wp_ajax_olama_get_ev_progress_students', array($this, 'ajax_get_ev_progress_students'));
-        add_action('wp_ajax_olama_get_student_evaluation', array($this, 'ajax_get_student_evaluation'));
-        add_action('wp_ajax_olama_approve_evaluation', array($this, 'ajax_approve_evaluation'));
-        add_action('wp_ajax_olama_save_supervisor_comments', array($this, 'ajax_save_supervisor_comments'));
-        add_action('wp_ajax_olama_bulk_approve_evaluations', array($this, 'ajax_bulk_approve_evaluations'));
+        if (olama_school_should_load_legacy_student_evaluation_module()) {
+            add_action('wp_ajax_olama_get_ev_progress_students', array($this, 'ajax_get_ev_progress_students'));
+            add_action('wp_ajax_olama_get_student_evaluation', array($this, 'ajax_get_student_evaluation'));
+            add_action('wp_ajax_olama_approve_evaluation', array($this, 'ajax_approve_evaluation'));
+            add_action('wp_ajax_olama_save_supervisor_comments', array($this, 'ajax_save_supervisor_comments'));
+            add_action('wp_ajax_olama_bulk_approve_evaluations', array($this, 'ajax_bulk_approve_evaluations'));
+        }
         add_action('wp_ajax_olama_upload_backup_chunk', array($this, 'ajax_upload_backup_chunk'));
         add_action('wp_ajax_olama_initiate_restore', array($this, 'ajax_restore_database'));
-        add_action('wp_ajax_olama_save_kg_session', array($this, 'ajax_save_kg_session'));
+        if (olama_school_should_load_legacy_kg_module()) {
+            add_action('wp_ajax_olama_save_kg_session', array($this, 'ajax_save_kg_session'));
+        }
 
-        // Exam Hall Distribution AJAX
-        new Olama_Exam_Hall_Ajax();
+        // Exam Hall Distribution AJAX (legacy fallback only).
+        if (olama_school_should_load_legacy_exam_module()) {
+            new Olama_Exam_Hall_Ajax();
+        }
 
         add_action('admin_init', array($this, 'restrict_teacher_access'));
         add_action('admin_post_olama_save_office_hours', array($this, 'handle_office_hours_save'));
@@ -588,6 +615,27 @@ class Olama_School_Admin
     }
 
     /**
+     * Redirect old Evaluation lesson planner links to Academic Supervision.
+     */
+    public function redirect_legacy_lesson_planner_tab()
+    {
+        if ('GET' !== ($_SERVER['REQUEST_METHOD'] ?? 'GET')) {
+            return;
+        }
+
+        $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+        $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+        if ('olama-school-evaluation' !== $page || 'lesson_planner' !== $tab) {
+            return;
+        }
+
+        $args = map_deep(wp_unslash($_GET), 'sanitize_text_field');
+        $args['page'] = olama_school_supervision_admin_page();
+        wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
+        exit;
+    }
+
+    /**
      * Handle Lesson Planner Actions (Save, Delete)
      */
     public function handle_lesson_planner_actions()
@@ -687,11 +735,11 @@ class Olama_School_Admin
 
             $result = Olama_School_Lesson_Planner::save_plan($plan_data);
             if ($result['result'] !== false) {
-                wp_redirect(admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner&message=lp_saved'));
+                wp_redirect(admin_url('admin.php?page=' . olama_school_supervision_admin_page() . '&tab=lesson_planner&message=lp_saved'));
                 exit;
             } else {
                 set_transient('lp_error_' . get_current_user_id(), $result['error'], 60);
-                wp_redirect(admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner&lp_action=' . ($_POST['plan_id'] ? 'edit&plan_id=' . $_POST['plan_id'] : 'create') . '&lp_err=1'));
+                wp_redirect(admin_url('admin.php?page=' . olama_school_supervision_admin_page() . '&tab=lesson_planner&lp_action=' . ($_POST['plan_id'] ? 'edit&plan_id=' . $_POST['plan_id'] : 'create') . '&lp_err=1'));
                 exit;
             }
         }
@@ -705,9 +753,9 @@ class Olama_School_Admin
             $success = Olama_School_Lesson_Planner::delete_plan($plan_id, $is_admin_priv ? 0 : get_current_user_id());
 
             if ($success) {
-                wp_redirect(admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner&message=lp_deleted'));
+                wp_redirect(admin_url('admin.php?page=' . olama_school_supervision_admin_page() . '&tab=lesson_planner&message=lp_deleted'));
             } else {
-                wp_redirect(admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner&message=' . urlencode(__('Error deleting lesson plan or permission denied.', 'olama-school'))));
+                wp_redirect(admin_url('admin.php?page=' . olama_school_supervision_admin_page() . '&tab=lesson_planner&message=' . urlencode(__('Error deleting lesson plan or permission denied.', 'olama-school'))));
             }
             exit;
         }
@@ -729,6 +777,11 @@ class Olama_School_Admin
      */
     public function render_kg_management_page()
     {
+        if (!olama_school_should_load_legacy_kg_module()) {
+            wp_safe_redirect(admin_url('admin.php?page=olama-kg'));
+            exit;
+        }
+
         if (!Olama_School_Permissions::can('olama_access_evaluation')) {
             wp_die(__('You do not have sufficient permissions to access this page.', 'olama-school'));
         }
@@ -1540,14 +1593,16 @@ class Olama_School_Admin
             array($this, 'render_weekly_plan_management_page')
         );
 
-        add_submenu_page(
-            'olama-school',
-            Olama_School_Helpers::translate('Follow Up'),
-            Olama_School_Helpers::translate('Follow Up'),
-            'olama_access_followup',
-            'olama-school-follow-up',
-            array($this, 'render_follow_up_page')
-        );
+        if (olama_school_should_load_legacy_employees_module()) {
+            add_submenu_page(
+                'olama-school',
+                Olama_School_Helpers::translate('Follow Up'),
+                Olama_School_Helpers::translate('Follow Up'),
+                'olama_access_followup',
+                'olama-school-follow-up',
+                array($this, 'render_follow_up_page')
+            );
+        }
 
         add_submenu_page(
             'olama-school',
@@ -1567,59 +1622,64 @@ class Olama_School_Admin
             array($this, 'render_curriculum_management_page')
         );
 
-        add_submenu_page(
-            'olama-school',
-            Olama_School_Helpers::translate('Exam Management'),
-            Olama_School_Helpers::translate('Exam Management'),
-            'olama_access_exams_mgmt',
-            'olama-school-exams',
-            array($this, 'render_exam_management_page')
-        );
+        if (olama_school_should_load_legacy_exam_module()) {
+            add_submenu_page(
+                'olama-school',
+                Olama_School_Helpers::translate('Exam Management'),
+                Olama_School_Helpers::translate('Exam Management'),
+                'olama_access_exams_mgmt',
+                'olama-school-exams',
+                array($this, 'render_exam_management_page')
+            );
+        }
 
-        add_submenu_page(
-            'olama-school',
-            Olama_School_Helpers::translate('Evaluation'),
-            Olama_School_Helpers::translate('Evaluation'),
-            'olama_access_evaluation',
-            'olama-school-evaluation',
-            array($this, 'render_evaluation_page')
-        );
+        if (olama_school_should_load_legacy_student_evaluation_module()) {
+            add_submenu_page(
+                'olama-school',
+                Olama_School_Helpers::translate('Evaluation'),
+                Olama_School_Helpers::translate('Evaluation'),
+                'olama_access_evaluation',
+                'olama-school-evaluation',
+                array($this, 'render_evaluation_page')
+            );
+        }
 
-        add_submenu_page(
-            'olama-school',
-            __('Academic Supervision', 'olama-school'),
-            __('Academic Supervision', 'olama-school'),
-            'olama_access_supervision',
-            'olama-school-supervision',
-            array($this, 'render_academic_supervision_page')
-        );
+        if (olama_school_should_load_legacy_supervision_module()) {
+            $supervision_menu_capability = Olama_School_Permissions::can('olama_access_supervision')
+                ? 'olama_access_supervision'
+                : 'olama_manage_lesson_planner';
 
-        add_submenu_page(
-            'olama-school',
-            Olama_School_Helpers::translate('Users & Permissions'),
-            Olama_School_Helpers::translate('Users & Permissions'),
-            'olama_access_users_mgmt',
-            'olama-school-users',
-            array($this, 'render_users_page')
-        );
+            add_submenu_page(
+                'olama-school',
+                __('Academic Supervision', 'olama-school'),
+                __('Academic Supervision', 'olama-school'),
+                $supervision_menu_capability,
+                'olama-school-supervision',
+                array($this, 'render_academic_supervision_page')
+            );
+        }
 
-        add_submenu_page(
-            'olama-school',
-            Olama_School_Helpers::translate('KG الروضة'),
-            Olama_School_Helpers::translate('KG الروضة'),
-            'olama_access_evaluation',
-            'olama-school-kg',
-            array($this, 'render_kg_management_page')
-        );
+        if (olama_school_should_load_legacy_kg_module()) {
+            add_submenu_page(
+                'olama-school',
+                Olama_School_Helpers::translate('KG الروضة'),
+                Olama_School_Helpers::translate('KG الروضة'),
+                'olama_access_kg',
+                'olama-school-kg',
+                array($this, 'render_kg_management_page')
+            );
+        }
 
-        add_submenu_page(
-            'olama-school',
-            Olama_School_Helpers::translate('Transportation'),
-            Olama_School_Helpers::translate('Transportation'),
-            'olama_access_transport_mgmt',
-            'olama-school-transport',
-            array($this, 'render_transport_management_page')
-        );
+        if (olama_school_should_load_legacy_transportation_module()) {
+            add_submenu_page(
+                'olama-school',
+                Olama_School_Helpers::translate('Transportation'),
+                Olama_School_Helpers::translate('Transportation'),
+                'olama_access_transport_mgmt',
+                'olama-school-transport',
+                array($this, 'render_transport_management_page')
+            );
+        }
 
         add_submenu_page(
             'olama-school',
@@ -1630,14 +1690,16 @@ class Olama_School_Admin
             array($this, 'render_settings_page')
         );
 
-        add_submenu_page(
-            'olama-school',
-            Olama_School_Helpers::translate('Exam Hall Distribution'),
-            Olama_School_Helpers::translate('Exam Hall Distribution'),
-            'olama_access_exam_halls',
-            'olama-school-exam-halls',
-            array($this, 'render_exam_hall_distribution_page')
-        );
+        if (olama_school_should_load_legacy_exam_module()) {
+            add_submenu_page(
+                'olama-school',
+                Olama_School_Helpers::translate('Exam Hall Distribution'),
+                Olama_School_Helpers::translate('Exam Hall Distribution'),
+                'olama_access_exam_halls',
+                'olama-school-exam-halls',
+                array($this, 'render_exam_hall_distribution_page')
+            );
+        }
     }
 
     /**
@@ -2903,6 +2965,11 @@ class Olama_School_Admin
      */
     public function render_transport_management_page()
     {
+        if (!olama_school_should_load_legacy_transportation_module()) {
+            wp_safe_redirect(admin_url('admin.php?page=olama-transportation'));
+            exit;
+        }
+
         $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'buses';
 
         $allowed_tabs = array(
@@ -3097,13 +3164,19 @@ class Olama_School_Admin
      */
     public function render_evaluation_page()
     {
+        if (!olama_school_should_load_legacy_student_evaluation_module()) {
+            $args = map_deep(wp_unslash($_GET), 'sanitize_text_field');
+            $args['page'] = 'olama-student-evaluation';
+            wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
+            exit;
+        }
+
         $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'student_evaluation';
 
         $tabs_config = array(
             'student_evaluation' => array('label' => Olama_School_Helpers::translate('Student Evaluation'), 'cap' => 'olama_manage_evaluation_students'),
             'evaluation_progress' => array('label' => Olama_School_Helpers::translate('Evaluation Progress'), 'cap' => 'olama_manage_evaluation_students'),
             'evaluation_mgmt' => array('label' => Olama_School_Helpers::translate('Evaluation Management'), 'cap' => 'olama_manage_evaluation_mgmt'),
-            'lesson_planner' => array('label' => Olama_School_Helpers::translate('Lesson Planner'), 'cap' => 'olama_manage_lesson_planner'),
         );
 
         $allowed_tabs = array();
@@ -3148,9 +3221,6 @@ class Olama_School_Admin
                     case 'student_evaluation':
                         $this->render_student_evaluation_page_content();
                         break;
-                    case 'lesson_planner':
-                        include OLAMA_SCHOOL_PATH . 'includes/admin-views/lesson-planner.php';
-                        break;
                 }
                 ?>
             </div>
@@ -3163,6 +3233,13 @@ class Olama_School_Admin
      */
     public function render_academic_supervision_page()
     {
+        if (!olama_school_should_load_legacy_supervision_module()) {
+            $args = map_deep(wp_unslash($_GET), 'sanitize_text_field');
+            $args['page'] = 'olama-supervision';
+            wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
+            exit;
+        }
+
         $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'plan_visit';
 
         $tabs_config = array(
@@ -3171,6 +3248,7 @@ class Olama_School_Admin
             'assignments' => array('label' => __('Assign Supervisor', 'olama-school'), 'cap' => 'olama_manage_supervision_plan'),
             'reports' => array('label' => __('Reports', 'olama-school'), 'cap' => 'olama_view_supervision_reports'),
             'analytics' => array('label' => __('Analytics', 'olama-school'), 'cap' => 'olama_view_supervision_analytics'),
+            'lesson_planner' => array('label' => Olama_School_Helpers::translate('Lesson Planner'), 'cap' => 'olama_manage_lesson_planner'),
         );
 
         $allowed_tabs = array();
@@ -3220,6 +3298,9 @@ class Olama_School_Admin
                         break;
                     case 'analytics':
                         include OLAMA_SCHOOL_PATH . 'includes/admin-views/supervision-analytics.php';
+                        break;
+                    case 'lesson_planner':
+                        include OLAMA_SCHOOL_PATH . 'includes/admin-views/lesson-planner.php';
                         break;
                 }
                 ?>
@@ -5940,8 +6021,12 @@ class Olama_School_Admin
             // Ensure table exists
             $table_sheets = $wpdb->prefix . 'olama_attendance_sheets';
             if ($wpdb->get_var("SHOW TABLES LIKE '$table_sheets'") !== $table_sheets) {
-                $olama_db = new Olama_School_DB();
-                $olama_db->create_tables();
+                if (class_exists('Olama_Student_Evaluation_DB') && !olama_school_should_load_legacy_student_evaluation_module()) {
+                    Olama_Student_Evaluation_DB::install();
+                } else {
+                    $olama_db = new Olama_School_DB();
+                    $olama_db->create_tables();
+                }
             }
 
             foreach ($attendance_data as $student_id => $data) {
@@ -6010,8 +6095,12 @@ class Olama_School_Admin
 
             // Dynamic table check 
             if ($wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table) {
-                $olama_db = new Olama_School_DB();
-                $olama_db->create_tables();
+                if (class_exists('Olama_Employees_DB') && !olama_school_should_load_legacy_employees_module()) {
+                    Olama_Employees_DB::install();
+                } else {
+                    $olama_db = new Olama_School_DB();
+                    $olama_db->create_tables();
+                }
             }
 
             $academic_year_id = intval($_POST['academic_year_id'] ?? 0);
@@ -6054,7 +6143,7 @@ class Olama_School_Admin
                 $wpdb->insert($table, $data);
             }
 
-            $redirect_url = isset($_POST['redirect_to']) ? sanitize_text_field($_POST['redirect_to']) : admin_url('admin.php?page=olama-school-follow-up&tab=cleaning');
+            $redirect_url = isset($_POST['redirect_to']) ? sanitize_text_field($_POST['redirect_to']) : admin_url('admin.php?page=' . olama_school_follow_up_admin_page() . '&tab=cleaning');
             $redirect_url = add_query_arg(array(
                 'floor_id' => $floor_id,
                 'cleaning_date' => $cleaning_date,
@@ -6082,8 +6171,12 @@ class Olama_School_Admin
             // Dynamic table check to ensure they exist
             $test_table = $wpdb->prefix . 'olama_cleaning_items';
             if ($wpdb->get_var("SHOW TABLES LIKE '$test_table'") !== $test_table) {
-                $olama_db = new Olama_School_DB();
-                $olama_db->create_tables();
+                if (class_exists('Olama_Employees_DB') && !olama_school_should_load_legacy_employees_module()) {
+                    Olama_Employees_DB::install();
+                } else {
+                    $olama_db = new Olama_School_DB();
+                    $olama_db->create_tables();
+                }
             }
 
             $type = sanitize_text_field($_POST['config_type']);
@@ -6142,7 +6235,7 @@ class Olama_School_Admin
                 }
             }
 
-            wp_redirect(admin_url('admin.php?page=olama-school-follow-up&tab=cleaning&view=config&section=' . $type));
+            wp_redirect(admin_url('admin.php?page=' . olama_school_follow_up_admin_page() . '&tab=cleaning&view=config&section=' . $type));
             exit;
         }
     }
@@ -6188,8 +6281,12 @@ class Olama_School_Admin
         // Check if table exists
         $table_sheets = $wpdb->prefix . 'olama_attendance_sheets';
         if ($wpdb->get_var("SHOW TABLES LIKE '$table_sheets'") !== $table_sheets) {
-            $olama_db = new Olama_School_DB();
-            $olama_db->create_tables();
+            if (class_exists('Olama_Student_Evaluation_DB') && !olama_school_should_load_legacy_student_evaluation_module()) {
+                Olama_Student_Evaluation_DB::install();
+            } else {
+                $olama_db = new Olama_School_DB();
+                $olama_db->create_tables();
+            }
         }
 
         // Fetch student_uid for stable linkage
@@ -6300,6 +6397,12 @@ class Olama_School_Admin
      */
     public function render_follow_up_page()
     {
+        if (!olama_school_should_load_legacy_employees_module()) {
+            $args = map_deep(wp_unslash($_GET), 'sanitize_text_field');
+            $args['page'] = 'olama-employees';
+            wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
+            exit;
+        }
         $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'student_attendance';
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/follow-up.php';
     }

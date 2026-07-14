@@ -166,7 +166,7 @@ $templates = Olama_School_EV_Template::get_templates($selected_grade_id, $active
 <div class="olama-supervision-plan-wrap">
     <div class="olama-filter-section" style="background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
         <form method="get" class="olama-filter-row">
-            <input type="hidden" name="page" value="olama-school-supervision" />
+            <input type="hidden" name="page" value="<?php echo esc_attr(olama_school_supervision_admin_page()); ?>" />
             <input type="hidden" name="tab" value="plan_visit" />
             
             <?php 

@@ -170,13 +170,13 @@ if ($edit_plan) {
             <p class="description"><?php echo $t('Create and manage daily lesson plans.'); ?></p>
         </div>
         <?php if ($mode === 'list'): ?>
-            <a href="<?php echo admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner&lp_action=create'); ?>"
+            <a href="<?php echo admin_url('admin.php?page=' . olama_school_supervision_admin_page() . '&tab=lesson_planner&lp_action=create'); ?>"
                 class="button button-primary button-large" style="background:#6366f1;border-color:#6366f1;">
                 <span class="dashicons dashicons-plus-alt2"
                     style="margin-top:4px;margin-right:3px;"></span><?php echo $t('Add New Lesson Plan'); ?>
             </a>
         <?php else: ?>
-            <a href="<?php echo admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner'); ?>"
+            <a href="<?php echo admin_url('admin.php?page=' . olama_school_supervision_admin_page() . '&tab=lesson_planner'); ?>"
                 class="button button-large">
                 <span class="dashicons dashicons-arrow-left-alt"
                     style="margin-top:4px;margin-right:3px;"></span><?php echo $t('Back to List'); ?>
@@ -188,7 +188,7 @@ if ($edit_plan) {
         <!-- ===== LIST MODE ===== -->
         <div class="olama-card"
             style="background:#fff;padding:20px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:25px;">
-            <form method="get"><input type="hidden" name="page" value="olama-school-evaluation"><input type="hidden"
+            <form method="get"><input type="hidden" name="page" value="<?php echo esc_attr(olama_school_supervision_admin_page()); ?>"><input type="hidden"
                     name="tab" value="lesson_planner">
                 <div style="display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;">
                     <?php
@@ -238,7 +238,7 @@ if ($edit_plan) {
                     <span class="dashicons dashicons-welcome-write-blog"
                         style="font-size:48px;width:48px;height:48px;margin-bottom:15px;"></span>
                     <p style="font-size:1.1em;"><?php echo $t('No lesson plans found.'); ?></p>
-                    <a href="<?php echo admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner&lp_action=create'); ?>"
+                    <a href="<?php echo admin_url('admin.php?page=' . olama_school_supervision_admin_page() . '&tab=lesson_planner&lp_action=create'); ?>"
                         class="button button-primary"
                         style="background:#6366f1;border-color:#6366f1;"><?php echo $t('Add New Lesson Plan'); ?></a>
                 </div>
@@ -311,10 +311,10 @@ if ($edit_plan) {
                                             <span style="font-weight: 600;"><?php echo $t('Results'); ?></span>
                                         </button>
                                     <?php endif; ?>
-                                    <a href="<?php echo admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner&lp_action=edit&plan_id=' . $plan->id); ?>"
+                                    <a href="<?php echo admin_url('admin.php?page=' . olama_school_supervision_admin_page() . '&tab=lesson_planner&lp_action=edit&plan_id=' . $plan->id); ?>"
                                         class="button button-small"><span class="dashicons dashicons-edit"
                                             style="font-size:16px;width:16px;height:16px;margin-top:3px;"></span></a>
-                                    <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-evaluation&tab=lesson_planner&lp_action=delete&plan_id=' . $plan->id), 'olama_lp_delete_' . $plan->id); ?>"
+                                    <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=' . olama_school_supervision_admin_page() . '&tab=lesson_planner&lp_action=delete&plan_id=' . $plan->id), 'olama_lp_delete_' . $plan->id); ?>"
                                         class="button button-small" style="color:#dc2626;"
                                         onclick="return confirm('<?php echo esc_js($t('Are you sure you want to delete this lesson plan?')); ?>');"><span
                                             class="dashicons dashicons-trash"

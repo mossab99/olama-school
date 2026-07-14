@@ -52,48 +52,53 @@ class Olama_School_Ajax_Handlers
         // Plan Review AJAX Handler
         add_action('wp_ajax_olama_handle_plan_approval', array($this, 'handle_plan_approval'));
 
-        // Exam Attachment AJAX Handlers
-        add_action('wp_ajax_olama_upload_exam_file', array($this, 'upload_exam_file'));
-        add_action('wp_ajax_olama_download_exam_file', array($this, 'download_exam_file'));
-        add_action('wp_ajax_olama_get_exam_attachment', array($this, 'get_exam_attachment'));
-        add_action('wp_ajax_olama_delete_exam_attachment', array($this, 'delete_exam_attachment'));
-        add_action('wp_ajax_olama_save_exam_attachment_comment', array($this, 'save_exam_attachment_comment'));
-        add_action('wp_ajax_olama_download_all_exams_zip', array($this, 'download_all_exams_zip'));
-        add_action('wp_ajax_olama_get_semester_exams', array($this, 'get_semester_exams'));
+        // Exam attachment handlers remain available as a legacy fallback.
+        // The standalone Exam Management plugin owns these hooks when active.
+        if (olama_school_should_load_legacy_exam_module()) {
+            add_action('wp_ajax_olama_upload_exam_file', array($this, 'upload_exam_file'));
+            add_action('wp_ajax_olama_download_exam_file', array($this, 'download_exam_file'));
+            add_action('wp_ajax_olama_get_exam_attachment', array($this, 'get_exam_attachment'));
+            add_action('wp_ajax_olama_delete_exam_attachment', array($this, 'delete_exam_attachment'));
+            add_action('wp_ajax_olama_save_exam_attachment_comment', array($this, 'save_exam_attachment_comment'));
+            add_action('wp_ajax_olama_download_all_exams_zip', array($this, 'download_all_exams_zip'));
+            add_action('wp_ajax_olama_get_semester_exams', array($this, 'get_semester_exams'));
+        }
 
-        add_action('wp_ajax_olama_save_shift_location', array($this, 'save_shift_location'));
-        add_action('wp_ajax_olama_get_shift_locations', array($this, 'get_shift_locations'));
-        add_action('wp_ajax_olama_delete_shift_location', array($this, 'delete_shift_location'));
+        if (olama_school_should_load_legacy_employees_module()) {
+            add_action('wp_ajax_olama_save_shift_location', array($this, 'save_shift_location'));
+            add_action('wp_ajax_olama_get_shift_locations', array($this, 'get_shift_locations'));
+            add_action('wp_ajax_olama_delete_shift_location', array($this, 'delete_shift_location'));
+            add_action('wp_ajax_olama_save_shift_time_slot', array($this, 'save_shift_time_slot'));
+            add_action('wp_ajax_olama_get_shift_time_slots', array($this, 'get_shift_time_slots'));
+            add_action('wp_ajax_olama_delete_shift_slot', array($this, 'delete_shift_slot'));
+            add_action('wp_ajax_olama_save_shift_period', array($this, 'save_shift_period'));
+            add_action('wp_ajax_olama_get_shift_periods', array($this, 'get_shift_periods'));
+            add_action('wp_ajax_olama_delete_shift_period', array($this, 'delete_shift_period'));
+            add_action('wp_ajax_olama_save_shift_and_assignments', array($this, 'save_shift_and_assignments'));
+            add_action('wp_ajax_olama_get_shift_schedule', array($this, 'get_shift_schedule'));
+            add_action('wp_ajax_olama_delete_shift', array($this, 'delete_shift'));
+            add_action('wp_ajax_olama_bulk_copy_shifts', array($this, 'bulk_copy_shifts'));
+        }
 
-        add_action('wp_ajax_olama_save_shift_time_slot', array($this, 'save_shift_time_slot'));
-        add_action('wp_ajax_olama_get_shift_time_slots', array($this, 'get_shift_time_slots'));
-        add_action('wp_ajax_olama_delete_shift_slot', array($this, 'delete_shift_slot'));
+        // Transportation handlers remain available as a legacy fallback.
+        // The standalone Transportation plugin owns these hooks when active.
+        if (olama_school_should_load_legacy_transportation_module()) {
+            add_action('wp_ajax_olama_save_bus', array($this, 'save_bus'));
+            add_action('wp_ajax_olama_get_buses', array($this, 'get_buses'));
+            add_action('wp_ajax_olama_get_bus', array($this, 'get_bus'));
+            add_action('wp_ajax_olama_delete_bus', array($this, 'delete_bus'));
+            add_action('wp_ajax_olama_assign_students_to_bus', array($this, 'assign_students_to_bus'));
+            add_action('wp_ajax_olama_unassign_student_from_bus', array($this, 'unassign_student_from_bus'));
+            add_action('wp_ajax_olama_get_bus_students', array($this, 'get_bus_students'));
+            add_action('wp_ajax_olama_get_unassigned_students', array($this, 'get_unassigned_students'));
+        }
 
-        add_action('wp_ajax_olama_save_shift_period', array($this, 'save_shift_period'));
-        add_action('wp_ajax_olama_get_shift_periods', array($this, 'get_shift_periods'));
-        add_action('wp_ajax_olama_delete_shift_period', array($this, 'delete_shift_period'));
-
-        add_action('wp_ajax_olama_save_shift_and_assignments', array($this, 'save_shift_and_assignments'));
-        add_action('wp_ajax_olama_get_shift_schedule', array($this, 'get_shift_schedule'));
-        add_action('wp_ajax_olama_delete_shift', array($this, 'delete_shift'));
-        add_action('wp_ajax_olama_bulk_copy_shifts', array($this, 'bulk_copy_shifts'));
-
-        // Transportation (Buses) AJAX Handlers
-        add_action('wp_ajax_olama_save_bus', array($this, 'save_bus'));
-        add_action('wp_ajax_olama_get_buses', array($this, 'get_buses'));
-        add_action('wp_ajax_olama_get_bus', array($this, 'get_bus'));
-        add_action('wp_ajax_olama_delete_bus', array($this, 'delete_bus'));
-
-        // Student-Bus Assignment AJAX Handlers
-        add_action('wp_ajax_olama_assign_students_to_bus', array($this, 'assign_students_to_bus'));
-        add_action('wp_ajax_olama_unassign_student_from_bus', array($this, 'unassign_student_from_bus'));
-        add_action('wp_ajax_olama_get_bus_students', array($this, 'get_bus_students'));
-        add_action('wp_ajax_olama_get_unassigned_students', array($this, 'get_unassigned_students'));
-
-        // Lesson Planner AJAX Handlers
-        add_action('wp_ajax_olama_lp_get_units', array($this, 'lp_get_units'));
-        add_action('wp_ajax_olama_lp_get_timeline_lessons', array($this, 'lp_get_timeline_lessons'));
-        add_action('wp_ajax_olama_lp_get_teacher_subjects', array($this, 'lp_get_teacher_subjects'));
+        // Lesson Planner AJAX Handlers (legacy fallback only).
+        if (olama_school_should_load_legacy_supervision_module()) {
+            add_action('wp_ajax_olama_lp_get_units', array($this, 'lp_get_units'));
+            add_action('wp_ajax_olama_lp_get_timeline_lessons', array($this, 'lp_get_timeline_lessons'));
+            add_action('wp_ajax_olama_lp_get_teacher_subjects', array($this, 'lp_get_teacher_subjects'));
+        }
 
         // Family Lookup AJAX Handler
         add_action('wp_ajax_olama_lookup_family_number', array($this, 'lookup_family_number'));
@@ -1241,7 +1246,7 @@ class Olama_School_Ajax_Handlers
     public function save_shift_location()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
-        if (!current_user_can('olama_manage_plans'))
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
             wp_send_json_error(__('Unauthorized', 'olama-school'));
 
         $result = Olama_School_Shifts::save_location($_POST);
@@ -1253,6 +1258,8 @@ class Olama_School_Ajax_Handlers
     public function get_shift_locations()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
         $active_only = isset($_POST['active_only']) ? filter_var($_POST['active_only'], FILTER_VALIDATE_BOOLEAN) : true;
         wp_send_json_success(Olama_School_Shifts::get_locations($active_only));
     }
@@ -1260,7 +1267,7 @@ class Olama_School_Ajax_Handlers
     public function delete_shift_location()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
-        if (!current_user_can('olama_manage_plans'))
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
             wp_send_json_error(__('Unauthorized', 'olama-school'));
 
         global $wpdb;
@@ -1274,7 +1281,7 @@ class Olama_School_Ajax_Handlers
     public function save_shift_time_slot()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
-        if (!current_user_can('olama_manage_plans'))
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
             wp_send_json_error(__('Unauthorized', 'olama-school'));
 
         $result = Olama_School_Shifts::save_time_slot($_POST);
@@ -1286,6 +1293,8 @@ class Olama_School_Ajax_Handlers
     public function get_shift_time_slots()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
         $active_only = isset($_POST['active_only']) ? filter_var($_POST['active_only'], FILTER_VALIDATE_BOOLEAN) : true;
         wp_send_json_success(Olama_School_Shifts::get_time_slots($active_only));
     }
@@ -1299,7 +1308,7 @@ class Olama_School_Ajax_Handlers
     public function save_shift_period()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
-        if (!current_user_can('olama_manage_plans'))
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
             wp_send_json_error(__('Unauthorized', 'olama-school'));
 
         $result = Olama_School_Shifts::save_period($_POST);
@@ -1311,13 +1320,15 @@ class Olama_School_Ajax_Handlers
     public function get_shift_periods()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
         wp_send_json_success(Olama_School_Shifts::get_periods());
     }
 
     public function delete_shift_period()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
-        if (!current_user_can('olama_manage_plans'))
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
             wp_send_json_error(__('Unauthorized', 'olama-school'));
 
         global $wpdb;
@@ -1331,7 +1342,7 @@ class Olama_School_Ajax_Handlers
     public function save_shift_and_assignments()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
-        if (!current_user_can('olama_manage_plans'))
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
             wp_send_json_error(__('Unauthorized', 'olama-school'));
 
         $result = Olama_School_Shifts::save_shift_and_assignments($_POST);
@@ -1345,6 +1356,8 @@ class Olama_School_Ajax_Handlers
     public function get_shift_schedule()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
+            wp_send_json_error(__('Unauthorized', 'olama-school'));
         $period_id = isset($_POST['period_id']) ? intval($_POST['period_id']) : 0;
         wp_send_json_success(Olama_School_Shifts::get_schedule($period_id));
     }
@@ -1352,7 +1365,7 @@ class Olama_School_Ajax_Handlers
     public function delete_shift()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
-        if (!current_user_can('olama_manage_plans'))
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
             wp_send_json_error(__('Unauthorized', 'olama-school'));
 
         $shift_id = intval($_POST['id']);
@@ -1371,7 +1384,7 @@ class Olama_School_Ajax_Handlers
     public function delete_shift_slot()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
-        if (!current_user_can('olama_manage_plans'))
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
             wp_send_json_error(__('Unauthorized', 'olama-school'));
 
         global $wpdb;
@@ -1385,14 +1398,15 @@ class Olama_School_Ajax_Handlers
     public function bulk_copy_shifts()
     {
         check_ajax_referer('olama_admin_nonce', 'nonce');
-        if (!current_user_can('olama_manage_plans'))
+        if (!Olama_School_Permissions::can('olama_manage_shifts'))
             wp_send_json_error(__('Unauthorized', 'olama-school'));
 
         $from_semester_id = intval($_POST['from_semester_id']);
         $to_semester_id = intval($_POST['to_semester_id']);
 
         if (!$from_semester_id || !$to_semester_id)
-            $count = Olama_School_Shifts::bulk_copy($from_semester_id, $to_semester_id);
+            wp_send_json_error(__('Both source and destination semesters are required.', 'olama-school'));
+        $count = Olama_School_Shifts::bulk_copy($from_semester_id, $to_semester_id);
         wp_send_json_success(sprintf(__('%d shifts copied successfully', 'olama-school'), $count));
     }
 

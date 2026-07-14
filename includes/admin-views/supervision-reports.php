@@ -310,7 +310,7 @@ if ($sem_start && $sem_end) {
     <!-- SECTION 2: Supervisor Filtering and Mini Dashboard -->
     <div style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 25px;">
         <form method="GET" style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9;">
-            <input type="hidden" name="page" value="olama-school-supervision">
+            <input type="hidden" name="page" value="<?php echo esc_attr(olama_school_supervision_admin_page()); ?>">
             <input type="hidden" name="tab" value="reports">
             
             <div style="flex: 1;">
@@ -359,7 +359,7 @@ if ($sem_start && $sem_end) {
 
             <div style="flex: none; display: flex; gap: 10px;">
                 <button type="submit" class="button button-primary" style="height: 35px; background: #6366f1; border-color: #6366f1;"><?php _e('Update Dashboard', 'olama-school'); ?></button>
-                <a href="<?php echo admin_url('admin.php?page=olama-school-supervision&tab=reports'); ?>" class="button" style="height: 35px;"><?php _e('Clear', 'olama-school'); ?></a>
+                <a href="<?php echo admin_url('admin.php?page=' . olama_school_supervision_admin_page() . '&tab=reports'); ?>" class="button" style="height: 35px;"><?php _e('Clear', 'olama-school'); ?></a>
             </div>
         </form>
 

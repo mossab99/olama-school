@@ -93,11 +93,11 @@ class Olama_School_EV_Manager
         }
 
         if ($result !== false) {
-            $url = wp_get_referer() ?: admin_url('admin.php?page=olama-school-evaluation&tab=evaluation_mgmt');
+            $url = wp_get_referer() ?: admin_url('admin.php?page=' . olama_school_evaluation_admin_page() . '&tab=evaluation_mgmt');
             $url = remove_query_arg(array('message', 'id'), $url);
 
             if (is_array($result) && isset($result['status']) && $result['status'] === 'orphans_removed') {
-                $url = admin_url('admin.php?page=olama-school-evaluation&tab=evaluation_mgmt&message=orphans_removed&count=' . $result['count']);
+                $url = admin_url('admin.php?page=' . olama_school_evaluation_admin_page() . '&tab=evaluation_mgmt&message=orphans_removed&count=' . $result['count']);
             } else {
                 // Ensure we stay on the management tab
                 if (strpos($url, 'tab=evaluation_mgmt') === false) {

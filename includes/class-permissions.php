@@ -117,7 +117,7 @@ class Olama_School_Permissions
                     'olama_manage_evaluation_students' => __('Student Evaluation', 'olama-school'),
                     'olama_manage_evaluation_progress' => __('Evaluation Progress', 'olama-school'),
                     'olama_manage_evaluation_mgmt' => __('Evaluation Management', 'olama-school'),
-                    'olama_manage_lesson_planner' => __('Lesson Planner', 'olama-school'),
+                    'olama_manage_attendance' => __('Student Attendance', 'olama-school'),
                 )
             ),
             'users' => array(
@@ -152,7 +152,6 @@ class Olama_School_Permissions
                 'label' => __('Follow Up', 'olama-school'),
                 'caps' => array(
                     'olama_access_followup' => __('Access Management', 'olama-school'),
-                    'olama_manage_attendance' => __('Student Attendance', 'olama-school'),
                     'olama_manage_shifts' => __('Employee Shifts', 'olama-school'),
                     'olama_manage_cleaning' => __('Toilet Cleaning Follow-up', 'olama-school'),
                     'olama_configure_cleaning' => __('Configure Cleaning Settings', 'olama-school'),
@@ -172,6 +171,7 @@ class Olama_School_Permissions
                     'olama_manage_supervision_plan' => __('Plan Visit', 'olama-school'),
                     'olama_view_supervision_reports' => __('Reports', 'olama-school'),
                     'olama_view_supervision_analytics' => __('Analytics', 'olama-school'),
+                    'olama_manage_lesson_planner' => __('Lesson Planner', 'olama-school'),
                 )
             ),
             'kg' => array(
@@ -331,6 +331,10 @@ class Olama_School_Permissions
      */
     public static function can($capability, $user_id = null)
     {
+        if (class_exists('Olama_Core_Permissions')) {
+            return Olama_Core_Permissions::can($capability, $user_id);
+        }
+
         if (!$user_id) {
             $user_id = get_current_user_id();
         }

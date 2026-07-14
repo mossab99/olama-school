@@ -7,7 +7,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$can_manage_attendance = Olama_School_Permissions::can('olama_manage_attendance');
+$follow_up_page_slug = isset($olama_employees_page_slug) ? sanitize_key($olama_employees_page_slug) : 'olama-school-follow-up';
+$follow_up_page_title = isset($olama_employees_page_title) ? $olama_employees_page_title : Olama_School_Helpers::translate('Follow Up');
+$can_manage_attendance = empty($olama_employees_hide_attendance)
+    && olama_school_should_load_legacy_student_evaluation_module()
+    && Olama_School_Permissions::can('olama_manage_attendance');
 $can_manage_shifts = Olama_School_Permissions::can('olama_manage_shifts');
 $can_manage_cleaning = Olama_School_Permissions::can('olama_manage_cleaning');
 
@@ -62,7 +66,7 @@ if ($section_id && $active_year && $can_manage_attendance) {
 <div class="wrap olama-school-wrap">
 
     <h1>
-        <?php echo Olama_School_Helpers::translate('Follow Up'); ?>
+        <?php echo esc_html($follow_up_page_title); ?>
     </h1>
 
     <?php if (isset($_GET['message']) && $_GET['message'] === 'attendance_saved'): ?>
@@ -83,19 +87,19 @@ if ($section_id && $active_year && $can_manage_attendance) {
 
     <h2 class="nav-tab-wrapper">
         <?php if ($can_manage_attendance): ?>
-            <a href="?page=olama-school-follow-up&tab=student_attendance"
+            <a href="?page=<?php echo esc_attr($follow_up_page_slug); ?>&tab=student_attendance"
                 class="nav-tab <?php echo $active_tab === 'student_attendance' ? 'nav-tab-active' : ''; ?>">
                 <?php echo Olama_School_Helpers::translate('Student Attendance'); ?>
             </a>
         <?php endif; ?>
         <?php if ($can_manage_shifts): ?>
-            <a href="?page=olama-school-follow-up&tab=employee_shifts"
+            <a href="?page=<?php echo esc_attr($follow_up_page_slug); ?>&tab=employee_shifts"
                 class="nav-tab <?php echo $active_tab === 'employee_shifts' ? 'nav-tab-active' : ''; ?>">
                 <?php echo Olama_School_Helpers::translate('Employee Shifts'); ?>
             </a>
         <?php endif; ?>
         <?php if ($can_manage_cleaning): ?>
-            <a href="?page=olama-school-follow-up&tab=cleaning"
+            <a href="?page=<?php echo esc_attr($follow_up_page_slug); ?>&tab=cleaning"
                 class="nav-tab <?php echo $active_tab === 'cleaning' ? 'nav-tab-active' : ''; ?>">
                 <?php echo Olama_School_Helpers::translate('Cleaning'); ?>
             </a>
@@ -106,7 +110,7 @@ if ($section_id && $active_year && $can_manage_attendance) {
         <?php if ($active_tab === 'student_attendance' && $can_manage_attendance): ?>
             <div class="attendance-filters card" style="padding: 15px; margin-bottom: 20px; max-width: 100%;">
                 <form method="get" action="">
-                    <input type="hidden" name="page" value="olama-school-follow-up">
+                    <input type="hidden" name="page" value="<?php echo esc_attr($follow_up_page_slug); ?>">
                     <input type="hidden" name="tab" value="student_attendance">
 
                     <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
@@ -609,7 +613,7 @@ if ($section_id && $active_year && $can_manage_attendance) {
                 <div class="cleaning-header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div></div>
                     <?php if ($can_configure): ?>
-                        <a href="?page=olama-school-follow-up&tab=cleaning&view=config" class="button">
+                        <a href="?page=<?php echo esc_attr($follow_up_page_slug); ?>&tab=cleaning&view=config" class="button">
                             <span class="dashicons dashicons-admin-generic" style="vertical-align: middle; margin-right: 5px;"></span>
                             <?php echo Olama_School_Helpers::translate('Configuration'); ?>
                         </a>
@@ -618,7 +622,7 @@ if ($section_id && $active_year && $can_manage_attendance) {
 
                 <div class="cleaning-filters card" style="padding: 20px; margin-bottom: 25px; border-radius: 12px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: #fdfdfd;">
                     <form method="get" action="">
-                        <input type="hidden" name="page" value="olama-school-follow-up">
+                        <input type="hidden" name="page" value="<?php echo esc_attr($follow_up_page_slug); ?>">
                         <input type="hidden" name="tab" value="cleaning">
                         <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
                             <div style="flex: 1; min-width: 200px;">

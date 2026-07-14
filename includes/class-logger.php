@@ -18,6 +18,11 @@ class Olama_School_Logger
      */
     public static function log($action, $details = '', $user_id = 0)
     {
+        if (class_exists('Olama_Core_Logger')) {
+            Olama_Core_Logger::log($action, $details, 'school', $user_id);
+            return;
+        }
+
         global $wpdb;
 
         if (!$user_id) {

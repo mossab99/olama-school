@@ -29,7 +29,7 @@ if (!isset($sections[$section])) {
                 <?php echo Olama_School_Helpers::translate('Cleaning Configuration'); ?>
             </div>
             <?php foreach ($sections as $id => $s): ?>
-                <a href="?page=olama-school-follow-up&tab=cleaning&view=config&section=<?php echo $id; ?>" 
+                <a href="?page=<?php echo esc_attr($follow_up_page_slug ?? 'olama-school-follow-up'); ?>&tab=cleaning&view=config&section=<?php echo $id; ?>"
                    style="display: flex; gap: 10px; padding: 15px 20px; text-decoration: none; color: <?php echo $section === $id ? '#1e88e5' : '#666'; ?>; background: <?php echo $section === $id ? '#f0f7ff' : '#fff'; ?>; border-left: 4px solid <?php echo $section === $id ? '#1e88e5' : 'transparent'; ?>; transition: all 0.2s; font-weight: <?php echo $section === $id ? '600' : '400'; ?>;">
                     <i class="dashicons <?php echo $s['icon']; ?>"></i>
                     <?php echo $s['label']; ?>
@@ -38,7 +38,7 @@ if (!isset($sections[$section])) {
         </div>
         
         <div style="margin-top: 20px;">
-            <a href="?page=olama-school-follow-up&tab=cleaning" class="button button-link" style="color: #666;">
+            <a href="?page=<?php echo esc_attr($follow_up_page_slug ?? 'olama-school-follow-up'); ?>&tab=cleaning" class="button button-link" style="color: #666;">
                 <i class="dashicons dashicons-arrow-left-alt" style="vertical-align: middle;"></i> <?php echo Olama_School_Helpers::translate('Back to Logs'); ?>
             </a>
         </div>

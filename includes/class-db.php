@@ -14,7 +14,7 @@ class Olama_School_DB
 	 */
 	public static function get_tables()
 	{
-		return array(
+		$tables = array(
 			'olama_settings',
 			'olama_academic_years',
 			'olama_semesters',
@@ -33,8 +33,6 @@ class Olama_School_DB
 			'olama_curriculum_lessons',
 			'olama_curriculum_questions',
 			'olama_logs',
-			'olama_transport_buses',
-			'olama_student_bus_assignments',
 			'olama_academic_events',
 			'olama_teacher_assignments',
 			'olama_teacher_office_hours',
@@ -76,6 +74,53 @@ class Olama_School_DB
 			'olama_exam_hall_invigilators',
 			'olama_system_logs'
 		);
+
+		if (!olama_school_should_load_legacy_kg_module()) {
+			$tables = array_values(array_diff($tables, array(
+				'olama_kg_photo_session',
+				'olama_kg_graduation_session',
+			)));
+		}
+
+		if (!olama_school_should_load_legacy_student_evaluation_module()) {
+			$tables = array_values(array_diff($tables, array(
+				'olama_ev_templates',
+				'olama_ev_domains',
+				'olama_ev_categories',
+				'olama_ev_indicators',
+				'olama_ev_records',
+				'olama_ev_scores',
+				'olama_attendance',
+				'olama_attendance_sheets',
+			)));
+		}
+
+		if (!olama_school_should_load_legacy_employees_module()) {
+			$tables = array_values(array_diff($tables, array(
+				'olama_shifts_locations',
+				'olama_shifts_time_slots',
+				'olama_shifts_schedule',
+				'olama_shifts_periods',
+				'olama_shifts',
+				'olama_shifts_assignments',
+				'olama_cleaning_logs',
+				'olama_cleaning_items',
+				'olama_cleaning_floors',
+				'olama_cleaning_cleaners',
+				'olama_cleaning_slots',
+				'olama_cleaning_assignments',
+			)));
+		}
+
+		if (!olama_school_should_load_legacy_supervision_module()) {
+			$tables = array_values(array_diff($tables, array(
+				'olama_lesson_plans',
+				'olama_supervisor_visits',
+				'olama_supervisor_assignments',
+			)));
+		}
+
+		return $tables;
 	}
 
 	/**
@@ -926,6 +971,52 @@ class Olama_School_DB
 			) $charset_collate;"
 		);
 
+		if (!olama_school_should_load_legacy_transportation_module()) {
+			unset($tables['olama_transport_buses'], $tables['olama_student_bus_assignments']);
+		}
+
+		if (!olama_school_should_load_legacy_kg_module()) {
+			unset($tables['olama_kg_photo_session'], $tables['olama_kg_graduation_session']);
+		}
+
+		if (!olama_school_should_load_legacy_student_evaluation_module()) {
+			unset(
+				$tables['olama_ev_templates'],
+				$tables['olama_ev_domains'],
+				$tables['olama_ev_categories'],
+				$tables['olama_ev_indicators'],
+				$tables['olama_ev_records'],
+				$tables['olama_ev_scores'],
+				$tables['olama_attendance'],
+				$tables['olama_attendance_sheets']
+			);
+		}
+
+		if (!olama_school_should_load_legacy_employees_module()) {
+			unset(
+				$tables['olama_shifts_locations'],
+				$tables['olama_shifts_time_slots'],
+				$tables['olama_shifts_schedule'],
+				$tables['olama_shifts_periods'],
+				$tables['olama_shifts'],
+				$tables['olama_shifts_assignments'],
+				$tables['olama_cleaning_logs'],
+				$tables['olama_cleaning_items'],
+				$tables['olama_cleaning_floors'],
+				$tables['olama_cleaning_cleaners'],
+				$tables['olama_cleaning_slots'],
+				$tables['olama_cleaning_assignments']
+			);
+		}
+
+		if (!olama_school_should_load_legacy_supervision_module()) {
+			unset(
+				$tables['olama_lesson_plans'],
+				$tables['olama_supervisor_visits'],
+				$tables['olama_supervisor_assignments']
+			);
+		}
+
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		foreach ($tables as $table_sql) {
 			dbDelta($table_sql);
@@ -1086,11 +1177,13 @@ class Olama_School_DB
 		}
 
 		// Ensure student_uid exists in other student tables
-		$student_link_tables = array(
-			'olama_student_enrollment',
-			'olama_attendance',
-			'olama_student_bus_assignments'
-		);
+		$student_link_tables = array('olama_student_enrollment');
+		if (olama_school_should_load_legacy_student_evaluation_module()) {
+			$student_link_tables[] = 'olama_attendance';
+		}
+		if (olama_school_should_load_legacy_transportation_module()) {
+			$student_link_tables[] = 'olama_student_bus_assignments';
+		}
 
 		foreach ($student_link_tables as $table_base) {
 			$table_name = $wpdb->prefix . $table_base;
@@ -1119,13 +1212,15 @@ class Olama_School_DB
 				'old_key' => 'student_date',
 				'new_key' => 'student_uid_date',
 				'new_columns' => 'student_uid, attendance_date'
-			),
-			'olama_student_bus_assignments' => array(
+			)
+		);
+		if (olama_school_should_load_legacy_transportation_module()) {
+			$unique_key_migrations['olama_student_bus_assignments'] = array(
 				'old_key' => 'student_year',
 				'new_key' => 'student_uid_year',
 				'new_columns' => 'student_uid, academic_year_id'
-			)
-		);
+			);
+		}
 
 		foreach ($unique_key_migrations as $table_base => $key_info) {
 			$table_name = $wpdb->prefix . $table_base;
@@ -1337,7 +1432,7 @@ class Olama_School_DB
 		}
 
 		// Ensure shifts refactor updates
-		if ($wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}olama_shifts_locations'") === "{$wpdb->prefix}olama_shifts_locations") {
+		if (olama_school_should_load_legacy_employees_module() && $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}olama_shifts_locations'") === "{$wpdb->prefix}olama_shifts_locations") {
 			$location_cols = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}olama_shifts_locations");
 			$location_col_names = wp_list_pluck($location_cols, 'Field');
 			if (!in_array('gender', $location_col_names)) {
@@ -1552,6 +1647,7 @@ class Olama_School_DB
 		$tables = array(
 			'olama_supervisor_visits',
 			'olama_attendance',
+			'olama_attendance_sheets',
 			'olama_ev_scores',
 			'olama_ev_records',
 			'olama_ev_indicators',
@@ -1587,8 +1683,52 @@ class Olama_School_DB
 			'olama_shifts_periods',
 			'olama_shifts',
 			'olama_shifts_assignments',
-			'olama_shifts_locations'
+			'olama_shifts_locations',
+			'olama_cleaning_logs',
+			'olama_cleaning_items',
+			'olama_cleaning_floors',
+			'olama_cleaning_cleaners',
+			'olama_cleaning_slots',
+			'olama_cleaning_assignments'
 		);
+
+		if (!olama_school_should_load_legacy_supervision_module()) {
+			$tables = array_values(array_diff($tables, array(
+				'olama_lesson_plans',
+				'olama_supervisor_visits',
+				'olama_supervisor_assignments',
+			)));
+		}
+
+		if (!olama_school_should_load_legacy_student_evaluation_module()) {
+			$tables = array_values(array_diff($tables, array(
+				'olama_ev_templates',
+				'olama_ev_domains',
+				'olama_ev_categories',
+				'olama_ev_indicators',
+				'olama_ev_records',
+				'olama_ev_scores',
+				'olama_attendance',
+				'olama_attendance_sheets',
+			)));
+		}
+
+		if (!olama_school_should_load_legacy_employees_module()) {
+			$tables = array_values(array_diff($tables, array(
+				'olama_shifts_locations',
+				'olama_shifts_time_slots',
+				'olama_shifts_schedule',
+				'olama_shifts_periods',
+				'olama_shifts',
+				'olama_shifts_assignments',
+				'olama_cleaning_logs',
+				'olama_cleaning_items',
+				'olama_cleaning_floors',
+				'olama_cleaning_cleaners',
+				'olama_cleaning_slots',
+				'olama_cleaning_assignments',
+			)));
+		}
 
 		foreach ($tables as $table) {
 			$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}$table");
