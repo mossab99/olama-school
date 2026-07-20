@@ -303,7 +303,6 @@ function olama_school_activate()
         $olama_db->create_tables();
 
         // Initialize Permissions
-        Olama_School_Permissions::add_capabilities();
 
         // Flush rewrite rules
         flush_rewrite_rules();

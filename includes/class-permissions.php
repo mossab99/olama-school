@@ -23,17 +23,16 @@ class Olama_School_Permissions
         $initialized = get_option('olama_school_caps_version') === OLAMA_SCHOOL_VERSION;
         $exams_added = get_option('olama_school_exams_caps_added');
         $teacher_role = get_role('teacher');
-        $roles_exist = get_role('supervisor') && $teacher_role && get_role('assistant') && get_role('accountant');
-        $teacher_media_caps_added = $teacher_role &&
+        $roles_exist = true;
+        $teacher_media_caps_added = !$teacher_role || ($teacher_role &&
             $teacher_role->has_cap('olama_access_media_library') &&
-            $teacher_role->has_cap('olama_media_upload_video');
+            $teacher_role->has_cap('olama_media_upload_video'));
 
         if ($initialized && $exams_added && $roles_exist && $teacher_media_caps_added) {
             return;
         }
 
-        // Run capability setup only once or if explicit sync flag missing
-        self::add_capabilities();
+        // Capability grants are managed exclusively by the OLAMA Users matrix.
         update_option('olama_school_caps_version', OLAMA_SCHOOL_VERSION);
         update_option('olama_school_exams_caps_added', true);
     }
@@ -230,22 +229,8 @@ class Olama_School_Permissions
      */
     public static function add_capabilities()
     {
-        // Ensure custom roles exist
-        if (!get_role('teacher')) {
-            add_role('teacher', __('Teacher', 'olama-school'), get_role('author')->capabilities);
-        }
-        if (!get_role('supervisor')) {
-            add_role('supervisor', __('Supervisor', 'olama-school'), get_role('editor')->capabilities);
-        }
-        if (!get_role('assistant')) {
-            add_role('assistant', __('Assistant', 'olama-school'), get_role('author')->capabilities);
-        }
-        if (!get_role('accountant')) {
-            add_role('accountant', __('Accountant', 'olama-school'), get_role('author')->capabilities);
-        }
-
         $all_groups = self::get_all_capabilities();
-        $roles = array('administrator', 'editor', 'supervisor', 'author', 'teacher', 'assistant', 'accountant', 'os_warehouse_manager', 'os_warehouse_staff', 'os_viewer');
+        $roles = array('administrator');
 
         foreach ($roles as $role_name) {
             $role = get_role($role_name);
@@ -341,17 +326,6 @@ class Olama_School_Permissions
 
         if (!$user_id)
             return false;
-
-        // Super admins with manage_options always have all capabilities
-        if (user_can($user_id, 'manage_options')) {
-            return true;
-        }
-
-        // Supervisors have full access to all olama modules
-        $user = get_userdata($user_id);
-        if ($user && in_array('supervisor', (array) $user->roles) && strpos($capability, 'olama_') === 0) {
-            return true;
-        }
 
         return user_can($user_id, $capability);
     }

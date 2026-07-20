@@ -4867,6 +4867,9 @@ class Olama_School_Admin
         if (!current_user_can('manage_options')) {
             return;
         }
+        echo '<div class="notice notice-info inline"><p>' . esc_html__('Capabilities are managed centrally by OLAMA Users.', 'olama-school') . '</p></div>';
+        echo '<p><a class="button button-primary" href="' . esc_url(admin_url('admin.php?page=olama-users-matrix')) . '">' . esc_html__('Open OLAMA Users capabilities', 'olama-school') . '</a></p>';
+        return;
 
         $roles = array(
             'administrator' => __('Administrator', 'olama-school'),
