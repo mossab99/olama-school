@@ -189,13 +189,8 @@ class Olama_School_Exporter
 
         $filename = 'olama-subjects-' . date('Y-m-d') . '.csv';
 
-        // Fetch subjects joined with grades
-        $subjects = $wpdb->get_results("
-            SELECT s.*, g.grade_name
-            FROM {$wpdb->prefix}olama_subjects s
-            LEFT JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id
-            ORDER BY g.grade_name ASC, s.subject_name ASC
-        ");
+        // Fetch the current Oracle-backed subject projection.
+        $subjects = Olama_School_Subject::get_subjects();
 
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename=' . $filename);

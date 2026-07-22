@@ -2491,6 +2491,26 @@ class Olama_School_Admin
      */
     public function render_grades_page_content()
     {
+        $oracle_managed = Olama_School_Academic_Bridge::is_available();
+        $blocked_mutation = false;
+        if ($oracle_managed) {
+            foreach (array('add_grade', 'edit_grade', 'add_section', 'edit_section') as $field) {
+                if (isset($_POST[$field])) {
+                    unset($_POST[$field]);
+                    $blocked_mutation = true;
+                }
+            }
+            if (isset($_GET['action']) && in_array($_GET['action'], array('delete_grade', 'delete_section', 'clear_all_grades'), true)) {
+                unset($_GET['action']);
+                $blocked_mutation = true;
+            }
+            if ($blocked_mutation) {
+                echo '<div class="notice notice-error"><p>'
+                    . esc_html__('Grades and sections are managed by Oracle. Make structural changes in Oracle, then run Olama Oracle Sync.', 'olama-school')
+                    . '</p></div>';
+            }
+        }
+
         // Handle Grade submission
         if (isset($_POST['add_grade']) && check_admin_referer('olama_add_grade')) {
             $result = Olama_School_Grade::add_grade(array(
@@ -2642,6 +2662,19 @@ class Olama_School_Admin
      */
     public function handle_subject_actions()
     {
+        if (Olama_School_Academic_Bridge::is_available()) {
+            $has_mutation = isset($_POST['subject_action_type'])
+                || (isset($_GET['action']) && in_array($_GET['action'], array('delete_subject', 'clear_all_subjects'), true));
+            if ($has_mutation) {
+                set_transient(
+                    'olama_subject_error',
+                    __('Subjects are managed by Oracle. Make structural changes in Oracle, then run Olama Oracle Sync.', 'olama-school'),
+                    30
+                );
+            }
+            return;
+        }
+
         // Handle Subject submission (Add/Edit)
         if (isset($_POST['subject_action_type'])) {
             // Verify nonce

@@ -15,6 +15,13 @@ jQuery(document).ready(function ($) {
     const $sectionsList = $('#sections-list');
     const $subjectsList = $('#subjects-list');
 
+    $('#teacher-assignment-search').on('input', function () {
+        const term = $(this).val().toLowerCase().trim();
+        $teacherItems.each(function () {
+            $(this).toggle(!term || String($(this).data('search')).includes(term));
+        });
+    });
+
     function refreshSummary() {
         if (!selectedTeacherId) return;
         $.post(olamaAssignment.ajaxUrl, {
@@ -145,7 +152,7 @@ jQuery(document).ready(function ($) {
                         <div class="subject-item">
                             <input type="checkbox" class="assignment-checkbox" 
                                 data-subject-id="${subject.id}" ${isChecked}>
-                            <span class="item-title">${subject.subject_name} <small>(${subject.subject_code || ''})</small></span>
+                            <span class="item-title">${subject.subject_name} <small>(${subject.oracle_subject_id || subject.subject_code || ''})</small></span>
                         </div>`;
                 });
                 $subjectsList.html(html);
@@ -178,7 +185,10 @@ jQuery(document).ready(function ($) {
             if (response.success) {
                 refreshSummary();
             } else {
-                alert(olamaAssignment.i18n.error);
+                const message = typeof response.data === 'string'
+                    ? response.data
+                    : (response.data && response.data.message ? response.data.message : olamaAssignment.i18n.error);
+                alert(message);
                 $this.prop('checked', !$this.prop('checked')); // Revert
             }
         });

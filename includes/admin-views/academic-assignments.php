@@ -15,7 +15,7 @@ $grades = Olama_School_Grade::get_grades();
             <?php _e('Assign Teachers to Subjects', 'olama-school'); ?>
         </h2>
         <p>
-            <?php _e('Manage subject assignments by selecting a teacher, then narrowing down by grade and section.', 'olama-school'); ?>
+            <?php _e('Teachers come from active Olama Users employee accounts. Grades, sections, and subjects come from Oracle through Olama Core.', 'olama-school'); ?>
         </p>
     </div>
 
@@ -25,23 +25,30 @@ $grades = Olama_School_Grade::get_grades();
             <div class="column-header">
                 <span class="dashicons dashicons-businessman"></span>
                 <h3>
-                    <?php _e('1. Teachers', 'olama-school'); ?>
+                    <?php printf(__('1. Teachers (%d)', 'olama-school'), count($teachers)); ?>
                 </h3>
+            </div>
+            <div class="assignment-search-wrap">
+                <input type="search" id="teacher-assignment-search" placeholder="<?php esc_attr_e('Search teacher or employee ID', 'olama-school'); ?>">
             </div>
             <div class="assignment-list" id="teachers-list">
                 <?php foreach ($teachers as $teacher): ?>
-                    <div class="assignment-item teacher-item" data-id="<?php echo $teacher->ID; ?>">
+                    <div class="assignment-item teacher-item" data-id="<?php echo esc_attr($teacher->ID); ?>"
+                        data-search="<?php echo esc_attr(strtolower($teacher->display_name . ' ' . $teacher->employee_id . ' ' . $teacher->user_email)); ?>">
                         <div class="item-main">
                             <span class="item-title">
                                 <?php echo esc_html($teacher->display_name); ?>
                             </span>
                             <span class="item-sub">
-                                <?php echo esc_html($teacher->employee_id ? 'Employee ID: ' . $teacher->employee_id : ''); ?>
+                                <?php echo esc_html($teacher->employee_id ? __('Employee ID:', 'olama-school') . ' ' . $teacher->employee_id : ''); ?>
                             </span>
                         </div>
                         <span class="dashicons dashicons-arrow-right-alt2"></span>
                     </div>
                 <?php endforeach; ?>
+                <?php if (empty($teachers)): ?>
+                    <div class="select-hint"><p><?php _e('No active synchronized teachers were found. Run the employee sync in Olama Users.', 'olama-school'); ?></p></div>
+                <?php endif; ?>
             </div>
         </div>
 

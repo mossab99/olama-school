@@ -454,6 +454,10 @@ class Olama_School_Importer
     {
         global $wpdb;
 
+        if (class_exists('Olama_School_Academic_Bridge') && Olama_School_Academic_Bridge::is_available()) {
+            wp_die(__('Subjects are managed by Oracle. Import them through Olama Oracle Sync.', 'olama-school'));
+        }
+
         // Verify nonce
         if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_import_subjects')) {
             wp_die(__('Security check failed.', 'olama-school'));
@@ -571,6 +575,10 @@ class Olama_School_Importer
     public static function import_grades_sections_csv()
     {
         global $wpdb;
+
+        if (class_exists('Olama_School_Academic_Bridge') && Olama_School_Academic_Bridge::is_available()) {
+            wp_die(__('Grades and sections are managed by Oracle. Import them through Olama Oracle Sync.', 'olama-school'));
+        }
 
         // Verify nonce
         if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_import_grades')) {

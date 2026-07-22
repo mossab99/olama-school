@@ -21,7 +21,18 @@ class Olama_School_Grade
             return self::$cache['all_grades'];
         }
         global $wpdb;
-        $results = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_grades ORDER BY CAST(grade_level AS UNSIGNED) ASC");
+        if (Olama_School_Academic_Bridge::sync()) {
+            $results = $wpdb->get_results(
+                "SELECT g.*, c.grade_id AS oracle_grade_id, c.grade_name AS grade_name,
+                        c.last_synced_at AS oracle_last_synced_at
+                 FROM {$wpdb->prefix}olama_grades g
+                 INNER JOIN {$wpdb->prefix}olama_core_academic_grades c
+                    ON c.grade_id = g.core_grade_id
+                 ORDER BY CAST(c.grade_id AS SIGNED), c.grade_id"
+            );
+        } else {
+            $results = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}olama_grades ORDER BY CAST(grade_level AS SIGNED) ASC");
+        }
         self::$cache['all_grades'] = $results;
         return $results;
     }
@@ -31,6 +42,10 @@ class Olama_School_Grade
      */
     public static function add_grade($data)
     {
+        if (Olama_School_Academic_Bridge::is_available()) {
+            return new WP_Error('oracle_managed', __('Grades are managed by Oracle and synchronized through Olama Core.', 'olama-school'));
+        }
+
         global $wpdb;
 
         // Check for duplicates
@@ -70,10 +85,21 @@ class Olama_School_Grade
             return self::$cache['grade_' . $id];
         }
         global $wpdb;
-        $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_grades WHERE id = %d",
-            $id
-        ));
+        if (Olama_School_Academic_Bridge::sync()) {
+            $row = $wpdb->get_row($wpdb->prepare(
+                "SELECT g.*, c.grade_id AS oracle_grade_id, c.grade_name AS grade_name,
+                        c.last_synced_at AS oracle_last_synced_at
+                 FROM {$wpdb->prefix}olama_grades g
+                 INNER JOIN {$wpdb->prefix}olama_core_academic_grades c ON c.grade_id = g.core_grade_id
+                 WHERE g.id = %d",
+                $id
+            ));
+        } else {
+            $row = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}olama_grades WHERE id = %d",
+                $id
+            ));
+        }
         self::$cache['grade_' . $id] = $row;
         return $row;
     }
@@ -84,6 +110,16 @@ class Olama_School_Grade
     public static function update_grade($id, $data)
     {
         global $wpdb;
+
+        if (Olama_School_Academic_Bridge::is_available()) {
+            $allowed = array('periods_count', 'max_weekly_plans', 'max_sun', 'max_mon', 'max_tue', 'max_wed', 'max_thu', 'is_active');
+            $settings = array_intersect_key($data, array_flip($allowed));
+            if (empty($settings)) {
+                return new WP_Error('oracle_managed', __('Grade names and levels are managed by Oracle.', 'olama-school'));
+            }
+            self::$cache = array();
+            return $wpdb->update("{$wpdb->prefix}olama_grades", $settings, array('id' => $id));
+        }
 
         // Check for duplicates (excluding current ID)
         $exists = $wpdb->get_var($wpdb->prepare(
@@ -119,6 +155,10 @@ class Olama_School_Grade
      */
     public static function delete_grade($id)
     {
+        if (Olama_School_Academic_Bridge::is_available()) {
+            return new WP_Error('oracle_managed', __('Grades are managed by Oracle and cannot be deleted in Olama School.', 'olama-school'));
+        }
+
         global $wpdb;
 
         // Check for related records

@@ -21,7 +21,12 @@ class Olama_School_Section
             return self::$cache['all_sections'];
         }
         global $wpdb;
-        $results = $wpdb->get_results("SELECT s.*, g.grade_name FROM {$wpdb->prefix}olama_sections s JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id");
+        $study_year = Olama_School_Academic_Bridge::get_study_year();
+        if (Olama_School_Academic_Bridge::sync($study_year)) {
+            $results = self::query_core_sections($study_year);
+        } else {
+            $results = $wpdb->get_results("SELECT s.*, g.grade_name FROM {$wpdb->prefix}olama_sections s JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id");
+        }
         self::$cache['all_sections'] = $results;
         return $results;
     }
@@ -42,14 +47,19 @@ class Olama_School_Section
         }
 
         global $wpdb;
-        $results = $wpdb->get_results($wpdb->prepare(
-            "SELECT s.*, g.grade_name 
-             FROM {$wpdb->prefix}olama_sections s 
-             JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id 
-             WHERE s.academic_year_id = %d 
-             ORDER BY CAST(g.grade_level AS UNSIGNED), s.section_name",
-            $academic_year_id
-        ));
+        $study_year = Olama_School_Academic_Bridge::get_study_year($academic_year_id);
+        if (Olama_School_Academic_Bridge::sync($study_year)) {
+            $results = self::query_core_sections($study_year);
+        } else {
+            $results = $wpdb->get_results($wpdb->prepare(
+                "SELECT s.*, g.grade_name
+                 FROM {$wpdb->prefix}olama_sections s
+                 JOIN {$wpdb->prefix}olama_grades g ON s.grade_id = g.id
+                 WHERE s.academic_year_id = %d
+                 ORDER BY CAST(g.grade_level AS SIGNED), s.section_name",
+                $academic_year_id
+            ));
+        }
         self::$cache[$cache_key] = $results;
         return $results;
     }
@@ -70,11 +80,16 @@ class Olama_School_Section
         }
 
         global $wpdb;
-        $results = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d AND academic_year_id = %d",
-            $grade_id,
-            $academic_year_id
-        ));
+        $study_year = Olama_School_Academic_Bridge::get_study_year($academic_year_id);
+        if (Olama_School_Academic_Bridge::sync($study_year)) {
+            $results = self::query_core_sections($study_year, $grade_id);
+        } else {
+            $results = $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}olama_sections WHERE grade_id = %d AND academic_year_id = %d",
+                $grade_id,
+                $academic_year_id
+            ));
+        }
         self::$cache[$cache_key] = $results;
         return $results;
     }
@@ -88,10 +103,33 @@ class Olama_School_Section
             return self::$cache['section_' . $id];
         }
         global $wpdb;
-        $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}olama_sections WHERE id = %d",
-            $id
-        ));
+        if (Olama_School_Academic_Bridge::is_available()) {
+            $row = $wpdb->get_row($wpdb->prepare(
+                "SELECT s.*, gs.section_name AS section_name, gs.grade_name AS grade_name,
+                        gs.section_id AS oracle_section_id, gs.grade_id AS oracle_grade_id,
+                        gs.last_synced_at AS oracle_last_synced_at
+                 FROM {$wpdb->prefix}olama_sections s
+                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_sections gs
+                    ON gs.study_year = s.core_study_year
+                   AND gs.grade_id = s.core_grade_id
+                   AND gs.section_id = s.core_section_id
+                 WHERE s.id = %d",
+                $id
+            ));
+            if (!$row) {
+                // Preserve access to historical School sections that are not
+                // members of the current Oracle study-year snapshot.
+                $row = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}olama_sections WHERE id = %d",
+                    $id
+                ));
+            }
+        } else {
+            $row = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}olama_sections WHERE id = %d",
+                $id
+            ));
+        }
         self::$cache['section_' . $id] = $row;
         return $row;
     }
@@ -101,6 +139,10 @@ class Olama_School_Section
      */
     public static function add_section($data)
     {
+        if (Olama_School_Academic_Bridge::is_available()) {
+            return new WP_Error('oracle_managed', __('Sections are managed by Oracle and synchronized through Olama Core.', 'olama-school'));
+        }
+
         global $wpdb;
 
         // Check for duplicates in the same grade and academic year
@@ -131,6 +173,10 @@ class Olama_School_Section
      */
     public static function update_section($id, $data)
     {
+        if (Olama_School_Academic_Bridge::is_available()) {
+            return new WP_Error('oracle_managed', __('Section membership and names are managed by Oracle.', 'olama-school'));
+        }
+
         global $wpdb;
 
         // Check for duplicates (excluding current ID)
@@ -163,6 +209,10 @@ class Olama_School_Section
      */
     public static function delete_section($id)
     {
+        if (Olama_School_Academic_Bridge::is_available()) {
+            return new WP_Error('oracle_managed', __('Sections are managed by Oracle and cannot be deleted in Olama School.', 'olama-school'));
+        }
+
         global $wpdb;
 
         // Check for related records (enrollments)
@@ -176,5 +226,32 @@ class Olama_School_Section
         }
 
         return $wpdb->delete("{$wpdb->prefix}olama_sections", array('id' => $id));
+    }
+
+    private static function query_core_sections($study_year, $grade_id = 0)
+    {
+        global $wpdb;
+
+        $where = 'WHERE gs.study_year = %s';
+        $values = array($study_year);
+        if ($grade_id) {
+            $where .= ' AND s.grade_id = %d';
+            $values[] = $grade_id;
+        }
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT s.*, gs.section_name AS section_name, gs.grade_name AS grade_name,
+                    gs.section_id AS oracle_section_id, gs.grade_id AS oracle_grade_id,
+                    gs.last_synced_at AS oracle_last_synced_at
+             FROM {$wpdb->prefix}olama_sections s
+             INNER JOIN {$wpdb->prefix}olama_core_academic_grade_sections gs
+                ON gs.study_year = s.core_study_year
+               AND gs.grade_id = s.core_grade_id
+               AND gs.section_id = s.core_section_id
+             {$where}
+             ORDER BY CAST(gs.grade_id AS SIGNED), gs.grade_id,
+                      CAST(gs.section_id AS SIGNED), gs.section_id",
+            $values
+        ));
     }
 }

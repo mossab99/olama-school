@@ -660,8 +660,11 @@ class Olama_School_Ajax_Handlers
     public function get_teacher_summary()
     {
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_manage_academic_assignment')) {
+            wp_send_json_error(__('You are not allowed to manage teacher assignments.', 'olama-school'), 403);
+        }
         $teacher_id = intval($_POST['teacher_id']);
-        if (!$teacher_id) {
+        if (!$teacher_id || !Olama_School_Teacher::get_synced_teacher($teacher_id)) {
             wp_send_json_error(__('Invalid Teacher ID', 'olama-school'));
         }
         $active_year = Olama_School_Academic::get_active_year();
@@ -672,12 +675,15 @@ class Olama_School_Ajax_Handlers
     public function get_teacher_assignments()
     {
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_manage_academic_assignment')) {
+            wp_send_json_error(__('You are not allowed to manage teacher assignments.', 'olama-school'), 403);
+        }
 
         $teacher_id = intval($_POST['teacher_id']);
         $section_id = intval($_POST['section_id']);
         $grade_id = intval($_POST['grade_id']);
 
-        if (!$teacher_id || !$section_id || !$grade_id) {
+        if (!$teacher_id || !$section_id || !$grade_id || !Olama_School_Teacher::get_synced_teacher($teacher_id)) {
             wp_send_json_error(__('Invalid parameters', 'olama-school'));
         }
 
@@ -694,6 +700,9 @@ class Olama_School_Ajax_Handlers
     public function toggle_teacher_assignment()
     {
         check_ajax_referer('olama_curriculum_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_manage_academic_assignment')) {
+            wp_send_json_error(__('You are not allowed to manage teacher assignments.', 'olama-school'), 403);
+        }
 
         $teacher_id = intval($_POST['teacher_id']);
         $section_id = intval($_POST['section_id']);
@@ -707,7 +716,9 @@ class Olama_School_Ajax_Handlers
         $active_year = Olama_School_Academic::get_active_year();
         $result = Olama_School_Teacher::toggle_assignment($teacher_id, $section_id, $subject_id, $grade_id, $active_year ? $active_year->id : 0);
 
-        if ($result !== false) {
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        } elseif ($result !== false) {
             wp_send_json_success();
         } else {
             wp_send_json_error(__('Database error', 'olama-school'));

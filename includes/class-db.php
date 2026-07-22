@@ -164,6 +164,8 @@ class Olama_School_DB
 
 			'olama_grades' => "CREATE TABLE {$wpdb->prefix}olama_grades (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				core_grade_id varchar(50) DEFAULT NULL,
+				academic_source varchar(20) DEFAULT 'manual' NOT NULL,
 				grade_name varchar(50) NOT NULL,
 				grade_level varchar(20) NOT NULL,
 				periods_count tinyint(4) DEFAULT 8 NOT NULL,
@@ -174,23 +176,33 @@ class Olama_School_DB
 				max_wed tinyint(4) DEFAULT 0 NOT NULL,
 				max_thu tinyint(4) DEFAULT 0 NOT NULL,
 				is_active tinyint(1) DEFAULT 1 NOT NULL,
-				PRIMARY KEY  (id)
+				PRIMARY KEY  (id),
+				UNIQUE KEY core_grade_id (core_grade_id)
 			) $charset_collate;",
 
 			'olama_sections' => "CREATE TABLE {$wpdb->prefix}olama_sections (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				academic_year_id mediumint(9) NOT NULL,
 				grade_id mediumint(9) NOT NULL,
+				core_grade_id varchar(50) DEFAULT NULL,
+				core_section_id varchar(50) DEFAULT NULL,
+				core_study_year varchar(20) DEFAULT NULL,
+				academic_source varchar(20) DEFAULT 'manual' NOT NULL,
 				section_name varchar(50) NOT NULL,
 				room_number varchar(20) DEFAULT NULL,
 				homeroom_teacher_id bigint(20) UNSIGNED DEFAULT NULL,
 				PRIMARY KEY  (id),
 				KEY  academic_year_id (academic_year_id),
-				KEY  grade_id (grade_id)
+				KEY  grade_id (grade_id),
+				UNIQUE KEY core_grade_section (core_study_year, core_grade_id, core_section_id)
 			) $charset_collate;",
 
 			'olama_subjects' => "CREATE TABLE {$wpdb->prefix}olama_subjects (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				core_study_year varchar(20) DEFAULT NULL,
+				core_grade_id varchar(50) DEFAULT NULL,
+				core_subject_id varchar(50) DEFAULT NULL,
+				academic_source varchar(20) DEFAULT 'manual' NOT NULL,
 				subject_name varchar(100) NOT NULL,
 				subject_code varchar(20) DEFAULT NULL,
 				grade_id mediumint(9) NOT NULL,
@@ -198,7 +210,8 @@ class Olama_School_DB
 				max_weekly_plans tinyint(4) DEFAULT 0 NOT NULL,
 				is_active tinyint(1) DEFAULT 1 NOT NULL,
 				PRIMARY KEY  (id),
-				KEY  grade_id (grade_id)
+				KEY  grade_id (grade_id),
+				UNIQUE KEY core_grade_subject (core_study_year, core_grade_id, core_subject_id)
 			) $charset_collate;",
 
 			'olama_teachers' => "CREATE TABLE {$wpdb->prefix}olama_teachers (
@@ -443,12 +456,14 @@ class Olama_School_DB
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				academic_year_id mediumint(9) NOT NULL,
 				teacher_id bigint(20) UNSIGNED NOT NULL,
+				teacher_employee_id varchar(50) DEFAULT NULL,
 				grade_id mediumint(9) NOT NULL,
 				section_id mediumint(9) NOT NULL,
 				subject_id mediumint(9) NOT NULL,
 				PRIMARY KEY  (id),
 				KEY  academic_year_id (academic_year_id),
 				KEY  teacher_id (teacher_id),
+				KEY  teacher_employee_id (teacher_employee_id),
 				KEY  section_id (section_id),
 				KEY  assignment (teacher_id, section_id, subject_id),
 				KEY  assignment_full (academic_year_id, grade_id, section_id)

@@ -17,8 +17,40 @@ class Olama_School_Teacher
     {
         global $wpdb;
 
-        // Get only users with teacher role
-        $teacher_users = get_users(array('role__in' => array('administrator', 'editor', 'supervisor', 'author', 'teacher', 'assistant')));
+        $identity_table = $wpdb->prefix . 'olama_user_identities';
+        $profile_table = $wpdb->prefix . 'olama_core_staff_profiles';
+        $has_identity_source = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $identity_table)) === $identity_table
+            && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $profile_table)) === $profile_table;
+
+        if ($has_identity_source) {
+            $teacher_ids = get_users(array(
+                'role' => 'olama_teacher',
+                'fields' => 'ids',
+            ));
+
+            if (empty($teacher_ids)) {
+                return array();
+            }
+
+            $placeholders = implode(',', array_fill(0, count($teacher_ids), '%d'));
+
+            return $wpdb->get_results($wpdb->prepare(
+                "SELECT u.ID, u.display_name, u.user_email,
+                        p.employee_id, p.phone_number, i.account_status
+                 FROM {$wpdb->users} u
+                 INNER JOIN {$profile_table} p ON p.user_id = u.ID
+                 INNER JOIN {$identity_table} i
+                    ON i.wp_user_id = u.ID
+                   AND i.identity_type = 'employee'
+                   AND i.account_status = 'active'
+                 WHERE u.ID IN ({$placeholders})
+                 ORDER BY CAST(p.employee_id AS UNSIGNED), p.employee_id, u.display_name",
+                ...array_map('intval', $teacher_ids)
+            ));
+        }
+
+        // Compatibility fallback for sites that have not installed Olama Core/Users yet.
+        $teacher_users = get_users(array('role__in' => array('teacher', 'assistant')));
 
         if (empty($teacher_users)) {
             return array();
@@ -32,9 +64,29 @@ class Olama_School_Teacher
             "SELECT u.ID, u.display_name, u.user_email, t.employee_id, t.phone_number 
 			FROM {$wpdb->users} u 
 			LEFT JOIN {$wpdb->prefix}olama_teachers t ON u.ID = t.id
-            WHERE u.ID IN ($placeholders)",
+            WHERE u.ID IN ($placeholders)
+            ORDER BY u.display_name",
             ...$teacher_ids
         ));
+    }
+
+    /**
+     * Get an active teacher synchronized by Olama Users/Core.
+     */
+    public static function get_synced_teacher($teacher_id)
+    {
+        $teacher_id = absint($teacher_id);
+        if (!$teacher_id) {
+            return null;
+        }
+
+        foreach (self::get_teachers() as $teacher) {
+            if ((int) $teacher->ID === $teacher_id) {
+                return $teacher;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -64,10 +116,52 @@ class Olama_School_Teacher
         }
 
         global $wpdb;
+        $teacher = self::get_synced_teacher($teacher_id);
+        $employee_id = $teacher ? (string) $teacher->employee_id : '';
+        $study_year = Olama_School_Academic_Bridge::get_study_year($academic_year_id);
+
+        if ($study_year !== '' && Olama_School_Academic_Bridge::sync($study_year)) {
+            return $wpdb->get_col($wpdb->prepare(
+                "SELECT DISTINCT ta.subject_id
+                 FROM {$wpdb->prefix}olama_teacher_assignments ta
+                 INNER JOIN {$wpdb->prefix}olama_sections sec
+                    ON sec.id = ta.section_id
+                   AND sec.grade_id = ta.grade_id
+                   AND sec.academic_year_id = ta.academic_year_id
+                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_sections csec
+                    ON csec.study_year = sec.core_study_year
+                   AND csec.grade_id = sec.core_grade_id
+                   AND csec.section_id = sec.core_section_id
+                 INNER JOIN {$wpdb->prefix}olama_subjects s
+                    ON s.id = ta.subject_id
+                   AND s.grade_id = ta.grade_id
+                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_subjects cs
+                    ON cs.study_year = s.core_study_year
+                   AND cs.grade_id = s.core_grade_id
+                   AND cs.subject_id = s.core_subject_id
+                   AND cs.is_active = 1
+                 WHERE (ta.teacher_id = %d OR (%s <> '' AND ta.teacher_employee_id = %s))
+                   AND ta.section_id = %d
+                   AND ta.academic_year_id = %d
+                   AND csec.study_year = %s
+                   AND cs.study_year = %s",
+                $teacher_id,
+                $employee_id,
+                $employee_id,
+                $section_id,
+                $academic_year_id,
+                $study_year,
+                $study_year
+            ));
+        }
+
         return $wpdb->get_col($wpdb->prepare(
-            "SELECT subject_id FROM {$wpdb->prefix}olama_teacher_assignments 
-            WHERE teacher_id = %d AND section_id = %d AND academic_year_id = %d",
+            "SELECT subject_id FROM {$wpdb->prefix}olama_teacher_assignments
+             WHERE (teacher_id = %d OR (%s <> '' AND teacher_employee_id = %s))
+               AND section_id = %d AND academic_year_id = %d",
             $teacher_id,
+            $employee_id,
+            $employee_id,
             $section_id,
             $academic_year_id
         ));
@@ -83,12 +177,47 @@ class Olama_School_Teacher
             $academic_year_id = $active_year ? $active_year->id : 0;
         }
 
+        $teacher = self::get_synced_teacher($teacher_id);
+        if (!$teacher) {
+            return new WP_Error('invalid_teacher', __('The selected teacher is not an active synchronized employee.', 'olama-school'));
+        }
+
+        $grade = Olama_School_Grade::get_grade($grade_id);
+        if (!$grade) {
+            return new WP_Error('invalid_grade', __('The selected grade is not available in the current Oracle data.', 'olama-school'));
+        }
+
+        $valid_section = false;
+        foreach (Olama_School_Section::get_by_grade($grade_id, $academic_year_id) as $section) {
+            if ((int) $section->id === (int) $section_id) {
+                $valid_section = true;
+                break;
+            }
+        }
+        if (!$valid_section) {
+            return new WP_Error('invalid_section', __('The selected section does not belong to this grade and study year.', 'olama-school'));
+        }
+
+        $valid_subject = false;
+        foreach (Olama_School_Subject::get_by_grade($grade_id, true) as $subject) {
+            if ((int) $subject->id === (int) $subject_id) {
+                $valid_subject = true;
+                break;
+            }
+        }
+        if (!$valid_subject) {
+            return new WP_Error('invalid_subject', __('The selected subject is not active for this grade in Oracle.', 'olama-school'));
+        }
+
         global $wpdb;
         $table = "{$wpdb->prefix}olama_teacher_assignments";
 
         $existing = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM $table WHERE teacher_id = %d AND section_id = %d AND subject_id = %d AND academic_year_id = %d",
+            "SELECT id FROM $table
+             WHERE (teacher_id = %d OR teacher_employee_id = %s)
+               AND section_id = %d AND subject_id = %d AND academic_year_id = %d",
             $teacher_id,
+            (string) $teacher->employee_id,
             $section_id,
             $subject_id,
             $academic_year_id
@@ -100,6 +229,7 @@ class Olama_School_Teacher
             return $wpdb->insert($table, array(
                 'academic_year_id' => $academic_year_id,
                 'teacher_id' => $teacher_id,
+                'teacher_employee_id' => (string) $teacher->employee_id,
                 'grade_id' => $grade_id,
                 'section_id' => $section_id,
                 'subject_id' => $subject_id,
@@ -118,10 +248,51 @@ class Olama_School_Teacher
         }
 
         global $wpdb;
+        $teacher = self::get_synced_teacher($teacher_id);
+        $employee_id = $teacher ? (string) $teacher->employee_id : '';
+        $study_year = Olama_School_Academic_Bridge::get_study_year($academic_year_id);
+
+        if ($study_year !== '' && Olama_School_Academic_Bridge::sync($study_year)) {
+            return $wpdb->get_results($wpdb->prepare(
+                "SELECT DISTINCT ta.grade_id, ta.section_id, ta.subject_id
+                 FROM {$wpdb->prefix}olama_teacher_assignments ta
+                 INNER JOIN {$wpdb->prefix}olama_sections sec
+                    ON sec.id = ta.section_id
+                   AND sec.grade_id = ta.grade_id
+                   AND sec.academic_year_id = ta.academic_year_id
+                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_sections csec
+                    ON csec.study_year = sec.core_study_year
+                   AND csec.grade_id = sec.core_grade_id
+                   AND csec.section_id = sec.core_section_id
+                 INNER JOIN {$wpdb->prefix}olama_subjects s
+                    ON s.id = ta.subject_id
+                   AND s.grade_id = ta.grade_id
+                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_subjects cs
+                    ON cs.study_year = s.core_study_year
+                   AND cs.grade_id = s.core_grade_id
+                   AND cs.subject_id = s.core_subject_id
+                   AND cs.is_active = 1
+                 WHERE (ta.teacher_id = %d OR (%s <> '' AND ta.teacher_employee_id = %s))
+                   AND ta.academic_year_id = %d
+                   AND csec.study_year = %s
+                   AND cs.study_year = %s",
+                $teacher_id,
+                $employee_id,
+                $employee_id,
+                $academic_year_id,
+                $study_year,
+                $study_year
+            ));
+        }
+
         return $wpdb->get_results($wpdb->prepare(
-            "SELECT grade_id, section_id, subject_id FROM {$wpdb->prefix}olama_teacher_assignments 
-            WHERE teacher_id = %d AND academic_year_id = %d",
+            "SELECT grade_id, section_id, subject_id
+             FROM {$wpdb->prefix}olama_teacher_assignments
+             WHERE (teacher_id = %d OR (%s <> '' AND teacher_employee_id = %s))
+               AND academic_year_id = %d",
             $teacher_id,
+            $employee_id,
+            $employee_id,
             $academic_year_id
         ));
     }
