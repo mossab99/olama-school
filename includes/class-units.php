@@ -38,9 +38,9 @@ class Olama_School_Unit
         global $wpdb;
         $table = "{$wpdb->prefix}olama_curriculum_units";
 
-        $unit_exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}os_units WHERE name = %s", $data['unit_name']));
-        if (!$unit_exists) {
-            return new WP_Error('invalid_unit_name', __('The selected unit title is not authorized. Please define it in Units settings.', 'olama-school'));
+        $unit_name = sanitize_text_field($data['unit_name'] ?? '');
+        if ($unit_name === '') {
+            return new WP_Error('missing_unit_name', __('Unit name is required.', 'olama-school'));
         }
 
         $unit_data = array(
@@ -48,7 +48,7 @@ class Olama_School_Unit
             'subject_id' => intval($data['subject_id']),
             'semester_id' => intval($data['semester_id']),
             'unit_number' => sanitize_text_field($data['unit_number']),
-            'unit_name' => sanitize_text_field($data['unit_name']),
+            'unit_name' => $unit_name,
             'objectives' => sanitize_textarea_field($data['objectives'] ?? ''),
         );
 

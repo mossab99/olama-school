@@ -22,6 +22,10 @@ jQuery(document).ready(function ($) {
         $(container).html('<div class="olama-loading">Loading...</div>');
     }
 
+    function escapeHtml(value) {
+        return $('<div>').text(value == null ? '' : String(value)).html();
+    }
+
     function toggleSection(sectionId, enabled) {
         const $section = $('#' + sectionId);
         if (enabled) {
@@ -188,10 +192,13 @@ jQuery(document).ready(function ($) {
             html = '<p>' + olamaCurriculum.i18n.noUnits + '</p>';
         } else {
             units.forEach(function (unit) {
+                const unitName = escapeHtml(unit.unit_name);
+                const unitNumber = escapeHtml(unit.unit_number || '');
+                const objectives = escapeHtml(unit.objectives || '');
                 html += `
-                <div class="olama-item unit-item" data-id="${unit.id}" data-name="${unit.unit_name}" data-number="${unit.unit_number || ''}" data-objectives="${unit.objectives || ''}">
+                <div class="olama-item unit-item" data-id="${unit.id}" data-name="${unitName}" data-number="${unitNumber}" data-objectives="${objectives}">
                     <div class="item-info">
-                        <strong>${unit.unit_number ? unit.unit_number + ' - ' : ''}${unit.unit_name}</strong>
+                        <strong>${unit.unit_number ? unitNumber + ' - ' : ''}${unitName}</strong>
                         ${parseInt(unit.lesson_count) === 0
                         ? `<span class="empty-unit-indicator" title="${olamaCurriculum.i18n.noLessons}"></span>`
                         : `<span class="lesson-count-badge">(${unit.lesson_count})</span>`}
@@ -236,8 +243,8 @@ jQuery(document).ready(function ($) {
         const data = {
             action: 'olama_save_curriculum_unit',
             id: $('#unit-id').val(),
-            unit_name: $('#unit-name').val(),
-            unit_number: $('#unit-number').val(),
+            unit_name: $.trim($('#unit-name').val()),
+            unit_number: $.trim($('#unit-number').val()),
             subject_id: currentSubject,
             grade_id: currentGrade,
             semester_id: $('#curriculum-semester').val(),

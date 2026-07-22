@@ -159,17 +159,17 @@ if ($import_error = get_transient('olama_import_error')) {
                     required>
             </div>
             <div style="margin-bottom: 10px;">
+                <input type="text" id="unit-name"
+                    <?php echo !empty($global_units) ? 'list="olama-unit-title-suggestions"' : ''; ?>
+                    placeholder="<?php echo Olama_School_Helpers::translate('Unit Name'); ?>"
+                    style="width: 100%; height: 40px; border-radius: 8px; border: 1px solid #cbd5e1;"
+                    required>
                 <?php if (!empty($global_units)): ?>
-                    <select id="unit-name" style="width: 100%; height: 40px; border-radius: 6px; border: 1px solid #cbd5e1;" required>
-                        <option value=""><?php echo Olama_School_Helpers::translate('-- Select Unit Title --'); ?></option>
+                    <datalist id="olama-unit-title-suggestions">
                         <?php foreach ($global_units as $gu): ?>
-                            <option value="<?php echo esc_attr($gu); ?>"><?php echo esc_html($gu); ?></option>
+                            <option value="<?php echo esc_attr($gu); ?>"></option>
                         <?php endforeach; ?>
-                    </select>
-                <?php else: ?>
-                    <input type="text" id="unit-name"
-                        placeholder="<?php echo Olama_School_Helpers::translate('Unit Name'); ?>" style="width: 100%; height: 40px; border-radius: 8px; border: 1px solid #cbd5e1;"
-                        required>
+                    </datalist>
                 <?php endif; ?>
             </div>
             <div style="margin-bottom: 10px;">
