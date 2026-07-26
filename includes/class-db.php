@@ -22,9 +22,6 @@ class Olama_School_DB
 			'olama_sections',
 			'olama_subjects',
 			'olama_teachers',
-			'olama_families',
-			'olama_students',
-			'olama_student_enrollment',
 			'olama_plans',
 			'olama_plan_questions',
 			'olama_templates',
@@ -142,63 +139,6 @@ class Olama_School_DB
 				employee_id varchar(50) DEFAULT NULL,
 				phone_number varchar(20) DEFAULT NULL,
 				PRIMARY KEY  (id)
-			) $charset_collate;",
-
-			'olama_families' => "CREATE TABLE {$wpdb->prefix}olama_families (
-				id mediumint(9) NOT NULL AUTO_INCREMENT,
-				family_uid varchar(50) NOT NULL,
-				family_name varchar(255) NOT NULL,
-				father_first_name varchar(100) DEFAULT NULL,
-				father_second_name varchar(100) DEFAULT NULL,
-				father_third_name varchar(100) DEFAULT NULL,
-				father_family_name varchar(100) DEFAULT NULL,
-				father_nationality varchar(50) DEFAULT NULL,
-				father_job varchar(100) DEFAULT NULL,
-				father_workplace varchar(100) DEFAULT NULL,
-				father_mobile varchar(20) DEFAULT NULL,
-				father_email varchar(100) DEFAULT NULL,
-				mother_full_name varchar(255) DEFAULT NULL,
-				mother_nationality varchar(50) DEFAULT NULL,
-				mother_mobile varchar(20) DEFAULT NULL,
-				mother_email varchar(100) DEFAULT NULL,
-				residential_area varchar(100) DEFAULT NULL,
-				home_address text DEFAULT NULL,
-				building_number varchar(50) DEFAULT NULL,
-				apartment_number varchar(50) DEFAULT NULL,
-				home_phone varchar(50) DEFAULT NULL,
-				address text DEFAULT NULL,
-				created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-				PRIMARY KEY  (id),
-				UNIQUE KEY family_uid (family_uid)
-			) $charset_collate;",
-
-			'olama_students' => "CREATE TABLE {$wpdb->prefix}olama_students (
-				id mediumint(9) NOT NULL AUTO_INCREMENT,
-				student_name varchar(100) NOT NULL,
-				student_uid varchar(50) NOT NULL,
-				family_id varchar(50) DEFAULT NULL,
-				dob date DEFAULT NULL,
-				national_id varchar(50) DEFAULT NULL,
-				gender varchar(20) DEFAULT NULL,
-				is_active tinyint(1) DEFAULT 1 NOT NULL,
-				PRIMARY KEY  (id),
-				KEY student_uid (student_uid),
-				KEY family_id (family_id)
-			) $charset_collate;",
-
-			'olama_student_enrollment' => "CREATE TABLE {$wpdb->prefix}olama_student_enrollment (
-				id mediumint(9) NOT NULL AUTO_INCREMENT,
-				student_id mediumint(9) NOT NULL,
-				student_uid varchar(50) DEFAULT NULL,
-				academic_year_id mediumint(9) NOT NULL,
-				section_id mediumint(9) NOT NULL,
-				enrollment_date date DEFAULT NULL,
-				status varchar(20) DEFAULT 'active' NOT NULL,
-				PRIMARY KEY  (id),
-				KEY student_id (student_id),
-				KEY student_uid (student_uid),
-				KEY academic_year_id (academic_year_id),
-				KEY section_id (section_id)
 			) $charset_collate;",
 
 			'olama_plans' => "CREATE TABLE {$wpdb->prefix}olama_plans (
@@ -460,9 +400,122 @@ class Olama_School_DB
 		$wpdb->query("UPDATE {$wpdb->prefix}olama_semesters SET semester_name = 'Second Semester' WHERE semester_name = '2nd Semester'");
 	}
 
+	/**
+	 * Replace obsolete School family/student tables with read-only compatibility
+	 * views backed by Olama Core. The physical legacy records are intentionally
+	 * discarded because Core is the sole source of truth.
+	 */
+	public function migrate_core_student_source()
+	{
+		global $wpdb;
+
+		$core_tables = array(
+			'olama_core_families',
+			'olama_core_students',
+			'olama_core_student_years',
+		);
+		foreach ($core_tables as $table) {
+			$full = $wpdb->prefix . $table;
+			if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $full)) !== $full) {
+				return new WP_Error('olama_core_schema_missing', __('Olama Core family/student tables are not available.', 'olama-school'));
+			}
+		}
+
+		if (class_exists('Olama_School_Academic_Bridge')) {
+			Olama_School_Academic_Bridge::sync();
+		}
+
+		$migration_option = 'olama_school_core_student_source_v2';
+		$migrated = (bool) get_option($migration_option, false);
+		$legacy_tables = array('olama_student_enrollment', 'olama_students', 'olama_families');
+		$table_types = array();
+		foreach ($legacy_tables as $table) {
+			$full = $wpdb->prefix . $table;
+			$type = $wpdb->get_var($wpdb->prepare(
+				'SELECT TABLE_TYPE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s',
+				$full
+			));
+			$table_types[$table] = $type;
+		}
+
+		if ($migrated && count(array_filter($table_types, static function ($type) {
+			return $type === 'VIEW';
+		})) === count($legacy_tables)) {
+			return true;
+		}
+
+		foreach ($legacy_tables as $table) {
+			$full = $wpdb->prefix . $table;
+			$type = $table_types[$table];
+			if ($type === 'BASE TABLE') {
+				if ($migrated) {
+					return new WP_Error('legacy_table_recreated', sprintf(__('Legacy table %s was recreated after the Core migration.', 'olama-school'), $full));
+				}
+				if ($wpdb->query("DROP TABLE IF EXISTS `{$full}`") === false) {
+					return new WP_Error('legacy_table_drop_failed', $wpdb->last_error);
+				}
+			}
+		}
+
+		$prefix = $wpdb->prefix;
+		$views = array(
+			"CREATE OR REPLACE ALGORITHM=TEMPTABLE VIEW `{$prefix}olama_families` AS
+			SELECT f.id, f.family_uid,
+			       COALESCE(f.sponsor_full_name, f.father_name, f.family_uid) AS family_name,
+			       f.father_name AS father_first_name, NULL AS father_second_name,
+			       NULL AS father_third_name, NULL AS father_family_name,
+			       f.father_nation AS father_nationality, f.father_job,
+			       f.father_work_place AS father_workplace, f.father_mobile, f.father_email,
+			       f.mother_name AS mother_full_name, f.mother_nation AS mother_nationality,
+			       f.mother_mobile, f.mother_email, f.trans_region_name AS residential_area,
+			       f.family_address AS home_address, f.building_no AS building_number,
+			       f.home_no AS apartment_number, f.family_home_phone AS home_phone,
+			       f.address, f.created_at
+			FROM `{$prefix}olama_core_families` f",
+
+			"CREATE OR REPLACE ALGORITHM=TEMPTABLE VIEW `{$prefix}olama_students` AS
+			SELECT s.id, s.student_name, s.student_uid, s.family_uid AS family_id,
+			       s.birth_date AS dob, s.student_national_no AS national_id,
+			       COALESCE(s.student_gender_name, s.student_gender) AS gender,
+			       CASE WHEN s.student_status IN ('0','inactive','disabled') THEN 0 ELSE 1 END AS is_active
+			FROM `{$prefix}olama_core_students` s",
+
+			"CREATE OR REPLACE ALGORITHM=TEMPTABLE VIEW `{$prefix}olama_student_enrollment` AS
+			SELECT y.id, s.id AS student_id, y.student_uid, ay.id AS academic_year_id,
+			       sec.id AS section_id, y.registration_date AS enrollment_date,
+			       CASE WHEN y.student_status IN ('0','inactive','withdrawn') THEN 'inactive' ELSE 'active' END AS status
+			FROM `{$prefix}olama_core_student_years` y
+			INNER JOIN `{$prefix}olama_core_students` s ON s.student_uid=y.student_uid
+			INNER JOIN `{$prefix}olama_academic_years` ay
+			    ON REPLACE(ay.year_name, '/', '-')=REPLACE(y.study_year, '/', '-')
+			INNER JOIN `{$prefix}olama_sections` sec ON sec.core_study_year=y.study_year
+			    AND sec.core_grade_id=y.class_id AND sec.core_section_id=y.section_id",
+		);
+
+		foreach ($views as $view_sql) {
+			if ($wpdb->query($view_sql) === false) {
+				return new WP_Error('core_compatibility_view_failed', $wpdb->last_error);
+			}
+		}
+
+		update_option($migration_option, OLAMA_SCHOOL_VERSION, false);
+		self::flush_student_cache();
+		return true;
+	}
+
+	private static function flush_student_cache()
+	{
+		global $wpdb;
+		$wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_olama_%students_list_%'");
+	}
+
 	public function drop_tables()
 	{
 		global $wpdb;
+		$compatibility_views = array('olama_student_enrollment', 'olama_students', 'olama_families');
+		foreach ($compatibility_views as $view) {
+			$wpdb->query("DROP VIEW IF EXISTS `{$wpdb->prefix}{$view}`");
+		}
 
 		$tables = array(
 			'olama_stationary',
@@ -477,7 +530,6 @@ class Olama_School_DB
 			'olama_templates',
 			'olama_plan_questions',
 			'olama_plans',
-			'olama_students',
 			'olama_teachers',
 			'olama_subjects',
 			'olama_sections',
@@ -494,5 +546,7 @@ class Olama_School_DB
 		}
 
 		delete_option('olama_school_version');
+		delete_option('olama_school_core_student_source_v1');
+		delete_option('olama_school_core_student_source_v2');
 	}
 }

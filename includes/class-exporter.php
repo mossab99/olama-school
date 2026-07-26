@@ -312,12 +312,17 @@ class Olama_School_Exporter
 
         $filename = 'olama-families-' . date('Y-m-d') . '.csv';
 
-        // Fetch families joined with students for a comprehensive export
+        // Export the authoritative Core family/student directory.
         $data = $wpdb->get_results("
-            SELECT f.*, s.student_name, s.student_uid, s.dob, s.national_id, s.gender
-            FROM {$wpdb->prefix}olama_families f
-            LEFT JOIN {$wpdb->prefix}olama_students s ON f.family_uid = s.family_id
-            ORDER BY f.family_name ASC, s.student_name ASC
+            SELECT f.family_uid,
+                   COALESCE(f.sponsor_full_name, f.father_name, f.family_uid) AS family_name,
+                   f.father_mobile, f.mother_mobile, f.address,
+                   s.student_name, s.student_uid, s.birth_date AS dob,
+                   s.student_national_no AS national_id,
+                   COALESCE(s.student_gender_name, s.student_gender) AS gender
+            FROM {$wpdb->prefix}olama_core_families f
+            LEFT JOIN {$wpdb->prefix}olama_core_students s ON f.family_uid = s.family_uid
+            ORDER BY family_name ASC, s.student_name ASC
         ");
 
         header('Content-Type: text/csv; charset=utf-8');
@@ -377,22 +382,7 @@ class Olama_School_Exporter
 
         $filename = 'olama-students-enrollment-' . date('Y-m-d') . '.csv';
 
-        // Fetch ALL students (Registry) with their LATEST enrollment info if any
-        $query = "SELECT s.*, e.section_id, e.academic_year_id, e.status as enrollment_status, 
-                  g.grade_name, sec.section_name, ay.year_name as academic_year_name,
-                  f.family_name, f.family_uid as f_uid
-                  FROM {$wpdb->prefix}olama_students s 
-                  LEFT JOIN {$wpdb->prefix}olama_families f ON s.family_id = f.family_uid
-                  LEFT JOIN (
-                      SELECT e1.* FROM {$wpdb->prefix}olama_student_enrollment e1
-                      WHERE e1.id = (SELECT MAX(id) FROM {$wpdb->prefix}olama_student_enrollment e2 WHERE e2.student_uid = e1.student_uid)
-                  ) e ON s.student_uid = e.student_uid 
-                  LEFT JOIN {$wpdb->prefix}olama_sections sec ON e.section_id = sec.id 
-                  LEFT JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id 
-                  LEFT JOIN {$wpdb->prefix}olama_academic_years ay ON e.academic_year_id = ay.id
-                  ORDER BY s.student_name ASC";
-
-        $data = $wpdb->get_results($query);
+        $data = Olama_School_Student::get_students();
 
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename=' . $filename);

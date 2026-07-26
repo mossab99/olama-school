@@ -28,7 +28,6 @@ class Olama_School_Admin
         add_action('admin_init', array($this, 'handle_subject_actions'));
         add_action('admin_init', array($this, 'handle_backup_restore_actions'));
         add_action('admin_init', array($this, 'handle_teacher_settings_save'));
-        add_action('admin_init', array($this, 'handle_family_actions'));
         add_action('wp_ajax_olama_get_semesters', array($this, 'ajax_get_semesters'));
         add_action('wp_ajax_olama_get_subjects', array($this, 'ajax_get_subjects'));
         add_action('wp_ajax_olama_get_student_history', array($this, 'ajax_get_enrollment_history'));
@@ -84,6 +83,10 @@ class Olama_School_Admin
      */
     public function handle_export()
     {
+        if (isset($_POST['olama_export_families'])) {
+            Olama_School_Exporter::export_families_csv();
+        }
+
         if (isset($_POST['olama_export']) && $_POST['olama_export'] === 'true') {
             Olama_School_Exporter::export_plans_csv();
         }
@@ -117,9 +120,7 @@ class Olama_School_Admin
             error_log('Olama Import: File detected. Type: ' . $type);
             error_log('Olama Import: POST data: ' . print_r($_POST, true));
 
-            if ($type === 'students') {
-                Olama_School_Importer::import_students_csv();
-            } elseif ($type === 'curriculum') {
+            if ($type === 'curriculum') {
                 Olama_School_Importer::import_curriculum_csv(
                     $_POST['semester_id'] ?? 0,
                     $_POST['grade_id'] ?? 0,
@@ -129,10 +130,6 @@ class Olama_School_Admin
                 Olama_School_Importer::import_subjects_csv();
             } elseif ($type === 'grades') {
                 Olama_School_Importer::import_grades_sections_csv();
-            } elseif ($type === 'families' || isset($_POST['olama_import_families'])) {
-                Olama_School_Importer::import_families_csv();
-            } elseif ($type === 'students_enrollment' || isset($_POST['olama_import_students_enrollment'])) {
-                Olama_School_Importer::import_students_enrollment_csv();
             } elseif ($type === 'plans' || !isset($_POST['olama_import_type'])) {
                 // Default to plans for legacy support if not otherwise handled
                 Olama_School_Importer::import_plans_csv();
@@ -1899,7 +1896,6 @@ class Olama_School_Admin
                 foreach ($all_grades as $grade) {
                     $tables_to_check = array(
                         'olama_sections' => 'sections',
-                        'olama_students' => 'students',
                         'olama_subjects' => 'subjects',
                         'olama_curriculum_units' => 'curriculum',
                     );
@@ -1917,7 +1913,7 @@ class Olama_School_Admin
                 }
 
                 if ($has_linked_data) {
-                    echo '<div class="error"><p>' . Olama_School_Helpers::translate('Cannot delete grades because some grades have linked data (sections, students, subjects, or curriculum). Please delete dependent data first.') . '</p></div>';
+                    echo '<div class="error"><p>' . Olama_School_Helpers::translate('Cannot delete grades because some grades have linked data (sections, subjects, or curriculum). Please delete dependent data first.') . '</p></div>';
                 } else {
                     // Safe to delete all grades
                     foreach ($all_grades as $grade) {
@@ -3623,8 +3619,8 @@ class Olama_School_Admin
 
         $stats = array();
 
-        // Total Students
-        $stats['total_students'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}olama_students");
+        // Total students in the authoritative Core registry.
+        $stats['total_students'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}olama_core_students");
 
         // Enrolled Students
         $active_year = Olama_School_Academic::get_active_year();
@@ -3632,9 +3628,10 @@ class Olama_School_Admin
 
         $stats['enrolled_students'] = 0;
         if ($active_year_id) {
+            $study_year = Olama_School_Academic_Bridge::get_study_year($active_year_id);
             $stats['enrolled_students'] = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(DISTINCT student_id) FROM {$wpdb->prefix}olama_student_enrollment WHERE academic_year_id = %d",
-                $active_year_id
+                "SELECT COUNT(DISTINCT student_uid) FROM {$wpdb->prefix}olama_core_student_years WHERE study_year = %s",
+                $study_year
             ));
         }
 
@@ -4074,88 +4071,6 @@ class Olama_School_Admin
 
         $students = Olama_School_Family::get_family_students($family_uid);
         wp_send_json_success($students);
-    }
-
-    /**
-     * Handle Family & Student Import/Export actions
-     */
-    public function handle_family_actions()
-    {
-        // Export Families
-        if (isset($_POST['olama_export_families'])) {
-            Olama_School_Exporter::export_families_csv();
-        }
-
-        // Import Families and Student Enrollment are now handled by the global handle_export method
-
-        // Save Family
-        if (isset($_POST['save_family'])) {
-            if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_save_family')) {
-                wp_die(__('Security check failed.', 'olama-school'));
-            }
-
-            // Prepare family data
-            $family_data = array(
-                'id' => $_POST['family_db_id'] ?? 0,
-                'family_uid' => $_POST['family_uid'],
-                'family_name' => $_POST['family_name'],
-                'father_mobile' => $_POST['father_mobile'] ?? '',
-                'mother_mobile' => $_POST['mother_mobile'] ?? '',
-                'address' => $_POST['address'] ?? ''
-            );
-
-            $id = Olama_School_Family::save_family($family_data);
-
-            if ($id && !is_wp_error($id)) {
-                // Batch save students
-                if (isset($_POST['students']) && is_array($_POST['students'])) {
-                    foreach ($_POST['students'] as $stu) {
-                        if (empty($stu['name']) || empty($stu['uid']))
-                            continue;
-
-                        $stu_data = array(
-                            'student_name' => sanitize_text_field($stu['name']),
-                            'student_uid' => sanitize_text_field($stu['uid']),
-                            'family_id' => $family_data['family_uid'],
-                            'dob' => $stu['dob'] ?? '',
-                            'national_id' => $stu['national_id'] ?? '',
-                            'gender' => $stu['gender'] ?? 'male'
-                        );
-
-                        if (!empty($stu['db_id'])) {
-                            Olama_School_Student::update_student(intval($stu['db_id']), $stu_data);
-                        } else {
-                            Olama_School_Student::register_student($stu_data);
-                        }
-                    }
-                }
-                set_transient('olama_admin_message', __('Family and students saved successfully.', 'olama-school'), 30);
-            } elseif (is_wp_error($id)) {
-                set_transient('olama_admin_error', $id->get_error_message(), 30);
-            }
-
-            wp_redirect(admin_url('admin.php?page=olama-school-users&tab=families'));
-            exit;
-        }
-
-        // Delete Family
-        if (isset($_POST['delete_family'])) {
-            if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'olama_delete_family')) {
-                wp_die(__('Security check failed.', 'olama-school'));
-            }
-
-            $family_id = intval($_POST['family_id']);
-            $result = Olama_School_Family::delete_family($family_id);
-
-            if (is_wp_error($result)) {
-                set_transient('olama_admin_error', $result->get_error_message(), 30);
-            } else {
-                set_transient('olama_admin_message', __('Family deleted successfully.', 'olama-school'), 30);
-            }
-
-            wp_redirect(admin_url('admin.php?page=olama-school-users&tab=families'));
-            exit;
-        }
     }
 
     /**

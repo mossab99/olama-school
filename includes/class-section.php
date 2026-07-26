@@ -215,10 +215,14 @@ class Olama_School_Section
 
         global $wpdb;
 
-        // Check for related records (enrollments)
+        // Check for related Core enrollment records.
+        $section = self::get_section($id);
         $count = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_student_enrollment WHERE section_id = %d",
-            $id
+            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_core_student_years
+             WHERE study_year = %s AND class_id = %s AND section_id = %s",
+            (string) ($section->core_study_year ?? ''),
+            (string) ($section->core_grade_id ?? ''),
+            (string) ($section->core_section_id ?? '')
         ));
 
         if ($count > 0) {

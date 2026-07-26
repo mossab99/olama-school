@@ -3,7 +3,7 @@
  * Plugin Name: Olama School System
  * Plugin URI: https://olama.online/olama-school-weekly-plan
  * Description: A comprehensive WordPress plugin for managing school weekly plans, including hierarchical structures (Grades, Sections), subject management, and teacher/student assignments.
- * Version: 2.8.1
+ * Version: 2.9.0
  * Requires Plugins: olama-core, olama-users
  * Author: د. مصعب الحنيطي
  * Author URI: https://olama.online
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 // Get version from plugin header to keep it synced
 $plugin_header_data = file_get_contents(__FILE__, false, null, 0, 500);
 preg_match('/Version:\s*(.*)$/mi', $plugin_header_data, $matches);
-define('OLAMA_SCHOOL_VERSION', isset($matches[1]) ? trim($matches[1]) : '2.8.1');
+define('OLAMA_SCHOOL_VERSION', isset($matches[1]) ? trim($matches[1]) : '2.9.0');
 define('OLAMA_SCHOOL_PATH', plugin_dir_path(__FILE__));
 define('OLAMA_SCHOOL_URL', plugin_dir_url(__FILE__));
 define('OLAMA_SCHOOL_FILE', __FILE__);
@@ -143,6 +143,7 @@ function olama_school_activate()
         // Initialize Database
         $olama_db = new Olama_School_DB();
         $olama_db->create_tables();
+        $olama_db->migrate_core_student_source();
 
         // Initialize Permissions
 
@@ -190,6 +191,13 @@ function olama_school_init()
         update_option('olama_school_version', OLAMA_SCHOOL_VERSION);
     }
 
+    // Keep legacy consumers read-only while Core remains the sole data owner.
+    $olama_db = isset($olama_db) ? $olama_db : new Olama_School_DB();
+    $core_student_migration = $olama_db->migrate_core_student_source();
+    if (is_wp_error($core_student_migration)) {
+        error_log('Olama School Core student bridge: ' . $core_student_migration->get_error_message());
+    }
+
     // Initialize Permissions (ensure caps are updated if code changes)
     Olama_School_Permissions::init();
 
@@ -224,6 +232,7 @@ function olama_check_db_reset()
         $olama_db = new Olama_School_DB();
         $olama_db->drop_tables();
         $olama_db->create_tables();
+        $olama_db->migrate_core_student_source();
 
         add_action('admin_notices', function () {
             echo '<div class="notice notice-success is-dismissible"><p>All Olama School tables have been successfully dropped and recreated.</p></div>';

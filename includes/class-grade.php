@@ -164,7 +164,6 @@ class Olama_School_Grade
         // Check for related records
         $tables_to_check = array(
             'olama_sections' => __('sections', 'olama-school'),
-            'olama_students' => __('students', 'olama-school'),
             'olama_subjects' => __('subjects', 'olama-school'),
             'olama_curriculum' => __('curriculum items', 'olama-school'),
         );
