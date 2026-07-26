@@ -23,4 +23,6 @@
 Olama School owns academic operations, curriculum, weekly plans, schedules,
 teacher assignments, office hours, reports, and School settings. Exams,
 evaluation, supervision, employees, KG, transportation, media, users, and
-permissions are provided by their standalone Olama plugins.
+permissions are provided by their standalone Olama plugins. School requires
+only Olama Core and Olama Users; feature plugins depend on School, never the
+other way around.
