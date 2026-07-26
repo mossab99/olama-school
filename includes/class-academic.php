@@ -135,10 +135,6 @@ class Olama_School_Academic
                     return new WP_Error('dependency_error', sprintf(__('Cannot delete year because semester "%s" has %d curriculum units.', 'olama-school'), $sem->semester_name, $units_count));
                 }
 
-                $exams_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}olama_exams WHERE semester_id = %d", $sem->id));
-                if ($exams_count > 0) {
-                    return new WP_Error('dependency_error', sprintf(__('Cannot delete year because semester "%s" has %d exams.', 'olama-school'), $sem->semester_name, $exams_count));
-                }
             }
 
             // Also check for direct year dependencies (events, sections, teacher assignments)
@@ -262,10 +258,6 @@ class Olama_School_Academic
                 return new WP_Error('dependency_error', sprintf(__('Cannot delete semester because it has %d curriculum units.', 'olama-school'), $units_count));
             }
 
-            $exams_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}olama_exams WHERE semester_id = %d", $semester_id));
-            if ($exams_count > 0) {
-                return new WP_Error('dependency_error', sprintf(__('Cannot delete semester because it has %d exams.', 'olama-school'), $exams_count));
-            }
         } else {
             // Force delete: Clean up all tables
             // 1. Delete plan questions
@@ -298,8 +290,6 @@ class Olama_School_Academic
             // 6. Delete curriculum units
             $wpdb->delete("{$wpdb->prefix}olama_curriculum_units", array('semester_id' => $semester_id));
 
-            // 7. Delete exams
-            $wpdb->delete("{$wpdb->prefix}olama_exams", array('semester_id' => $semester_id));
         }
 
         $semester = $wpdb->get_row($wpdb->prepare("SELECT academic_year_id FROM {$wpdb->prefix}olama_semesters WHERE id = %d", $semester_id));

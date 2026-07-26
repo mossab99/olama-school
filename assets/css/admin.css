@@ -707,11 +707,6 @@
 	font-weight: 600;
 }
 
-/* Exam Tables Actions Column */
-.olama-actions-col {
-	width: 200px !important;
-}
-
 .assignment-search-wrap {
 	padding: 10px 12px 0;
 	background: #f8fafc;
