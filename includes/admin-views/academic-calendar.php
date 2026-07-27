@@ -10,6 +10,7 @@ if (!defined('ABSPATH')) {
 ?>
 
 <style>
+    .olama-definition-write-control { display: none !important; }
     .olama-modal {
         display: none;
         position: fixed;
@@ -70,6 +71,15 @@ if (!defined('ABSPATH')) {
     }
 </style>
 
+<div class="notice notice-info inline">
+    <p>
+        <?php esc_html_e('Academic-year and semester definitions are read-only in Olama School.', 'olama-school'); ?>
+        <a class="button button-small" href="<?php echo esc_url(admin_url('admin.php?page=olama-core-academic-calendar')); ?>">
+            <?php esc_html_e('Manage them in Olama Core', 'olama-school'); ?>
+        </a>
+    </p>
+</div>
+
 <div class="olama-admin-header">
     <div style="display: flex; align-items: center; gap: 20px;">
         <form method="get" id="olama-calendar-year-filter" style="margin: 0;">
@@ -90,7 +100,7 @@ if (!defined('ABSPATH')) {
             </div>
         </form>
     </div>
-    <button type="button" class="button button-primary" onclick="olamaOpenModal('add-year-modal')">
+    <button type="button" class="button button-primary olama-definition-write-control" onclick="olamaOpenModal('add-year-modal')">
         <?php _e('Add New Academic Year', 'olama-school'); ?>
     </button>
 </div>
@@ -161,7 +171,7 @@ if (!defined('ABSPATH')) {
                                         <?php _e('Manage Semesters', 'olama-school'); ?>
                                     </a>
 
-                                    <button type="button" class="button button-small"
+                                    <button type="button" class="button button-small olama-definition-write-control"
                                         data-id="<?php echo esc_attr($year->id); ?>"
                                         data-name="<?php echo esc_attr($year->year_name); ?>"
                                         data-start="<?php echo esc_attr(Olama_School_Helpers::format_date($year->start_date)); ?>"
@@ -172,13 +182,13 @@ if (!defined('ABSPATH')) {
 
                                     <?php if (!$year->is_active): ?>
                                         <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-academic&action=activate&year_id=' . $year->id), 'olama_activate_year_' . $year->id); ?>"
-                                            class="button button-small primary">
+                                            class="button button-small primary olama-definition-write-control">
                                             <?php _e('Activate', 'olama-school'); ?>
                                         </a>
                                     <?php endif; ?>
 
                                     <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-academic&action=delete&year_id=' . $year->id), 'olama_delete_year_' . $year->id); ?>"
-                                        class="button button-small delete-button" style="color: #dc2626;"
+                                        class="button button-small delete-button olama-definition-write-control" style="color: #dc2626;"
                                         onclick="return confirm('<?php _e('Delete Year and its Semesters?', 'olama-school'); ?>')">
                                         <?php _e('Delete', 'olama-school'); ?>
                                     </a>
@@ -213,13 +223,13 @@ if (!defined('ABSPATH')) {
                         <h2 style="margin: 0;">
                             <?php printf(__('Semesters for %s', 'olama-school'), esc_html($selected_year->year_name)); ?>
                         </h2>
-                        <button type="button" class="button"
+                        <button type="button" class="button olama-definition-write-control"
                             onclick="document.getElementById('add-semester-form').style.display='block'">
                             <?php _e('Add Semester', 'olama-school'); ?>
                         </button>
                     </div>
 
-                    <div id="add-semester-form"
+                    <div id="add-semester-form" class="olama-definition-write-control"
                         style="display: none; background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #cbd5e1;">
                         <form method="post" action="">
                             <?php wp_nonce_field('olama_add_semester'); ?>
@@ -271,7 +281,7 @@ if (!defined('ABSPATH')) {
                         </form>
                     </div>
 
-                    <div id="edit-semester-form"
+                    <div id="edit-semester-form" class="olama-definition-write-control"
                         style="display: none; background: #fffbeb; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #d97706;">
                         <form method="post" action="">
                             <?php wp_nonce_field('olama_update_semester'); ?>
@@ -372,7 +382,7 @@ if (!defined('ABSPATH')) {
                                                 <?php _e('Manage Exams', 'olama-school'); ?>
                                             </a>
 
-                                            <button type="button" class="button button-small"
+                                            <button type="button" class="button button-small olama-definition-write-control"
                                                 data-id="<?php echo esc_attr($sem->id); ?>"
                                                 data-name="<?php echo esc_attr($sem->semester_name); ?>"
                                                 data-start="<?php echo esc_attr(Olama_School_Helpers::format_date($sem->start_date)); ?>"
@@ -384,13 +394,13 @@ if (!defined('ABSPATH')) {
 
                                             <?php if (empty($sem->is_active)): ?>
                                                 <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-academic&manage_year=' . $selected_year_id . '&action=activate_semester&semester_id=' . $sem->id), 'olama_activate_semester_' . $sem->id); ?>"
-                                                    class="button button-small primary">
+                                                    class="button button-small primary olama-definition-write-control">
                                                     <?php _e('Activate', 'olama-school'); ?>
                                                 </a>
                                             <?php endif; ?>
 
                                             <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=olama-school-academic&manage_year=' . $selected_year_id . '&action=delete_semester&semester_id=' . $sem->id), 'olama_delete_semester_' . $sem->id); ?>"
-                                                class="button button-small" style="color: #dc2626;"
+                                                class="button button-small olama-definition-write-control" style="color: #dc2626;"
                                                 onclick="return confirm('<?php _e('Delete Semester?', 'olama-school'); ?>')">
                                                 <?php _e('Delete', 'olama-school'); ?>
                                             </a>
@@ -791,7 +801,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Add Year Modal -->
-<div id="add-year-modal" class="olama-modal">
+<div id="add-year-modal" class="olama-modal olama-definition-write-control">
     <div class="olama-modal-content">
         <div class="olama-modal-header">
             <h2><?php _e('Add Academic Year', 'olama-school'); ?></h2>
@@ -828,7 +838,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Edit Year Modal -->
-<div id="edit-year-modal" class="olama-modal">
+<div id="edit-year-modal" class="olama-modal olama-definition-write-control">
     <div class="olama-modal-content">
         <div class="olama-modal-header">
             <h2><?php _e('Edit Academic Year', 'olama-school'); ?></h2>

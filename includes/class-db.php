@@ -16,8 +16,6 @@ class Olama_School_DB
 	{
 		$tables = array(
 			'olama_settings',
-			'olama_academic_years',
-			'olama_semesters',
 			'olama_grades',
 			'olama_sections',
 			'olama_subjects',
@@ -60,26 +58,6 @@ class Olama_School_DB
 				setting_value longtext NOT NULL,
 				PRIMARY KEY  (id),
 				UNIQUE KEY  setting_name (setting_name)
-			) $charset_collate;",
-
-			'olama_academic_years' => "CREATE TABLE {$wpdb->prefix}olama_academic_years (
-				id mediumint(9) NOT NULL AUTO_INCREMENT,
-				year_name varchar(50) NOT NULL,
-				start_date date NOT NULL,
-				end_date date NOT NULL,
-				is_active tinyint(1) DEFAULT 0 NOT NULL,
-				PRIMARY KEY  (id)
-			) $charset_collate;",
-
-			'olama_semesters' => "CREATE TABLE {$wpdb->prefix}olama_semesters (
-				id mediumint(9) NOT NULL AUTO_INCREMENT,
-				academic_year_id mediumint(9) NOT NULL,
-				semester_name varchar(50) NOT NULL,
-				start_date date NOT NULL,
-				end_date date NOT NULL,
-				is_active tinyint(1) DEFAULT 0 NOT NULL,
-				PRIMARY KEY  (id),
-				KEY  academic_year_id (academic_year_id)
 			) $charset_collate;",
 
 			'olama_grades' => "CREATE TABLE {$wpdb->prefix}olama_grades (
@@ -395,9 +373,6 @@ class Olama_School_DB
 			dbDelta($table_sql);
 		}
 
-		// Rename existing semesters for better naming convention
-		$wpdb->query("UPDATE {$wpdb->prefix}olama_semesters SET semester_name = 'First Semester' WHERE semester_name = '1st Semester'");
-		$wpdb->query("UPDATE {$wpdb->prefix}olama_semesters SET semester_name = 'Second Semester' WHERE semester_name = '2nd Semester'");
 	}
 
 	/**
@@ -534,8 +509,6 @@ class Olama_School_DB
 			'olama_subjects',
 			'olama_sections',
 			'olama_grades',
-			'olama_semesters',
-			'olama_academic_years',
 			'olama_settings',
 			'olama_user_preferences',
 			'olama_notifications',

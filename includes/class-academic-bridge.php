@@ -31,16 +31,13 @@ class Olama_School_Academic_Bridge
 
     public static function get_study_year($academic_year_id = 0)
     {
-        global $wpdb;
-
-        if ($academic_year_id) {
-            $year = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}olama_academic_years WHERE id = %d",
-                $academic_year_id
-            ));
-        } else {
-            $year = Olama_School_Academic::get_active_year();
+        if (!function_exists('olama_core')) {
+            return '';
         }
+
+        $year = $academic_year_id
+            ? olama_core()->academic_calendar()->year(absint($academic_year_id))
+            : olama_core()->academic_context()->current_year();
 
         if ($year) {
             foreach (array('code', 'year_name', 'name_en', 'name_ar') as $property) {
@@ -50,26 +47,17 @@ class Olama_School_Academic_Bridge
             }
         }
 
-        return self::is_available() ? olama_core()->academic()->latest_study_year() : '';
+        return '';
     }
 
     public static function get_academic_year_id($study_year)
     {
-        global $wpdb;
-
-        $id = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}olama_academic_years
-             WHERE year_name = %s
-             ORDER BY is_active DESC, id DESC LIMIT 1",
-            $study_year
-        ));
-
-        if ($id) {
-            return (int) $id;
+        if (!function_exists('olama_core')) {
+            return 0;
         }
 
-        $active = Olama_School_Academic::get_active_year();
-        return $active ? (int) $active->id : 0;
+        $year = olama_core()->academic_calendar()->resolve_year_code($study_year);
+        return $year ? (int) $year->id : 0;
     }
 
     public static function sync($study_year = '')

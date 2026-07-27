@@ -1506,6 +1506,19 @@ class Olama_School_Admin
             return;
         }
 
+        // Academic-year and semester definitions are exclusively owned by Core.
+        $definition_actions = array('activate', 'delete', 'activate_semester', 'delete_semester');
+        $requested_action = isset($_GET['action']) ? sanitize_key(wp_unslash($_GET['action'])) : '';
+        $definition_post = isset($_POST['add_year']) || isset($_POST['update_year'])
+            || isset($_POST['add_semester']) || isset($_POST['update_semester']);
+        if ($definition_post || in_array($requested_action, $definition_actions, true)) {
+            wp_safe_redirect(add_query_arg(array(
+                'page' => 'olama-core-academic-calendar',
+                'olama_core_notice' => __('Academic years and semesters are managed only in Olama Core.', 'olama-school'),
+            ), admin_url('admin.php')));
+            exit;
+        }
+
         $selected_year_id = isset($_GET['manage_year']) ? intval($_GET['manage_year']) : 0;
         $base_url = admin_url('admin.php?page=olama-school-academic');
         if ($selected_year_id) {
