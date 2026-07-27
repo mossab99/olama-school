@@ -78,7 +78,7 @@ class Olama_School_Academic_Bridge
             return true;
         }
 
-        self::sync_grades();
+        self::sync_grades($study_year);
         self::sync_sections($study_year);
         self::sync_subjects($study_year);
         if ($revision !== '') {
@@ -114,7 +114,7 @@ class Olama_School_Academic_Bridge
         }
 
         return implode('|', array(
-            'bridge-v2',
+            'bridge-v7-active-oracle-subjects-only',
             (string) $grade_revision['row_count'],
             (string) $grade_revision['synced_at'],
             (string) ($relation_revision['row_count'] ?? 0),
@@ -124,17 +124,19 @@ class Olama_School_Academic_Bridge
         ));
     }
 
-    private static function sync_grades()
+    private static function sync_grades($study_year)
     {
         global $wpdb;
 
         $table = $wpdb->prefix . 'olama_grades';
-        foreach (olama_core()->academic()->grades() as $core_grade) {
+        $active_core_ids = array();
+        foreach (olama_core()->academic()->active_grades($study_year) as $core_grade) {
             $core_id = sanitize_text_field((string) ($core_grade['grade_id'] ?? ''));
             $name = sanitize_text_field((string) ($core_grade['grade_name'] ?? ''));
             if ($core_id === '') {
                 continue;
             }
+            $active_core_ids[] = $core_id;
 
             $local_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$table} WHERE core_grade_id = %s", $core_id));
             if (!$local_id) {
@@ -155,6 +157,7 @@ class Olama_School_Academic_Bridge
                 'academic_source' => 'oracle',
                 'grade_name' => $name !== '' ? $name : $core_id,
                 'grade_level' => $core_id,
+                'is_active' => 1,
             );
 
             if ($local_id) {
@@ -162,6 +165,18 @@ class Olama_School_Academic_Bridge
             } else {
                 $wpdb->insert($table, $data + array('periods_count' => 8, 'is_active' => 1));
             }
+        }
+
+        // Definitions can remain in Oracle after they stop being used. Keep
+        // their local IDs for historical references, but remove them from all
+        // operational selectors by marking them inactive.
+        $where = "academic_source = 'oracle' AND core_grade_id IS NOT NULL";
+        if ($active_core_ids) {
+            $placeholders = implode(', ', array_fill(0, count($active_core_ids), '%s'));
+            $where .= " AND core_grade_id NOT IN ({$placeholders})";
+            $wpdb->query($wpdb->prepare("UPDATE {$table} SET is_active = 0 WHERE {$where}", $active_core_ids));
+        } else {
+            $wpdb->query("UPDATE {$table} SET is_active = 0 WHERE {$where}");
         }
     }
 
@@ -246,6 +261,7 @@ class Olama_School_Academic_Bridge
             $local_grades[(string) $grade->core_grade_id] = (int) $grade->id;
         }
 
+        $active_local_subject_ids = array();
         foreach (olama_core()->academic()->grade_subjects($study_year) as $relation) {
             $core_grade_id = sanitize_text_field((string) ($relation['grade_id'] ?? ''));
             $core_subject_id = sanitize_text_field((string) ($relation['subject_id'] ?? ''));
@@ -285,19 +301,33 @@ class Olama_School_Academic_Bridge
                 'academic_source' => 'oracle',
                 'grade_id' => $local_grade_id,
                 'subject_name' => $name !== '' ? $name : $core_subject_id,
-                'is_active' => empty($relation['is_active']) ? 0 : 1,
+                'is_active' => 1,
             );
 
             if ($local_id) {
                 $wpdb->update($subject_table, $data, array('id' => (int) $local_id));
+                $active_local_subject_ids[] = (int) $local_id;
             } else {
-                $wpdb->insert($subject_table, $data + array(
+                $inserted = $wpdb->insert($subject_table, $data + array(
                     'subject_code' => $core_subject_id,
                     'color_code' => self::subject_color($core_subject_id),
                     'max_weekly_plans' => 0,
                 ));
+                if (false !== $inserted) {
+                    $active_local_subject_ids[] = (int) $wpdb->insert_id;
+                }
             }
         }
+
+        // Keep historical subject IDs intact, but prevent Oracle subjects that
+        // are no longer active for this study year from being listed or used.
+        $where = "academic_source = 'oracle' AND core_study_year = %s";
+        $values = array($study_year);
+        if ($active_local_subject_ids) {
+            $where .= ' AND id NOT IN (' . implode(', ', array_fill(0, count($active_local_subject_ids), '%d')) . ')';
+            $values = array_merge($values, $active_local_subject_ids);
+        }
+        $wpdb->query($wpdb->prepare("UPDATE {$subject_table} SET is_active = 0 WHERE {$where}", $values));
     }
 
     private static function canonical_subject_name($name)

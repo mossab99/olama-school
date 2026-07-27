@@ -28,6 +28,7 @@ class Olama_School_Grade
                  FROM {$wpdb->prefix}olama_grades g
                  INNER JOIN {$wpdb->prefix}olama_core_academic_grades c
                     ON c.grade_id = g.core_grade_id
+                 WHERE g.is_active = 1
                  ORDER BY CAST(c.grade_id AS SIGNED), c.grade_id"
             );
         } else {
