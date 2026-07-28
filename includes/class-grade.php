@@ -22,11 +22,12 @@ class Olama_School_Grade
         }
         global $wpdb;
         if (Olama_School_Academic_Bridge::sync()) {
+            $core_grades = olama_core()->read_models()->table('academic_grades');
             $results = $wpdb->get_results(
                 "SELECT g.*, c.grade_id AS oracle_grade_id, c.grade_name AS grade_name,
                         c.last_synced_at AS oracle_last_synced_at
                  FROM {$wpdb->prefix}olama_grades g
-                 INNER JOIN {$wpdb->prefix}olama_core_academic_grades c
+                 INNER JOIN {$core_grades} c
                     ON c.grade_id = g.core_grade_id
                  WHERE g.is_active = 1
                  ORDER BY CAST(c.grade_id AS SIGNED), c.grade_id"
@@ -87,11 +88,12 @@ class Olama_School_Grade
         }
         global $wpdb;
         if (Olama_School_Academic_Bridge::sync()) {
+            $core_grades = olama_core()->read_models()->table('academic_grades');
             $row = $wpdb->get_row($wpdb->prepare(
                 "SELECT g.*, c.grade_id AS oracle_grade_id, c.grade_name AS grade_name,
                         c.last_synced_at AS oracle_last_synced_at
                  FROM {$wpdb->prefix}olama_grades g
-                 INNER JOIN {$wpdb->prefix}olama_core_academic_grades c ON c.grade_id = g.core_grade_id
+                 INNER JOIN {$core_grades} c ON c.grade_id = g.core_grade_id
                  WHERE g.id = %d",
                 $id
             ));

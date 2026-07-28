@@ -384,14 +384,9 @@ class Olama_School_DB
 	{
 		global $wpdb;
 
-		$core_tables = array(
-			'olama_core_families',
-			'olama_core_students',
-			'olama_core_student_years',
-		);
-		foreach ($core_tables as $table) {
-			$full = $wpdb->prefix . $table;
-			if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $full)) !== $full) {
+		$core_models = array('families', 'students', 'student_years');
+		foreach ($core_models as $model) {
+			if (!function_exists('olama_core') || !olama_core()->read_models()->available($model)) {
 				return new WP_Error('olama_core_schema_missing', __('Olama Core family/student tables are not available.', 'olama-school'));
 			}
 		}
@@ -433,6 +428,9 @@ class Olama_School_DB
 		}
 
 		$prefix = $wpdb->prefix;
+		$core_families = olama_core()->read_models()->table('families');
+		$core_students = olama_core()->read_models()->table('students');
+		$core_student_years = olama_core()->read_models()->table('student_years');
 		$views = array(
 			"CREATE OR REPLACE ALGORITHM=TEMPTABLE VIEW `{$prefix}olama_families` AS
 			SELECT f.id, f.family_uid,
@@ -446,21 +444,21 @@ class Olama_School_DB
 			       f.family_address AS home_address, f.building_no AS building_number,
 			       f.home_no AS apartment_number, f.family_home_phone AS home_phone,
 			       f.address, f.created_at
-			FROM `{$prefix}olama_core_families` f",
+			FROM `{$core_families}` f",
 
 			"CREATE OR REPLACE ALGORITHM=TEMPTABLE VIEW `{$prefix}olama_students` AS
 			SELECT s.id, s.student_name, s.student_uid, s.family_uid AS family_id,
 			       s.birth_date AS dob, s.student_national_no AS national_id,
 			       COALESCE(s.student_gender_name, s.student_gender) AS gender,
 			       CASE WHEN s.student_status IN ('0','inactive','disabled') THEN 0 ELSE 1 END AS is_active
-			FROM `{$prefix}olama_core_students` s",
+			FROM `{$core_students}` s",
 
 			"CREATE OR REPLACE ALGORITHM=TEMPTABLE VIEW `{$prefix}olama_student_enrollment` AS
 			SELECT y.id, s.id AS student_id, y.student_uid, ay.id AS academic_year_id,
 			       sec.id AS section_id, y.registration_date AS enrollment_date,
 			       CASE WHEN y.student_status IN ('0','inactive','withdrawn') THEN 'inactive' ELSE 'active' END AS status
-			FROM `{$prefix}olama_core_student_years` y
-			INNER JOIN `{$prefix}olama_core_students` s ON s.student_uid=y.student_uid
+			FROM `{$core_student_years}` y
+			INNER JOIN `{$core_students}` s ON s.student_uid=y.student_uid
 			INNER JOIN `{$prefix}olama_academic_years` ay
 			    ON REPLACE(ay.year_name, '/', '-')=REPLACE(y.study_year, '/', '-')
 			INNER JOIN `{$prefix}olama_sections` sec ON sec.core_study_year=y.study_year

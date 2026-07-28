@@ -16,17 +16,11 @@ class Olama_School_Academic_Bridge
 
     public static function is_available()
     {
-        global $wpdb;
-
         if (!function_exists('olama_core')) {
             return false;
         }
-
-        $grades = $wpdb->prefix . 'olama_core_academic_grades';
-        $relations = $wpdb->prefix . 'olama_core_academic_grade_sections';
-
-        return $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $grades)) === $grades
-            && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $relations)) === $relations;
+        return olama_core()->read_models()->available('academic_grades')
+            && olama_core()->read_models()->available('academic_grade_sections');
     }
 
     public static function get_study_year($academic_year_id = 0)
@@ -89,25 +83,13 @@ class Olama_School_Academic_Bridge
 
     private static function source_revision($study_year)
     {
-        global $wpdb;
-
-        $grade_table = $wpdb->prefix . 'olama_core_academic_grades';
-        $relation_table = $wpdb->prefix . 'olama_core_academic_grade_sections';
-        $subject_table = $wpdb->prefix . 'olama_core_academic_grade_subjects';
-        $grade_revision = $wpdb->get_row(
-            "SELECT COUNT(*) AS row_count, MAX(last_synced_at) AS synced_at FROM {$grade_table}",
-            ARRAY_A
+        $revision = olama_core()->read_models()->revision(
+            array('academic_grades', 'academic_grade_sections', 'academic_grade_subjects'),
+            $study_year
         );
-        $relation_revision = $wpdb->get_row($wpdb->prepare(
-            "SELECT COUNT(*) AS row_count, MAX(last_synced_at) AS synced_at
-             FROM {$relation_table} WHERE study_year = %s",
-            $study_year
-        ), ARRAY_A);
-        $subject_revision = $wpdb->get_row($wpdb->prepare(
-            "SELECT COUNT(*) AS row_count, MAX(last_synced_at) AS synced_at
-             FROM {$subject_table} WHERE study_year = %s",
-            $study_year
-        ), ARRAY_A);
+        $grade_revision = $revision['academic_grades'];
+        $relation_revision = $revision['academic_grade_sections'];
+        $subject_revision = $revision['academic_grade_subjects'];
 
         if (empty($grade_revision['row_count'])) {
             return '';

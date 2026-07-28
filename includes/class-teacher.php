@@ -18,7 +18,7 @@ class Olama_School_Teacher
         global $wpdb;
 
         $identity_table = $wpdb->prefix . 'olama_user_identities';
-        $profile_table = $wpdb->prefix . 'olama_core_staff_profiles';
+        $profile_table = olama_core()->read_models()->table('staff_profiles');
         $has_identity_source = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $identity_table)) === $identity_table
             && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $profile_table)) === $profile_table;
 
@@ -121,6 +121,8 @@ class Olama_School_Teacher
         $study_year = Olama_School_Academic_Bridge::get_study_year($academic_year_id);
 
         if ($study_year !== '' && Olama_School_Academic_Bridge::sync($study_year)) {
+            $core_grade_sections = olama_core()->read_models()->table('academic_grade_sections');
+            $core_grade_subjects = olama_core()->read_models()->table('academic_grade_subjects');
             return $wpdb->get_col($wpdb->prepare(
                 "SELECT DISTINCT ta.subject_id
                  FROM {$wpdb->prefix}olama_teacher_assignments ta
@@ -128,14 +130,14 @@ class Olama_School_Teacher
                     ON sec.id = ta.section_id
                    AND sec.grade_id = ta.grade_id
                    AND sec.academic_year_id = ta.academic_year_id
-                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_sections csec
+                 INNER JOIN {$core_grade_sections} csec
                     ON csec.study_year = sec.core_study_year
                    AND csec.grade_id = sec.core_grade_id
                    AND csec.section_id = sec.core_section_id
                  INNER JOIN {$wpdb->prefix}olama_subjects s
                     ON s.id = ta.subject_id
                    AND s.grade_id = ta.grade_id
-                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_subjects cs
+                 INNER JOIN {$core_grade_subjects} cs
                     ON cs.study_year = s.core_study_year
                    AND cs.grade_id = s.core_grade_id
                    AND cs.subject_id = s.core_subject_id
@@ -253,6 +255,8 @@ class Olama_School_Teacher
         $study_year = Olama_School_Academic_Bridge::get_study_year($academic_year_id);
 
         if ($study_year !== '' && Olama_School_Academic_Bridge::sync($study_year)) {
+            $core_grade_sections = olama_core()->read_models()->table('academic_grade_sections');
+            $core_grade_subjects = olama_core()->read_models()->table('academic_grade_subjects');
             return $wpdb->get_results($wpdb->prepare(
                 "SELECT DISTINCT ta.grade_id, ta.section_id, ta.subject_id
                  FROM {$wpdb->prefix}olama_teacher_assignments ta
@@ -260,14 +264,14 @@ class Olama_School_Teacher
                     ON sec.id = ta.section_id
                    AND sec.grade_id = ta.grade_id
                    AND sec.academic_year_id = ta.academic_year_id
-                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_sections csec
+                 INNER JOIN {$core_grade_sections} csec
                     ON csec.study_year = sec.core_study_year
                    AND csec.grade_id = sec.core_grade_id
                    AND csec.section_id = sec.core_section_id
                  INNER JOIN {$wpdb->prefix}olama_subjects s
                     ON s.id = ta.subject_id
                    AND s.grade_id = ta.grade_id
-                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_subjects cs
+                 INNER JOIN {$core_grade_subjects} cs
                     ON cs.study_year = s.core_study_year
                    AND cs.grade_id = s.core_grade_id
                    AND cs.subject_id = s.core_subject_id

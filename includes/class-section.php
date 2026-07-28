@@ -104,12 +104,13 @@ class Olama_School_Section
         }
         global $wpdb;
         if (Olama_School_Academic_Bridge::is_available()) {
+            $core_grade_sections = olama_core()->read_models()->table('academic_grade_sections');
             $row = $wpdb->get_row($wpdb->prepare(
                 "SELECT s.*, gs.section_name AS section_name, gs.grade_name AS grade_name,
                         gs.section_id AS oracle_section_id, gs.grade_id AS oracle_grade_id,
                         gs.last_synced_at AS oracle_last_synced_at
                  FROM {$wpdb->prefix}olama_sections s
-                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_sections gs
+                 INNER JOIN {$core_grade_sections} gs
                     ON gs.study_year = s.core_study_year
                    AND gs.grade_id = s.core_grade_id
                    AND gs.section_id = s.core_section_id
@@ -217,8 +218,9 @@ class Olama_School_Section
 
         // Check for related Core enrollment records.
         $section = self::get_section($id);
+        $core_student_years = olama_core()->read_models()->table('student_years');
         $count = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}olama_core_student_years
+            "SELECT COUNT(*) FROM {$core_student_years}
              WHERE study_year = %s AND class_id = %s AND section_id = %s",
             (string) ($section->core_study_year ?? ''),
             (string) ($section->core_grade_id ?? ''),
@@ -243,12 +245,13 @@ class Olama_School_Section
             $values[] = $grade_id;
         }
 
+        $core_grade_sections = olama_core()->read_models()->table('academic_grade_sections');
         return $wpdb->get_results($wpdb->prepare(
             "SELECT s.*, gs.section_name AS section_name, gs.grade_name AS grade_name,
                     gs.section_id AS oracle_section_id, gs.grade_id AS oracle_grade_id,
                     gs.last_synced_at AS oracle_last_synced_at
              FROM {$wpdb->prefix}olama_sections s
-             INNER JOIN {$wpdb->prefix}olama_core_academic_grade_sections gs
+             INNER JOIN {$core_grade_sections} gs
                 ON gs.study_year = s.core_study_year
                AND gs.grade_id = s.core_grade_id
                AND gs.section_id = s.core_section_id

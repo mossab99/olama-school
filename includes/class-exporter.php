@@ -313,6 +313,8 @@ class Olama_School_Exporter
         $filename = 'olama-families-' . date('Y-m-d') . '.csv';
 
         // Export the authoritative Core family/student directory.
+        $core_families = olama_core()->read_models()->table('families');
+        $core_students = olama_core()->read_models()->table('students');
         $data = $wpdb->get_results("
             SELECT f.family_uid,
                    COALESCE(f.sponsor_full_name, f.father_name, f.family_uid) AS family_name,
@@ -320,8 +322,8 @@ class Olama_School_Exporter
                    s.student_name, s.student_uid, s.birth_date AS dob,
                    s.student_national_no AS national_id,
                    COALESCE(s.student_gender_name, s.student_gender) AS gender
-            FROM {$wpdb->prefix}olama_core_families f
-            LEFT JOIN {$wpdb->prefix}olama_core_students s ON f.family_uid = s.family_uid
+            FROM {$core_families} f
+            LEFT JOIN {$core_students} s ON f.family_uid = s.family_uid
             ORDER BY family_name ASC, s.student_name ASC
         ");
 

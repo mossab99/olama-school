@@ -31,9 +31,9 @@ class Olama_School_Student
             return $cached;
         }
 
-        $students = $wpdb->prefix . 'olama_core_students';
-        $years = $wpdb->prefix . 'olama_core_student_years';
-        $families = $wpdb->prefix . 'olama_core_families';
+        $students = olama_core()->read_models()->table('students');
+        $years = olama_core()->read_models()->table('student_years');
+        $families = olama_core()->read_models()->table('families');
         $sections = $wpdb->prefix . 'olama_sections';
         $grades = $wpdb->prefix . 'olama_grades';
         $academic_years = $wpdb->prefix . 'olama_academic_years';
@@ -79,13 +79,15 @@ class Olama_School_Student
             return array();
         }
 
+        $core_students = olama_core()->read_models()->table('students');
+        $core_student_years = olama_core()->read_models()->table('student_years');
         return $wpdb->get_results($wpdb->prepare(
             "SELECT y.id, s.id AS student_id, y.student_uid, ay.id AS academic_year_id,
                     sec.id AS section_id, y.registration_date AS enrollment_date,
                     y.student_status AS status, g.grade_name, sec.section_name,
                     y.study_year AS academic_year_name
-             FROM {$wpdb->prefix}olama_core_students s
-             INNER JOIN {$wpdb->prefix}olama_core_student_years y ON y.student_uid=s.student_uid
+             FROM {$core_students} s
+             INNER JOIN {$core_student_years} y ON y.student_uid=s.student_uid
              LEFT JOIN {$wpdb->prefix}olama_academic_years ay
                 ON REPLACE(ay.year_name, '/', '-')=REPLACE(y.study_year, '/', '-')
              LEFT JOIN {$wpdb->prefix}olama_sections sec ON sec.core_study_year=y.study_year
@@ -104,12 +106,14 @@ class Olama_School_Student
             return null;
         }
 
+        $core_students = olama_core()->read_models()->table('students');
+        $core_student_years = olama_core()->read_models()->table('student_years');
         return $wpdb->get_row($wpdb->prepare(
             "SELECT y.id, s.id AS student_id, y.student_uid, ay.id AS academic_year_id,
                     sec.id AS section_id, sec.grade_id, y.registration_date AS enrollment_date,
                     y.student_status AS status
-             FROM {$wpdb->prefix}olama_core_students s
-             INNER JOIN {$wpdb->prefix}olama_core_student_years y ON y.student_uid=s.student_uid
+             FROM {$core_students} s
+             INNER JOIN {$core_student_years} y ON y.student_uid=s.student_uid
              LEFT JOIN {$wpdb->prefix}olama_academic_years ay
                 ON REPLACE(ay.year_name, '/', '-')=REPLACE(y.study_year, '/', '-')
              LEFT JOIN {$wpdb->prefix}olama_sections sec ON sec.core_study_year=y.study_year
@@ -136,10 +140,7 @@ class Olama_School_Student
 
     private static function core_available()
     {
-        global $wpdb;
-        $table = $wpdb->prefix . 'olama_core_students';
-        return function_exists('olama_core')
-            && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table;
+        return function_exists('olama_core') && olama_core()->read_models()->available('students');
     }
 
     private static function read_only_error()

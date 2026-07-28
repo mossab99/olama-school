@@ -32,6 +32,7 @@ class Olama_School_Subject
         global $wpdb;
         $study_year = Olama_School_Academic_Bridge::get_study_year();
         if (Olama_School_Academic_Bridge::sync($study_year)) {
+            $core_grade_subjects = olama_core()->read_models()->table('academic_grade_subjects');
             $where = $active_only ? ' AND gs.is_active = 1' : '';
             $results = $wpdb->get_results($wpdb->prepare(
                 "SELECT s.*, gs.subject_id AS oracle_subject_id,
@@ -39,7 +40,7 @@ class Olama_School_Subject
                         gs.grade_id AS oracle_grade_id, gs.grade_name AS grade_name,
                         gs.last_synced_at AS oracle_last_synced_at
                  FROM {$wpdb->prefix}olama_subjects s
-                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_subjects gs
+                 INNER JOIN {$core_grade_subjects} gs
                     ON gs.study_year = s.core_study_year
                    AND gs.grade_id = s.core_grade_id
                    AND gs.subject_id = s.core_subject_id
@@ -68,6 +69,7 @@ class Olama_School_Subject
         global $wpdb;
         $study_year = Olama_School_Academic_Bridge::get_study_year();
         if (Olama_School_Academic_Bridge::sync($study_year)) {
+            $core_grade_subjects = olama_core()->read_models()->table('academic_grade_subjects');
             $where = $active_only ? ' AND gs.is_active = 1' : '';
             $results = $wpdb->get_results($wpdb->prepare(
                 "SELECT s.*, gs.subject_id AS oracle_subject_id,
@@ -75,7 +77,7 @@ class Olama_School_Subject
                         gs.grade_id AS oracle_grade_id, gs.grade_name AS grade_name,
                         gs.last_synced_at AS oracle_last_synced_at
                  FROM {$wpdb->prefix}olama_subjects s
-                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_subjects gs
+                 INNER JOIN {$core_grade_subjects} gs
                     ON gs.study_year = s.core_study_year
                    AND gs.grade_id = s.core_grade_id
                    AND gs.subject_id = s.core_subject_id
@@ -138,13 +140,14 @@ class Olama_School_Subject
         }
         global $wpdb;
         if (Olama_School_Academic_Bridge::sync()) {
+            $core_grade_subjects = olama_core()->read_models()->table('academic_grade_subjects');
             $row = $wpdb->get_row($wpdb->prepare(
                 "SELECT s.*, gs.subject_id AS oracle_subject_id,
                         gs.subject_name AS subject_name, gs.is_active AS is_active,
                         gs.grade_id AS oracle_grade_id, gs.grade_name AS grade_name,
                         gs.last_synced_at AS oracle_last_synced_at
                  FROM {$wpdb->prefix}olama_subjects s
-                 INNER JOIN {$wpdb->prefix}olama_core_academic_grade_subjects gs
+                 INNER JOIN {$core_grade_subjects} gs
                     ON gs.study_year = s.core_study_year
                    AND gs.grade_id = s.core_grade_id
                    AND gs.subject_id = s.core_subject_id

@@ -3633,7 +3633,7 @@ class Olama_School_Admin
         $stats = array();
 
         // Total students in the authoritative Core registry.
-        $stats['total_students'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}olama_core_students");
+        $stats['total_students'] = function_exists('olama_core') ? olama_core()->students()->count() : 0;
 
         // Enrolled Students
         $active_year = Olama_School_Academic::get_active_year();
@@ -3642,10 +3642,7 @@ class Olama_School_Admin
         $stats['enrolled_students'] = 0;
         if ($active_year_id) {
             $study_year = Olama_School_Academic_Bridge::get_study_year($active_year_id);
-            $stats['enrolled_students'] = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(DISTINCT student_uid) FROM {$wpdb->prefix}olama_core_student_years WHERE study_year = %s",
-                $study_year
-            ));
+            $stats['enrolled_students'] = count(olama_core()->student_years()->for_study_year($study_year));
         }
 
         // Enrollment Percentage
