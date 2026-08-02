@@ -48,9 +48,11 @@ foreach ($grades as $grade) {
 <div class="olama-card" style="background:#fff; padding:20px; border:1px solid #ccd0d4; margin-bottom:20px;">
     <h2><?php esc_html_e('Oracle Grades', 'olama-school'); ?></h2>
     <p style="color:#646970;">
-        <?php esc_html_e('Grade names, levels, and section membership are read from the latest Oracle data synchronized into Olama Core. School IDs remain stable for schedules, plans, and assignments.', 'olama-school'); ?>
+        <?php esc_html_e('Grade names, levels, and section membership are read from the latest Oracle data synchronized into Olama Core. Periods are managed here and remain unchanged when Oracle data is synchronized.', 'olama-school'); ?>
     </p>
-    <table class="wp-list-table widefat fixed striped">
+    <form method="post">
+        <?php wp_nonce_field('olama_save_grade_periods', 'olama_grade_periods_nonce'); ?>
+        <table class="wp-list-table widefat fixed striped">
         <thead>
             <tr>
                 <th style="width:90px;"><?php esc_html_e('School ID', 'olama-school'); ?></th>
@@ -69,7 +71,22 @@ foreach ($grades as $grade) {
                         <td><code><?php echo esc_html($grade->oracle_grade_id ?? $grade->core_grade_id); ?></code></td>
                         <td><strong><?php echo esc_html($grade->grade_name); ?></strong></td>
                         <td><?php echo esc_html($grade->grade_level); ?></td>
-                        <td><?php echo esc_html($grade->periods_count ?? 8); ?></td>
+                        <td>
+                            <label class="screen-reader-text" for="grade-periods-<?php echo esc_attr($grade->id); ?>">
+                                <?php echo esc_html(sprintf(__('Periods for %s', 'olama-school'), $grade->grade_name)); ?>
+                            </label>
+                            <input
+                                id="grade-periods-<?php echo esc_attr($grade->id); ?>"
+                                name="grade_periods[<?php echo esc_attr($grade->id); ?>]"
+                                type="number"
+                                min="1"
+                                max="127"
+                                step="1"
+                                value="<?php echo esc_attr($grade->periods_count ?? 8); ?>"
+                                class="small-text"
+                                required
+                            >
+                        </td>
                         <td>
                             <a class="button button-small button-primary" href="<?php echo esc_url(add_query_arg(array('page' => 'olama-school-academic', 'tab' => 'grades', 'manage_grade' => $grade->id), admin_url('admin.php'))); ?>">
                                 <?php esc_html_e('View Sections', 'olama-school'); ?>
@@ -81,7 +98,15 @@ foreach ($grades as $grade) {
                 <tr><td colspan="6"><?php esc_html_e('No synchronized Oracle grades were found.', 'olama-school'); ?></td></tr>
             <?php endif; ?>
         </tbody>
-    </table>
+        </table>
+        <?php if ($grades): ?>
+            <p class="submit" style="margin-bottom:0; padding-bottom:0;">
+                <button type="submit" name="save_grade_periods" class="button button-primary">
+                    <?php esc_html_e('Save Periods', 'olama-school'); ?>
+                </button>
+            </p>
+        <?php endif; ?>
+    </form>
 </div>
 
 <?php if ($selected_grade): ?>

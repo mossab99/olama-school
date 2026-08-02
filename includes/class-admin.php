@@ -389,7 +389,7 @@ class Olama_School_Admin
                         exit;
                     } else {
                         // Get subjects for mapping
-                        $subjects = Olama_School_Subject::get_by_grade($grade_id);
+                        $subjects = Olama_School_Subject::get_for_schedule($grade_id);
                         $subject_map_by_name = array();
                         $subject_map_by_code = array();
                         foreach ($subjects as $subj) {
@@ -486,6 +486,9 @@ class Olama_School_Admin
         }
 
         if (isset($_POST['olama_save_stationary']) && check_admin_referer('olama_save_stationary', 'olama_stationary_nonce_field')) {
+            if (!Olama_School_Permissions::can('olama_manage_academic_stationary')) {
+                wp_die(esc_html__('You do not have permission to manage stationery.', 'olama-school'));
+            }
             $result = Olama_School_Stationary::save_stationary($_POST);
 
             $redirect_url = admin_url('admin.php?page=olama-school-academic&tab=stationary');
@@ -1836,6 +1839,56 @@ class Olama_School_Admin
     {
         $oracle_managed = Olama_School_Academic_Bridge::is_available();
         $blocked_mutation = false;
+
+        // The timetable period count is a local school setting. It remains
+        // editable even when grade identities are synchronized from Oracle.
+        if (isset($_POST['save_grade_periods'])) {
+            if (!Olama_School_Permissions::can('olama_manage_academic_grades')) {
+                wp_die(esc_html__('You do not have permission to edit grade periods.', 'olama-school'));
+            }
+
+            check_admin_referer('olama_save_grade_periods', 'olama_grade_periods_nonce');
+
+            $submitted_periods = isset($_POST['grade_periods'])
+                ? (array) wp_unslash($_POST['grade_periods'])
+                : array();
+            $periods_error = false;
+
+            foreach ($submitted_periods as $grade_id => $periods_count) {
+                $grade_id = absint($grade_id);
+                $periods_count = filter_var($periods_count, FILTER_VALIDATE_INT, array(
+                    'options' => array('min_range' => 1, 'max_range' => 127),
+                ));
+                $grade = $grade_id ? Olama_School_Grade::get_grade($grade_id) : null;
+
+                if (!$grade || false === $periods_count) {
+                    $periods_error = true;
+                    break;
+                }
+            }
+
+            if ($periods_error || empty($submitted_periods)) {
+                echo '<div class="notice notice-error"><p>'
+                    . esc_html__('Enter a period count between 1 and 127 for every grade.', 'olama-school')
+                    . '</p></div>';
+            } else {
+                $update_failed = false;
+                foreach ($submitted_periods as $grade_id => $periods_count) {
+                    $result = Olama_School_Grade::update_periods_count($grade_id, $periods_count);
+                    if (is_wp_error($result) || false === $result) {
+                        $update_failed = true;
+                        break;
+                    }
+                }
+
+                echo '<div class="notice ' . ($update_failed ? 'notice-error' : 'notice-success is-dismissible') . '"><p>'
+                    . esc_html($update_failed
+                        ? __('Unable to update all grade periods. Please try again.', 'olama-school')
+                        : __('Grade periods updated successfully.', 'olama-school'))
+                    . '</p></div>';
+            }
+        }
+
         if ($oracle_managed) {
             foreach (array('add_grade', 'edit_grade', 'add_section', 'edit_section') as $field) {
                 if (isset($_POST[$field])) {
@@ -2004,6 +2057,37 @@ class Olama_School_Admin
      */
     public function handle_subject_actions()
     {
+        // Colors and visibility flags are owned by Olama School even when the
+        // subject identity is synchronized from Oracle.
+        if (isset($_POST['olama_save_subject_display_settings'])) {
+            if (!Olama_School_Permissions::can('olama_manage_academic_subjects')) {
+                wp_die(__('Unauthorized', 'olama-school'));
+            }
+            check_admin_referer('olama_subject_display_settings', 'olama_subject_display_nonce');
+
+            $subject_ids = array_map('intval', (array) ($_POST['subject_ids'] ?? array()));
+            $colors = (array) ($_POST['subject_color'] ?? array());
+            $weekly_plan_flags = (array) ($_POST['appear_in_weekly_plan'] ?? array());
+            $schedule_flags = (array) ($_POST['appear_in_schedule'] ?? array());
+            $stationary_flags = (array) ($_POST['requires_stationary'] ?? array());
+
+            foreach ($subject_ids as $subject_id) {
+                if (!$subject_id || !Olama_School_Subject::get_subject($subject_id)) {
+                    continue;
+                }
+                Olama_School_Subject::update_display_settings($subject_id, array(
+                    'color_code' => $colors[$subject_id] ?? '#2271b1',
+                    'appear_in_weekly_plan' => isset($weekly_plan_flags[$subject_id]),
+                    'appear_in_schedule' => isset($schedule_flags[$subject_id]),
+                    'requires_stationary' => isset($stationary_flags[$subject_id]),
+                ));
+            }
+
+            set_transient('olama_subject_msg', __('Subject display settings updated successfully.', 'olama-school'), 30);
+            wp_safe_redirect(admin_url('admin.php?page=olama-school-academic&tab=subjects'));
+            exit;
+        }
+
         if (Olama_School_Academic_Bridge::is_available()) {
             $has_mutation = isset($_POST['subject_action_type'])
                 || (isset($_GET['action']) && in_array($_GET['action'], array('delete_subject', 'clear_all_subjects'), true));
@@ -3575,10 +3659,12 @@ class Olama_School_Admin
         $active_year = Olama_School_Academic::get_active_year();
         $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);
 
-        $grades = Olama_School_Grade::get_grades();
+        $grades = Olama_School_Subject::get_grades_with_subjects();
         $selected_grade_id = isset($_GET['grade_id']) ? intval($_GET['grade_id']) : (!empty($grades) ? $grades[0]->id : 0);
 
         $stationary_data = Olama_School_Stationary::get_stationary($selected_year_id, $selected_grade_id);
+        $stationary_subjects = Olama_School_Subject::get_for_stationary($selected_grade_id);
+        $subject_stationary = Olama_School_Stationary::get_subject_stationary($selected_year_id, $selected_grade_id);
 
         include OLAMA_SCHOOL_PATH . 'includes/admin-views/stationary.php';
     }
@@ -3853,7 +3939,7 @@ class Olama_School_Admin
         $schedule_type = Olama_School_Schedule::is_ramadan($selected_date) ? 'ramadan' : 'normal';
 
         return $wpdb->get_results($wpdb->prepare("
-            SELECT sch.*, sub.subject_name, sec.section_name, g.grade_name, p.status as plan_status, p.id as plan_id
+            SELECT sch.*, sub.subject_name, sub.color_code, sec.section_name, g.grade_name, p.status as plan_status, p.id as plan_id
             FROM {$wpdb->prefix}olama_schedule sch
             JOIN {$wpdb->prefix}olama_teacher_assignments ta ON ta.section_id = sch.section_id AND ta.subject_id = sch.subject_id
             JOIN {$wpdb->prefix}olama_subjects sub ON sch.subject_id = sub.id
@@ -3868,6 +3954,8 @@ class Olama_School_Admin
                 AND sch.semester_id = %d
                 AND sch.day_name = %s
                 AND sch.schedule_type = %s
+                AND sub.is_active = 1
+                AND sub.appear_in_schedule = 1
             ORDER BY sch.period_number ASC
         ", $selected_date, $teacher_id, $active_year->id, $active_semester->id, $day_name, $schedule_type));
     }

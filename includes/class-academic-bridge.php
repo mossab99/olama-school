@@ -294,6 +294,8 @@ class Olama_School_Academic_Bridge
                     'subject_code' => $core_subject_id,
                     'color_code' => self::subject_color($core_subject_id),
                     'max_weekly_plans' => 0,
+                    'appear_in_weekly_plan' => 1,
+                    'appear_in_schedule' => 1,
                 ));
                 if (false !== $inserted) {
                     $active_local_subject_ids[] = (int) $wpdb->insert_id;
@@ -333,7 +335,35 @@ class Olama_School_Academic_Bridge
 
     private static function subject_color($subject_id)
     {
-        $palette = array('#2271b1', '#8c564b', '#2ca02c', '#9467bd', '#d62728', '#ff7f0e', '#17becf', '#7f7f7f');
-        return $palette[abs(crc32((string) $subject_id)) % count($palette)];
+        // Golden-angle spacing keeps neighboring Oracle IDs visually distinct
+        // while giving the same subject a stable color across grade levels.
+        $seed = is_numeric($subject_id) ? (float) $subject_id : (float) sprintf('%u', crc32((string) $subject_id));
+        $hue = fmod($seed * 137.508, 360.0);
+        $saturation = 0.68;
+        $value = 0.72;
+        $chroma = $value * $saturation;
+        $x = $chroma * (1 - abs(fmod($hue / 60.0, 2) - 1));
+        $match = $value - $chroma;
+
+        if ($hue < 60) {
+            $rgb = array($chroma, $x, 0);
+        } elseif ($hue < 120) {
+            $rgb = array($x, $chroma, 0);
+        } elseif ($hue < 180) {
+            $rgb = array(0, $chroma, $x);
+        } elseif ($hue < 240) {
+            $rgb = array(0, $x, $chroma);
+        } elseif ($hue < 300) {
+            $rgb = array($x, 0, $chroma);
+        } else {
+            $rgb = array($chroma, 0, $x);
+        }
+
+        return sprintf(
+            '#%02x%02x%02x',
+            (int) round(($rgb[0] + $match) * 255),
+            (int) round(($rgb[1] + $match) * 255),
+            (int) round(($rgb[2] + $match) * 255)
+        );
     }
 }

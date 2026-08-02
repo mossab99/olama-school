@@ -33,10 +33,11 @@ class Olama_School_Schedule
         return $wpdb->get_results($wpdb->prepare(
             "SELECT DISTINCT s.section_id, s.semester_id, sec.section_name, sem.semester_name, g.grade_name, g.id as grade_id
             FROM {$wpdb->prefix}olama_schedule s
+            JOIN {$wpdb->prefix}olama_subjects subj ON s.subject_id = subj.id
             JOIN {$wpdb->prefix}olama_sections sec ON s.section_id = sec.id
             JOIN {$wpdb->prefix}olama_semesters sem ON s.semester_id = sem.id
             JOIN {$wpdb->prefix}olama_grades g ON sec.grade_id = g.id
-            WHERE {$where}
+            WHERE {$where} AND subj.is_active = 1 AND subj.appear_in_schedule = 1
             ORDER BY sem.semester_name ASC, g.grade_level ASC, sec.section_name ASC",
             ...$params
         ));
@@ -52,7 +53,8 @@ class Olama_School_Schedule
             "SELECT s.*, subj.subject_name, subj.color_code 
             FROM {$wpdb->prefix}olama_schedule s 
             JOIN {$wpdb->prefix}olama_subjects subj ON s.subject_id = subj.id 
-            WHERE s.section_id = %d AND s.semester_id = %d AND s.schedule_type = %s",
+            WHERE s.section_id = %d AND s.semester_id = %d AND s.schedule_type = %s
+            AND subj.is_active = 1 AND subj.appear_in_schedule = 1",
             $section_id,
             $semester_id,
             $schedule_type
@@ -80,6 +82,10 @@ class Olama_School_Schedule
         $period_number = intval($data['period_number']);
         $subject_id = intval($data['subject_id']);
         $schedule_type = sanitize_text_field($data['schedule_type'] ?? 'normal');
+
+        if (!self::subject_can_appear($subject_id)) {
+            return false;
+        }
 
         $result = $wpdb->query($wpdb->prepare(
             "INSERT INTO $table (semester_id, section_id, day_name, period_number, subject_id, schedule_type)
@@ -136,6 +142,9 @@ class Olama_School_Schedule
                         'schedule_type' => $schedule_type
                     ));
                 } else {
+                    if (!self::subject_can_appear(intval($subject_id))) {
+                        continue;
+                    }
                     // Use INSERT ... ON DUPLICATE KEY UPDATE instead of REPLACE
                     // to avoid deleting rows with a different schedule_type
                     $wpdb->query($wpdb->prepare(
@@ -207,11 +216,26 @@ class Olama_School_Schedule
             WHERE s.section_id = %d AND s.day_name = %s AND s.semester_id = %d
             AND s.schedule_type = %s
             AND subj.is_active = 1
+            AND subj.appear_in_schedule = 1
+            AND subj.appear_in_weekly_plan = 1
             ORDER BY subj.subject_name ASC",
             $section_id,
             $day_name,
             $semester_id,
             $schedule_type
+        ));
+    }
+
+    /**
+     * Check that a subject is active and enabled for schedules.
+     */
+    private static function subject_can_appear($subject_id)
+    {
+        global $wpdb;
+        return (bool) $wpdb->get_var($wpdb->prepare(
+            "SELECT 1 FROM {$wpdb->prefix}olama_subjects
+             WHERE id = %d AND is_active = 1 AND appear_in_schedule = 1",
+            $subject_id
         ));
     }
 
@@ -257,9 +281,11 @@ class Olama_School_Schedule
         // Insert from source to target
         $query = $wpdb->prepare(
             "INSERT INTO $table (semester_id, section_id, day_name, period_number, subject_id, schedule_type)
-            SELECT semester_id, section_id, day_name, period_number, subject_id, %s
+            SELECT $table.semester_id, $table.section_id, $table.day_name, $table.period_number, $table.subject_id, %s
             FROM $table
-            WHERE section_id = %d AND semester_id = %d AND schedule_type = %s",
+            INNER JOIN {$wpdb->prefix}olama_subjects subj ON $table.subject_id = subj.id
+            WHERE $table.section_id = %d AND $table.semester_id = %d AND $table.schedule_type = %s
+            AND subj.is_active = 1 AND subj.appear_in_schedule = 1",
             $to_type,
             $section_id,
             $semester_id,

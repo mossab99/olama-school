@@ -303,7 +303,10 @@ class Olama_School_Helpers
         'Stationary' => 'القرطاسية',
         'Required Notebooks' => 'الدفاتر المطلوبة',
         'Required Stationary' => 'القرطاسية المطلوبة',
+        'Stationery Required' => 'تحتاج قرطاسية',
         'Class Teacher Notes' => 'ملاحظات المعلم',
+        'Define required notebooks and stationary for each subject, with class teacher notes for the whole grade.' => 'حدد الدفاتر والقرطاسية المطلوبة لكل مادة، مع ملاحظات معلم الصف للصف بالكامل.',
+        'No subjects in this grade are marked as requiring stationery. Enable the Stationery Required checkbox in the Subjects tab first.' => 'لا توجد مواد في هذا الصف محددة بأنها تحتاج قرطاسية. فعّل خيار تحتاج قرطاسية من تبويب المواد أولاً.',
         'Save Stationary' => 'حفظ القرطاسية',
         'Curriculum Management' => 'إدارة المناهج',
         'Exam Management' => 'إدارة الامتحانات',
@@ -1955,6 +1958,34 @@ class Olama_School_Helpers
         $string = preg_replace('/[\x{064B}-\x{0652}]/u', '', $string);
 
         return $string;
+    }
+
+    /**
+     * Build an accessible pastel palette from a subject's stored color.
+     */
+    public static function get_subject_palette($color)
+    {
+        $color = sanitize_hex_color($color) ?: '#2271b1';
+        $hex = ltrim($color, '#');
+        $rgb = array(
+            hexdec(substr($hex, 0, 2)),
+            hexdec(substr($hex, 2, 2)),
+            hexdec(substr($hex, 4, 2)),
+        );
+
+        $tint = array_map(function ($channel) {
+            return (int) round($channel + (255 - $channel) * 0.88);
+        }, $rgb);
+        $luminance = (0.2126 * $rgb[0] + 0.7152 * $rgb[1] + 0.0722 * $rgb[2]) / 255;
+        $text = $luminance > 0.55
+            ? array_map(function ($channel) { return (int) round($channel * 0.45); }, $rgb)
+            : $rgb;
+
+        return array(
+            'background' => sprintf('#%02x%02x%02x', $tint[0], $tint[1], $tint[2]),
+            'text' => sprintf('#%02x%02x%02x', $text[0], $text[1], $text[2]),
+            'border' => $color,
+        );
     }
 
     /**

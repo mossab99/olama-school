@@ -105,11 +105,32 @@ jQuery(document).ready(function ($) {
         }
     }
 
+    function applySelectedSubjectColor() {
+        const color = $subjectSelect.find('option:selected').data('color');
+        if (!color) {
+            $subjectSelect.css({ backgroundColor: '', color: '', borderColor: '', fontWeight: '' });
+            return;
+        }
+        const hex = String(color).replace('#', '');
+        const rgb = [0, 2, 4].map(i => parseInt(hex.substring(i, i + 2), 16));
+        const tint = rgb.map(v => Math.round(v + (255 - v) * 0.88));
+        const luminance = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
+        const text = luminance > 0.55 ? rgb.map(v => Math.round(v * 0.45)) : rgb;
+        $subjectSelect.css({
+            backgroundColor: `rgb(${tint.join(',')})`,
+            color: `rgb(${text.join(',')})`,
+            borderColor: color,
+            fontWeight: 600
+        });
+    }
+
     // Trigger on load
     handleSubjectFiltering();
+    applySelectedSubjectColor();
 
     // Handle Subject selection -> Load Units
     $subjectSelect.on('change', function () {
+        applySelectedSubjectColor();
         const subjectId = $(this).val();
         const gradeId = $('select[name="grade_id"]').val();
         const semesterId = olamaPlan.semesterId;

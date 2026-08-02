@@ -35,6 +35,7 @@ class Olama_School_DB
 			'olama_notifications',
 			'olama_semester_exams',
 			'olama_stationary',
+			'olama_subject_stationary',
 			'olama_system_logs'
 		);
 
@@ -106,6 +107,9 @@ class Olama_School_DB
 				grade_id mediumint(9) NOT NULL,
 				color_code varchar(7) DEFAULT NULL,
 				max_weekly_plans tinyint(4) DEFAULT 0 NOT NULL,
+				appear_in_weekly_plan tinyint(1) DEFAULT 1 NOT NULL,
+				appear_in_schedule tinyint(1) DEFAULT 1 NOT NULL,
+				requires_stationary tinyint(1) DEFAULT 0 NOT NULL,
 				is_active tinyint(1) DEFAULT 1 NOT NULL,
 				PRIMARY KEY  (id),
 				KEY  grade_id (grade_id),
@@ -342,6 +346,20 @@ class Olama_School_DB
 				UNIQUE KEY grade_year (academic_year_id, grade_id)
 			) $charset_collate;",
 
+			'olama_subject_stationary' => "CREATE TABLE {$wpdb->prefix}olama_subject_stationary (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				academic_year_id mediumint(9) NOT NULL,
+				grade_id mediumint(9) NOT NULL,
+				subject_id mediumint(9) NOT NULL,
+				notebooks text DEFAULT NULL,
+				stationary text DEFAULT NULL,
+				updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY year_grade_subject (academic_year_id, grade_id, subject_id),
+				KEY grade_year (academic_year_id, grade_id),
+				KEY subject_id (subject_id)
+			) $charset_collate;",
+
 
 
 
@@ -491,6 +509,7 @@ class Olama_School_DB
 		}
 
 		$tables = array(
+			'olama_subject_stationary',
 			'olama_stationary',
 			'olama_teacher_office_hours',
 			'olama_teacher_assignments',

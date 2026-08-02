@@ -154,6 +154,38 @@ class Olama_School_Grade
     }
 
     /**
+     * Update the locally managed timetable period count for a grade.
+     */
+    public static function update_periods_count($id, $periods_count)
+    {
+        global $wpdb;
+
+        $id = absint($id);
+        $periods_count = filter_var($periods_count, FILTER_VALIDATE_INT, array(
+            'options' => array(
+                'min_range' => 1,
+                'max_range' => 127,
+            ),
+        ));
+
+        if (!$id || false === $periods_count || !self::get_grade($id)) {
+            return new WP_Error(
+                'invalid_grade_periods',
+                __('Enter a period count between 1 and 127 for a valid grade.', 'olama-school')
+            );
+        }
+
+        self::$cache = array();
+        return $wpdb->update(
+            "{$wpdb->prefix}olama_grades",
+            array('periods_count' => $periods_count),
+            array('id' => $id),
+            array('%d'),
+            array('%d')
+        );
+    }
+
+    /**
      * Delete grade with validation
      */
     public static function delete_grade($id)

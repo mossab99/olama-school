@@ -6,8 +6,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$active_year = Olama_School_Academic::get_active_year();
-$selected_year_id = $active_year ? intval($active_year->id) : 0;
+$subject_stationary = isset($subject_stationary) && is_array($subject_stationary) ? $subject_stationary : array();
 ?>
 
 <div class="olama-stationary-wrap">
@@ -16,7 +15,7 @@ $selected_year_id = $active_year ? intval($active_year->id) : 0;
             <?php echo Olama_School_Helpers::translate('Stationary'); ?>
         </h2>
         <p class="description">
-            <?php echo Olama_School_Helpers::translate('Define required notebooks and stationary for each grade.'); ?>
+            <?php echo Olama_School_Helpers::translate('Define required notebooks and stationary for each subject, with class teacher notes for the whole grade.'); ?>
         </p>
     </div>
 
@@ -77,33 +76,46 @@ $selected_year_id = $active_year ? intval($active_year->id) : 0;
             <input type="hidden" name="grade_id" value="<?php echo $selected_grade_id; ?>">
 
             <div style="padding: 30px;">
-                <div style="margin-bottom: 25px;">
-                    <label class="olama-label"
-                        style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                        <span class="dashicons dashicons-book" style="color: #6366f1;"></span>
-                        <strong>
-                            <?php echo Olama_School_Helpers::translate('Required Notebooks'); ?>
-                        </strong>
-                    </label>
-                    <textarea name="notebooks" rows="5" class="olama-textarea"
-                        placeholder="<?php echo Olama_School_Helpers::translate('List required notebooks...'); ?>"
-                        style="width: 100%; min-height: 120px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 12px;"><?php echo esc_textarea($stationary_data->notebooks ?? ''); ?></textarea>
-                </div>
+                <?php if (!empty($stationary_subjects)): ?>
+                    <div class="olama-stationary-table-wrap">
+                        <table class="wp-list-table widefat striped olama-stationary-table">
+                            <thead>
+                                <tr>
+                                    <th><?php esc_html_e('Subject', 'olama-school'); ?></th>
+                                    <th><?php echo esc_html(Olama_School_Helpers::translate('Required Notebooks')); ?></th>
+                                    <th><?php echo esc_html(Olama_School_Helpers::translate('Required Stationary')); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($stationary_subjects as $subject):
+                                    $requirements = $subject_stationary[(int) $subject->id] ?? null;
+                                    ?>
+                                    <tr>
+                                        <th scope="row">
+                                            <strong><?php echo esc_html($subject->subject_name); ?></strong>
+                                        </th>
+                                        <td>
+                                            <textarea name="subject_requirements[<?php echo esc_attr($subject->id); ?>][notebooks]"
+                                                rows="4" class="olama-textarea"
+                                                placeholder="<?php echo esc_attr(Olama_School_Helpers::translate('List required notebooks...')); ?>"><?php echo esc_textarea($requirements->notebooks ?? ''); ?></textarea>
+                                        </td>
+                                        <td>
+                                            <textarea name="subject_requirements[<?php echo esc_attr($subject->id); ?>][stationary]"
+                                                rows="4" class="olama-textarea"
+                                                placeholder="<?php echo esc_attr(Olama_School_Helpers::translate('List other stationary items...')); ?>"><?php echo esc_textarea($requirements->stationary ?? ''); ?></textarea>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <div class="notice notice-info inline" style="margin:0 0 25px;">
+                        <p><?php esc_html_e('No subjects in this grade are marked as requiring stationery. Enable the Stationery Required checkbox in the Subjects tab first.', 'olama-school'); ?></p>
+                    </div>
+                <?php endif; ?>
 
-                <div style="margin-bottom: 25px;">
-                    <label class="olama-label"
-                        style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                        <span class="dashicons dashicons-forms" style="color: #6366f1;"></span>
-                        <strong>
-                            <?php echo Olama_School_Helpers::translate('Required Stationary'); ?>
-                        </strong>
-                    </label>
-                    <textarea name="stationary" rows="5" class="olama-textarea"
-                        placeholder="<?php echo Olama_School_Helpers::translate('List other stationary items...'); ?>"
-                        style="width: 100%; min-height: 120px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 12px;"><?php echo esc_textarea($stationary_data->stationary ?? ''); ?></textarea>
-                </div>
-
-                <div style="margin-bottom: 25px;">
+                <div style="margin-top: 28px;">
                     <label class="olama-label"
                         style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
                         <span class="dashicons dashicons-admin-comments" style="color: #6366f1;"></span>
@@ -153,6 +165,28 @@ $selected_year_id = $active_year ? intval($active_year->id) : 0;
         border-color: #6366f1 !important;
         box-shadow: 0 0 0 1px #6366f1 !important;
         outline: none;
+    }
+
+    .olama-stationary-table-wrap {
+        overflow-x: auto;
+    }
+
+    .olama-stationary-table th:first-child {
+        width: 22%;
+        min-width: 160px;
+    }
+
+    .olama-stationary-table td {
+        vertical-align: top;
+    }
+
+    .olama-stationary-table .olama-textarea {
+        width: 100%;
+        min-width: 240px;
+        min-height: 100px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        padding: 10px;
     }
 
     <?php if (Olama_School_Helpers::is_arabic()): ?>

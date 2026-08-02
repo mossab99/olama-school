@@ -214,7 +214,7 @@ if (!defined('ABSPATH')) {
                             foreach ($scheduled_subjects as $subj):
                                 $is_filled = in_array($subj->id, $filled_subject_ids);
                                 ?>
-                                <option value="<?php echo $subj->id; ?>" <?php echo $is_filled ? 'data-filled="true" class="olama-filled-subject"' : ''; ?>>
+                                <option value="<?php echo $subj->id; ?>" data-color="<?php echo esc_attr($subj->color_code ?: '#2271b1'); ?>" <?php echo $is_filled ? 'data-filled="true" class="olama-filled-subject"' : ''; ?>>
                                     <?php echo esc_html($subj->subject_name); ?>
                                 </option>
                             <?php endforeach; ?>

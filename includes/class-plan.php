@@ -16,7 +16,7 @@ class Olama_School_Plan
     public static function get_plans($section_id, $start_date, $end_date, $subject_id = 0)
     {
         global $wpdb;
-        $where = $wpdb->prepare("p.section_id = %d AND p.plan_date BETWEEN %s AND %s", $section_id, $start_date, $end_date);
+        $where = $wpdb->prepare("p.section_id = %d AND p.plan_date BETWEEN %s AND %s AND s.appear_in_weekly_plan = 1", $section_id, $start_date, $end_date);
 
         if ($subject_id > 0) {
             $where .= $wpdb->prepare(" AND p.subject_id = %d", $subject_id);
@@ -67,6 +67,15 @@ class Olama_School_Plan
 
         if (!$subject_id) {
             return new WP_Error('missing_subject', Olama_School_Helpers::translate('Please select a subject.'));
+        }
+
+        $subject_visible = $wpdb->get_var($wpdb->prepare(
+            "SELECT 1 FROM {$wpdb->prefix}olama_subjects
+             WHERE id = %d AND is_active = 1 AND appear_in_weekly_plan = 1",
+            $subject_id
+        ));
+        if (!$subject_visible) {
+            return new WP_Error('subject_not_in_weekly_plan', Olama_School_Helpers::translate('This subject is not enabled for the weekly plan.'));
         }
         if (!$unit_id) {
             return new WP_Error('missing_unit', Olama_School_Helpers::translate('Please select a unit.'));

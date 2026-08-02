@@ -106,6 +106,64 @@ class Olama_School_Subject
     }
 
     /**
+     * Get active subjects that may be assigned to the master schedule.
+     */
+    public static function get_for_schedule($grade_id)
+    {
+        return array_values(array_filter(self::get_by_grade($grade_id, true), function ($subject) {
+            return !isset($subject->appear_in_schedule) || (int) $subject->appear_in_schedule === 1;
+        }));
+    }
+
+    /**
+     * Get active subjects enabled for weekly planning and reporting.
+     */
+    public static function get_for_weekly_plan($grade_id)
+    {
+        return array_values(array_filter(self::get_by_grade($grade_id, true), function ($subject) {
+            return !isset($subject->appear_in_weekly_plan) || (int) $subject->appear_in_weekly_plan === 1;
+        }));
+    }
+
+    /**
+     * Get active subjects whose grade/subject stationery list is enabled.
+     */
+    public static function get_for_stationary($grade_id)
+    {
+        return array_values(array_filter(self::get_by_grade($grade_id, true), function ($subject) {
+            return isset($subject->requires_stationary) && (int) $subject->requires_stationary === 1;
+        }));
+    }
+
+    /**
+     * Get the current grades represented by active grade-subject records.
+     *
+     * Stationery is configured against subjects, so this selector must not
+     * disappear when the separate student-placement snapshot is unavailable.
+     */
+    public static function get_grades_with_subjects()
+    {
+        $grades = array();
+        foreach (self::get_subjects(true) as $subject) {
+            $grade_id = (int) $subject->grade_id;
+            if (!$grade_id || isset($grades[$grade_id])) {
+                continue;
+            }
+            $grades[$grade_id] = (object) array(
+                'id' => $grade_id,
+                'grade_name' => $subject->grade_name,
+                'grade_level' => $subject->oracle_grade_id ?? $subject->core_grade_id ?? $grade_id,
+            );
+        }
+
+        uasort($grades, static function ($left, $right) {
+            return strnatcasecmp((string) $left->grade_level, (string) $right->grade_level);
+        });
+
+        return array_values($grades);
+    }
+
+    /**
      * Add subject
      */
     public static function add_subject($data)
@@ -123,6 +181,9 @@ class Olama_School_Subject
                 'grade_id' => $data['grade_id'],
                 'color_code' => $data['color_code'] ?? '#000000',
                 'max_weekly_plans' => $data['max_weekly_plans'] ?? 0,
+                'appear_in_weekly_plan' => $data['appear_in_weekly_plan'] ?? 1,
+                'appear_in_schedule' => $data['appear_in_schedule'] ?? 1,
+                'requires_stationary' => $data['requires_stationary'] ?? 0,
                 'is_active' => $data['is_active'] ?? 1,
             )
         );
@@ -179,7 +240,7 @@ class Olama_School_Subject
     {
         global $wpdb;
         if (Olama_School_Academic_Bridge::is_available()) {
-            $allowed = array('color_code', 'max_weekly_plans');
+            $allowed = array('color_code', 'max_weekly_plans', 'appear_in_weekly_plan', 'appear_in_schedule', 'requires_stationary');
             $settings = array_intersect_key($data, array_flip($allowed));
             if (empty($settings)) {
                 return new WP_Error('oracle_managed', __('Subject names, IDs, grade membership, and status are managed by Oracle.', 'olama-school'));
@@ -197,10 +258,32 @@ class Olama_School_Subject
                 'grade_id' => $data['grade_id'],
                 'color_code' => $data['color_code'] ?? '#000000',
                 'max_weekly_plans' => $data['max_weekly_plans'] ?? 0,
+                'appear_in_weekly_plan' => $data['appear_in_weekly_plan'] ?? 1,
+                'appear_in_schedule' => $data['appear_in_schedule'] ?? 1,
+                'requires_stationary' => $data['requires_stationary'] ?? 0,
                 'is_active' => $data['is_active'] ?? 1,
             ),
             array('id' => $id)
         );
+        self::clear_cache();
+        return $result;
+    }
+
+    /**
+     * Update settings owned by Olama School, regardless of the academic source.
+     */
+    public static function update_display_settings($id, $data)
+    {
+        global $wpdb;
+
+        $settings = array(
+            'color_code' => sanitize_hex_color($data['color_code'] ?? '') ?: '#2271b1',
+            'appear_in_weekly_plan' => empty($data['appear_in_weekly_plan']) ? 0 : 1,
+            'appear_in_schedule' => empty($data['appear_in_schedule']) ? 0 : 1,
+            'requires_stationary' => empty($data['requires_stationary']) ? 0 : 1,
+        );
+
+        $result = $wpdb->update("{$wpdb->prefix}olama_subjects", $settings, array('id' => intval($id)));
         self::clear_cache();
         return $result;
     }

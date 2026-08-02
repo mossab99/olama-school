@@ -537,12 +537,12 @@ class Olama_School_Shortcodes
                             <?php else: ?>
                                 <?php foreach ($day_plans as $plan):
                                     $icon = $get_icon($plan->subject_name);
-                                    $bg_color = $get_subject_bg($plan->subject_name);
+                                    $subject_palette = Olama_School_Helpers::get_subject_palette($plan->color_code ?? '#2271b1');
                                     ?>
-                                    <div class="subject-card" style="background: <?php echo esc_attr($bg_color); ?>;">
+                                    <div class="subject-card" style="background:<?php echo esc_attr($subject_palette['background']); ?>; border-color:<?php echo esc_attr($subject_palette['border']); ?>;">
                                         <div class="subject-header">
-                                            <span class="dashicons <?php echo $icon; ?> subject-icon"></span>
-                                            <span class="subject-name">
+                                            <span class="dashicons <?php echo $icon; ?> subject-icon" style="color:<?php echo esc_attr($subject_palette['text']); ?>;"></span>
+                                            <span class="subject-name" style="color:<?php echo esc_attr($subject_palette['text']); ?>;">
                                                 <?php echo esc_html($plan->subject_name); ?>
                                             </span>
                                             <?php if (isset($plan->plan_type) && $plan->plan_type === 'review'): ?>
@@ -869,12 +869,12 @@ class Olama_School_Shortcodes
                                     </td>
                                     <?php for ($i = 1; $i <= $max_periods; $i++):
                                         $item = $schedule[$day_en][$i] ?? null;
-                                        $colors = $item ? $get_subject_color($item->subject_name) : array('bg' => '#f8fafc', 'text' => '#94a3b8');
+                                        $colors = $item ? Olama_School_Helpers::get_subject_palette($item->color_code) : array('background' => '#f8fafc', 'text' => '#94a3b8', 'border' => '#e2e8f0');
                                         ?>
                                         <td class="subject-cell">
                                             <?php if ($item): ?>
                                                 <div class="subject-card-v2"
-                                                    style="background: <?php echo esc_attr($colors['bg']); ?>; color: <?php echo esc_attr($colors['text']); ?>;">
+                                                    style="background:<?php echo esc_attr($colors['background']); ?>; color:<?php echo esc_attr($colors['text']); ?>; border-color:<?php echo esc_attr($colors['border']); ?>;">
                                                     <span class="subject-text">
                                                         <?php echo esc_html($item->subject_name); ?>
                                                     </span>
@@ -909,9 +909,9 @@ class Olama_School_Shortcodes
                                     if (!$item)
                                         continue;
                                     $has_periods = true;
-                                    $colors = $get_subject_color($item->subject_name);
+                                    $colors = Olama_School_Helpers::get_subject_palette($item->color_code);
                                     ?>
-                                    <div class="mobile-period-item" style="background: <?php echo esc_attr($colors['bg']); ?>;">
+                                    <div class="mobile-period-item" style="background:<?php echo esc_attr($colors['background']); ?>; border-color:<?php echo esc_attr($colors['border']); ?>;">
                                         <span class="period-badge" style="background: <?php echo esc_attr($colors['text']); ?>;">
                                             <?php echo Olama_School_Helpers::translate('Period'); ?>
                                             <?php echo isset($periods_ar[$i]) ? $periods_ar[$i] : $i; ?>
@@ -1278,35 +1278,45 @@ class Olama_School_Shortcodes
                                 </div>
                             </div>
                             <div class="olama-accordion-content" <?php echo $is_first ? 'style="display: block;"' : ''; ?>>
-                                <?php if (!empty($item->notebooks)): ?>
+                                <?php
+                                $has_subject_requirements = false;
+                                foreach ((array) ($item->subjects ?? array()) as $subject_requirement):
+                                    if (empty($subject_requirement->notebooks) && empty($subject_requirement->stationary)) {
+                                        continue;
+                                    }
+                                    $has_subject_requirements = true;
+                                    ?>
+                                    <h3 class="subject-requirement-title"><?php echo esc_html($subject_requirement->subject_name); ?></h3>
+                                <?php if (!empty($subject_requirement->notebooks)): ?>
                                     <div class="content-section">
                                         <div class="section-title">
                                             <span class="section-icon">📓</span>
                                             <?php echo Olama_School_Helpers::translate('Required Notebooks'); ?>
                                         </div>
                                         <div class="section-content">
-                                            <?php echo nl2br(esc_html($item->notebooks)); ?>
+                                            <?php echo nl2br(esc_html($subject_requirement->notebooks)); ?>
                                         </div>
                                     </div>
                                 <?php endif; ?>
 
-                                <?php if (!empty($item->stationary)): ?>
+                                <?php if (!empty($subject_requirement->stationary)): ?>
                                     <div class="content-section">
                                         <div class="section-title">
                                             <span class="section-icon">📏</span>
                                             <?php echo Olama_School_Helpers::translate('Required Stationery'); ?>
                                         </div>
                                         <div class="section-content">
-                                            <?php echo nl2br(esc_html($item->stationary)); ?>
+                                            <?php echo nl2br(esc_html($subject_requirement->stationary)); ?>
                                         </div>
                                     </div>
                                 <?php endif; ?>
+                                <?php endforeach; ?>
 
                                 <?php if (!empty($item->teacher_notes)): ?>
                                     <div class="content-section notes">
                                         <div class="section-title">
                                             <span class="section-icon">📝</span>
-                                            <?php echo Olama_School_Helpers::translate('Teacher Notes'); ?>
+                                            <?php echo Olama_School_Helpers::translate('Class Teacher Notes'); ?>
                                         </div>
                                         <div class="section-content">
                                             <?php echo nl2br(esc_html($item->teacher_notes)); ?>
@@ -1314,7 +1324,7 @@ class Olama_School_Shortcodes
                                     </div>
                                 <?php endif; ?>
 
-                                <?php if (empty($item->notebooks) && empty($item->stationary) && empty($item->teacher_notes)): ?>
+                                <?php if (!$has_subject_requirements && empty($item->teacher_notes)): ?>
                                     <div class="empty-state">
                                         <span class="empty-icon">📭</span>
                                         <p>
@@ -1459,6 +1469,19 @@ class Olama_School_Shortcodes
                     border-top: 3px solid rgba(0, 0, 0, 0.05);
                 }
 
+                .subject-requirement-title {
+                    margin: 24px 0 14px;
+                    padding: 10px 14px;
+                    border-radius: 8px;
+                    background: #eef2ff;
+                    color: #3730a3;
+                    font-size: 1.1rem;
+                }
+
+                .subject-requirement-title:first-child {
+                    margin-top: 0;
+                }
+
                 .content-section {
                     margin-bottom: 20px;
                     padding-bottom: 20px;
@@ -1597,16 +1620,18 @@ class Olama_School_Shortcodes
                     <div style="margin-top: 20px;">
                         <?php if ($teacher_schedule): ?>
                             <div style="display: flex; flex-direction: column; gap: 12px;">
-                                <?php foreach ($teacher_schedule as $period): ?>
+                                <?php foreach ($teacher_schedule as $period):
+                                    $period_palette = Olama_School_Helpers::get_subject_palette($period->color_code ?? '#2271b1');
+                                    ?>
                                     <div
-                                        style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #f9f9f9; border-radius: 8px; border-right: 4px solid #2271b1;">
+                                        style="display:flex; align-items:center; justify-content:space-between; padding:15px; background:<?php echo esc_attr($period_palette['background']); ?>; border-radius:8px; border-right:4px solid <?php echo esc_attr($period_palette['border']); ?>;">
                                         <div style="display: flex; align-items: center; gap: 15px;">
-                                            <div style="background: #f0f6fb; padding: 8px; border-radius: 8px;">
+                                            <div style="background:#fff; padding:8px; border-radius:8px;">
                                                 <span class="dashicons dashicons-book-alt"
-                                                    style="color: #2271b1; font-size: 20px; width: 20px; height: 20px;"></span>
+                                                    style="color:<?php echo esc_attr($period_palette['text']); ?>; font-size:20px; width:20px; height:20px;"></span>
                                             </div>
                                             <div>
-                                                <div style="font-weight: 700; color: #1d2327; font-size: 1.1em;">
+                                                <div style="font-weight:700; color:<?php echo esc_attr($period_palette['text']); ?>; font-size:1.1em;">
                                                     <?php echo esc_html($period->subject_name); ?>
                                                 </div>
                                                 <div style="font-size: 0.9em; color: #666; font-weight: 500;">
@@ -1616,7 +1641,7 @@ class Olama_School_Shortcodes
                                         </div>
                                         <div style="display: flex; align-items: center; gap: 10px;">
                                             <div
-                                                style="background: #2271b1; color: #fff; width: 45px; height: 45px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(34, 113, 177, 0.2);">
+                                                style="background:<?php echo esc_attr($period_palette['border']); ?>; color:#fff; width:45px; height:45px; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
                                                 <span
                                                     style="font-size: 0.7em; text-transform: uppercase; font-weight: 700; opacity: 0.9; margin-bottom: -4px;">
                                                     <?php echo Olama_School_Helpers::translate('Period'); ?>

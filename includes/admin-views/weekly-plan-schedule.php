@@ -88,7 +88,7 @@ if ($selected_section_id && $selected_semester_id) {
 }
 
 // Subjects for dropdown
-$subjects = $selected_grade_id ? Olama_School_Subject::get_by_grade($selected_grade_id, true) : [];
+$subjects = $selected_grade_id ? Olama_School_Subject::get_for_schedule($selected_grade_id) : [];
 
 $scheduled_sections = Olama_School_Schedule::get_scheduled_sections($selected_schedule_type, $selected_year_id, $selected_semester_id);
 ?>
@@ -349,10 +349,12 @@ function olamaPrintSchedule() {
                             $item_subject_id = $item ? $item->subject_id : 0;
                             ?>
                             <td style="padding: 15px; border-right: 1px solid #eee; vertical-align: top;">
-                                <select name="schedule[<?php echo esc_attr($day); ?>][<?php echo $period; ?>]" style="width: 100%; font-size: 12px;" <?php disabled(!$is_admin); ?>>
+                                <?php $item_palette = $item ? Olama_School_Helpers::get_subject_palette($item->color_code) : null; ?>
+                                <select class="olama-schedule-subject-select" name="schedule[<?php echo esc_attr($day); ?>][<?php echo $period; ?>]"
+                                    style="width:100%; font-size:12px;<?php echo $item_palette ? 'background:' . esc_attr($item_palette['background']) . ';color:' . esc_attr($item_palette['text']) . ';border-color:' . esc_attr($item_palette['border']) . ';font-weight:600;' : ''; ?>" <?php disabled(!$is_admin); ?>>
                                     <option value=""><?php _e('-- Select Subject --', 'olama-school'); ?></option>
                                     <?php foreach ($subjects as $subject): ?>
-                                        <option value="<?php echo $subject->id; ?>" <?php selected($item_subject_id, $subject->id); ?>>
+                                        <option value="<?php echo $subject->id; ?>" data-color="<?php echo esc_attr($subject->color_code ?: '#2271b1'); ?>" <?php selected($item_subject_id, $subject->id); ?>>
                                             <?php echo esc_html($subject->subject_name); ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -415,3 +417,29 @@ function olamaPrintSchedule() {
         </p>
     <?php endif; ?>
 </div>
+
+<script>
+jQuery(function ($) {
+    function tintScheduleSelect(select) {
+        const option = select.options[select.selectedIndex];
+        const color = option ? option.dataset.color : '';
+        if (!color) {
+            select.style.background = '';
+            select.style.color = '';
+            select.style.borderColor = '';
+            select.style.fontWeight = '';
+            return;
+        }
+        const hex = color.replace('#', '');
+        const rgb = [0, 2, 4].map(i => parseInt(hex.substring(i, i + 2), 16));
+        const tint = rgb.map(v => Math.round(v + (255 - v) * 0.88));
+        const luminance = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
+        const text = luminance > 0.55 ? rgb.map(v => Math.round(v * 0.45)) : rgb;
+        select.style.background = `rgb(${tint.join(',')})`;
+        select.style.color = `rgb(${text.join(',')})`;
+        select.style.borderColor = color;
+        select.style.fontWeight = '600';
+    }
+    $('.olama-schedule-subject-select').on('change', function () { tintScheduleSelect(this); });
+});
+</script>
