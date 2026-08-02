@@ -1043,6 +1043,8 @@ class Olama_School_Admin
      */
     public function add_menu_pages()
     {
+        $has_academic_access = $this->has_academic_access();
+
         add_menu_page(
             __('Olama School', 'olama-school'),
             __('Olama School', 'olama-school'),
@@ -1084,10 +1086,16 @@ class Olama_School_Admin
             'olama-school',
             Olama_School_Helpers::translate('Academic Management'),
             Olama_School_Helpers::translate('Academic Management'),
-            'olama_access_academic_mgmt',
+            'read',
             'olama-school-academic',
             array($this, 'render_academic_management_page')
         );
+
+        // Keep the page registered so WordPress permits leaf-capability URLs,
+        // but do not show the menu when the user owns no Academic tab.
+        if (!$has_academic_access) {
+            remove_submenu_page('olama-school', 'olama-school-academic');
+        }
 
         add_submenu_page(
             'olama-school',
@@ -1107,6 +1115,34 @@ class Olama_School_Admin
             array($this, 'render_settings_page')
         );
 
+    }
+
+    /**
+     * Determine whether the current user owns any Academic capability.
+     *
+     * The Academic page is a tab container. A user with a permitted leaf tab
+     * must be able to enter that container even when the optional parent
+     * "Access Management" capability was not assigned.
+     */
+    private function has_academic_access()
+    {
+        $capabilities = array(
+            'olama_access_academic_mgmt',
+            'olama_manage_academic_calendar',
+            'olama_manage_academic_grades',
+            'olama_manage_academic_subjects',
+            'olama_manage_academic_assignment',
+            'olama_manage_academic_stationary',
+            'olama_manage_academic_office_hours',
+        );
+
+        foreach ($capabilities as $capability) {
+            if (Olama_School_Permissions::can($capability)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -3037,7 +3073,7 @@ class Olama_School_Admin
     public function handle_office_hours_save()
     {
         if (isset($_POST['olama_save_office_hours']) && check_admin_referer('olama_save_office_hours', 'olama_office_hours_nonce')) {
-            if (!Olama_School_Permissions::can('olama_access_academic_mgmt')) {
+            if (!Olama_School_Permissions::can('olama_manage_academic_office_hours')) {
                 wp_die(__('Unauthorized', 'olama-school'));
             }
 
