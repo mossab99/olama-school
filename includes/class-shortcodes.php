@@ -1266,7 +1266,7 @@ class Olama_School_Shortcodes
                         $index++;
                         ?>
                         <div class="olama-accordion-item <?php echo $is_first ? 'olama-active' : ''; ?>">
-                            <div class="olama-accordion-header" style="background: <?php echo $gradient; ?>;">
+                            <button type="button" class="olama-accordion-header" aria-expanded="<?php echo $is_first ? 'true' : 'false'; ?>" style="background: <?php echo $gradient; ?>;">
                                 <div class="header-left">
                                     <span class="grade-icon">🎒</span>
                                     <span class="grade-name">
@@ -1276,7 +1276,7 @@ class Olama_School_Shortcodes
                                 <div class="header-right">
                                     <span class="toggle-icon">▼</span>
                                 </div>
-                            </div>
+                            </button>
                             <div class="olama-accordion-content" <?php echo $is_first ? 'style="display: block;"' : ''; ?>>
                                 <?php
                                 $has_subject_requirements = false;
@@ -1583,7 +1583,70 @@ class Olama_School_Shortcodes
                         font-size: 0.9rem;
                     }
                 }
+
+                /* Parent portal presentation refinements. */
+                .olama-stationary-container { max-width: 960px; color: #172554; }
+                .olama-stationary-header {
+                    position: relative;
+                    overflow: hidden;
+                    padding: 30px 32px;
+                    border-radius: 24px 24px 0 0;
+                    background: radial-gradient(circle at 10% 15%, rgba(255,255,255,.86), transparent 22%), linear-gradient(120deg, #fff9d9, #fff1ad);
+                    box-shadow: 0 12px 30px rgba(113, 88, 20, .09);
+                }
+                .olama-stationary-header::after { content: '✏️'; position: absolute; left: 28px; bottom: -21px; font-size: 6.2rem; opacity: .18; transform: rotate(-20deg); }
+                .olama-stationary-header .header-icon { font-size: 0; width: 62px; height: 62px; border-radius: 18px; background: #fff; display: grid; place-items: center; box-shadow: 0 8px 16px rgba(128, 91, 17, .12); }
+                .olama-stationary-header .header-icon::before { content: '📚'; font-size: 2.15rem; }
+                .olama-stationary-header .header-content { z-index: 1; }
+                .olama-stationary-header h1 { font-size: clamp(1.45rem, 3vw, 2rem); font-weight: 900; color: #8a420d; }
+                .olama-stationary-header p { color: #745d3d; }
+                .header-year { z-index: 1; border-radius: 14px; background: rgba(255,255,255,.82); border-color: rgba(200, 143, 22, .25); }
+                .olama-stationary-accordion { padding: 18px; border: 1px solid #e5eaf5; border-top: 0; border-radius: 0 0 24px 24px; }
+                .olama-accordion-item { margin-bottom: 12px; border-radius: 14px; box-shadow: 0 4px 12px rgba(28, 48, 94, .07); }
+                .olama-accordion-header { width: 100%; border: 0; font: inherit; text-align: right; gap: 12px; }
+                .olama-accordion-header:focus-visible { outline: 3px solid #f7c948; outline-offset: -4px; }
+                .olama-accordion-header .header-right::after { content: 'عرض القائمة'; font-size: .78rem; font-weight: 600; margin-inline-end: 16px; opacity: .86; }
+                .olama-accordion-item.olama-active .header-right::after { visibility: hidden; }
+                .olama-accordion-content { padding: 22px; border-top: 0; }
+                .subject-requirement-title { display: flex; align-items: center; gap: 8px; margin: 19px 0 11px; padding: 10px 13px; border-radius: 10px; }
+                .subject-requirement-title::before { content: '📖'; font-size: 1rem; }
+                .content-section { display: inline-block; vertical-align: top; width: calc(50% - 8px); box-sizing: border-box; margin: 0 0 16px; padding: 13px; border: 1px solid #e5eaf4; border-radius: 12px; }
+                .content-section + .content-section { margin-inline-start: 12px; }
+                .section-title { font-size: .92rem; margin-bottom: 9px; }
+                .section-content { padding: 11px 12px; font-size: .92rem; background: #f8faff; }
+                .content-section.notes { display: block; width: 100%; background: #fffcf2; border-color: #f8df9b; }
+                .content-section.notes .section-content { background: #fff8e5; }
+                .olama-stationary-footer { display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 14px; }
+                .olama-stationary-footer p::before { content: '✨'; margin-inline-end: 8px; }
+
+                @media (max-width: 600px) {
+                    .olama-stationary-header { padding: 21px 17px; gap: 12px; }
+                    .olama-stationary-header::after { left: 4px; font-size: 4rem; }
+                    .olama-stationary-header .header-icon { width: 48px; height: 48px; border-radius: 14px; }
+                    .olama-stationary-header .header-icon::before { font-size: 1.7rem; }
+                    .header-year { padding: 9px 11px; }
+                    .olama-stationary-accordion { padding: 10px; }
+                    .olama-accordion-header { padding: 15px 13px; }
+                    .header-right::after { display: none; }
+                    .olama-accordion-content { padding: 14px; }
+                    .content-section, .content-section.notes { display: block; width: 100%; margin: 0 0 10px; }
+                    .content-section + .content-section { margin-inline-start: 0; }
+                    .section-content { font-size: .87rem; }
+                }
             </style>
+            <script>
+            (function () {
+                document.querySelectorAll('.olama-stationary-container .olama-accordion-header').forEach(function (header) {
+                    header.addEventListener('click', function () {
+                        var item = header.closest('.olama-accordion-item');
+                        var content = item.querySelector('.olama-accordion-content');
+                        var isOpen = item.classList.toggle('olama-active');
+                        header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                        content.style.display = isOpen ? 'block' : 'none';
+                    });
+                });
+            }());
+            </script>
             <?php
             return ob_get_clean();
     }
