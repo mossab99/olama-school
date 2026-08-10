@@ -117,14 +117,13 @@ class Olama_School_Stationary
              FROM {$wpdb->prefix}olama_grades g
              LEFT JOIN {$wpdb->prefix}olama_stationary s
                 ON s.grade_id = g.id AND s.academic_year_id = %d
-             WHERE s.id IS NOT NULL OR EXISTS (
-                    SELECT 1 FROM {$wpdb->prefix}olama_subject_stationary ss
-                    INNER JOIN {$wpdb->prefix}olama_subjects subj
-                        ON subj.id = ss.subject_id AND subj.requires_stationary = 1 AND subj.is_active = 1
-                    WHERE ss.academic_year_id = %d AND ss.grade_id = g.id
+             WHERE EXISTS (
+                    SELECT 1 FROM {$wpdb->prefix}olama_subjects subj
+                    WHERE subj.grade_id = g.id
+                        AND subj.requires_stationary = 1
+                        AND subj.is_active = 1
                 )
              ORDER BY CAST(g.grade_level AS SIGNED) ASC",
-            $year_id,
             $year_id
         ));
         foreach ($items as $item) {
