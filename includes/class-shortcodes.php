@@ -407,13 +407,16 @@ class Olama_School_Shortcodes
             $academic_year_display = $academic_year->year_name ?? ($academic_year->start_year . '-' . $academic_year->end_year);
             $week_number = 1;
 
-            $all_weeks = Olama_School_Academic::get_academic_weeks($academic_year_id, $semester_id, true);
+            // The ordinal is academic-year-wide; the selected semester is used
+            // for validation and filtering, not as a new week-number origin.
+            $all_weeks = Olama_School_Academic::get_academic_weeks($academic_year_id, null, true);
             if (!empty($all_weeks) && isset($all_weeks[$week_start])) {
                 $week_number = $all_weeks[$week_start]['number'];
-            } elseif (!empty($semester->start_date)) {
-                $semester_start = strtotime($semester->start_date);
+            } elseif (!empty($academic_year->start_date)) {
+                $academic_year_start = Olama_School_Helpers::get_week_range($academic_year->start_date);
+                $academic_year_start_ts = strtotime($academic_year_start['start']);
                 $week_start_ts = strtotime($week_start);
-                $week_number = max(1, floor(($week_start_ts - $semester_start) / (7 * 86400)) + 1);
+                $week_number = max(1, floor(($week_start_ts - $academic_year_start_ts) / (7 * 86400)) + 1);
             }
 
             // Arabic ordinal week names

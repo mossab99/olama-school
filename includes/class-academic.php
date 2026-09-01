@@ -253,7 +253,9 @@ class Olama_School_Academic
         $date_format = isset($settings['date_format']) ? $settings['date_format'] : 'd-m-Y';
         $format_key = str_replace('-', '', $date_format); // dmY, mdY, or Ymd
 
-        $cache_key = 'olama_academic_weeks_' . $year_id . ($semester_id ? '_s' . $semester_id : '') . '_' . $format_key . ($full_info ? '_full' : '');
+        // Keep week numbering inside the selected academic year's boundaries.
+        // The cache version prevents older semester-only week indexes from being reused.
+        $cache_key = 'olama_academic_weeks_v2_' . $year_id . ($semester_id ? '_s' . $semester_id : '') . '_' . $format_key . ($full_info ? '_full' : '');
         $weeks = get_transient($cache_key);
         if ($weeks !== false) {
             return $weeks;
@@ -271,6 +273,14 @@ class Olama_School_Academic
         if (!$semesters) {
             return array();
         }
+
+        $academic_year = self::get_year($year_id);
+        $academic_year_start_ts = $academic_year && !empty($academic_year->start_date)
+            ? strtotime($academic_year->start_date)
+            : false;
+        $academic_year_end_ts = $academic_year && !empty($academic_year->end_date)
+            ? strtotime($academic_year->end_date)
+            : false;
 
         $settings = get_option('olama_school_settings', array());
         $start_day_setting = $settings['start_day'] ?? 'Sunday';
@@ -290,6 +300,18 @@ class Olama_School_Academic
         foreach ($semesters as $semester) {
             $start_ts = strtotime($semester->start_date);
             $end_ts = strtotime($semester->end_date);
+
+            // Core calendar data can contain semester dates outside the academic
+            // year. Those dates must not shift the report's first week to week 10.
+            if ($academic_year_start_ts !== false) {
+                $start_ts = max($start_ts, $academic_year_start_ts);
+            }
+            if ($academic_year_end_ts !== false) {
+                $end_ts = min($end_ts, $academic_year_end_ts);
+            }
+            if ($start_ts > $end_ts) {
+                continue;
+            }
 
             // Find the start day of the week containing the start date
             $day_of_week = (int) date('w', $start_ts);
