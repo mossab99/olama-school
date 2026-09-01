@@ -247,16 +247,30 @@ class Olama_School_Shortcodes
 
     /**
      * Shortcode: [olama_weekly_plan]
-     * Attributes: semester, grade, section, week
+     * Attributes: year, semester, grade, section, week
      */
     public function render_weekly_plan_shortcode($atts)
     {
         $atts = shortcode_atts(array(
+            'year' => '',
             'semester' => '',
             'grade' => '',
             'section' => '',
             'week' => '',
         ), $atts, 'olama_weekly_plan');
+
+        $academic_year_id = $atts['year'];
+        if ($academic_year_id === 'active' || empty($academic_year_id)) {
+            $academic_year = Olama_School_Academic::get_active_year();
+            $academic_year_id = $academic_year ? (int) $academic_year->id : 0;
+        } else {
+            $academic_year_id = absint($academic_year_id);
+            $academic_year = $academic_year_id ? Olama_School_Academic::get_year($academic_year_id) : null;
+        }
+
+        if (!$academic_year_id || !$academic_year) {
+            return '<div class="olama-error">' . Olama_School_Helpers::translate('Invalid Academic Year.') . '</div>';
+        }
 
         $section_id = intval($atts['section']);
         if (!$section_id && isset($_GET['section_id'])) {
@@ -267,22 +281,52 @@ class Olama_School_Shortcodes
             return '<div class="olama-error">' . Olama_School_Helpers::translate('Please specify a valid section ID in the shortcode.') . '</div>';
         }
 
+        $section = Olama_School_Section::get_section($section_id);
+        if (!$section) {
+            return '<div class="olama-error">' . Olama_School_Helpers::translate('Please specify a valid section ID in the shortcode.') . '</div>';
+        }
+
+        if (isset($section->academic_year_id) && (int) $section->academic_year_id !== $academic_year_id) {
+            return '<div class="olama-error">' . Olama_School_Helpers::translate('The selected section does not belong to the selected academic year.') . '</div>';
+        }
+
+        $grade = Olama_School_Grade::get_grade($section->grade_id);
+        $requested_grade_id = absint($atts['grade']);
+        if ($requested_grade_id && $requested_grade_id !== (int) $section->grade_id) {
+            return '<div class="olama-error">' . Olama_School_Helpers::translate('The selected section does not belong to the selected grade.') . '</div>';
+        }
+
         // Resolve Semester ID for header/filtering
         $semester_id = $atts['semester'];
         if ($semester_id === 'active' || empty($semester_id)) {
-            $active_year = Olama_School_Academic::get_active_year();
-            $active_sem = $active_year ? Olama_School_Academic::get_active_semester($active_year->id) : null;
+            $active_sem = Olama_School_Academic::get_active_semester($academic_year_id);
             $semester_id = $active_sem ? $active_sem->id : 0;
         } else {
             $semester_id = intval($semester_id);
         }
 
+        $semester = $semester_id ? Olama_School_Academic::get_semester($semester_id) : null;
+        if (!$semester || (isset($semester->academic_year_id) && (int) $semester->academic_year_id !== $academic_year_id)) {
+            return '<div class="olama-error">' . Olama_School_Helpers::translate('Invalid Semester.') . '</div>';
+        }
+
+        $semester_weeks = Olama_School_Academic::get_academic_weeks($academic_year_id, $semester_id, true);
         $week_start = $atts['week'];
         if (!$week_start) {
-            // Default to current/upcoming week start based on Saturday-switch logic
-            $week_start = Olama_School_Helpers::get_active_week_start();
+            $candidate_week = Olama_School_Helpers::get_active_week_start();
+            $week_start = isset($semester_weeks[$candidate_week])
+                ? $candidate_week
+                : (!empty($semester_weeks) ? (string) array_key_first($semester_weeks) : $candidate_week);
         } elseif ($week_start === 'previous') {
             $week_start = Olama_School_Helpers::get_previous_week_start();
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $week_start)) {
+            return '<div class="olama-error">' . Olama_School_Helpers::translate('Invalid week date.') . '</div>';
+        }
+
+        if (!isset($semester_weeks[$week_start])) {
+            return '<div class="olama-error">' . Olama_School_Helpers::translate('The selected week does not belong to the selected semester.') . '</div>';
         }
 
         $week_range = Olama_School_Helpers::get_week_range($week_start);
@@ -315,16 +359,6 @@ class Olama_School_Shortcodes
         $grouped_plans = array();
         foreach ($plans as $plan) {
             $grouped_plans[$plan->plan_date][] = $plan;
-        }
-
-        // Get Section/Grade info for the header
-        $section = Olama_School_Section::get_section($section_id);
-        $grade = $section ? Olama_School_Grade::get_grade($section->grade_id) : null;
-
-        $semester_name = '';
-        if ($semester_id > 0) {
-            global $wpdb;
-            $semester_name = $wpdb->get_var($wpdb->prepare("SELECT semester_name FROM {$wpdb->prefix}olama_semesters WHERE id = %d", $semester_id));
         }
 
         // Helper to get subject icons
@@ -369,35 +403,17 @@ class Olama_School_Shortcodes
         ?>
         <div class="olama-weekly-plan-v2">
             <?php
-            // Get active academic year and calculate week number
-            $active_year = Olama_School_Academic::get_active_year();
-            $academic_year_display = '';
+            // Use the academic context encoded in the shortcode for the report header.
+            $academic_year_display = $academic_year->year_name ?? ($academic_year->start_year . '-' . $academic_year->end_year);
             $week_number = 1;
 
-            if ($active_year) {
-                $academic_year_display = $active_year->year_name ?? ($active_year->start_year . '-' . $active_year->end_year);
-
-                // Get weeks for the active year to find the current week number
-                $all_weeks = Olama_School_Academic::get_academic_weeks($active_year->id, $semester_id, true);
-                if (!empty($all_weeks) && isset($all_weeks[$week_start])) {
-                    $week_number = $all_weeks[$week_start]['number'];
-                } else {
-                    // Fallback: calculate week number from semester start
-                    if ($semester_id) {
-                        global $wpdb;
-                        $semester_data = $wpdb->get_row($wpdb->prepare("SELECT start_date FROM {$wpdb->prefix}olama_semesters WHERE id = %d", $semester_id));
-                        if ($semester_data) {
-                            $semester_start = strtotime($semester_data->start_date);
-                            $week_start_ts = strtotime($week_start);
-                            $week_number = max(1, floor(($week_start_ts - $semester_start) / (7 * 86400)) + 1);
-                        }
-                    }
-                }
-            } else {
-                // Fallback if no active year
-                $start_year = date('Y', strtotime($week_start));
-                $end_year = $start_year + 1;
-                $academic_year_display = $start_year . '-' . $end_year;
+            $all_weeks = Olama_School_Academic::get_academic_weeks($academic_year_id, $semester_id, true);
+            if (!empty($all_weeks) && isset($all_weeks[$week_start])) {
+                $week_number = $all_weeks[$week_start]['number'];
+            } elseif (!empty($semester->start_date)) {
+                $semester_start = strtotime($semester->start_date);
+                $week_start_ts = strtotime($week_start);
+                $week_number = max(1, floor(($week_start_ts - $semester_start) / (7 * 86400)) + 1);
             }
 
             // Arabic ordinal week names
