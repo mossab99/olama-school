@@ -305,6 +305,7 @@ if ($current_semester_id && $selected_grade_id) {
                 </select>
             </div>
 
+            <?php if (Olama_School_Permissions::can('olama_approve_plans')): ?>
             <div style="margin-left: auto;">
                 <button type="button" id="olama-bulk-approve-btn" class="button button-primary"
                     style="height: 35px; background: #10b981; border-color: #059669; font-weight: 600; margin-top: 20px;"
@@ -314,6 +315,7 @@ if ($current_semester_id && $selected_grade_id) {
                     <?php _e('Approve All', 'olama-school'); ?>
                 </button>
             </div>
+            <?php endif; ?>
         </form>
     </div>
 

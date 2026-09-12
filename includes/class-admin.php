@@ -1388,7 +1388,8 @@ class Olama_School_Admin
         if (isset($_GET['page']) && $_GET['page'] === 'olama-school-plans') {
             wp_enqueue_script('olama-plan-list-script', OLAMA_SCHOOL_URL . 'assets/js/plan-list.js', array('jquery'), OLAMA_SCHOOL_VERSION, true);
             wp_localize_script('olama-plan-list-script', 'olamaPlanList', array(
-                'isSupervisor' => current_user_can('olama_manage_plans'),
+                // Kept as isSupervisor for compatibility with cached plan-list.js versions.
+                'isSupervisor' => Olama_School_Permissions::can('olama_approve_plans'),
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('olama_admin_nonce'),
                 'i18n' => array(
