@@ -18,6 +18,9 @@ class Olama_School_Shortcodes
         add_shortcode('olama_weekly_schedule', array($this, 'render_weekly_schedule_shortcode'));
         add_shortcode('olama_teachers_office_hours', array($this, 'render_teachers_office_hours_shortcode'));
         add_shortcode('olama_stationary', array($this, 'render_stationary_shortcode'));
+        add_shortcode('olama_exam_report', array($this, 'render_exam_report_shortcode'));
+        // Historical alias used by some family-gateway pages.
+        add_shortcode('olama_online_exams_schedule', array($this, 'render_exam_report_shortcode'));
         add_shortcode('olama_logged_teacher_schedule', array($this, 'render_logged_teacher_schedule_shortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_shortcode_assets'));
     }
@@ -27,6 +30,7 @@ class Olama_School_Shortcodes
      */
     public function enqueue_shortcode_assets()
     {
+        wp_enqueue_style('dashicons');
         wp_enqueue_style('olama-google-fonts', 'https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Inter:wght@400;600;700&display=swap', array(), null);
         wp_enqueue_style('olama-material-icons', 'https://fonts.googleapis.com/icon?family=Material+Icons', array(), null);
         wp_enqueue_style('olama-shortcodes', OLAMA_SCHOOL_URL . 'assets/css/shortcodes.css', array(), OLAMA_SCHOOL_VERSION);
@@ -729,6 +733,272 @@ class Olama_School_Shortcodes
      * Shortcode: [olama_exam_report]
      * Attributes: year, semester, grade, exam
      */
+    public function render_exam_report_shortcode($atts)
+    {
+        if (!class_exists('Olama_School_Exam')) {
+            return '<div class="olama-error">' . esc_html__('Exam Management must be active to display the exam schedule.', 'olama-school') . '</div>';
+        }
+
+        $atts = shortcode_atts(array(
+            'year' => '',
+            'semester' => '',
+            'grade' => '',
+            'exam' => '',
+        ), $atts, 'olama_exam_report');
+
+        // Accept both straight and typographic quotes in legacy page content.
+        foreach ($atts as $key => $value) {
+            $atts[$key] = trim((string) $value, " \t\n\r\0\x0B\"'“”‘’");
+        }
+
+        $student_uid = isset($_GET['student_uid'])
+            ? sanitize_text_field(wp_unslash($_GET['student_uid']))
+            : '';
+        $student_context = null;
+        $grade_id = absint($atts['grade']);
+
+        if ($student_uid && method_exists('Olama_School_Exam', 'get_student_specific_exams')) {
+            $student_context = Olama_School_Exam::get_student_specific_exams($student_uid);
+        }
+
+        if ($student_context) {
+            $grade_id = absint($student_context['grade_id']);
+            $year_id = absint($student_context['year_id']);
+            $semester_id = absint($student_context['semester_id']);
+            $semester_exam_id = absint($student_context['semester_exam_id']);
+            $exams = is_array($student_context['exams']) ? $student_context['exams'] : array();
+        } else {
+            if (!$grade_id && isset($_GET['grade_id'])) {
+                $grade_id = absint(wp_unslash($_GET['grade_id']));
+            }
+
+            if (!$grade_id) {
+                return '<div class="olama-error">' . esc_html(Olama_School_Helpers::translate('Please specify a valid grade ID in the shortcode.')) . '</div>';
+            }
+
+            if ('active' === strtolower($atts['year']) || '' === $atts['year']) {
+                $active_year = Olama_School_Academic::get_active_year();
+                $year_id = $active_year ? absint($active_year->id) : 0;
+            } else {
+                $year_id = absint($atts['year']);
+            }
+
+            if ('active' === strtolower($atts['semester']) || '' === $atts['semester']) {
+                $active_semester = $year_id ? Olama_School_Academic::get_active_semester($year_id) : null;
+                $semester_id = $active_semester ? absint($active_semester->id) : 0;
+            } else {
+                $semester_id = absint($atts['semester']);
+            }
+
+            if ('active' === strtolower($atts['exam'])) {
+                $active_exam = $semester_id ? Olama_School_Academic::get_active_exam($semester_id) : null;
+                $semester_exam_id = $active_exam ? absint($active_exam->id) : 0;
+            } else {
+                $semester_exam_id = absint($atts['exam']);
+            }
+
+            if (!$year_id || !$semester_id) {
+                return '<div class="olama-error">' . esc_html(Olama_School_Helpers::translate('No active academic year or semester was found.')) . '</div>';
+            }
+
+            $exams = Olama_School_Exam::get_exams($year_id, $semester_id, $grade_id, 0, $semester_exam_id);
+        }
+
+        $can_view_unapproved = Olama_School_Permissions::can('olama_view_reports_summary');
+        $approved_exams = array_values(array_filter((array) $exams, function ($exam) use ($can_view_unapproved) {
+            $status = isset($exam->status) ? (string) $exam->status : '';
+            return $can_view_unapproved || in_array($status, array('approved', 'published'), true);
+        }));
+
+        if (!$approved_exams) {
+            $message = Olama_School_Helpers::translate('No approved exams found for the selected criteria.');
+            if ($student_context && !empty($student_context['student_name'])) {
+                $message = sprintf(
+                    Olama_School_Helpers::translate('No approved exams found for student: %s'),
+                    $student_context['student_name']
+                );
+            }
+
+            return '<div class="olama-no-plans" style="padding:30px;background:#fff1f2;border:1px solid #fecaca;border-radius:8px;color:#b91c1c;text-align:center;font-weight:600;">' . esc_html($message) . '</div>';
+        }
+
+        $grouped_exams = array();
+        foreach ($approved_exams as $exam) {
+            $date = !empty($exam->exam_date) ? $exam->exam_date : '';
+            $grouped_exams[$date][] = $exam;
+        }
+        ksort($grouped_exams);
+
+        $grade = Olama_School_Grade::get_grade($grade_id);
+        $year = Olama_School_Academic::get_year($year_id);
+        $semester_exam = $semester_exam_id ? Olama_School_Academic::get_semester_exam($semester_exam_id) : null;
+        $instance_id = wp_unique_id('olama-exam-report-');
+
+        ob_start();
+        ?>
+        <div id="<?php echo esc_attr($instance_id); ?>" class="olama-weekly-plan-v2 olama-exam-report-v2 <?php echo Olama_School_Helpers::is_arabic() ? 'is-rtl' : ''; ?>" dir="<?php echo Olama_School_Helpers::is_arabic() ? 'rtl' : 'ltr'; ?>">
+            <div class="plan-header-v2" style="background:linear-gradient(145deg,#818cf8 0%,#6366f1 100%);">
+                <div class="header-content">
+                    <h1 class="header-title" style="color:#fff;font-size:2.2rem;margin-bottom:15px;">
+                        <?php
+                        if ($student_context && !empty($student_context['student_name'])) {
+                            echo esc_html(sprintf(Olama_School_Helpers::translate('Exam Schedule for %s'), $student_context['student_name']));
+                        } else {
+                            echo esc_html(Olama_School_Helpers::translate('Exam Schedule'));
+                        }
+                        ?>
+                    </h1>
+                    <div class="header-subtitle" style="background:rgba(255,255,255,.2);padding:8px 20px;border-radius:50px;display:inline-flex;align-items:center;gap:10px;font-weight:500;">
+                        <span><?php echo $grade ? esc_html($grade->grade_name) : ''; ?></span>
+                        <?php if ($semester_exam): ?>
+                            <span><?php echo esc_html($semester_exam->exam_name); ?></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="semester-bar" style="background:rgba(255,255,255,.15);">
+                    <div class="semester-left" style="display:flex;flex-direction:column;align-items:center;width:100%;">
+                        <div>
+                            <span class="week-label"><?php echo esc_html(Olama_School_Helpers::translate('Academic Year')); ?></span>
+                            <span class="week-dates" style="color:#fff;"><?php echo $year ? esc_html($year->year_name) : ''; ?></span>
+                        </div>
+                        <div style="margin-top:5px;font-weight:700;color:rgba(255,255,255,.9);">
+                            <?php echo esc_html(Olama_School_Helpers::translate('Total Exams')); ?>: <?php echo esc_html(count($approved_exams)); ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="days-accordion">
+                <?php $first = true; ?>
+                <?php foreach ($grouped_exams as $date => $exams_on_date): ?>
+                    <?php $first_exam = reset($exams_on_date); ?>
+                    <div class="day-item <?php echo $first ? 'active' : ''; ?>">
+                        <div class="day-header" role="button" tabindex="0" aria-expanded="<?php echo $first ? 'true' : 'false'; ?>">
+                            <div class="day-left">
+                                <div class="day-text">
+                                    <span class="day-name-ar">
+                                        <?php echo $date ? esc_html(date_i18n('l', strtotime($date))) : ''; ?>
+                                        <?php if (!empty($first_exam->subject_name)): ?>
+                                            <span style="font-weight:400;margin-inline-start:10px;color:#64748b;">- <?php echo esc_html($first_exam->subject_name); ?></span>
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
+                                <span class="toggle-chevron dashicons dashicons-arrow-down-alt2"></span>
+                            </div>
+                            <div class="day-date-badge" style="background:linear-gradient(145deg,#6366f1 0%,#4f46e5 100%);">
+                                <span class="date-month"><?php echo $date ? esc_html(strtoupper(Olama_School_Helpers::format_date($date, false, 'M'))) : ''; ?></span>
+                                <span class="date-day"><?php echo $date ? esc_html(Olama_School_Helpers::format_date($date, false, 'd')) : ''; ?></span>
+                            </div>
+                        </div>
+                        <div class="day-content">
+                            <?php foreach ($exams_on_date as $exam): ?>
+                                <?php
+                                $material = !empty($exam->exam_material_json) ? json_decode($exam->exam_material_json, true) : array();
+                                $material = is_array($material) ? $material : array();
+                                $notes = !empty($material['teacher_notes']) ? $material['teacher_notes'] : (!empty($exam->teacher_notes) ? $exam->teacher_notes : '');
+                                $booklets = !empty($material['booklets_notebooks']) ? $material['booklets_notebooks'] : (!empty($exam->notebook_material) ? $exam->notebook_material : '');
+                                ?>
+                                <div class="subject-card" style="background:#f8fafc;border-inline-start:5px solid #6366f1;">
+                                    <div class="subject-header">
+                                        <span class="dashicons dashicons-book-alt subject-icon"></span>
+                                        <span class="subject-name"><?php echo esc_html($exam->subject_name ?? ''); ?></span>
+                                    </div>
+
+                                    <?php if (!empty($exam->room_number) || !empty($exam->master_room)): ?>
+                                        <div class="detail-list" style="margin-bottom:15px;">
+                                            <div class="detail-item">
+                                                <span class="dashicons dashicons-location detail-icon"></span>
+                                                <span class="detail-label"><?php echo esc_html(Olama_School_Helpers::translate('Hall/Room')); ?>:</span>
+                                                <span class="detail-value"><?php echo esc_html(!empty($exam->room_number) ? $exam->room_number : $exam->master_room); ?></span>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <div class="section-block classwork" style="border-radius:12px;border:1px solid rgba(99,102,241,.1);">
+                                        <div class="section-label" style="color:#4f46e5;">
+                                            <span class="dashicons dashicons-welcome-learn-more"></span>
+                                            <?php echo esc_html(Olama_School_Helpers::translate('Exam Subject')); ?>
+                                        </div>
+                                        <?php if (!empty($exam->description)): ?>
+                                            <div style="margin-bottom:10px;font-weight:700;color:#1e293b;"><?php echo nl2br(esc_html($exam->description)); ?></div>
+                                        <?php endif; ?>
+
+                                        <?php if (!empty($material['curriculum_items']) && is_array($material['curriculum_items'])): ?>
+                                            <div class="detail-list">
+                                                <?php foreach ($material['curriculum_items'] as $item): ?>
+                                                    <?php
+                                                    $lesson = !empty($item['lesson_id']) ? Olama_School_Lesson::get_lesson(absint($item['lesson_id'])) : null;
+                                                    $lesson_name = $lesson ? $lesson->lesson_title : ($item['lesson'] ?? '');
+                                                    if (!$lesson_name && empty($item['material'])) {
+                                                        continue;
+                                                    }
+                                                    ?>
+                                                    <div class="detail-item" style="padding:6px 0;">
+                                                        <span class="dashicons dashicons-arrow-left-alt2 detail-icon"></span>
+                                                        <span class="detail-value">
+                                                            <?php echo esc_html($lesson_name); ?>
+                                                            <?php if (!empty($item['material'])): ?>
+                                                                <small style="display:block;color:#64748b;"><?php echo esc_html($item['material']); ?></small>
+                                                            <?php endif; ?>
+                                                        </span>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <div style="margin-top:15px;display:grid;gap:10px;">
+                                            <?php if (!empty($exam->student_book_material)): ?><div><strong><?php echo esc_html(Olama_School_Helpers::translate('Student Book')); ?>:</strong> <?php echo esc_html($exam->student_book_material); ?></div><?php endif; ?>
+                                            <?php if (!empty($exam->workbook_material)): ?><div><strong><?php echo esc_html(Olama_School_Helpers::translate('Workbook')); ?>:</strong> <?php echo esc_html($exam->workbook_material); ?></div><?php endif; ?>
+                                            <?php if ($booklets): ?><div><strong><?php echo esc_html(Olama_School_Helpers::translate('Booklets & Notebooks')); ?>:</strong> <?php echo esc_html($booklets); ?></div><?php endif; ?>
+                                        </div>
+                                    </div>
+
+                                    <?php if ($notes): ?>
+                                        <div class="section-block teacher-notes">
+                                            <div class="section-label"><span class="dashicons dashicons-info"></span><?php echo esc_html(Olama_School_Helpers::translate('Important Notes')); ?></div>
+                                            <div class="notes-content"><?php echo nl2br(esc_html($notes)); ?></div>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php $first = false; ?>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <script>
+            (function () {
+                var report = document.getElementById(<?php echo wp_json_encode($instance_id); ?>);
+                if (!report) return;
+                report.querySelectorAll('.day-header').forEach(function (header) {
+                    function toggleDay() {
+                        var item = header.closest('.day-item');
+                        var open = item.classList.contains('active');
+                        report.querySelectorAll('.day-item').forEach(function (other) {
+                            other.classList.remove('active');
+                            var otherHeader = other.querySelector('.day-header');
+                            if (otherHeader) otherHeader.setAttribute('aria-expanded', 'false');
+                        });
+                        if (!open) {
+                            item.classList.add('active');
+                            header.setAttribute('aria-expanded', 'true');
+                        }
+                    }
+                    header.addEventListener('click', toggleDay);
+                    header.addEventListener('keydown', function (event) {
+                        if ('Enter' === event.key || ' ' === event.key) {
+                            event.preventDefault();
+                            toggleDay();
+                        }
+                    });
+                });
+            }());
+        </script>
+        <?php
+        return ob_get_clean();
+    }
+
     /**
      * Shortcode: [olama_weekly_schedule]
      * Attributes: semester, section, schedule_type

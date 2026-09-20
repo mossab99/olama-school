@@ -42,7 +42,7 @@ $label_style = 'display:block;font-weight:600;color:#475569;margin-bottom:8px;fo
         <?php esc_html_e('Shortcode Generator', 'olama-school'); ?>
     </h2>
     <p style="color:#64748b;margin-bottom:24px;font-size:1rem;line-height:1.5;">
-        <?php esc_html_e('Configure the options below to generate a custom shortcode for displaying weekly plans. You can paste this shortcode into any post, page, or widget.', 'olama-school'); ?>
+        <?php esc_html_e('Configure the options below to generate a custom shortcode for school content. You can paste this shortcode into any post, page, or widget.', 'olama-school'); ?>
     </p>
 
     <form method="get" id="olama-shortcode-gen-filters" style="margin-bottom:25px;">
@@ -59,6 +59,7 @@ $label_style = 'display:block;font-weight:600;color:#475569;margin-bottom:8px;fo
                 <option value="weekly_schedule"><?php esc_html_e('Weekly Schedule', 'olama-school'); ?></option>
                 <option value="teachers_office_hours"><?php esc_html_e('Teachers Office Hours', 'olama-school'); ?></option>
                 <option value="stationary"><?php esc_html_e('Stationary', 'olama-school'); ?></option>
+                <option value="exam_report"><?php esc_html_e('Exam Schedule', 'olama-school'); ?></option>
                 <option value="logged_teacher_schedule"><?php esc_html_e('Today\'s Teaching Schedule', 'olama-school'); ?></option>
             </select>
         </div>
@@ -105,6 +106,14 @@ $label_style = 'display:block;font-weight:600;color:#475569;margin-bottom:8px;fo
             <select id="gen-schedule-type" style="<?php echo esc_attr($field_style); ?>">
                 <option value="normal"><?php esc_html_e('Normal Schedule', 'olama-school'); ?></option>
                 <option value="ramadan"><?php esc_html_e('Ramadan Schedule', 'olama-school'); ?></option>
+            </select>
+        </div>
+
+        <div id="gen-exam-wrapper" style="display:none;">
+            <label for="gen-exam" style="<?php echo esc_attr($label_style); ?>"><?php esc_html_e('Specific Exam', 'olama-school'); ?></label>
+            <select id="gen-exam" style="<?php echo esc_attr($field_style); ?>">
+                <option value="active"><?php esc_html_e('Active Exam', 'olama-school'); ?></option>
+                <option value=""><?php esc_html_e('-- All Exams --', 'olama-school'); ?></option>
             </select>
         </div>
     </div>
@@ -155,20 +164,23 @@ jQuery(function ($) {
     function updateShortcode() {
         const type = $('#gen-type').val();
         const usesAcademicContext = type !== 'logged_teacher_schedule';
-        const usesSemester = type === 'weekly_plan' || type === 'weekly_schedule' || type === 'teachers_office_hours';
+        const usesSemester = type === 'weekly_plan' || type === 'weekly_schedule' || type === 'teachers_office_hours' || type === 'exam_report';
         const usesClass = usesSemester;
 
         $('#olama-shortcode-gen-filters').toggle(usesAcademicContext);
         $('#gen-semester-wrapper').toggle(usesSemester);
-        $('#gen-grade-wrapper, #gen-section-wrapper').toggle(usesClass);
+        $('#gen-grade-wrapper').toggle(usesClass);
+        $('#gen-section-wrapper').toggle(usesClass && type !== 'exam_report');
         $('#gen-week-wrapper').toggle(type === 'weekly_plan');
         $('#gen-schedule-type-wrapper').toggle(type === 'weekly_schedule');
+        $('#gen-exam-wrapper').toggle(type === 'exam_report');
 
         let shortcode = '[olama_' + type;
         if (usesAcademicContext && selectedYearId) shortcode += ' year="' + selectedYearId + '"';
         if (usesSemester && $('#gen-semester').val()) shortcode += ' semester="' + $('#gen-semester').val() + '"';
         if (usesClass && $('#gen-grade').val()) shortcode += ' grade="' + $('#gen-grade').val() + '"';
-        if (usesClass && $('#gen-section').val()) shortcode += ' section="' + $('#gen-section').val() + '"';
+        if (usesClass && type !== 'exam_report' && $('#gen-section').val()) shortcode += ' section="' + $('#gen-section').val() + '"';
+        if (type === 'exam_report' && $('#gen-exam').val()) shortcode += ' exam="' + $('#gen-exam').val() + '"';
         if (type === 'weekly_plan' && $('#gen-week').val()) shortcode += ' week="' + $('#gen-week').val() + '"';
         if (type === 'weekly_schedule' && $('#gen-schedule-type').val() !== 'normal') {
             shortcode += ' schedule_type="' + $('#gen-schedule-type').val() + '"';
@@ -214,7 +226,7 @@ jQuery(function ($) {
             updateShortcode();
         });
     });
-    $('#gen-section, #gen-week, #gen-schedule-type').on('change', updateShortcode);
+    $('#gen-section, #gen-week, #gen-schedule-type, #gen-exam').on('change', updateShortcode);
 
     $('#copy-shortcode').on('click', function () {
         const text = $('#generated-shortcode').text().trim();
