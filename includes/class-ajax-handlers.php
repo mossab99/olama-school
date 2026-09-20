@@ -52,6 +52,10 @@ class Olama_School_Ajax_Handlers
         // Plan Review AJAX Handler
         add_action('wp_ajax_olama_handle_plan_approval', array($this, 'handle_plan_approval'));
 
+        // Public family-number lookup used by the family lookup shortcode.
+        add_action('wp_ajax_olama_lookup_family_number', array($this, 'lookup_family_number'));
+        add_action('wp_ajax_nopriv_olama_lookup_family_number', array($this, 'lookup_family_number'));
+
     }
 
     // ==========================================
@@ -997,6 +1001,59 @@ class Olama_School_Ajax_Handlers
             error_log('Olama Review Crash: ' . $th->getMessage());
             wp_send_json_error('Server Error: ' . $th->getMessage());
         }
+    }
+
+    /**
+     * Find the Oracle family number by a parent/family name.
+     */
+    public function lookup_family_number()
+    {
+        check_ajax_referer('olama_family_lookup', 'nonce');
+
+        $search = isset($_REQUEST['search'])
+            ? sanitize_text_field(wp_unslash($_REQUEST['search']))
+            : '';
+        $length = function_exists('mb_strlen') ? mb_strlen($search) : strlen($search);
+
+        if ($length < 2) {
+            wp_send_json_error(array(
+                'message' => Olama_School_Helpers::translate('Search term too short'),
+            ), 400);
+        }
+
+        if (!function_exists('olama_core') || !method_exists(olama_core(), 'families')) {
+            wp_send_json_error(array(
+                'message' => __('The family directory is unavailable.', 'olama-school'),
+            ), 503);
+        }
+
+        $rows = olama_core()->families()->search($search, array('limit' => 10));
+        $results = array();
+
+        foreach ((array) $rows as $row) {
+            $family_number = trim((string) ($row['oracle_family_id'] ?? ''));
+            if ('' === $family_number && !empty($row['family_uid'])) {
+                $family_number = preg_replace('/^ORA-FAM-/i', '', (string) $row['family_uid']);
+            }
+            if ('' === $family_number) {
+                continue;
+            }
+
+            $family_name = trim((string) ($row['father_name'] ?? ''));
+            if ('' === $family_name) {
+                $family_name = trim((string) ($row['sponsor_full_name'] ?? ''));
+            }
+            if ('' === $family_name) {
+                $family_name = trim((string) ($row['mother_name'] ?? ''));
+            }
+
+            $results[] = array(
+                'family_name' => $family_name ?: $family_number,
+                'family_number' => $family_number,
+            );
+        }
+
+        wp_send_json_success($results);
     }
 
 }

@@ -21,6 +21,7 @@ class Olama_School_Shortcodes
         add_shortcode('olama_exam_report', array($this, 'render_exam_report_shortcode'));
         // Historical alias used by some family-gateway pages.
         add_shortcode('olama_online_exams_schedule', array($this, 'render_exam_report_shortcode'));
+        add_shortcode('olama_family_number_lookup', array($this, 'render_family_number_lookup_shortcode'));
         add_shortcode('olama_logged_teacher_schedule', array($this, 'render_logged_teacher_schedule_shortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_shortcode_assets'));
     }
@@ -1938,6 +1939,224 @@ class Olama_School_Shortcodes
             </script>
             <?php
             return ob_get_clean();
+    }
+
+    /**
+     * Shortcode: [olama_family_number_lookup]
+     * Lets a family retrieve its Oracle portal number by parent name.
+     */
+    public function render_family_number_lookup_shortcode($atts)
+    {
+        if (!function_exists('olama_core') || !method_exists(olama_core(), 'families')) {
+            return '<div class="olama-error">' . esc_html__('The family directory is unavailable.', 'olama-school') . '</div>';
+        }
+
+        $instance_id = wp_unique_id('olama-family-lookup-');
+        $input_id = $instance_id . '-search';
+        $status_id = $instance_id . '-status';
+        $suggestions_id = $instance_id . '-suggestions';
+        $ajax_url = admin_url('admin-ajax.php');
+        $nonce = wp_create_nonce('olama_family_lookup');
+
+        ob_start();
+        ?>
+        <div id="<?php echo esc_attr($instance_id); ?>" class="olama-family-lookup-wrapper" dir="rtl">
+            <div class="olama-family-lookup-card">
+                <div class="olama-family-lookup-header">
+                    <span class="material-icons olama-family-lookup-icon" aria-hidden="true">person_search</span>
+                    <h2><?php echo esc_html(Olama_School_Helpers::translate('Find Your Family Number')); ?></h2>
+                    <p><?php echo esc_html(Olama_School_Helpers::translate('Enter the parent name to retrieve the portal access number')); ?></p>
+                </div>
+
+                <div class="olama-family-lookup-body">
+                    <label for="<?php echo esc_attr($input_id); ?>"><?php echo esc_html(Olama_School_Helpers::translate('Parent Name')); ?></label>
+                    <div class="olama-family-search-wrap">
+                        <span class="material-icons" aria-hidden="true">search</span>
+                        <input
+                            type="search"
+                            id="<?php echo esc_attr($input_id); ?>"
+                            autocomplete="off"
+                            aria-autocomplete="list"
+                            aria-controls="<?php echo esc_attr($suggestions_id); ?>"
+                            aria-describedby="<?php echo esc_attr($status_id); ?>"
+                            placeholder="<?php echo esc_attr(Olama_School_Helpers::translate('Start typing the parent name...')); ?>"
+                        >
+                    </div>
+                    <div id="<?php echo esc_attr($suggestions_id); ?>" class="olama-family-suggestions" role="listbox" hidden></div>
+                    <div id="<?php echo esc_attr($status_id); ?>" class="olama-family-lookup-status" aria-live="polite"></div>
+
+                    <div class="olama-family-lookup-result" hidden>
+                        <div class="olama-family-result-label"><?php echo esc_html(Olama_School_Helpers::translate('Your Family Number is:')); ?></div>
+                        <div class="olama-family-result-number" dir="ltr"></div>
+                        <button type="button" class="olama-family-copy-button">
+                            <span class="material-icons" aria-hidden="true">content_copy</span>
+                            <span><?php echo esc_html(Olama_School_Helpers::translate('Copy Number')); ?></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                #<?php echo esc_attr($instance_id); ?>{font-family:'Tajawal','Inter',sans-serif;max-width:560px;margin:24px auto;color:#1e293b}
+                #<?php echo esc_attr($instance_id); ?> *{box-sizing:border-box}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-lookup-card{overflow:visible;background:#fff;border:1px solid #e2e8f0;border-radius:22px;box-shadow:0 18px 45px rgba(15,23,42,.08)}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-lookup-header{padding:32px 28px 27px;text-align:center;background:linear-gradient(145deg,#eff6ff,#eef2ff);border-radius:21px 21px 0 0}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-lookup-icon{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;margin-bottom:14px;border-radius:20px;background:#2563eb;color:#fff;font-size:34px;box-shadow:0 9px 20px rgba(37,99,235,.25)}
+                #<?php echo esc_attr($instance_id); ?> h2{margin:0 0 7px;font-size:1.55rem;font-weight:800;color:#172554}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-lookup-header p{margin:0;color:#64748b;font-size:.96rem}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-lookup-body{position:relative;padding:28px}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-lookup-body>label{display:block;margin-bottom:9px;color:#334155;font-weight:700;font-size:.92rem}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-search-wrap{position:relative}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-search-wrap>.material-icons{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:21px;pointer-events:none}
+                #<?php echo esc_attr($instance_id); ?> input{width:100%;height:50px;padding:0 46px 0 15px;border:2px solid #e2e8f0;border-radius:12px;background:#fff;color:#1e293b;font:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
+                #<?php echo esc_attr($instance_id); ?> input:focus{border-color:#2563eb;box-shadow:0 0 0 4px rgba(37,99,235,.1)}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-suggestions{position:absolute;z-index:100;top:106px;right:28px;left:28px;max-height:245px;overflow:auto;background:#fff;border:1px solid #dbe4f0;border-radius:12px;box-shadow:0 14px 32px rgba(15,23,42,.14)}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-suggestion{display:block;width:100%;padding:12px 15px;border:0;border-bottom:1px solid #f1f5f9;background:#fff;color:#1e293b;text-align:right;font:inherit;font-weight:650;cursor:pointer}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-suggestion:last-child{border-bottom:0}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-suggestion:hover,#<?php echo esc_attr($instance_id); ?> .olama-family-suggestion:focus{background:#eff6ff;outline:none}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-lookup-status{min-height:22px;margin-top:8px;color:#64748b;font-size:.84rem}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-lookup-status.is-error{color:#b91c1c}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-lookup-result{margin-top:16px;padding:22px;text-align:center;background:#eff6ff;border:2px dashed #60a5fa;border-radius:14px}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-result-label{color:#1d4ed8;font-weight:700}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-result-number{margin:8px 0 15px;color:#172554;font-family:'Inter',sans-serif;font-size:2rem;font-weight:850;letter-spacing:2px}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-copy-button{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border:1px solid #bfdbfe;border-radius:9px;background:#fff;color:#1d4ed8;font:inherit;font-weight:700;cursor:pointer}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-copy-button:hover{background:#dbeafe}
+                #<?php echo esc_attr($instance_id); ?> .olama-family-copy-button .material-icons{font-size:18px}
+                @media(max-width:520px){#<?php echo esc_attr($instance_id); ?> .olama-family-lookup-header,#<?php echo esc_attr($instance_id); ?> .olama-family-lookup-body{padding:24px 18px}#<?php echo esc_attr($instance_id); ?> .olama-family-suggestions{right:18px;left:18px;top:102px}}
+            </style>
+
+            <script>
+                (function () {
+                    var root = document.getElementById(<?php echo wp_json_encode($instance_id); ?>);
+                    if (!root) return;
+
+                    var input = root.querySelector('input');
+                    var suggestions = root.querySelector('.olama-family-suggestions');
+                    var status = root.querySelector('.olama-family-lookup-status');
+                    var result = root.querySelector('.olama-family-lookup-result');
+                    var resultNumber = root.querySelector('.olama-family-result-number');
+                    var copyButton = root.querySelector('.olama-family-copy-button');
+                    var copyLabel = copyButton.querySelector('span:last-child');
+                    var timer = null;
+                    var controller = null;
+                    var strings = {
+                        searching: <?php echo wp_json_encode(Olama_School_Helpers::translate('Searching...')); ?>,
+                        noResults: <?php echo wp_json_encode(Olama_School_Helpers::translate('No matching family was found.')); ?>,
+                        error: <?php echo wp_json_encode(Olama_School_Helpers::translate('The search could not be completed. Please try again.')); ?>,
+                        copy: <?php echo wp_json_encode(Olama_School_Helpers::translate('Copy Number')); ?>,
+                        copied: <?php echo wp_json_encode(Olama_School_Helpers::translate('Copied!')); ?>
+                    };
+
+                    function setStatus(message, error) {
+                        status.textContent = message || '';
+                        status.classList.toggle('is-error', Boolean(error));
+                    }
+
+                    function closeSuggestions() {
+                        suggestions.hidden = true;
+                        suggestions.replaceChildren();
+                        input.setAttribute('aria-expanded', 'false');
+                    }
+
+                    function chooseFamily(item) {
+                        input.value = item.family_name;
+                        resultNumber.textContent = item.family_number;
+                        result.hidden = false;
+                        closeSuggestions();
+                        setStatus('');
+                    }
+
+                    function showSuggestions(items) {
+                        suggestions.replaceChildren();
+                        items.forEach(function (item) {
+                            var button = document.createElement('button');
+                            button.type = 'button';
+                            button.className = 'olama-family-suggestion';
+                            button.setAttribute('role', 'option');
+                            button.textContent = item.family_name;
+                            button.addEventListener('click', function () { chooseFamily(item); });
+                            suggestions.appendChild(button);
+                        });
+                        suggestions.hidden = false;
+                        input.setAttribute('aria-expanded', 'true');
+                    }
+
+                    function search(term) {
+                        if (controller) controller.abort();
+                        controller = new AbortController();
+                        setStatus(strings.searching);
+
+                        var body = new URLSearchParams({
+                            action: 'olama_lookup_family_number',
+                            nonce: <?php echo wp_json_encode($nonce); ?>,
+                            search: term
+                        });
+
+                        fetch(<?php echo wp_json_encode($ajax_url); ?>, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+                            body: body.toString(),
+                            signal: controller.signal
+                        }).then(function (response) {
+                            if (!response.ok) throw new Error('lookup_failed');
+                            return response.json();
+                        }).then(function (response) {
+                            var items = response.success && Array.isArray(response.data) ? response.data : [];
+                            if (!items.length) {
+                                closeSuggestions();
+                                setStatus(strings.noResults);
+                                return;
+                            }
+                            showSuggestions(items);
+                            setStatus('');
+                        }).catch(function (error) {
+                            if ('AbortError' === error.name) return;
+                            closeSuggestions();
+                            setStatus(strings.error, true);
+                        });
+                    }
+
+                    input.addEventListener('input', function () {
+                        clearTimeout(timer);
+                        result.hidden = true;
+                        copyLabel.textContent = strings.copy;
+                        var term = input.value.trim();
+                        if (term.length < 2) {
+                            if (controller) controller.abort();
+                            closeSuggestions();
+                            setStatus('');
+                            return;
+                        }
+                        timer = setTimeout(function () { search(term); }, 300);
+                    });
+
+                    document.addEventListener('click', function (event) {
+                        if (!root.contains(event.target)) closeSuggestions();
+                    });
+
+                    copyButton.addEventListener('click', function () {
+                        var number = resultNumber.textContent;
+                        var copied = navigator.clipboard && navigator.clipboard.writeText
+                            ? navigator.clipboard.writeText(number)
+                            : Promise.reject();
+                        copied.catch(function () {
+                            var helper = document.createElement('input');
+                            helper.value = number;
+                            document.body.appendChild(helper);
+                            helper.select();
+                            document.execCommand('copy');
+                            helper.remove();
+                        }).finally(function () {
+                            copyLabel.textContent = strings.copied;
+                            setTimeout(function () { copyLabel.textContent = strings.copy; }, 1800);
+                        });
+                    });
+                }());
+            </script>
+        </div>
+        <?php
+        return ob_get_clean();
     }
 
     /**

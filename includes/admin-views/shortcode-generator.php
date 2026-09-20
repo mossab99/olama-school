@@ -60,6 +60,7 @@ $label_style = 'display:block;font-weight:600;color:#475569;margin-bottom:8px;fo
                 <option value="teachers_office_hours"><?php esc_html_e('Teachers Office Hours', 'olama-school'); ?></option>
                 <option value="stationary"><?php esc_html_e('Stationary', 'olama-school'); ?></option>
                 <option value="exam_report"><?php esc_html_e('Exam Schedule', 'olama-school'); ?></option>
+                <option value="family_number_lookup"><?php esc_html_e('Family Number Lookup', 'olama-school'); ?></option>
                 <option value="logged_teacher_schedule"><?php esc_html_e('Today\'s Teaching Schedule', 'olama-school'); ?></option>
             </select>
         </div>
@@ -163,7 +164,7 @@ jQuery(function ($) {
 
     function updateShortcode() {
         const type = $('#gen-type').val();
-        const usesAcademicContext = type !== 'logged_teacher_schedule';
+        const usesAcademicContext = type !== 'logged_teacher_schedule' && type !== 'family_number_lookup';
         const usesSemester = type === 'weekly_plan' || type === 'weekly_schedule' || type === 'teachers_office_hours' || type === 'exam_report';
         const usesClass = usesSemester;
 
