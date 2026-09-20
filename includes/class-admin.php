@@ -19,6 +19,7 @@ class Olama_School_Admin
         add_action('admin_menu', array($this, 'add_menu_pages'));
         add_action('admin_init', array($this, 'register_settings'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
+        add_action('admin_footer', array($this, 'restore_stripped_core_nonces'), 1);
         add_action('admin_init', array($this, 'handle_export'));
         add_action('admin_init', array($this, 'handle_schedule_save'));
         add_action('admin_init', array($this, 'handle_plan_load_save'));
@@ -57,6 +58,55 @@ class Olama_School_Admin
             return '';
         }
         return $text;
+    }
+
+    /**
+     * Restore core post-screen nonce values when a server output filter strips
+     * values from hidden inputs. Inline JavaScript nonce values are unaffected
+     * on the affected host, so hydrate only empty fields in the browser.
+     */
+    public function restore_stripped_core_nonces()
+    {
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        if (!$screen || !in_array($screen->base, array('edit', 'post'), true)) {
+            return;
+        }
+
+        $nonces = array(
+            'input[name="screenoptionnonce"]' => wp_create_nonce('screen-options-nonce'),
+        );
+
+        if ('edit' === $screen->base) {
+            $nonces['input[name="_inline_edit"]'] = wp_create_nonce('inlineeditnonce');
+            $nonces['form#posts-filter input[name="_wpnonce"]'] = wp_create_nonce('bulk-posts');
+        } else {
+            global $post;
+
+            if ($post instanceof WP_Post) {
+                $nonces['form#post input[name="_wpnonce"]'] = wp_create_nonce('update-post_' . $post->ID);
+            }
+
+            $nonces['input[name="meta-box-order-nonce"]'] = wp_create_nonce('meta-box-order');
+            $nonces['input[name="closedpostboxesnonce"]'] = wp_create_nonce('closedpostboxes');
+            $nonces['input[name="samplepermalinknonce"]'] = wp_create_nonce('samplepermalink');
+            $nonces['input[name="toggle-custom-fields-nonce"]'] = wp_create_nonce('toggle-custom-fields');
+            $nonces['input[name="_ajax_linking_nonce"]'] = wp_create_nonce('internal-linking');
+        }
+
+        ?>
+        <script id="olama-restore-core-nonces">
+            (function (nonces) {
+                Object.keys(nonces).forEach(function (selector) {
+                    document.querySelectorAll(selector).forEach(function (field) {
+                        if (!field.value) {
+                            field.value = nonces[selector];
+                            field.setAttribute('value', nonces[selector]);
+                        }
+                    });
+                });
+            }(<?php echo wp_json_encode($nonces); ?>));
+        </script>
+        <?php
     }
 
     /**
