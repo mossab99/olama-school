@@ -19,7 +19,7 @@ class Olama_School_Admin
         add_action('admin_menu', array($this, 'add_menu_pages'));
         add_action('admin_init', array($this, 'register_settings'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
-        add_action('admin_footer', array($this, 'restore_stripped_core_nonces'), 1);
+        add_action('admin_print_footer_scripts', array($this, 'restore_stripped_core_nonces'), 999);
         add_action('admin_init', array($this, 'handle_export'));
         add_action('admin_init', array($this, 'handle_schedule_save'));
         add_action('admin_init', array($this, 'handle_plan_load_save'));
@@ -96,14 +96,38 @@ class Olama_School_Admin
         ?>
         <script id="olama-restore-core-nonces">
             (function (nonces) {
-                Object.keys(nonces).forEach(function (selector) {
-                    document.querySelectorAll(selector).forEach(function (field) {
-                        if (!field.value) {
-                            field.value = nonces[selector];
-                            field.setAttribute('value', nonces[selector]);
-                        }
+                function restoreNonces() {
+                    Object.keys(nonces).forEach(function (selector) {
+                        document.querySelectorAll(selector).forEach(function (field) {
+                            if (!field.value) {
+                                field.value = nonces[selector];
+                                field.setAttribute('value', nonces[selector]);
+                            }
+                        });
                     });
-                });
+                }
+
+                restoreNonces();
+
+                if ('loading' === document.readyState) {
+                    document.addEventListener('DOMContentLoaded', restoreNonces);
+                }
+                window.addEventListener('load', restoreNonces);
+
+                // Core and folder plugins may rebuild Quick Edit after page load.
+                document.addEventListener('click', function (event) {
+                    if (event.target.closest('.inline-edit-save, #publish, .editor-post-publish-button')) {
+                        restoreNonces();
+                    }
+                }, true);
+                document.addEventListener('submit', restoreNonces, true);
+
+                if (window.MutationObserver) {
+                    new MutationObserver(restoreNonces).observe(document.body, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
             }(<?php echo wp_json_encode($nonces); ?>));
         </script>
         <?php
