@@ -23,6 +23,19 @@ class Olama_School_Academic_Bridge
             && olama_core()->read_models()->available('academic_grade_sections');
     }
 
+    public static function empty_grades_message()
+    {
+        if (!self::is_available()) {
+            return __('Please create grades first.', 'olama-school');
+        }
+
+        if (self::get_study_year() === '') {
+            return __('Select an active academic year and semester in Olama Core first.', 'olama-school');
+        }
+
+        return __('No active grades were found for the current academic year. Check the Oracle academic student sync in Olama Core.', 'olama-school');
+    }
+
     public static function get_study_year($academic_year_id = 0)
     {
         if (!function_exists('olama_core')) {
@@ -84,25 +97,28 @@ class Olama_School_Academic_Bridge
     private static function source_revision($study_year)
     {
         $revision = olama_core()->read_models()->revision(
-            array('academic_grades', 'academic_grade_sections', 'academic_grade_subjects'),
+            array('academic_grades', 'academic_grade_sections', 'academic_grade_subjects', 'academic_students'),
             $study_year
         );
         $grade_revision = $revision['academic_grades'];
         $relation_revision = $revision['academic_grade_sections'];
         $subject_revision = $revision['academic_grade_subjects'];
+        $student_revision = $revision['academic_students'];
 
         if (empty($grade_revision['row_count'])) {
             return '';
         }
 
         return implode('|', array(
-            'bridge-v7-active-oracle-subjects-only',
+            'bridge-v8-student-scoped-grades',
             (string) $grade_revision['row_count'],
             (string) $grade_revision['synced_at'],
             (string) ($relation_revision['row_count'] ?? 0),
             (string) ($relation_revision['synced_at'] ?? ''),
             (string) ($subject_revision['row_count'] ?? 0),
             (string) ($subject_revision['synced_at'] ?? ''),
+            (string) ($student_revision['row_count'] ?? 0),
+            (string) ($student_revision['synced_at'] ?? ''),
         ));
     }
 

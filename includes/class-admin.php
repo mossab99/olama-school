@@ -3241,7 +3241,7 @@ class Olama_School_Admin
 
 
         if (!$grades) {
-            echo '<div class="error"><p>' . __('Please create grades first.', 'olama-school') . '</p></div>';
+            echo '<div class="error"><p>' . esc_html(Olama_School_Academic_Bridge::empty_grades_message()) . '</p></div>';
             return;
         }
 
@@ -3389,7 +3389,7 @@ class Olama_School_Admin
     {
         $grades = Olama_School_Grade::get_grades();
         if (!$grades) {
-            echo '<div class="error"><p>' . __('Please create grades first.', 'olama-school') . '</p></div>';
+            echo '<div class="error"><p>' . esc_html(Olama_School_Academic_Bridge::empty_grades_message()) . '</p></div>';
             return;
         }
 
