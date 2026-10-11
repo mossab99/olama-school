@@ -9,6 +9,7 @@ class Olama_School_Attendance_Shortcode
         add_shortcode('olama_attendance', array($this, 'render'));
         add_action('template_redirect', array($this, 'save'));
         add_action('admin_init', array($this, 'save'));
+        add_action('wp_ajax_olama_frontend_attendance_save', array($this, 'save'));
     }
 
     private function available()
@@ -50,6 +51,10 @@ class Olama_School_Attendance_Shortcode
         }));
         $grade_id = isset($_GET['grade_id']) ? absint($_GET['grade_id']) : absint($atts['grade']);
         $section_id = isset($_GET['section_id']) ? absint($_GET['section_id']) : absint($atts['section']);
+        if (!$section_id && !isset($_GET['section_id']) && !empty($allowed_sections)) {
+            $section_id = (int) $allowed_sections[0]->id;
+            $grade_id = (int) $allowed_sections[0]->grade_id;
+        }
         if (!$grade_id && $section_id) {
             foreach ($allowed_sections as $section) {
                 if ((int) $section->id === $section_id) { $grade_id = (int) $section->grade_id; break; }
@@ -129,6 +134,9 @@ class Olama_School_Attendance_Shortcode
             $year->id, $section_id, $date, get_current_user_id()
         ));
         if (false === $result) { wp_die(esc_html__('Attendance could not be saved. Please try again.', 'olama-school')); }
+        if (wp_doing_ajax()) {
+            wp_send_json_success(array('message' => Olama_School_Helpers::translate('Attendance saved successfully.')));
+        }
         wp_safe_redirect(add_query_arg('message', 'attendance_saved', wp_get_referer() ?: home_url('/')));
         exit;
     }
