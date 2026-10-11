@@ -1201,3 +1201,18 @@
         width: 100%;
     }
 }
+/* Frontend attendance form. */
+.olama-attendance-shortcode { background: #fff; padding: 24px; border-radius: 12px; color: #1e293b; }
+.olama-attendance-shortcode .attendance-filters { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+.olama-attendance-shortcode table { width: 100%; border-collapse: collapse; }
+.olama-attendance-shortcode th, .olama-attendance-shortcode td { padding: 10px; text-align: start; border-bottom: 1px solid #e2e8f0; }
+.olama-attendance-shortcode tbody tr:nth-child(odd) { background: #f8fafc; }
+.olama-attendance-shortcode input, .olama-attendance-shortcode select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; max-width: 100%; }
+.olama-attendance-shortcode .large-text { width: 100%; box-sizing: border-box; }
+.olama-attendance-shortcode button[type="submit"] { background: #2563eb; color: #fff; padding: 10px 24px; border: 0; border-radius: 6px; cursor: pointer; }
+.olama-attendance-shortcode .notice { padding: 10px 16px; background: #f1f5f9; margin-bottom: 16px; }
+.olama-attendance-shortcode .notice-success { background: #dcfce7; }
+@media (max-width: 600px) {
+    .olama-attendance-shortcode { padding: 12px; overflow-x: auto; }
+    .olama-attendance-shortcode table { min-width: 540px; }
+}

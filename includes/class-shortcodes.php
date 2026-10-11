@@ -14,6 +14,8 @@ class Olama_School_Shortcodes
      */
     public function __construct()
     {
+        require_once __DIR__ . '/class-attendance-shortcode.php';
+        new Olama_School_Attendance_Shortcode();
         add_shortcode('olama_weekly_plan', array($this, 'render_weekly_plan_shortcode'));
         add_shortcode('olama_weekly_schedule', array($this, 'render_weekly_schedule_shortcode'));
         add_shortcode('olama_teachers_office_hours', array($this, 'render_teachers_office_hours_shortcode'));

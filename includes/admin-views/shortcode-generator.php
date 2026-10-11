@@ -57,6 +57,7 @@ $label_style = 'display:block;font-weight:600;color:#475569;margin-bottom:8px;fo
             <select id="gen-type" style="<?php echo esc_attr($field_style); ?>">
                 <option value="weekly_plan"><?php esc_html_e('Weekly Plan', 'olama-school'); ?></option>
                 <option value="weekly_schedule"><?php esc_html_e('Weekly Schedule', 'olama-school'); ?></option>
+                <option value="attendance"><?php echo esc_html(Olama_School_Helpers::translate('Daily Attendance')); ?></option>
                 <option value="teachers_office_hours"><?php esc_html_e('Teachers Office Hours', 'olama-school'); ?></option>
                 <option value="stationary"><?php esc_html_e('Stationary', 'olama-school'); ?></option>
                 <option value="exam_report"><?php esc_html_e('Exam Schedule', 'olama-school'); ?></option>
@@ -134,6 +135,7 @@ $label_style = 'display:block;font-weight:600;color:#475569;margin-bottom:8px;fo
 <script>
 jQuery(function ($) {
     const selectedYearId = <?php echo wp_json_encode($selected_year_id); ?>;
+    const attendanceYearId = <?php echo wp_json_encode($active_year ? (int) $active_year->id : 0); ?>;
     const activeSemesterId = <?php echo wp_json_encode($active_semester ? (int) $active_semester->id : 0); ?>;
     const weeksBySemester = <?php echo wp_json_encode($weeks_by_semester); ?>;
     const strings = {
@@ -164,9 +166,9 @@ jQuery(function ($) {
 
     function updateShortcode() {
         const type = $('#gen-type').val();
-        const usesAcademicContext = type !== 'logged_teacher_schedule' && type !== 'family_number_lookup';
+        const usesAcademicContext = type !== 'logged_teacher_schedule' && type !== 'family_number_lookup' && type !== 'attendance';
         const usesSemester = type === 'weekly_plan' || type === 'weekly_schedule' || type === 'teachers_office_hours' || type === 'exam_report';
-        const usesClass = usesSemester;
+        const usesClass = usesSemester || type === 'attendance';
 
         $('#olama-shortcode-gen-filters').toggle(usesAcademicContext);
         $('#gen-semester-wrapper').toggle(usesSemester);
@@ -189,7 +191,10 @@ jQuery(function ($) {
         $('#generated-shortcode').text(shortcode + ']');
     }
 
-    $('#gen-type').on('change', updateShortcode);
+    $('#gen-type').on('change', function () {
+        $('#gen-grade').val('').trigger('change');
+        updateShortcode();
+    });
     $('#gen-semester').on('change', function () {
         refreshWeeks();
         updateShortcode();
@@ -207,7 +212,7 @@ jQuery(function ($) {
         $.post(ajaxurl, {
             action: 'olama_get_sections_by_grade',
             grade_id: gradeId,
-            academic_year_id: selectedYearId,
+            academic_year_id: $('#gen-type').val() === 'attendance' ? attendanceYearId : selectedYearId,
             nonce: <?php echo wp_json_encode(wp_create_nonce('olama_curriculum_nonce')); ?>
         }).done(function (response) {
             $section.empty();
