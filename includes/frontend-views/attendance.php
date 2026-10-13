@@ -4,7 +4,7 @@ foreach ($students as $student) {
     if (($attendance_records[$student->student_uid]->status ?? 'present') === 'absent') { $absent++; } else { $present++; }
 }
 ?>
-<link rel="stylesheet" href="<?php echo esc_url(OLAMA_SCHOOL_URL . 'assets/css/attendance.css?ver=' . OLAMA_SCHOOL_VERSION); ?>">
+<link rel="stylesheet" href="<?php echo esc_url(OLAMA_SCHOOL_URL . 'assets/css/attendance.css?ver=' . filemtime(OLAMA_SCHOOL_PATH . 'assets/css/attendance.css')); ?>">
 <div class="olama-attendance-shortcode" dir="<?php echo is_rtl() ? 'rtl' : 'ltr'; ?>">
     <div class="olama-attendance-header">
         <h2><?php echo esc_html(Olama_School_Helpers::translate('Daily Attendance')); ?></h2>
@@ -32,6 +32,10 @@ foreach ($students as $student) {
         <p><?php echo esc_html(Olama_School_Helpers::translate('No students found in this section.')); ?></p>
     <?php else: ?>
         <div class="olama-attendance-summary-cards">
+            <div class="olama-summary-card olama-attendance-status <?php echo $attendance_taken ? 'olama-taken' : 'olama-not-taken'; ?>" role="status" aria-live="polite" data-attendance-status>
+                <span><?php echo esc_html(Olama_School_Helpers::translate('Attendance Status')); ?></span>
+                <strong data-attendance-status-value><?php echo esc_html(Olama_School_Helpers::translate($attendance_taken ? 'Taken' : 'Not Taken')); ?></strong>
+            </div>
             <div class="olama-summary-card olama-present"><span><?php echo esc_html(Olama_School_Helpers::translate('Present')); ?></span><strong class="olama-card-value" data-present-count><?php echo (int) $present; ?></strong></div>
             <div class="olama-summary-card olama-absent"><span><?php echo esc_html(Olama_School_Helpers::translate('Absent')); ?></span><strong class="olama-card-value" data-absent-count><?php echo (int) $absent; ?></strong></div>
         </div>
@@ -87,6 +91,10 @@ foreach ($students as $student) {
                     if (!response.ok || !result.success) throw new Error();
                     confirmed = cards.map(c => ({status: c.querySelector('.olama-status-value').value, reason: c.querySelector('.olama-reason').value}));
                     message.textContent = result.data.message;
+                    const statusCard = root.querySelector('[data-attendance-status]');
+                    statusCard.classList.remove('olama-not-taken');
+                    statusCard.classList.add('olama-taken');
+                    statusCard.querySelector('[data-attendance-status-value]').textContent = <?php echo wp_json_encode(Olama_School_Helpers::translate('Taken')); ?>;
                 } catch (error) {
                     cards.forEach((c, i) => {c.querySelector('.olama-status-value').value = confirmed[i].status; c.querySelector('.olama-reason').value = confirmed[i].reason;}); refresh();
                     message.textContent = <?php echo wp_json_encode(__('Attendance could not be saved. Please try again.', 'olama-school')); ?>;

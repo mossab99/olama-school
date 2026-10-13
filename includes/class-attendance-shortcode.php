@@ -85,6 +85,13 @@ class Olama_School_Attendance_Shortcode
             ));
             foreach ($records as $record) { $attendance_records[$record->student_uid] = $record; }
         }
+        $attendance_taken = false;
+        if ($students) {
+            $attendance_taken = 'completed' === $wpdb->get_var($wpdb->prepare(
+                "SELECT status FROM {$wpdb->prefix}olama_attendance_sheets WHERE academic_year_id = %d AND section_id = %d AND attendance_date = %s",
+                $active_year->id, $section_id, $attendance_date
+            ));
+        }
         ob_start();
         include __DIR__ . '/frontend-views/attendance.php';
         return ob_get_clean();

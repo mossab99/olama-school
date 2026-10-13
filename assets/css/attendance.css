@@ -9,6 +9,22 @@
 }
 
 /* Attendance Summary Cards */
+.olama-attendance-status.olama-taken {
+    background: #e6fffa;
+    border-color: #b2f5ea;
+    color: #234e52;
+}
+.olama-attendance-status.olama-not-taken {
+    background: #fffbeb;
+    border-color: #fde68a;
+    color: #92400e;
+}
+.olama-attendance-status {
+    gap: 12px;
+}
+.olama-attendance-status strong {
+    font-size: 1.2rem;
+}
 .olama-attendance-summary-cards {
     display: flex;
     gap: 15px;

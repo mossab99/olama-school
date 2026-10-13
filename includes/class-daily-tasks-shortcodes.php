@@ -55,7 +55,7 @@ class Olama_School_Daily_Tasks_Shortcodes {
         if (!in_array($selected, array_map('intval', wp_list_pluck($sections, 'id')), true)) { $selected = 0; }
         ob_start();
         ?>
-        <h2><?php esc_html_e('Grade / Section Students', 'olama-school'); ?></h2>
+        <h2><?php esc_html_e('Section Passwords', 'olama-school'); ?></h2>
         <form method="get">
             <?php if (is_admin()): ?><input type="hidden" name="page" value="olama-dashboard"><input type="hidden" name="view" value="students"><?php endif; ?>
             <label for="olama-students-section"><?php esc_html_e('Grade / Section', 'olama-school'); ?></label>
