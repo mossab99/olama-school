@@ -63,6 +63,9 @@ $label_style = 'display:block;font-weight:600;color:#475569;margin-bottom:8px;fo
                 <option value="exam_report"><?php esc_html_e('Exam Schedule', 'olama-school'); ?></option>
                 <option value="family_number_lookup"><?php esc_html_e('Family Number Lookup', 'olama-school'); ?></option>
                 <option value="logged_teacher_schedule"><?php esc_html_e('Today\'s Teaching Schedule', 'olama-school'); ?></option>
+                <option value="logged_user_shifts"><?php esc_html_e('Teacher Shifts', 'olama-school'); ?></option>
+                <option value="exam_halls_attendance"><?php esc_html_e('Exam Halls Attendance', 'olama-school'); ?></option>
+                <option value="section_students"><?php esc_html_e('Grade / Section Students (ID & Mother Mobile)', 'olama-school'); ?></option>
             </select>
         </div>
 
@@ -166,9 +169,9 @@ jQuery(function ($) {
 
     function updateShortcode() {
         const type = $('#gen-type').val();
-        const usesAcademicContext = type !== 'logged_teacher_schedule' && type !== 'family_number_lookup' && type !== 'attendance';
+        const usesAcademicContext = !['logged_teacher_schedule', 'family_number_lookup', 'attendance', 'logged_user_shifts', 'exam_halls_attendance', 'section_students'].includes(type);
         const usesSemester = type === 'weekly_plan' || type === 'weekly_schedule' || type === 'teachers_office_hours' || type === 'exam_report';
-        const usesClass = usesSemester || type === 'attendance';
+        const usesClass = usesSemester || type === 'attendance' || type === 'section_students';
 
         $('#olama-shortcode-gen-filters').toggle(usesAcademicContext);
         $('#gen-semester-wrapper').toggle(usesSemester);
@@ -212,7 +215,7 @@ jQuery(function ($) {
         $.post(ajaxurl, {
             action: 'olama_get_sections_by_grade',
             grade_id: gradeId,
-            academic_year_id: $('#gen-type').val() === 'attendance' ? attendanceYearId : selectedYearId,
+            academic_year_id: ['attendance', 'section_students'].includes($('#gen-type').val()) ? attendanceYearId : selectedYearId,
             nonce: <?php echo wp_json_encode(wp_create_nonce('olama_curriculum_nonce')); ?>
         }).done(function (response) {
             $section.empty();
