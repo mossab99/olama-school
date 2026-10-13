@@ -13,8 +13,20 @@ class Olama_School_Daily_Tasks_Shortcodes {
     public function shifts($atts = array()) {
         if (!is_user_logged_in()) { return '<p>' . esc_html__('Please log in to view your shifts.', 'olama-school') . '</p>'; }
         if (!class_exists('Olama_School_Shifts')) { return '<p>' . esc_html__('Activate Olama Employees to view shifts.', 'olama-school') . '</p>'; }
-        $rows = Olama_School_Shifts::get_teacher_weekly_shifts(get_current_user_id());
+        $teacher_id = get_current_user_id();
         $html = '<h2>' . esc_html__('Teacher Shifts', 'olama-school') . '</h2>';
+        if (Olama_School_Permissions::is_assistant()) {
+            $teachers = Olama_School_Teacher::get_teachers();
+            $requested = absint($_GET['cover_teacher'] ?? 0);
+            $ids = array_map('intval', wp_list_pluck($teachers, 'ID'));
+            $teacher_id = in_array($requested, $ids, true) ? $requested : ($ids[0] ?? 0);
+            $html .= '<form method="get">';
+            if (is_admin()) { $html .= '<input type="hidden" name="page" value="olama-dashboard"><input type="hidden" name="view" value="shifts">'; }
+            $html .= '<label>' . esc_html__('Teacher', 'olama-school') . ' <select name="cover_teacher">';
+            foreach ($teachers as $teacher) { $html .= '<option value="' . esc_attr($teacher->ID) . '" ' . selected($teacher_id, $teacher->ID, false) . '>' . esc_html($teacher->display_name) . '</option>'; }
+            $html .= '</select></label> <button class="button">' . esc_html__('View Shifts', 'olama-school') . '</button></form>';
+        }
+        $rows = $teacher_id ? Olama_School_Shifts::get_teacher_weekly_shifts($teacher_id) : array();
         if (!$rows) { return $html . '<p>' . esc_html(Olama_School_Helpers::translate('No shifts assigned for this week.')) . '</p>'; }
         $html .= '<table class="widefat striped"><thead><tr>';
         foreach (array('Day', 'Location', 'Time Slot', 'Start Time', 'End Time') as $label) { $html .= '<th>' . esc_html__($label, 'olama-school') . '</th>'; }
@@ -43,7 +55,7 @@ class Olama_School_Daily_Tasks_Shortcodes {
         $atts = shortcode_atts(array('grade' => 0, 'section' => 0), $atts, 'olama_section_students');
         $year = Olama_School_Academic::get_active_year();
         $sections = $year ? Olama_School_Section::get_sections_by_year($year->id) : array();
-        if (!current_user_can('manage_options') && !Olama_School_Permissions::can('olama_manage_academic_assignment')) {
+        if (!current_user_can('manage_options') && !Olama_School_Permissions::is_assistant() && !Olama_School_Permissions::can('olama_manage_academic_assignment')) {
             $assigned = $year ? Olama_School_Teacher::get_all_assignments(get_current_user_id(), $year->id) : array();
             $ids = array_map('intval', wp_list_pluck($assigned, 'section_id'));
             $sections = array_filter($sections, function($section) use ($ids) { return in_array((int) $section->id, $ids, true); });

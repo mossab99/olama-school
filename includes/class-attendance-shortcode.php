@@ -20,7 +20,7 @@ class Olama_School_Attendance_Shortcode
     private function sections($year_id)
     {
         $sections = Olama_School_Section::get_sections_by_year($year_id);
-        if (current_user_can('manage_options') || Olama_School_Permissions::can('olama_manage_academic_assignment')) {
+        if (current_user_can('manage_options') || Olama_School_Permissions::is_assistant() || Olama_School_Permissions::can('olama_manage_academic_assignment')) {
             return $sections;
         }
         $assignments = Olama_School_Teacher::get_all_assignments(get_current_user_id(), $year_id);

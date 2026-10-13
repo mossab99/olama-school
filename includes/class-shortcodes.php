@@ -2173,14 +2173,26 @@ class Olama_School_Shortcodes
         }
 
         $user_id = get_current_user_id();
-        if (!current_user_can('olama_create_plans')) {
+        if (!current_user_can('olama_create_plans') && !Olama_School_Permissions::is_assistant()) {
             return '<div class="olama-error">' . Olama_School_Helpers::translate('This feature is only available for teachers.') . '</div>';
         }
 
-        $teacher_schedule = Olama_School_Admin::get_teacher_daily_schedule($user_id);
+        if (Olama_School_Permissions::is_assistant()) {
+            $teachers = Olama_School_Teacher::get_teachers();
+            $requested = absint($_GET['cover_teacher'] ?? 0);
+            $ids = array_map('intval', wp_list_pluck($teachers, 'ID'));
+            $user_id = in_array($requested, $ids, true) ? $requested : ($ids[0] ?? 0);
+            $selector = '<form method="get">';
+            if (is_admin()) { $selector .= '<input type="hidden" name="page" value="olama-dashboard"><input type="hidden" name="view" value="schedule">'; }
+            $selector .= '<label>' . esc_html__('Teacher', 'olama-school') . ' <select name="cover_teacher">';
+            foreach ($teachers as $teacher) { $selector .= '<option value="' . esc_attr($teacher->ID) . '" ' . selected($user_id, $teacher->ID, false) . '>' . esc_html($teacher->display_name) . '</option>'; }
+            $selector .= '</select></label> <button class="button">' . esc_html__('View Schedule', 'olama-school') . '</button></form>';
+        }
+        $teacher_schedule = $user_id ? Olama_School_Admin::get_teacher_daily_schedule($user_id) : array();
 
         ob_start();
         ?>
+                <?php echo $selector ?? ''; ?>
                 <div class="olama-logged-teacher-schedule-wrap"
                     style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
                     <h2 class="olama-schedule-title"

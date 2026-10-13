@@ -96,6 +96,9 @@ class Olama_School_Permissions
      */
     public static function can($capability, $user_id = null)
     {
+        if (in_array($capability, array('olama_manage_attendance', 'olama_access_exam_halls', 'olama_manage_hall_attendance'), true) && self::is_assistant($user_id)) {
+            return true;
+        }
         if (class_exists('Olama_Core_Permissions')) {
             return Olama_Core_Permissions::can($capability, $user_id);
         }
@@ -110,4 +113,16 @@ class Olama_School_Permissions
         return user_can($user_id, $capability);
     }
 
+    /** Assistants can cover daily classroom tasks across sections. */
+    public static function is_assistant($user_id = null)
+    {
+        $user = $user_id ? get_userdata($user_id) : wp_get_current_user();
+        if (!$user || !$user->ID) { return false; }
+        $names = wp_roles()->role_names;
+        foreach ((array) $user->roles as $role) {
+            if (in_array($role, array('assistant', 'assistants', 'olama_assistant'), true)
+                || in_array(strtolower(trim($names[$role] ?? '')), array('assistant', 'assistants', 'مساعد', 'المساعد', 'المساعدون', 'المساعدين', 'مساعد إداري', 'مساعد اداري'), true)) { return true; }
+        }
+        return false;
+    }
 }
