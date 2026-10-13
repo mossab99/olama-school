@@ -65,7 +65,7 @@ $label_style = 'display:block;font-weight:600;color:#475569;margin-bottom:8px;fo
                 <option value="logged_teacher_schedule"><?php esc_html_e('Today\'s Teaching Schedule', 'olama-school'); ?></option>
                 <option value="logged_user_shifts"><?php esc_html_e('Teacher Shifts', 'olama-school'); ?></option>
                 <option value="exam_halls_attendance"><?php esc_html_e('Exam Halls Attendance', 'olama-school'); ?></option>
-                <option value="section_students"><?php esc_html_e('Grade / Section Students (ID & Mother Mobile)', 'olama-school'); ?></option>
+                <option value="section_students"><?php esc_html_e('Grade / Section Students (Family ID & Mother Mobile)', 'olama-school'); ?></option>
             </select>
         </div>
 

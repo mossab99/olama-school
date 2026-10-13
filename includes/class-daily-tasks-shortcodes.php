@@ -66,19 +66,20 @@ class Olama_School_Daily_Tasks_Shortcodes {
             </select>
             <button type="submit" class="button"><?php esc_html_e('View Students', 'olama-school'); ?></button>
         </form>
-        <table class="widefat striped"><thead><tr><th><?php esc_html_e('Student', 'olama-school'); ?></th><th><?php esc_html_e('ID', 'olama-school'); ?></th><th><?php esc_html_e('Mother Mobile', 'olama-school'); ?></th></tr></thead><tbody>
+        <table class="widefat striped"><thead><tr><th><?php esc_html_e('Student Full Name', 'olama-school'); ?></th><th><?php esc_html_e('Family ID', 'olama-school'); ?></th><th><?php esc_html_e('Mother Mobile #', 'olama-school'); ?></th></tr></thead><tbody>
         <?php
         $students = $selected ? Olama_School_Student::get_students(array('academic_year_id' => $year->id, 'section_id' => $selected)) : array();
         global $wpdb;
         $phones = array();
+        $family_ids = array();
         if ($students && function_exists('olama_core')) {
             $families = olama_core()->read_models()->table('families');
             $uids = array_unique(wp_list_pluck($students, 'family_id'));
             $placeholders = implode(',', array_fill(0, count($uids), '%s'));
-            foreach ($wpdb->get_results($wpdb->prepare("SELECT family_uid, mother_mobile FROM {$families} WHERE family_uid IN ($placeholders)", array_values($uids))) as $family) { $phones[$family->family_uid] = $family->mother_mobile; }
+            foreach ($wpdb->get_results($wpdb->prepare("SELECT family_uid, oracle_family_id, mother_mobile FROM {$families} WHERE family_uid IN ($placeholders)", array_values($uids))) as $family) { $phones[$family->family_uid] = $family->mother_mobile; $family_ids[$family->family_uid] = $family->oracle_family_id; }
         }
         foreach ($students as $student): ?>
-        <tr><td><?php echo esc_html($student->student_name); ?></td><td dir="ltr"><?php echo esc_html($student->student_uid); ?></td><td dir="ltr"><?php echo esc_html($phones[$student->family_id] ?? ''); ?></td></tr>
+        <tr><td><?php echo esc_html($student->student_name); ?></td><td dir="ltr"><?php echo esc_html($family_ids[$student->family_id] ?? ''); ?></td><td dir="ltr"><?php echo esc_html($phones[$student->family_id] ?? ''); ?></td></tr>
         <?php endforeach; ?>
         <?php if (!$students): ?><tr><td colspan="3"><?php esc_html_e('No students found in your assigned sections.', 'olama-school'); ?></td></tr><?php endif; ?>
         </tbody></table>
