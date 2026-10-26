@@ -74,7 +74,7 @@ class Olama_School_Attendance_Shortcode
             ? Olama_School_Helpers::sanitize_date(wp_unslash($_GET['attendance_date'])) : current_time('Y-m-d');
         $attendance_date = $attendance_date ?: current_time('Y-m-d');
         $students = $section_id && $active_semester ? Olama_School_Student::get_students(array(
-            'academic_year_id' => $active_year->id, 'section_id' => $section_id,
+            'academic_year_id' => $active_year->id, 'section_id' => $section_id, 'attendance_only' => true,
         )) : array();
         $attendance_records = array();
         if ($students) {
@@ -112,7 +112,7 @@ class Olama_School_Attendance_Shortcode
         if (!$semester || !$date || !in_array($section_id, $ids, true)) {
             wp_die(esc_html__('Invalid attendance section or date.', 'olama-school'), '', array('response' => 400));
         }
-        $students = Olama_School_Student::get_students(array('academic_year_id' => $year->id, 'section_id' => $section_id));
+        $students = Olama_School_Student::get_students(array('academic_year_id' => $year->id, 'section_id' => $section_id, 'attendance_only' => true));
         $data = wp_unslash($_POST['attendance'] ?? array());
         if (!$students || !is_array($data)) {
             wp_die(esc_html__('No students found in this section.', 'olama-school'));
