@@ -864,7 +864,7 @@ class Olama_School_Shortcodes
                     <div class="semester-left" style="display:flex;flex-direction:column;align-items:center;width:100%;">
                         <div>
                             <span class="week-label"><?php echo esc_html(Olama_School_Helpers::translate('Academic Year')); ?></span>
-                            <span class="week-dates" style="color:#fff;"><?php echo $year ? esc_html($year->year_name) : ''; ?></span>
+                            <bdi class="week-dates" dir="ltr" style="color:#fff;"><?php echo $year ? esc_html($year->year_name) : ''; ?></bdi>
                         </div>
                         <div style="margin-top:5px;font-weight:700;color:rgba(255,255,255,.9);">
                             <?php echo esc_html(Olama_School_Helpers::translate('Total Exams')); ?>: <?php echo esc_html(count($approved_exams)); ?>
@@ -887,6 +887,9 @@ class Olama_School_Shortcodes
                                             <span style="font-weight:400;margin-inline-start:10px;color:#64748b;">- <?php echo esc_html($first_exam->subject_name); ?></span>
                                         <?php endif; ?>
                                     </span>
+                                    <?php if ($date): ?>
+                                        <time class="day-count" dir="ltr" datetime="<?php echo esc_attr($date); ?>"><?php echo esc_html(Olama_School_Helpers::format_date($date)); ?></time>
+                                    <?php endif; ?>
                                 </div>
                                 <span class="toggle-chevron dashicons dashicons-arrow-down-alt2"></span>
                             </div>
