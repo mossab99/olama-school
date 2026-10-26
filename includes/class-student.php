@@ -19,13 +19,14 @@ class Olama_School_Student
 
         $year_id = isset($args['academic_year_id']) ? absint($args['academic_year_id']) : 0;
         $section_id = isset($args['section_id']) ? absint($args['section_id']) : 0;
+        $attendance_only = !empty($args['attendance_only']);
         $study_year = Olama_School_Academic_Bridge::get_study_year($year_id);
         if ($study_year === '') {
             return array();
         }
 
         Olama_School_Academic_Bridge::sync($study_year);
-        $cache_key = 'olama_core_students_list_' . md5($study_year . '|' . $section_id . '|' . ($year_id ? 'year' : 'registry'));
+        $cache_key = 'olama_core_students_list_' . md5($study_year . '|' . $section_id . '|' . ($year_id ? 'year' : 'registry') . ($attendance_only ? '|attendance-v1' : ''));
         $cached = get_transient($cache_key);
         if (is_array($cached)) {
             return $cached;
@@ -63,6 +64,12 @@ class Olama_School_Student
         if ($section_id) {
             $sql .= ' AND sec.id=%d';
             $params[] = $section_id;
+        }
+        if ($attendance_only) {
+            // Prefer the selected year's enrollment status over the registry status.
+            $excluded = "('0', '2', 'inactive', 'disabled', 'withdrawn', 'stopped', 'منسحب', 'غير مستمر', 'غير فعال', 'متوقف')";
+            $sql .= " AND LOWER(TRIM(COALESCE(NULLIF(TRIM(y.student_status), ''), s.student_status, ''))) NOT IN {$excluded}
+                       AND LOWER(TRIM(COALESCE(NULLIF(TRIM(y.student_status_name), ''), s.student_status_name, ''))) NOT IN {$excluded}";
         }
         $sql .= ' ORDER BY s.student_name ASC';
 
