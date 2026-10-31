@@ -267,28 +267,34 @@ jQuery(document).ready(function ($) {
             });
         }
 
-        $questionsList.html('<p>' + (olamaPlan.i18n.loadingQuestions || 'Loading questions...') + '</p>');
+        $questionsList.html('<p>جارٍ تحميل الامتحانات المباشرة...</p>');
         $questionsArea.show();
 
         $.ajax({
             url: olamaPlan.ajaxUrl,
             type: 'GET',
             data: {
-                action: 'olama_get_curriculum_questions',
+                action: 'olama_get_plan_exams',
+                section_id: $('[name=section_id]').first().val(),
+                subject_id: $subjectSelect.val(),
+                academic_year_id: $('[name=academic_year_id]').first().val(),
+                semester_id: $('[name=semester_id]').first().val(),
                 lesson_id: lessonId,
                 nonce: olamaPlan.nonce
             },
             success: function (response) {
+                if (String($lessonSelect.val()) !== String(lessonId)) return;
                 if (response.success && response.data && response.data.length > 0) {
                     let html = '<ul style="margin: 0; padding: 0; list-style: none;">';
                     response.data.forEach(function (q) {
-                        const isChecked = currentEditingPlan && currentEditingPlan.question_ids && currentEditingPlan.question_ids.includes(q.id.toString()) ? 'checked' : '';
+                        const isChecked = currentEditingPlan && currentEditingPlan.exam_ids && currentEditingPlan.exam_ids.map(String).includes(String(q.id)) ? 'checked' : '';
                         html += `
                             <li style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
                                 <label style="display: flex; gap: 10px; align-items: flex-start; cursor: pointer;">
-                                    <input type="checkbox" name="question_ids[]" value="${q.id}" style="margin-top: 3px;" ${isChecked}>
-                                    <span>${(q.question_number ? q.question_number + ' - ' : '') + q.question}</span>
+                                    <input type="checkbox" name="exam_ids[]" value="${q.id}" style="margin-top: 3px;" ${isChecked}>
+                                    <span>${$('<span>').text(q.title).html()}</span>
                                 </label>
+                                <a href="${$('<span>').text(q.url).html().replace(/"/g, '&quot;')}" target="_blank" rel="noopener">رابط الامتحان (يتطلب تسجيل الدخول)</a>
                             </li>`;
                     });
                     html += '</ul>';
@@ -299,12 +305,12 @@ jQuery(document).ready(function ($) {
                         currentEditingPlan = null;
                     }
                 } else {
-                    $questionsList.html('<p>' + (olamaPlan.i18n.noQuestions || 'No questions found') + '</p>');
+                    $questionsList.html('<p>لا توجد امتحانات مباشرة متاحة لهذا الدرس والشعبة.</p>');
                     currentEditingPlan = null;
                 }
             },
             error: function () {
-                $questionsList.html('<p>' + (olamaPlan.i18n.errorLoadingQuestions || 'Error loading questions') + '</p>');
+                $questionsList.html('<p>تعذر تحميل الامتحانات المباشرة.</p>');
                 currentEditingPlan = null;
             }
         });

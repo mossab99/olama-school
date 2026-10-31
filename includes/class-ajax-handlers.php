@@ -25,6 +25,7 @@ class Olama_School_Ajax_Handlers
         add_action('wp_ajax_olama_delete_curriculum_lesson', array($this, 'delete_curriculum_lesson'));
 
         add_action('wp_ajax_olama_save_curriculum_question', array($this, 'save_curriculum_question'));
+        add_action('wp_ajax_olama_get_plan_exams', array($this, 'get_plan_exams'));
         add_action('wp_ajax_olama_get_curriculum_questions', array($this, 'get_curriculum_questions'));
         add_action('wp_ajax_olama_delete_curriculum_question', array($this, 'delete_curriculum_question'));
         add_action('wp_ajax_olama_clear_curriculum', array($this, 'clear_curriculum'));
@@ -231,6 +232,21 @@ class Olama_School_Ajax_Handlers
                 'message' => __('Question saved successfully', 'olama-school')
             ));
         }
+    }
+
+    public function get_plan_exams()
+    {
+        check_ajax_referer('olama_curriculum_nonce', 'nonce');
+        if (!Olama_School_Permissions::can('olama_create_plans') && !Olama_School_Permissions::can('olama_manage_own_plans')) {
+            wp_send_json_error('Unauthorized', 403);
+        }
+        $rows = Olama_School_Plan::get_available_exams(
+            absint($_GET['section_id'] ?? 0), absint($_GET['subject_id'] ?? 0),
+            absint($_GET['lesson_id'] ?? 0), absint($_GET['academic_year_id'] ?? 0), absint($_GET['semester_id'] ?? 0)
+        );
+        wp_send_json_success(array_map(static function ($exam) {
+            return array('id' => (int) $exam->id, 'title' => $exam->title, 'url' => Olama_School_Plan::exam_gateway_url($exam->id));
+        }, $rows));
     }
 
     public function get_curriculum_questions()

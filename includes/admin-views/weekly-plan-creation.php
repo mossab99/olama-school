@@ -249,7 +249,7 @@ if (!defined('ABSPATH')) {
 
                 <div id="olama-questions-area" style="margin-bottom: 20px; display: none;">
                     <label style="display: block; font-weight: 600; margin-bottom: 8px;">
-                        <?php _e('Questions to Cover', 'olama-school'); ?>
+                        <?php echo esc_html('الامتحانات المباشرة المرتبطة بالدرس والشعبة'); ?>
                     </label>
                     <div id="olama-questions-list"
                         style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd; max-height: 200px; overflow-y: auto;">
@@ -361,7 +361,7 @@ if (!defined('ABSPATH')) {
             <?php
             if ($today_plans): ?>
                 <?php foreach ($today_plans as $plan):
-                    $q_ids = Olama_School_Plan::get_plan_questions($plan->id);
+                    $q_ids = Olama_School_Plan::get_plan_exams($plan->id);
                     $plan_json = wp_json_encode([
                         'id' => $plan->id,
                         'grade_id' => $selected_grade_id,
@@ -376,7 +376,7 @@ if (!defined('ABSPATH')) {
                         'teacher_notes' => $plan->teacher_notes,
                         'supervisor_feedback' => $plan->supervisor_feedback ?? '',
                         'teacher_response' => $plan->teacher_response ?? '',
-                        'question_ids' => $q_ids,
+                        'exam_ids' => $q_ids,
                         'status' => $plan->status,
                         'teacher_name' => $plan->teacher_name ?? '',
                         'plan_type' => $plan->plan_type ?? 'homework'

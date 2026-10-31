@@ -236,6 +236,14 @@ class Olama_School_Plan
             $semester_id = $semester ? $semester->id : 0;
         }
 
+        // Validate links against the saved plan scope before changing the plan.
+        $exam_ids = array_values(array_unique(array_filter(array_map('absint', (array) ($data['exam_ids'] ?? array())))));
+        $available = self::get_available_exams($section_id, $subject_id, $lesson_id, $academic_year_id, $semester_id);
+        $allowed = array_map(static function ($exam) { return (int) $exam->id; }, $available);
+        if (array_diff($exam_ids, $allowed)) {
+            return new WP_Error('invalid_plan_exam', 'الامتحان المحدد لا يتبع درس وشعبة الخطة أو لم يعد متاحاً.');
+        }
+
         $status = $data['status'] ?? 'draft';
 
         // Log teacher response if provided
@@ -310,6 +318,11 @@ class Olama_School_Plan
             }
         }
 
+        $wpdb->delete("{$wpdb->prefix}olama_plan_exams", array('plan_id' => $plan_id));
+        foreach ($exam_ids as $exam_id) {
+            $wpdb->insert("{$wpdb->prefix}olama_plan_exams", array('plan_id' => $plan_id, 'exam_id' => $exam_id));
+        }
+
         // Handle linked questions
         if ($plan_id) {
             $wpdb->delete("{$wpdb->prefix}olama_plan_questions", array('plan_id' => $plan_id));
@@ -330,7 +343,45 @@ class Olama_School_Plan
     {
         global $wpdb;
         $wpdb->delete("{$wpdb->prefix}olama_plan_questions", array('plan_id' => intval($id)));
+        $wpdb->delete("{$wpdb->prefix}olama_plan_exams", array('plan_id' => intval($id)));
         return $wpdb->delete("{$wpdb->prefix}olama_plans", array('id' => intval($id)));
+    }
+
+    public static function get_available_exams($section_id, $subject_id, $lesson_id, $year_id, $semester_id)
+    {
+        if (!class_exists('Olama_Exam_Manager') || !$section_id || !$subject_id || !$lesson_id || !$year_id || !$semester_id) {
+            return array();
+        }
+        $rows = Olama_Exam_Manager::get_exams(array(
+            'section_id' => absint($section_id), 'subject_id' => absint($subject_id),
+            'academic_year_id' => absint($year_id), 'semester_id' => absint($semester_id),
+            'exam_type' => 'direct', 'is_placement' => 0,
+        ));
+        return array_values(array_filter($rows, static function ($exam) use ($lesson_id) {
+            return (int) $exam->direct_lesson_id === (int) $lesson_id && in_array($exam->status, array('active', 'published'), true);
+        }));
+    }
+
+    public static function get_plan_exams($plan_id)
+    {
+        global $wpdb;
+        return $wpdb->get_col($wpdb->prepare("SELECT exam_id FROM {$wpdb->prefix}olama_plan_exams WHERE plan_id = %d", $plan_id));
+    }
+
+    public static function exam_gateway_url($exam_id)
+    {
+        static $url;
+        if (!$url) {
+            $url = home_url('/family/');
+            foreach (get_posts(array('post_type' => 'page', 'post_status' => 'publish', 'numberposts' => -1)) as $page) {
+                if (has_shortcode($page->post_content, 'olama_student_gateway') || has_shortcode($page->post_content, 'olama_family_gateway')) {
+                    $url = get_permalink($page->ID);
+                    break;
+                }
+            }
+            $url = apply_filters('olama_school_exam_gateway_url', $url);
+        }
+        return add_query_arg(array('og_view' => 'exams', 'og_exam_section' => 'direct', 'exam_view' => 'take', 'exam_id' => absint($exam_id)), $url);
     }
 
     public static function get_plan_questions($plan_id)

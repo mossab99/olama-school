@@ -22,6 +22,7 @@ class Olama_School_DB
 			'olama_teachers',
 			'olama_plans',
 			'olama_plan_questions',
+			'olama_plan_exams',
 			'olama_templates',
 			'olama_schedule',
 			'olama_curriculum_units',
@@ -162,6 +163,12 @@ class Olama_School_DB
 				question_id mediumint(9) NOT NULL,
 				PRIMARY KEY  (plan_id,question_id)
 			) $charset_collate;",
+
+            'olama_plan_exams' => "CREATE TABLE {$wpdb->prefix}olama_plan_exams (
+                plan_id mediumint(9) NOT NULL,
+                exam_id bigint(20) UNSIGNED NOT NULL,
+                PRIMARY KEY  (plan_id,exam_id)
+            ) $charset_collate;",
 
 			'olama_templates' => "CREATE TABLE {$wpdb->prefix}olama_templates (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -521,6 +528,7 @@ class Olama_School_DB
 			'olama_schedule',
 			'olama_templates',
 			'olama_plan_questions',
+			'olama_plan_exams',
 			'olama_plans',
 			'olama_teachers',
 			'olama_subjects',
