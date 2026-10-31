@@ -686,12 +686,26 @@ class Olama_School_Shortcodes
                                             </div>
                                         <?php endif; ?>
 
+                                        <?php $plan_exams = Olama_School_Plan::get_report_exams($plan); ?>
+                                        <?php if ($plan_exams): ?>
+                                            <div class="section-block direct-exams">
+                                                <div class="section-label">
+                                                    <span class="dashicons dashicons-welcome-learn-more"></span>
+                                                    <?php echo esc_html('الامتحانات المباشرة'); ?>
+                                                </div>
+                                                <div class="homework-list">
+                                                    <?php foreach ($plan_exams as $linked_exam): ?>
+                                                        <a class="homework-item olama-plan-exam" href="<?php echo esc_url(Olama_School_Plan::exam_gateway_url($linked_exam->id)); ?>">
+                                                            <strong><?php echo esc_html($linked_exam->title); ?></strong>
+                                                            <span><?php echo esc_html('الدخول إلى الامتحان عبر بوابة الطالب'); ?></span>
+                                                        </a>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                                <small><?php echo esc_html('يتطلب تسجيل الدخول إلى المنصة.'); ?></small>
+                                            </div>
+                                        <?php endif; ?>
+
                                         <!-- Teacher Notes -->
-                                        <?php foreach (Olama_School_Plan::get_plan_exams($plan->id) as $linked_exam_id):
-                                            $linked_exam = class_exists('Olama_Exam_Manager') ? Olama_Exam_Manager::get_exam($linked_exam_id) : null;
-                                            if (!$linked_exam || !in_array($linked_exam->status, array('active', 'published'), true)) { continue; } ?>
-                                            <div class="olama-plan-exam" style="margin:10px 0"><a href="<?php echo esc_url(Olama_School_Plan::exam_gateway_url($linked_exam_id)); ?>"><?php echo esc_html('الامتحان المباشر: ' . $linked_exam->title); ?></a></div>
-                                        <?php endforeach; ?>
                                         <?php if (!empty($plan->teacher_notes)): ?>
                                             <div class="section-block teacher-notes">
                                                 <div class="section-label">

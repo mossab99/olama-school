@@ -1216,3 +1216,19 @@
     .olama-attendance-shortcode { padding: 12px; overflow-x: auto; }
     .olama-attendance-shortcode table { min-width: 540px; }
 }
+
+/* Direct exam links in the public weekly-plan shortcode. */
+.olama-weekly-plan-v2 .direct-exams .section-label { color: #4f46e5; }
+.olama-weekly-plan-v2 .olama-plan-exam {
+    text-decoration: none;
+    border: 1px solid #c7d2fe;
+    color: #3730a3;
+}
+.olama-weekly-plan-v2 .olama-plan-exam:hover,
+.olama-weekly-plan-v2 .olama-plan-exam:focus-visible {
+    background: #eef2ff;
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+}
+.olama-weekly-plan-v2 .olama-plan-exam span,
+.olama-weekly-plan-v2 .direct-exams > small { font-size: .8rem; }
