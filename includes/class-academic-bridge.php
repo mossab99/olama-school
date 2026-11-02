@@ -312,6 +312,7 @@ class Olama_School_Academic_Bridge
                     'max_weekly_plans' => 0,
                     'appear_in_weekly_plan' => 1,
                     'appear_in_schedule' => 1,
+                    'appear_in_student_gateway' => 1,
                 ));
                 if (false !== $inserted) {
                     $active_local_subject_ids[] = (int) $wpdb->insert_id;

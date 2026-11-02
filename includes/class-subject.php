@@ -105,6 +105,14 @@ class Olama_School_Subject
         return self::get_by_grade($grade_id, $active_only);
     }
 
+    /** Active grade subjects enabled for student-facing content. */
+    public static function get_for_student_gateway($grade_id)
+    {
+        return array_values(array_filter(self::get_by_grade($grade_id, true), static function ($subject) {
+            return !isset($subject->appear_in_student_gateway) || (int) $subject->appear_in_student_gateway === 1;
+        }));
+    }
+
     /**
      * Get active subjects that may be assigned to the master schedule.
      */
@@ -183,6 +191,7 @@ class Olama_School_Subject
                 'max_weekly_plans' => $data['max_weekly_plans'] ?? 0,
                 'appear_in_weekly_plan' => $data['appear_in_weekly_plan'] ?? 1,
                 'appear_in_schedule' => $data['appear_in_schedule'] ?? 1,
+                'appear_in_student_gateway' => $data['appear_in_student_gateway'] ?? 1,
                 'requires_stationary' => $data['requires_stationary'] ?? 0,
                 'is_active' => $data['is_active'] ?? 1,
             )
@@ -240,7 +249,7 @@ class Olama_School_Subject
     {
         global $wpdb;
         if (Olama_School_Academic_Bridge::is_available()) {
-            $allowed = array('color_code', 'max_weekly_plans', 'appear_in_weekly_plan', 'appear_in_schedule', 'requires_stationary');
+            $allowed = array('color_code', 'max_weekly_plans', 'appear_in_weekly_plan', 'appear_in_schedule', 'appear_in_student_gateway', 'requires_stationary');
             $settings = array_intersect_key($data, array_flip($allowed));
             if (empty($settings)) {
                 return new WP_Error('oracle_managed', __('Subject names, IDs, grade membership, and status are managed by Oracle.', 'olama-school'));
@@ -260,6 +269,7 @@ class Olama_School_Subject
                 'max_weekly_plans' => $data['max_weekly_plans'] ?? 0,
                 'appear_in_weekly_plan' => $data['appear_in_weekly_plan'] ?? 1,
                 'appear_in_schedule' => $data['appear_in_schedule'] ?? 1,
+                'appear_in_student_gateway' => $data['appear_in_student_gateway'] ?? (self::get_subject($id)->appear_in_student_gateway ?? 1),
                 'requires_stationary' => $data['requires_stationary'] ?? 0,
                 'is_active' => $data['is_active'] ?? 1,
             ),
@@ -280,6 +290,7 @@ class Olama_School_Subject
             'color_code' => sanitize_hex_color($data['color_code'] ?? '') ?: '#2271b1',
             'appear_in_weekly_plan' => empty($data['appear_in_weekly_plan']) ? 0 : 1,
             'appear_in_schedule' => empty($data['appear_in_schedule']) ? 0 : 1,
+            'appear_in_student_gateway' => empty($data['appear_in_student_gateway']) ? 0 : 1,
             'requires_stationary' => empty($data['requires_stationary']) ? 0 : 1,
         );
 

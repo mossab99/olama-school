@@ -110,6 +110,7 @@ class Olama_School_DB
 				max_weekly_plans tinyint(4) DEFAULT 0 NOT NULL,
 				appear_in_weekly_plan tinyint(1) DEFAULT 1 NOT NULL,
 				appear_in_schedule tinyint(1) DEFAULT 1 NOT NULL,
+				appear_in_student_gateway tinyint(1) DEFAULT 1 NOT NULL,
 				requires_stationary tinyint(1) DEFAULT 0 NOT NULL,
 				is_active tinyint(1) DEFAULT 1 NOT NULL,
 				PRIMARY KEY  (id),

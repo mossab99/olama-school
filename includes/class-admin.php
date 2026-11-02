@@ -2180,6 +2180,7 @@ class Olama_School_Admin
             $colors = (array) ($_POST['subject_color'] ?? array());
             $weekly_plan_flags = (array) ($_POST['appear_in_weekly_plan'] ?? array());
             $schedule_flags = (array) ($_POST['appear_in_schedule'] ?? array());
+            $gateway_flags = (array) ($_POST['appear_in_student_gateway'] ?? array());
             $stationary_flags = (array) ($_POST['requires_stationary'] ?? array());
 
             foreach ($subject_ids as $subject_id) {
@@ -2190,6 +2191,7 @@ class Olama_School_Admin
                     'color_code' => $colors[$subject_id] ?? '#2271b1',
                     'appear_in_weekly_plan' => isset($weekly_plan_flags[$subject_id]),
                     'appear_in_schedule' => isset($schedule_flags[$subject_id]),
+                    'appear_in_student_gateway' => isset($gateway_flags[$subject_id]),
                     'requires_stationary' => isset($stationary_flags[$subject_id]),
                 ));
             }

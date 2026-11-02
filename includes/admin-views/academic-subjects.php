@@ -78,6 +78,7 @@ foreach ($subjects as $subject) {
                         <th style="width:100px; text-align:center;"><?php esc_html_e('Color', 'olama-school'); ?></th>
                         <th style="width:160px; text-align:center;"><?php esc_html_e('Appear in Weekly Plan', 'olama-school'); ?></th>
                         <th style="width:150px; text-align:center;"><?php esc_html_e('Appear in Schedule', 'olama-school'); ?></th>
+                        <th style="min-width:160px; text-align:center;"><?php esc_html_e('إظهار في بوابة الطالب', 'olama-school'); ?></th>
                         <th style="width:150px; text-align:center;"><?php esc_html_e('Stationery Required', 'olama-school'); ?></th>
                         <th style="width:100px; text-align:center;"><?php esc_html_e('Status', 'olama-school'); ?></th>
                     </tr>
@@ -109,6 +110,14 @@ foreach ($subjects as $subject) {
                                 <label>
                                     <input type="checkbox" name="appear_in_schedule[<?php echo esc_attr($subject->id); ?>]" value="1"
                                         <?php checked(!isset($subject->appear_in_schedule) || (int) $subject->appear_in_schedule === 1); ?> />
+                                    <?php esc_html_e('Yes', 'olama-school'); ?>
+                                </label>
+                            </td>
+                            <td style="text-align:center;">
+                                <label>
+                                    <input type="checkbox" name="appear_in_student_gateway[<?php echo esc_attr($subject->id); ?>]" value="1"
+                                        aria-label="<?php echo esc_attr(sprintf(__('إظهار %s في بوابة الطالب', 'olama-school'), $subject->subject_name)); ?>"
+                                        <?php checked(!isset($subject->appear_in_student_gateway) || (int) $subject->appear_in_student_gateway === 1); ?> />
                                     <?php esc_html_e('Yes', 'olama-school'); ?>
                                 </label>
                             </td>
