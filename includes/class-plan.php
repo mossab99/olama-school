@@ -372,6 +372,44 @@ class Olama_School_Plan
         return $wpdb->get_col($wpdb->prepare("SELECT exam_id FROM {$wpdb->prefix}olama_plan_exams WHERE plan_id = %d", $plan_id));
     }
 
+    /** Published media follows the curriculum of the selected section. */
+    public static function get_lesson_videos($section_id, $subject_id, $lesson_id, $year_id, $semester_id)
+    {
+        if (!class_exists('Olama_Media_Guardian_Library') || !$section_id || !$subject_id || !$lesson_id || !$year_id || !$semester_id) {
+            return array();
+        }
+
+        $section = Olama_School_Section::get_section($section_id);
+        if (!$section || empty($section->grade_id) || (int) $section->academic_year_id !== (int) $year_id) {
+            return array();
+        }
+
+        static $videos_by_lesson = array();
+        $key = implode(':', array($year_id, $semester_id, $section->grade_id, $subject_id, $lesson_id));
+        if (isset($videos_by_lesson[$key])) {
+            return $videos_by_lesson[$key];
+        }
+        $library = Olama_Media_Guardian_Library::for_curriculum(
+            $year_id, $semester_id, $section->grade_id, array($subject_id), $lesson_id
+        );
+        if (is_wp_error($library)) {
+            return $library;
+        }
+
+        foreach ($library['subjects'] as $subject) {
+            foreach ($subject['units'] as $unit) {
+                foreach ($unit['lessons'] as $lesson) {
+                    if ((int) $lesson['id'] === (int) $lesson_id) {
+                        return $videos_by_lesson[$key] = array_values(array_filter($lesson['videos'], static function ($video) {
+                            return !empty($video['url']);
+                        }));
+                    }
+                }
+            }
+        }
+        return $videos_by_lesson[$key] = array();
+    }
+
     /** Resolve report links for both saved selections and older lesson plans. */
     public static function get_report_exams($plan)
     {

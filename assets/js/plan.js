@@ -4,6 +4,15 @@ jQuery(document).ready(function ($) {
     const $lessonSelect = $('#olama-lesson-select');
     const $questionsArea = $('#olama-questions-area');
     const $questionsList = $('#olama-questions-list');
+    const $videoArea = $('#olama-plan-video-area');
+    const $videoList = $('#olama-plan-video-list');
+    let videoRequest = 0;
+
+    function clearLessonVideos() {
+        videoRequest++;
+        $videoArea.hide();
+        $videoList.empty();
+    }
     const $planIdInput = $('#olama-plan-id');
     const $saveButton = $('#olama-save-plan-btn');
     const $submitButton = $('#olama-submit-plan-btn');
@@ -140,6 +149,7 @@ jQuery(document).ready(function ($) {
         $lessonSelect.val('').prop('disabled', true).html('<option value="">' + (olamaPlan.i18n.selectLesson || 'Select Lesson') + '</option>');
         $questionsArea.hide();
         $questionsList.empty();
+        clearLessonVideos();
 
         if (!subjectId || !gradeId) return;
 
@@ -185,6 +195,7 @@ jQuery(document).ready(function ($) {
         $lessonSelect.val('').prop('disabled', true).html('<option value="">' + (olamaPlan.i18n.selectLesson || 'Select Lesson') + '</option>');
         $questionsArea.hide();
         $questionsList.empty();
+        clearLessonVideos();
 
         if (!unitId) return;
 
@@ -238,7 +249,34 @@ jQuery(document).ready(function ($) {
         }
     }
 
-    // Handle Lesson selection -> Load Questions & Progress Check
+    function loadLessonVideos(scope) {
+        const request = videoRequest;
+        $videoArea.show();
+        $videoList.text('جارٍ تحميل فيديوهات الدرس...');
+
+        $.get(olamaPlan.ajaxUrl, { ...scope, action: 'olama_get_plan_videos' })
+            .done(function (response) {
+                if (request !== videoRequest) return;
+                const videos = response.success ? response.data : [];
+                if (!videos.length) {
+                    $videoList.text('لا توجد فيديوهات معتمدة لهذا الدرس.');
+                    return;
+                }
+
+                const $links = $('<ul>');
+                videos.forEach(function (video, index) {
+                    const label = video.part ? 'الجزء ' + video.part : 'مشاهدة الفيديو ' + (index + 1);
+                    const $link = $('<a>', { href: video.url, target: '_blank', rel: 'noopener noreferrer' }).text(label);
+                    $links.append($('<li>').append($link));
+                });
+                $videoList.empty().append($links);
+            })
+            .fail(function () {
+                if (request === videoRequest) $videoList.text('تعذر تحميل فيديوهات الدرس.');
+            });
+    }
+
+    // Load the selected lesson resources and check progress.
     $lessonSelect.on('change', function () {
         const lessonId = $(this).val();
         const $selectedOption = $(this).find('option:selected');
@@ -249,6 +287,7 @@ jQuery(document).ready(function ($) {
 
         $questionsArea.hide();
         $questionsList.empty();
+        clearLessonVideos();
         $progressCheck.hide().removeClass('status-ontime status-delayed status-bypass').text('');
 
         if (!lessonId) return;
@@ -270,18 +309,20 @@ jQuery(document).ready(function ($) {
         $questionsList.html('<p>جارٍ تحميل امتحانات الدروس المباشرة...</p>');
         $questionsArea.show();
 
+        const scope = {
+            section_id: $('[name=section_id]').first().val(),
+            subject_id: $subjectSelect.val(),
+            academic_year_id: $('[name=academic_year_id]').first().val(),
+            semester_id: $('[name=semester_id]').first().val(),
+            lesson_id: lessonId,
+            nonce: olamaPlan.nonce
+        };
+        loadLessonVideos(scope);
+
         $.ajax({
             url: olamaPlan.ajaxUrl,
             type: 'GET',
-            data: {
-                action: 'olama_get_plan_exams',
-                section_id: $('[name=section_id]').first().val(),
-                subject_id: $subjectSelect.val(),
-                academic_year_id: $('[name=academic_year_id]').first().val(),
-                semester_id: $('[name=semester_id]').first().val(),
-                lesson_id: lessonId,
-                nonce: olamaPlan.nonce
-            },
+            data: { ...scope, action: 'olama_get_plan_exams' },
             success: function (response) {
                 if (String($lessonSelect.val()) !== String(lessonId)) return;
                 if (response.success && response.data && response.data.length > 0) {

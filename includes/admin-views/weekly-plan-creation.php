@@ -257,6 +257,14 @@ if (!defined('ABSPATH')) {
                     </div>
                 </div>
 
+                <div id="olama-plan-video-area" style="margin-bottom: 20px; display: none;">
+                    <div style="font-weight: 600; margin-bottom: 8px;">
+                        <?php echo esc_html('فيديوهات الدروس المباشرة المرتبطة بالدرس والشعبة'); ?>
+                    </div>
+                    <div id="olama-plan-video-list" aria-live="polite"
+                        style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd;"></div>
+                </div>
+
                 <!-- Supervisor Feedback & Teacher Response Loop -->
                 <div id="olama-revision-wrapper"
                     style="display: none; margin-bottom: 20px; padding: 20px; background: #fffaf0; border: 2px solid #f59e0b; border-radius: 12px;">

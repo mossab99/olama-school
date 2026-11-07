@@ -53,6 +53,17 @@ class Olama_Exam_Manager {
         }));
     }
 }
+function is_wp_error($value) { return false; }
+class Olama_Media_Guardian_Library {
+    public static function for_curriculum($year, $semester, $grade, $subjects, $lesson) {
+        check(array(2, 3, 23, array(20), 100) === array($year, $semester, $grade, $subjects, $lesson), 'Video lookup must use the report section curriculum and lesson.');
+        $videos = array(
+            array('part' => 1, 'url' => 'https://video.example/part-1'),
+            array('part' => 2, 'url' => 'https://video.example/part-2'),
+        );
+        return array('subjects' => array(array('units' => array(array('lessons' => array(array('id' => 100, 'videos' => $videos)))))));
+    }
+}
 function check($condition, $message) { if (!$condition) { throw new RuntimeException($message); } }
 require dirname(__DIR__) . '/includes/class-plan.php';
 require dirname(__DIR__) . '/includes/class-shortcodes.php';
@@ -67,6 +78,8 @@ $html = $shortcode->render_weekly_plan_shortcode($atts);
 check(strpos($html, 'exam_id=703') !== false, 'Older approved review plans must resolve the exam automatically.');
 check(strpos($html, '&lt;صدر الإسلام&gt;') !== false, 'Exam titles must be escaped.');
 check(strpos($html, 'يتطلب تسجيل الدخول') !== false, 'The report explains that login is required.');
+check(strpos($html, 'فيديوهات الدروس') !== false, 'The approved plan must contain a lesson video section.');
+check(strpos($html, 'https://video.example/part-1') !== false && strpos($html, 'https://video.example/part-2') !== false, 'The shortcode must render both published parts.');
 $wpdb->selected[10] = array('703');
 check(strpos($shortcode->render_weekly_plan_shortcode($atts), 'exam_id=703') !== false, 'Explicit selections must render through the real shortcode.');
 $other = clone $exam; $other->id = 704; $other->title = 'Other';
@@ -86,4 +99,5 @@ $plan->homework_sb = 'Page 10';
 check(strpos($shortcode->render_weekly_plan_shortcode($atts), 'exam_id=704') !== false, 'Homework plans must also show the exam section.');
 $plan->status = 'draft';
 check(strpos($shortcode->render_weekly_plan_shortcode($atts), 'exam_id=') === false, 'Parents must not see exams from unapproved plans.');
-echo "Weekly plan exam shortcode regression passed.\n";
+check(strpos($shortcode->render_weekly_plan_shortcode($atts), 'https://video.example/') === false, 'Draft plan videos must stay hidden from parents.');
+echo "Weekly plan exam and video shortcode regression passed.\n";

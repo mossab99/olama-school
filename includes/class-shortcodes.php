@@ -705,6 +705,28 @@ class Olama_School_Shortcodes
                                             </div>
                                         <?php endif; ?>
 
+                                        <?php
+                                        $videos = Olama_School_Plan::get_lesson_videos(
+                                            $section_id, $plan->subject_id, $plan->lesson_id, $academic_year_id, $semester_id
+                                        );
+                                        ?>
+                                        <?php if (is_array($videos) && $videos): ?>
+                                            <div class="section-block direct-exams">
+                                                <div class="section-label">
+                                                    <span class="dashicons dashicons-video-alt3" aria-hidden="true"></span>
+                                                    <?php echo esc_html('فيديوهات الدروس'); ?>
+                                                </div>
+                                                <div class="homework-list">
+                                                    <?php foreach ($videos as $index => $video): ?>
+                                                        <a class="homework-item olama-plan-exam" href="<?php echo esc_url($video['url']); ?>" target="_blank" rel="noopener noreferrer">
+                                                            <strong><?php echo esc_html($plan->lesson_title); ?></strong>
+                                                            <span><?php echo esc_html($video['part'] ? sprintf('مشاهدة الجزء %d', $video['part']) : sprintf('مشاهدة الفيديو %d', $index + 1)); ?></span>
+                                                        </a>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+
                                         <!-- Teacher Notes -->
                                         <?php if (!empty($plan->teacher_notes)): ?>
                                             <div class="section-block teacher-notes">
