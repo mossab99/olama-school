@@ -396,7 +396,35 @@ class Olama_School_Plan
         );
     }
 
-    public static function exam_gateway_url($exam_id)
+    public static function get_published_plan($plan_id)
+    {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT p.*, l.lesson_title FROM {$wpdb->prefix}olama_plans p
+             JOIN {$wpdb->prefix}olama_subjects s ON s.id = p.subject_id AND s.appear_in_weekly_plan = 1
+             JOIN {$wpdb->prefix}olama_curriculum_lessons l ON l.id = p.lesson_id
+             WHERE p.id = %d AND p.status IN ('approved', 'published')",
+            $plan_id
+        ));
+    }
+
+    public static function exam_gateway_url($exam_id, $plan_id = 0)
+    {
+        $args = array('og_view' => 'exams', 'og_exam_section' => 'direct', 'exam_view' => 'take', 'exam_id' => absint($exam_id));
+        if ($plan_id) {
+            $args['og_plan'] = absint($plan_id);
+        }
+        return add_query_arg($args, self::gateway_page_url());
+    }
+
+    public static function video_gateway_url($plan_id, $video_id)
+    {
+        return add_query_arg(array(
+            'og_view' => 'video_library', 'og_plan' => absint($plan_id), 'og_video' => $video_id,
+        ), self::gateway_page_url());
+    }
+
+    private static function gateway_page_url()
     {
         static $url;
         if (!$url) {
@@ -409,7 +437,7 @@ class Olama_School_Plan
             }
             $url = apply_filters('olama_school_exam_gateway_url', $url);
         }
-        return add_query_arg(array('og_view' => 'exams', 'og_exam_section' => 'direct', 'exam_view' => 'take', 'exam_id' => absint($exam_id)), $url);
+        return $url;
     }
 
     public static function get_plan_questions($plan_id)

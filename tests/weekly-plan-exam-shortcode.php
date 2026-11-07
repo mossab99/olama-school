@@ -62,8 +62,8 @@ class Olama_Media_Guardian_Library {
     public static function for_curriculum($year, $semester, $grade, $subjects, $lesson) {
         check(array(2, 3, 23, array(20), 100) === array($year, $semester, $grade, $subjects, $lesson), 'Video lookup must use the report section curriculum and lesson.');
         $videos = array(
-            array('part' => 1, 'url' => 'https://video.example/part-1'),
-            array('part' => 2, 'url' => 'https://video.example/part-2'),
+            array('id' => 'v2-1', 'part' => 1, 'url' => 'https://video.example/part-1'),
+            array('id' => 'v2-2', 'part' => 2, 'url' => 'https://video.example/part-2'),
         );
         return array('subjects' => array(array('units' => array(array('lessons' => array(array('id' => 100, 'videos' => $videos)))))));
     }
@@ -83,10 +83,9 @@ check(strpos($html, 'exam_id=703') !== false, 'Older approved review plans must 
 check(strpos($html, '&lt;صدر الإسلام&gt;') !== false, 'Exam titles must be escaped.');
 check(strpos($html, 'يتطلب تسجيل الدخول') !== false, 'The report explains that login is required.');
 check(strpos($html, 'فيديوهات الدروس') !== false, 'The approved plan must contain a lesson video section.');
-check(strpos($html, 'https://video.example/part-1') !== false && strpos($html, 'https://video.example/part-2') !== false, 'The shortcode must render both published parts.');
-check(substr_count($html, 'data-video-play data-video-url') === 2, 'Each lesson video must render as a player button.');
-check(strpos($html, 'href="https://video.example/') === false, 'Lesson videos must not expose a navigable link.');
-check(substr_count($html, 'data-video-dialog') === 1, 'A report should reuse one dialog for all lesson videos.');
+check(strpos($html, 'og_video=v2-1') !== false && strpos($html, 'og_video=v2-2') !== false, 'Both video parts must link through the gateway.');
+check(substr_count($html, 'og_plan=10') >= 3, 'Video and exam links must identify the plan.');
+check(strpos($html, 'https://video.example/') === false, 'The weekly plan must not expose the video source.');
 if (in_array('--html', $argv, true)) {
     echo $html;
     exit;
@@ -112,5 +111,5 @@ $plan->homework_sb = 'Page 10';
 check(strpos($shortcode->render_weekly_plan_shortcode($atts), 'exam_id=704') !== false, 'Homework plans must also show the exam section.');
 $plan->status = 'draft';
 check(strpos($shortcode->render_weekly_plan_shortcode($atts), 'exam_id=') === false, 'Parents must not see exams from unapproved plans.');
-check(strpos($shortcode->render_weekly_plan_shortcode($atts), 'https://video.example/') === false, 'Draft plan videos must stay hidden from parents.');
+check(strpos($shortcode->render_weekly_plan_shortcode($atts), 'og_video=') === false, 'Draft plan videos must stay hidden from parents.');
 echo "Weekly plan exam and video shortcode regression passed.\n";
