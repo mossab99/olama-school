@@ -1232,3 +1232,11 @@
 }
 .olama-weekly-plan-v2 .olama-plan-exam span,
 .olama-weekly-plan-v2 .direct-exams > small { font-size: .8rem; }
+
+
+.olama-weekly-plan-v2 .olama-plan-video-button {
+    width: 100%;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}

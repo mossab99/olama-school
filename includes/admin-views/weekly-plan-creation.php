@@ -257,13 +257,16 @@ if (!defined('ABSPATH')) {
                     </div>
                 </div>
 
-                <div id="olama-plan-video-area" style="margin-bottom: 20px; display: none;">
+                <?php if (defined('OLAMA_STUDENT_GATEWAY_VERSION')): ?>
+                <div id="olama-plan-video-area" data-olama-plan-player style="margin-bottom: 20px; display: none;">
                     <div style="font-weight: 600; margin-bottom: 8px;">
                         <?php echo esc_html('فيديوهات الدروس المباشرة المرتبطة بالدرس والشعبة'); ?>
                     </div>
                     <div id="olama-plan-video-list" aria-live="polite"
                         style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd;"></div>
+                    <?php include __DIR__ . '/../views/lesson-video-player.php'; ?>
                 </div>
+                <?php endif; ?>
 
                 <!-- Supervisor Feedback & Teacher Response Loop -->
                 <div id="olama-revision-wrapper"

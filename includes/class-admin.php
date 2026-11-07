@@ -1259,6 +1259,9 @@ class Olama_School_Admin
 
         // Exam Hall Distribution assets
         if ($page === 'olama-school-plans') {
+            if (defined('OLAMA_STUDENT_GATEWAY_VERSION')) {
+                wp_enqueue_style('olama-student-gateway');
+            }
             wp_enqueue_script('olama-plan-script', OLAMA_SCHOOL_URL . 'assets/js/plan.js', array('jquery'), OLAMA_SCHOOL_VERSION, true);
             $active_year = Olama_School_Academic::get_active_year();
             $selected_year_id = isset($_GET['academic_year_id']) ? intval($_GET['academic_year_id']) : ($active_year ? $active_year->id : 0);

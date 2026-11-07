@@ -1,6 +1,10 @@
 <?php
 /** Standalone regression: php tests/weekly-plan-exam-shortcode.php */
 define('ABSPATH', __DIR__);
+define('OLAMA_STUDENT_GATEWAY_VERSION', 'test');
+function wp_enqueue_style($handle) {}
+function wp_enqueue_script($handle) {}
+function wp_unique_id($prefix) { static $id = 0; return $prefix . ++$id; }
 function absint($value) { return abs((int) $value); }
 function shortcode_atts($defaults, $values, $name = '') { return array_merge($defaults, $values); }
 function esc_html($value) { return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); }
@@ -80,6 +84,13 @@ check(strpos($html, '&lt;صدر الإسلام&gt;') !== false, 'Exam titles mus
 check(strpos($html, 'يتطلب تسجيل الدخول') !== false, 'The report explains that login is required.');
 check(strpos($html, 'فيديوهات الدروس') !== false, 'The approved plan must contain a lesson video section.');
 check(strpos($html, 'https://video.example/part-1') !== false && strpos($html, 'https://video.example/part-2') !== false, 'The shortcode must render both published parts.');
+check(substr_count($html, 'data-video-play data-video-url') === 2, 'Each lesson video must render as a player button.');
+check(strpos($html, 'href="https://video.example/') === false, 'Lesson videos must not expose a navigable link.');
+check(substr_count($html, 'data-video-dialog') === 1, 'A report should reuse one dialog for all lesson videos.');
+if (in_array('--html', $argv, true)) {
+    echo $html;
+    exit;
+}
 $wpdb->selected[10] = array('703');
 check(strpos($shortcode->render_weekly_plan_shortcode($atts), 'exam_id=703') !== false, 'Explicit selections must render through the real shortcode.');
 $other = clone $exam; $other->id = 704; $other->title = 'Other';

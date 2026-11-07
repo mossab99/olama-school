@@ -250,6 +250,7 @@ jQuery(document).ready(function ($) {
     }
 
     function loadLessonVideos(scope) {
+        if (!$videoArea.length) return;
         const request = videoRequest;
         $videoArea.show();
         $videoList.text('جارٍ تحميل فيديوهات الدرس...');
@@ -266,8 +267,14 @@ jQuery(document).ready(function ($) {
                 const $links = $('<ul>');
                 videos.forEach(function (video, index) {
                     const label = video.part ? 'الجزء ' + video.part : 'مشاهدة الفيديو ' + (index + 1);
-                    const $link = $('<a>', { href: video.url, target: '_blank', rel: 'noopener noreferrer' }).text(label);
-                    $links.append($('<li>').append($link));
+                    const $button = $('<button>', {
+                        type: 'button',
+                        class: 'button',
+                        'data-video-play': '',
+                        'data-video-url': video.url,
+                        'data-video-title': $lessonSelect.find('option:selected').text()
+                    }).text(label);
+                    $links.append($('<li>').append($button));
                 });
                 $videoList.empty().append($links);
             })

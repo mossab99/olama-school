@@ -410,7 +410,8 @@ class Olama_School_Shortcodes
 
         ob_start();
         ?>
-        <div class="olama-weekly-plan-v2">
+        <div class="olama-weekly-plan-v2" data-olama-plan-player>
+            <?php $has_video_player = false; ?>
             <?php
             // Use the academic context encoded in the shortcode for the report header.
             $academic_year_display = $academic_year->year_name ?? ($academic_year->start_year . '-' . $academic_year->end_year);
@@ -706,11 +707,11 @@ class Olama_School_Shortcodes
                                         <?php endif; ?>
 
                                         <?php
-                                        $videos = Olama_School_Plan::get_lesson_videos(
+                                        $videos = defined('OLAMA_STUDENT_GATEWAY_VERSION') ? Olama_School_Plan::get_lesson_videos(
                                             $section_id, $plan->subject_id, $plan->lesson_id, $academic_year_id, $semester_id
-                                        );
+                                        ) : array();
                                         ?>
-                                        <?php if (is_array($videos) && $videos): ?>
+                                        <?php if (is_array($videos) && $videos): $has_video_player = true; ?>
                                             <div class="section-block direct-exams">
                                                 <div class="section-label">
                                                     <span class="dashicons dashicons-video-alt3" aria-hidden="true"></span>
@@ -718,10 +719,10 @@ class Olama_School_Shortcodes
                                                 </div>
                                                 <div class="homework-list">
                                                     <?php foreach ($videos as $index => $video): ?>
-                                                        <a class="homework-item olama-plan-exam" href="<?php echo esc_url($video['url']); ?>" target="_blank" rel="noopener noreferrer">
+                                                        <button type="button" class="homework-item olama-plan-exam olama-plan-video-button" data-video-play data-video-url="<?php echo esc_url($video['url']); ?>" data-video-title="<?php echo esc_attr($plan->lesson_title); ?>">
                                                             <strong><?php echo esc_html($plan->lesson_title); ?></strong>
                                                             <span><?php echo esc_html($video['part'] ? sprintf('مشاهدة الجزء %d', $video['part']) : sprintf('مشاهدة الفيديو %d', $index + 1)); ?></span>
-                                                        </a>
+                                                        </button>
                                                     <?php endforeach; ?>
                                                 </div>
                                             </div>
@@ -746,6 +747,8 @@ class Olama_School_Shortcodes
                     </div>
                 <?php endforeach; ?>
             </div>
+
+            <?php if ($has_video_player) { include __DIR__ . '/views/lesson-video-player.php'; } ?>
 
             <script>
                 document.querySelectorAll('.day-header').forEach(header => {
