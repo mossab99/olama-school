@@ -236,14 +236,6 @@ class Olama_School_Plan
             $semester_id = $semester ? $semester->id : 0;
         }
 
-        // Validate links against the saved plan scope before changing the plan.
-        $exam_ids = array_values(array_unique(array_filter(array_map('absint', (array) ($data['exam_ids'] ?? array())))));
-        $available = self::get_available_exams($section_id, $subject_id, $lesson_id, $academic_year_id, $semester_id);
-        $allowed = array_map(static function ($exam) { return (int) $exam->id; }, $available);
-        if (array_diff($exam_ids, $allowed)) {
-            return new WP_Error('invalid_plan_exam', 'الامتحان المحدد لا يتبع درس وشعبة الخطة أو لم يعد متاحاً.');
-        }
-
         $status = $data['status'] ?? 'draft';
 
         // Log teacher response if provided
@@ -318,15 +310,6 @@ class Olama_School_Plan
             }
         }
 
-        if (false === $wpdb->delete("{$wpdb->prefix}olama_plan_exams", array('plan_id' => $plan_id))) {
-            return new WP_Error('plan_exam_save_failed', 'تم حفظ بيانات الخطة، لكن تعذر حفظ روابط الامتحانات. يرجى تحديث الإضافة وإعادة حفظ الخطة.');
-        }
-        foreach ($exam_ids as $exam_id) {
-            if (false === $wpdb->insert("{$wpdb->prefix}olama_plan_exams", array('plan_id' => $plan_id, 'exam_id' => $exam_id))) {
-                return new WP_Error('plan_exam_save_failed', 'تم حفظ بيانات الخطة، لكن تعذر حفظ روابط الامتحانات. يرجى إعادة المحاولة.');
-            }
-        }
-
         // Handle linked questions
         if ($plan_id) {
             $wpdb->delete("{$wpdb->prefix}olama_plan_questions", array('plan_id' => $plan_id));
@@ -364,12 +347,6 @@ class Olama_School_Plan
         return array_values(array_filter($rows, static function ($exam) use ($lesson_id) {
             return (int) $exam->direct_lesson_id === (int) $lesson_id && in_array($exam->status, array('active', 'published'), true);
         }));
-    }
-
-    public static function get_plan_exams($plan_id)
-    {
-        global $wpdb;
-        return $wpdb->get_col($wpdb->prepare("SELECT exam_id FROM {$wpdb->prefix}olama_plan_exams WHERE plan_id = %d", $plan_id));
     }
 
     /** Published media follows the curriculum of the selected section. */
@@ -410,21 +387,13 @@ class Olama_School_Plan
         return $videos_by_lesson[$key] = array();
     }
 
-    /** Resolve report links for both saved selections and older lesson plans. */
+    /** Resolve the current direct exams for this plan's lesson and section. */
     public static function get_report_exams($plan)
     {
-        $available = self::get_available_exams(
+        return self::get_available_exams(
             (int) $plan->section_id, (int) $plan->subject_id, (int) $plan->lesson_id,
             (int) $plan->academic_year_id, (int) $plan->semester_id
         );
-        $selected = array_map('intval', self::get_plan_exams($plan->id));
-        if (!$selected) {
-            return $available;
-        }
-        // Never display an exam moved to a different lesson, section or semester.
-        return array_values(array_filter($available, static function ($exam) use ($selected) {
-            return in_array((int) $exam->id, $selected, true);
-        }));
     }
 
     public static function exam_gateway_url($exam_id)

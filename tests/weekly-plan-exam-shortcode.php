@@ -95,9 +95,11 @@ $wpdb->selected[10] = array('703');
 check(strpos($shortcode->render_weekly_plan_shortcode($atts), 'exam_id=703') !== false, 'Explicit selections must render through the real shortcode.');
 $other = clone $exam; $other->id = 704; $other->title = 'Other';
 Olama_Exam_Manager::$rows[] = $other;
-check(count(Olama_School_Plan::get_report_exams($plan)) === 1, 'Explicit selections must not include other exams.');
+$html = $shortcode->render_weekly_plan_shortcode($atts);
+check(strpos($html, 'exam_id=703') !== false && strpos($html, 'exam_id=704') !== false, 'An old manual selection must not hide new matching exams.');
 $exam->status = 'closed';
-check(array() === Olama_School_Plan::get_report_exams($plan), 'Closed selections must not be replaced by an unselected exam.');
+$html = $shortcode->render_weekly_plan_shortcode($atts);
+check(strpos($html, 'exam_id=703') === false && strpos($html, 'exam_id=704') !== false, 'Hide the closed exam and keep other matching exams visible.');
 $wpdb->selected = array();
 Olama_Exam_Manager::$rows = array($other);
 foreach (array('section_id' => 105, 'semester_id' => 4, 'academic_year_id' => 1, 'subject_id' => 21, 'direct_lesson_id' => 101) as $key => $wrong) {

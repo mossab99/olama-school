@@ -372,7 +372,6 @@ if (!defined('ABSPATH')) {
             <?php
             if ($today_plans): ?>
                 <?php foreach ($today_plans as $plan):
-                    $q_ids = Olama_School_Plan::get_plan_exams($plan->id);
                     $plan_json = wp_json_encode([
                         'id' => $plan->id,
                         'grade_id' => $selected_grade_id,
@@ -387,7 +386,6 @@ if (!defined('ABSPATH')) {
                         'teacher_notes' => $plan->teacher_notes,
                         'supervisor_feedback' => $plan->supervisor_feedback ?? '',
                         'teacher_response' => $plan->teacher_response ?? '',
-                        'exam_ids' => $q_ids,
                         'status' => $plan->status,
                         'teacher_name' => $plan->teacher_name ?? '',
                         'plan_type' => $plan->plan_type ?? 'homework'

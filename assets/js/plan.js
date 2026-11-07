@@ -333,20 +333,13 @@ jQuery(document).ready(function ($) {
             success: function (response) {
                 if (String($lessonSelect.val()) !== String(lessonId)) return;
                 if (response.success && response.data && response.data.length > 0) {
-                    let html = '<ul style="margin: 0; padding: 0; list-style: none;">';
-                    response.data.forEach(function (q) {
-                        const isChecked = currentEditingPlan && currentEditingPlan.exam_ids && currentEditingPlan.exam_ids.map(String).includes(String(q.id)) ? 'checked' : '';
-                        html += `
-                            <li style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
-                                <label style="display: flex; gap: 10px; align-items: flex-start; cursor: pointer;">
-                                    <input type="checkbox" name="exam_ids[]" value="${q.id}" style="margin-top: 3px;" ${isChecked}>
-                                    <span>${$('<span>').text(q.title).html()}</span>
-                                </label>
-                                <a href="${$('<span>').text(q.url).html().replace(/"/g, '&quot;')}" target="_blank" rel="noopener">رابط الامتحان (يتطلب تسجيل الدخول)</a>
-                            </li>`;
+                    const $links = $('<ul>');
+                    response.data.forEach(function (exam) {
+                        const $link = $('<a>', { href: exam.url, target: '_blank', rel: 'noopener' })
+                            .text(exam.title + ' (يتطلب تسجيل الدخول)');
+                        $links.append($('<li>').append($link));
                     });
-                    html += '</ul>';
-                    $questionsList.html(html);
+                    $questionsList.empty().append($links);
 
                     // Cascade finished for this plan
                     if (currentEditingPlan) {
