@@ -267,7 +267,7 @@ jQuery(document).ready(function ($) {
             });
         }
 
-        $questionsList.html('<p>جارٍ تحميل الامتحانات المباشرة...</p>');
+        $questionsList.html('<p>جارٍ تحميل امتحانات الدروس المباشرة...</p>');
         $questionsArea.show();
 
         $.ajax({
@@ -305,12 +305,12 @@ jQuery(document).ready(function ($) {
                         currentEditingPlan = null;
                     }
                 } else {
-                    $questionsList.html('<p>لا توجد امتحانات مباشرة متاحة لهذا الدرس والشعبة.</p>');
+                    $questionsList.html('<p>لا توجد امتحانات دروس مباشرة متاحة لهذا الدرس والشعبة.</p>');
                     currentEditingPlan = null;
                 }
             },
             error: function () {
-                $questionsList.html('<p>تعذر تحميل الامتحانات المباشرة.</p>');
+                $questionsList.html('<p>تعذر تحميل امتحانات الدروس المباشرة.</p>');
                 currentEditingPlan = null;
             }
         });

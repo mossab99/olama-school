@@ -691,7 +691,7 @@ class Olama_School_Shortcodes
                                             <div class="section-block direct-exams">
                                                 <div class="section-label">
                                                     <span class="dashicons dashicons-welcome-learn-more"></span>
-                                                    <?php echo esc_html('الامتحانات المباشرة'); ?>
+                                                    <?php echo esc_html('امتحانات الدروس المباشرة'); ?>
                                                 </div>
                                                 <div class="homework-list">
                                                     <?php foreach ($plan_exams as $linked_exam): ?>

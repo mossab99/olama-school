@@ -249,7 +249,7 @@ if (!defined('ABSPATH')) {
 
                 <div id="olama-questions-area" style="margin-bottom: 20px; display: none;">
                     <label style="display: block; font-weight: 600; margin-bottom: 8px;">
-                        <?php echo esc_html('الامتحانات المباشرة المرتبطة بالدرس والشعبة'); ?>
+                        <?php echo esc_html('امتحانات الدروس المباشرة المرتبطة بالدرس والشعبة'); ?>
                     </label>
                     <div id="olama-questions-list"
                         style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd; max-height: 200px; overflow-y: auto;">
